@@ -80,19 +80,20 @@ export default class Server {
    * Pings a server and gets the response.
    *
    * @param server the server to ping
+   * @param insertPing whether to insert the ping into the database
    * @returns the ping response or undefined if the server is offline
    */
-  public pingServer(server: Server): Promise<Ping | undefined> {
-    switch (server.getType()) {
+  public pingServer(): Promise<Ping | undefined> {
+    switch (this.getType()) {
       case "PC": {
-        return this.pingPCServer(server);
+        return this.pingPCServer();
       }
       case "PE": {
-        return this.pingPEServer(server);
+        return this.pingPEServer();
       }
       default: {
         throw new Error(
-          `Unknown server type ${server.getType()} for ${server.getName()}`
+          `Unknown server type ${this.getType()} for ${this.getName()}`
         );
       }
     }
@@ -104,10 +105,10 @@ export default class Server {
    * @param server the server to ping
    * @returns the ping response or undefined if the server is offline
    */
-  private async pingPCServer(server: Server): Promise<Ping | undefined> {
+  private async pingPCServer(): Promise<Ping | undefined> {
     if (this.dnsInfo.resolvedServer == undefined && !this.dnsInfo.hasResolved) {
       try {
-        const resolvedServer = await resolveDns(server.getIP());
+        const resolvedServer = await resolveDns(this.getIP());
 
         this.dnsInfo = {
           hasResolved: true,
@@ -125,7 +126,7 @@ export default class Server {
       ip = resolvedServer.ip;
       port = resolvedServer.port;
     } else {
-      ip = server.getIP();
+      ip = this.getIP();
       port = 25565; // The default port
     }
 
@@ -139,7 +140,7 @@ export default class Server {
 
         this.favicon = res.favicon; // Set the favicon
         resolve({
-          id: server.getID(),
+          id: this.getID(),
           timestamp: Date.now(),
           ip: ip,
           playerCount: res.players.online,
@@ -154,20 +155,20 @@ export default class Server {
    * @param server the server to ping
    * @returns the ping response or undefined if the server is offline
    */
-  private async pingPEServer(server: Server): Promise<Ping | undefined> {
+  private async pingPEServer(): Promise<Ping | undefined> {
     return new Promise((resolve, reject) => {
       bedrockPing(
-        server.getIP(),
-        server.getPort() || 19132,
+        this.getIP(),
+        this.getPort() || 19132,
         (err: any, res: any) => {
           if (err || res == undefined) {
             return reject(err);
           }
 
           resolve({
-            id: server.getID(),
+            id: this.getID(),
             timestamp: Date.now(),
-            ip: server.getIP(),
+            ip: this.getIP(),
             playerCount: res.currentPlayers,
           });
         }

@@ -64,7 +64,7 @@ export default class Database {
 
   constructor() {
     this.db = new SQLiteDatabase(`${DATA_DIR}/db.sqlite`);
-    this.db.pragma("journal_mode = WAL");
+    this.db.pragma("journal_mode = WAL"); // Enable WAL mode for better performance
 
     logger.info("Ensuring tables exist");
     this.db.exec(CREATE_PINGS_TABLE); // Ensure the pings table exists

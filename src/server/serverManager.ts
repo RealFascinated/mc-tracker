@@ -5,16 +5,23 @@ import Servers from "../../data/servers.json";
 export default class ServerManager {
   private servers: Server[] = [];
 
-  constructor() {
-    for (const server of Servers) {
-      this.servers.push(
-        new Server({
-          id: server.id,
-          ip: server.ip,
-          name: server.name,
-          type: server.type as ServerType,
-        })
-      );
+  constructor() {}
+
+  /**
+   * Loads the servers from the config file.
+   */
+  async init() {
+    for (const configServer of Servers) {
+      const server = new Server({
+        id: configServer.id,
+        ip: configServer.ip,
+        name: configServer.name,
+        type: configServer.type as ServerType,
+      });
+      try {
+        await server.pingServer();
+      } catch (err) {}
+      this.servers.push(server);
     }
   }
 

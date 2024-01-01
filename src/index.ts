@@ -20,8 +20,12 @@ export const serverManager = new ServerManager();
  */
 export const websocketServer = new WebsocketServer(Config.websocket.port);
 
-// The scanner is responsible for scanning all servers
-new Scanner();
+(async () => {
+  await serverManager.init();
+
+  // The scanner is responsible for scanning all servers
+  new Scanner();
+})();
 
 // The websocket server is responsible for
 // sending data to the client in real time

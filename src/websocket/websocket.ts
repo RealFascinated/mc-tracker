@@ -1,4 +1,5 @@
-import { Server as SocketServer } from "socket.io";
+import { Socket, Server as SocketServer } from "socket.io";
+import { serverManager } from "..";
 import Server, { ServerStatus } from "../server/server";
 import { Ping } from "../types/ping";
 import { logger } from "../utils/logger";
@@ -12,9 +13,29 @@ export default class WebsocketServer {
 
     this.server.on("connection", (socket) => {
       logger.debug("ws: Client connected");
-
-      // todo: send ping data to client
+      this.sendServerList(socket);
     });
+  }
+
+  /**
+   * Sends the server list to the given socket.
+   *
+   * @param socket the socket to send the server list to
+   */
+  public sendServerList(socket: Socket): void {
+    logger.debug(`ws: Sending server list to ${socket.id}`);
+
+    const servers = [];
+    for (const server of serverManager.getServers()) {
+      servers.push({
+        id: server.getID(),
+        name: server.getName(),
+        ip: server.getIP(),
+        port: server.getPort(),
+        favicon: server.getFavicon(),
+      });
+    }
+    socket.emit("serverList", servers);
   }
 
   /**

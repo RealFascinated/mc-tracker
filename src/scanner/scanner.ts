@@ -9,7 +9,6 @@ export default class Scanner {
   constructor() {
     logger.info("Loading scanner database");
 
-    logger.info("Starting server scan");
     cron.schedule(Config.scanner.updateCron, () => {
       this.scanServers();
     });
@@ -41,7 +40,7 @@ export default class Scanner {
     let online = false;
 
     try {
-      response = await server.pingServer(server);
+      response = await server.pingServer();
       if (response == undefined) {
         return; // Server is offline
       }
