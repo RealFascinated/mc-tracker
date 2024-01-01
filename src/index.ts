@@ -1,6 +1,7 @@
 import Database from "./database/database";
 import Scanner from "./scanner/scanner";
 import ServerManager from "./server/serverManager";
+import { formatTimestamp } from "./utils/timeUtils";
 
 /**
  * The database instance.
@@ -17,5 +18,12 @@ new Scanner();
 
 serverManager.getServers().forEach((server) => {
   const record = database.getRecord(server.getID());
-  console.log(`Record for "${server.getName()}": ${record?.playerCount}`);
+  if (!record) {
+    return;
+  }
+  console.log(
+    `Record for "${server.getName()}": ${record.playerCount} (${formatTimestamp(
+      record.timestamp
+    )})`
+  );
 });

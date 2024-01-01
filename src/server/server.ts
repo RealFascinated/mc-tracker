@@ -64,6 +64,11 @@ export default class Server {
   private type: ServerType;
 
   /**
+   * The favicon of the server.
+   */
+  private favicon: string | undefined;
+
+  /**
    * The resolved server information from
    * DNS records for a PC server.
    */
@@ -142,6 +147,7 @@ export default class Server {
           return reject(err);
         }
 
+        this.favicon = res.favicon; // Set the favicon
         resolve({
           timestamp: Date.now(),
           ip: ip,
@@ -228,5 +234,14 @@ export default class Server {
    */
   public getType(): ServerType {
     return this.type;
+  }
+
+  /**
+   * Returns the favicon of the server.
+   *
+   * @returns the favicon
+   */
+  public getFavicon(): string | undefined {
+    return this.favicon;
   }
 }
