@@ -24,6 +24,7 @@ export type PingResponse = {
 };
 
 type ServerOptions = {
+  id: number;
   name: string;
   ip: string;
   type: ServerType;
@@ -35,6 +36,11 @@ type DnsInfo = {
 };
 
 export default class Server {
+  /**
+   * The ID of the server.
+   */
+  private id: number;
+
   /**
    * The name of the server.
    */
@@ -58,7 +64,8 @@ export default class Server {
     hasResolved: false,
   };
 
-  constructor({ name, ip, type }: ServerOptions) {
+  constructor({ id, name, ip, type }: ServerOptions) {
+    this.id = id;
     this.name = name;
     this.ip = ip;
     this.type = type;
@@ -150,6 +157,15 @@ export default class Server {
     server: Server
   ): Promise<PingResponse | undefined> {
     return undefined;
+  }
+
+  /**
+   * Returns the ID of the server.
+   *
+   * @returns the ID
+   */
+  public getID(): number {
+    return this.id;
   }
 
   /**

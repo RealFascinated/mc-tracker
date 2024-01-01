@@ -9,6 +9,7 @@ export default class ServerManager {
     for (const server of Servers) {
       this.servers.push(
         new Server({
+          id: server.id,
           ip: server.ip,
           name: server.name,
           type: server.type as ServerType,

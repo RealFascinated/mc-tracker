@@ -13,30 +13,37 @@ const RECORD_TABLE = "record";
 /**
  * SQL Queries
  */
-const CREATE_TABLE = `
-  CREATE TABLE IF NOT EXISTS {} (
+const CREATE_PINGS_TABLE = `
+  CREATE TABLE IF NOT EXISTS pings (
+    id INTEGER NOT NULL,
     timestamp BIGINT NOT NULL,
     ip TINYTEXT NOT NULL,
     player_count MEDIUMINT NOT NULL
   );
 `;
-const CREATE_PINGS_TABLE = CREATE_TABLE.replace("{}", PINGS_TABLE);
-const CREATE_RECORD_TABLE = CREATE_TABLE.replace("{}", RECORD_TABLE);
+const CREATE_RECORD_TABLE = `
+  CREATE TABLE IF NOT EXISTS record (
+    id INTEGER PRIMARY KEY,
+    timestamp BIGINT NOT NULL,
+    ip TINYTEXT NOT NULL,
+    player_count MEDIUMINT NOT NULL
+  );
+`;
 
-const CREATE_PINGS_INDEX = `CREATE INDEX IF NOT EXISTS ip_index ON pings (ip, player_count)`;
-const CREATE_TIMESTAMP_INDEX = `CREATE INDEX IF NOT EXISTS timestamp_index on PINGS (timestamp)`;
+const CREATE_PINGS_INDEX = `CREATE INDEX IF NOT EXISTS ip_index ON pings (id, ip, player_count)`;
+const CREATE_TIMESTAMP_INDEX = `CREATE INDEX IF NOT EXISTS timestamp_index on PINGS (id, timestamp)`;
 
 const INSERT_PING = `
-  INSERT INTO ${PINGS_TABLE} (timestamp, ip, player_count)
-  VALUES (?, ?, ?)
+  INSERT INTO ${PINGS_TABLE} (id, timestamp, ip, player_count)
+  VALUES (?, ?, ?, ?)
 `;
 const INSERT_RECORD = `
-  INSERT INTO ${RECORD_TABLE} (timestamp, ip, player_count)
-  VALUES (?, ?, ?)
-`;
-const DELETE_OLD_RECORD = `
-  DELETE FROM ${RECORD_TABLE}
-  WHERE ip = ?
+  INSERT INTO ${RECORD_TABLE} (id, timestamp, ip, player_count)
+  VALUES (?, ?, ?, ?)
+  ON CONFLICT(id) DO UPDATE SET
+    timestamp = excluded.timestamp,
+    player_count = excluded.player_count,
+    ip = excluded.ip
 `;
 
 export default class Scanner {
@@ -100,32 +107,7 @@ export default class Scanner {
       return; // Server is offline
     }
 
-    const { timestamp, players } = response;
-
-    this.insertPing(timestamp, server.getIP(), players.online);
-    this.updateRecord(server, response);
-  }
-
-  /**
-   * Updates the record for a server.
-   *
-   * @param server the server to update
-   * @param response the response to update with
-   */
-  private updateRecord(server: Server, response: PingResponse): void {
-    const ip = server.getIP();
-
-    // select record from database for this server
-    const statement = this.db.prepare(
-      `SELECT * FROM ${RECORD_TABLE} WHERE ip = ?`
-    );
-    const record = statement.get(ip);
-
-    // delete old record
-    if (record) {
-      this.db.prepare(DELETE_OLD_RECORD).run(ip);
-    }
-
+    this.insertPing(server, response);
     this.insertRecord(server, response);
   }
 
@@ -136,9 +118,14 @@ export default class Scanner {
    * @param ip the IP address of the server
    * @param playerCount the number of players online
    */
-  private insertPing(timestamp: number, ip: string, playerCount: number): void {
+  private insertPing(server: Server, response: PingResponse): void {
+    const { timestamp, players } = response;
+    const id = server.getID();
+    const ip = server.getIP();
+    const onlineCount = players.online;
+
     const statement = this.db.prepare(INSERT_PING);
-    statement.run(timestamp, ip, playerCount); // Insert the ping into the database
+    statement.run(id, timestamp, ip, onlineCount); // Insert the ping into the database
   }
 
   /**
@@ -149,10 +136,11 @@ export default class Scanner {
    */
   private insertRecord(server: Server, response: PingResponse): void {
     const { timestamp, players } = response;
+    const id = server.getID();
     const ip = server.getIP();
     const onlineCount = players.online;
 
     const statement = this.db.prepare(INSERT_RECORD);
-    statement.run(timestamp, ip, onlineCount); // Insert the record into the database
+    statement.run(id, timestamp, ip, onlineCount); // Insert the record into the database
   }
 }
