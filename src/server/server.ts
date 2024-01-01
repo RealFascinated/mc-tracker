@@ -3,6 +3,7 @@ import { ResolvedServer, resolveDns } from "../utils/dnsResolver";
 const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
 
 import Config from "../../data/config.json";
+import { Ping } from "../types/ping";
 
 /**
  * The type of server.
@@ -11,18 +12,9 @@ import Config from "../../data/config.json";
  */
 export type ServerType = "PC" | "PE";
 
-/**
- * The response from a ping request to a server.
- */
-export type PingResponse = {
-  timestamp: number;
-  ip: string;
-  version?: string;
-  players: {
-    online: number;
-    max?: number;
-  };
-};
+export enum ServerStatus {
+  OFFLINE = "Unable to reach host",
+}
 
 type ServerOptions = {
   id: number;
@@ -90,7 +82,7 @@ export default class Server {
    * @param server the server to ping
    * @returns the ping response or undefined if the server is offline
    */
-  public pingServer(server: Server): Promise<PingResponse | undefined> {
+  public pingServer(server: Server): Promise<Ping | undefined> {
     switch (server.getType()) {
       case "PC": {
         return this.pingPCServer(server);
@@ -112,9 +104,7 @@ export default class Server {
    * @param server the server to ping
    * @returns the ping response or undefined if the server is offline
    */
-  private async pingPCServer(
-    server: Server
-  ): Promise<PingResponse | undefined> {
+  private async pingPCServer(server: Server): Promise<Ping | undefined> {
     if (this.dnsInfo.resolvedServer == undefined && !this.dnsInfo.hasResolved) {
       try {
         const resolvedServer = await resolveDns(server.getIP());
@@ -149,13 +139,10 @@ export default class Server {
 
         this.favicon = res.favicon; // Set the favicon
         resolve({
+          id: server.getID(),
           timestamp: Date.now(),
           ip: ip,
-          version: res.version.name,
-          players: {
-            online: res.players.online,
-            max: res.players.max,
-          },
+          playerCount: res.players.online,
         });
       });
     });
@@ -167,9 +154,7 @@ export default class Server {
    * @param server the server to ping
    * @returns the ping response or undefined if the server is offline
    */
-  private async pingPEServer(
-    server: Server
-  ): Promise<PingResponse | undefined> {
+  private async pingPEServer(server: Server): Promise<Ping | undefined> {
     return new Promise((resolve, reject) => {
       bedrockPing(
         server.getIP(),
@@ -180,11 +165,10 @@ export default class Server {
           }
 
           resolve({
+            id: server.getID(),
             timestamp: Date.now(),
             ip: server.getIP(),
-            players: {
-              online: res.currentPlayers,
-            },
+            playerCount: res.currentPlayers,
           });
         }
       );

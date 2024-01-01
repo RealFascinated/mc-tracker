@@ -15,12 +15,16 @@ export const database = new Database();
  */
 export const serverManager = new ServerManager();
 
+/**
+ * The websocket server instance.
+ */
+export const websocketServer = new WebsocketServer(Config.websocket.port);
+
 // The scanner is responsible for scanning all servers
 new Scanner();
 
 // The websocket server is responsible for
 // sending data to the client in real time
-new WebsocketServer(Config.websocket.port);
 
 // serverManager.getServers().forEach((server) => {
 //   const record = database.getRecord(server.getID());

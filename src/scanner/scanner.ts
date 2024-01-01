@@ -1,6 +1,6 @@
 import cron from "node-cron";
-import { database, serverManager } from "..";
-import Server from "../server/server";
+import { database, serverManager, websocketServer } from "..";
+import Server, { ServerStatus } from "../server/server";
 
 import Config from "../../data/config.json";
 import { logger } from "../utils/logger";
@@ -48,6 +48,7 @@ export default class Scanner {
       online = true;
     } catch (err) {
       logger.info(`Failed to ping ${server.getIP()}`, err);
+      websocketServer.sendServerError(server, ServerStatus.OFFLINE);
       return;
     }
 
@@ -56,6 +57,9 @@ export default class Scanner {
     }
 
     database.insertPing(server, response);
-    database.insertRecord(server, response);
+    const isNewRecord = database.insertRecord(server, response);
+
+    // todo: send all server pings at once
+    websocketServer.sendNewPing(server, response, isNewRecord);
   }
 }

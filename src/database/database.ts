@@ -1,6 +1,6 @@
 import SQLiteDatabase from "better-sqlite3";
 import cron from "node-cron";
-import Server, { PingResponse } from "../server/server";
+import Server from "../server/server";
 import { logger } from "../utils/logger";
 import { getFormattedDate } from "../utils/timeUtils";
 
@@ -125,14 +125,13 @@ export default class Database {
    * @param ip the IP address of the server
    * @param playerCount the number of players online
    */
-  public insertPing(server: Server, response: PingResponse) {
-    const { timestamp, players } = response;
+  public insertPing(server: Server, response: Ping) {
+    const { timestamp, playerCount } = response;
     const id = server.getID();
     const ip = server.getIP();
-    const onlineCount = players.online;
 
     const statement = this.db.prepare(INSERT_PING);
-    statement.run(id, timestamp, ip, onlineCount); // Insert the ping into the database
+    statement.run(id, timestamp, ip, playerCount); // Insert the ping into the database
   }
 
   /**
@@ -140,14 +139,20 @@ export default class Database {
    *
    * @param server the server to insert
    * @param response the response to insert
+   * @returns true if the a new record was set, false otherwise
    */
-  public insertRecord(server: Server, response: PingResponse) {
-    const { timestamp, players } = response;
+  public insertRecord(server: Server, response: Ping): boolean {
+    const { timestamp, playerCount } = response;
     const id = server.getID();
     const ip = server.getIP();
-    const onlineCount = players.online;
+
+    const oldRecord = this.getRecord(id);
+    if (oldRecord && oldRecord.playerCount >= playerCount) {
+      return false; // Don't update the record if the player count is lower
+    }
 
     const statement = this.db.prepare(INSERT_RECORD);
-    statement.run(id, timestamp, ip, onlineCount); // Insert the record into the database
+    statement.run(id, timestamp, ip, playerCount); // Insert the record into the database
+    return true;
   }
 }
