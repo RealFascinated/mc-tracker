@@ -1,5 +1,6 @@
+import javaPing from "mcping-js";
 import { ResolvedServer, resolveDns } from "../utils/dnsResolver";
-import JavaPing = require("mcping-js");
+const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
 
 import Config from "../../data/config.json";
 
@@ -16,10 +17,10 @@ export type ServerType = "PC" | "PE";
 export type PingResponse = {
   timestamp: number;
   ip: string;
-  version: string;
+  version?: string;
   players: {
     online: number;
-    max: number;
+    max?: number;
   };
 };
 
@@ -27,6 +28,7 @@ type ServerOptions = {
   id: number;
   name: string;
   ip: string;
+  port?: number;
   type: ServerType;
 };
 
@@ -52,6 +54,11 @@ export default class Server {
   private ip: string;
 
   /**
+   * The port of the server.
+   */
+  private port: number | undefined;
+
+  /**
    * The type of server.
    */
   private type: ServerType;
@@ -64,10 +71,11 @@ export default class Server {
     hasResolved: false,
   };
 
-  constructor({ id, name, ip, type }: ServerOptions) {
+  constructor({ id, name, ip, port, type }: ServerOptions) {
     this.id = id;
     this.name = name;
     this.ip = ip;
+    this.port = port;
     this.type = type;
   }
 
@@ -126,7 +134,7 @@ export default class Server {
       port = 25565; // The default port
     }
 
-    const serverPing = new JavaPing.MinecraftServer(ip, port);
+    const serverPing = new javaPing.MinecraftServer(ip, port);
 
     return new Promise((resolve, reject) => {
       serverPing.ping(Config.scanner.timeout, 700, (err, res) => {
@@ -156,7 +164,25 @@ export default class Server {
   private async pingPEServer(
     server: Server
   ): Promise<PingResponse | undefined> {
-    return undefined;
+    return new Promise((resolve, reject) => {
+      bedrockPing(
+        server.getIP(),
+        server.getPort() || 19132,
+        (err: any, res: any) => {
+          if (err || res == undefined) {
+            return reject(err);
+          }
+
+          resolve({
+            timestamp: Date.now(),
+            ip: server.getIP(),
+            players: {
+              online: res.currentPlayers,
+            },
+          });
+        }
+      );
+    });
   }
 
   /**
@@ -184,6 +210,15 @@ export default class Server {
    */
   public getIP(): string {
     return this.ip;
+  }
+
+  /**
+   * Returns the port of the server.
+   *
+   * @returns the port
+   */
+  public getPort(): number | undefined {
+    return this.port;
   }
 
   /**

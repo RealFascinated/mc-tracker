@@ -1,67 +1,15 @@
-import Database from "better-sqlite3";
 import cron from "node-cron";
-import { serverManager } from "..";
+import { database, serverManager } from "..";
+import Server from "../server/server";
 
 import Config from "../../data/config.json";
-import Server, { PingResponse } from "../server/server";
-
-const DATA_DIR = "data";
-
-const PINGS_TABLE = "pings";
-const RECORD_TABLE = "record";
-
-/**
- * SQL Queries
- */
-const CREATE_PINGS_TABLE = `
-  CREATE TABLE IF NOT EXISTS pings (
-    id INTEGER NOT NULL,
-    timestamp BIGINT NOT NULL,
-    ip TINYTEXT NOT NULL,
-    player_count MEDIUMINT NOT NULL
-  );
-`;
-const CREATE_RECORD_TABLE = `
-  CREATE TABLE IF NOT EXISTS record (
-    id INTEGER PRIMARY KEY,
-    timestamp BIGINT NOT NULL,
-    ip TINYTEXT NOT NULL,
-    player_count MEDIUMINT NOT NULL
-  );
-`;
-
-const CREATE_PINGS_INDEX = `CREATE INDEX IF NOT EXISTS ip_index ON pings (id, ip, player_count)`;
-const CREATE_TIMESTAMP_INDEX = `CREATE INDEX IF NOT EXISTS timestamp_index on PINGS (id, timestamp)`;
-
-const INSERT_PING = `
-  INSERT INTO ${PINGS_TABLE} (id, timestamp, ip, player_count)
-  VALUES (?, ?, ?, ?)
-`;
-const INSERT_RECORD = `
-  INSERT INTO ${RECORD_TABLE} (id, timestamp, ip, player_count)
-  VALUES (?, ?, ?, ?)
-  ON CONFLICT(id) DO UPDATE SET
-    timestamp = excluded.timestamp,
-    player_count = excluded.player_count,
-    ip = excluded.ip
-`;
+import { logger } from "../utils/logger";
 
 export default class Scanner {
-  private db: Database.Database;
-
   constructor() {
-    console.log("Loading scanner database");
-    this.db = new Database(`${DATA_DIR}/db.sqlite`);
+    logger.info("Loading scanner database");
 
-    console.log("Ensuring tables exist");
-    this.db.exec(CREATE_PINGS_TABLE); // Ensure the pings table exists
-    this.db.exec(CREATE_RECORD_TABLE); // Ensure the record table exists
-
-    console.log("Ensuring indexes exist");
-    this.db.exec(CREATE_PINGS_INDEX); // Ensure the pings index exists
-    this.db.exec(CREATE_TIMESTAMP_INDEX); // Ensure the timestamp index exists
-
-    console.log("Starting server scan");
+    logger.info("Starting server scan");
     cron.schedule(Config.scanner.updateCron, () => {
       this.scanServers();
     });
@@ -71,14 +19,14 @@ export default class Scanner {
    * Start a server scan to ping all servers.
    */
   private async scanServers(): Promise<void> {
-    console.log(`Scanning servers ${serverManager.getServers().length}`);
+    logger.info(`Scanning servers ${serverManager.getServers().length}`);
 
     // ping all servers in parallel
     await Promise.all(
       serverManager.getServers().map((server) => this.scanServer(server))
     );
 
-    console.log("Finished scanning servers");
+    logger.info("Finished scanning servers");
   }
 
   /**
@@ -88,7 +36,7 @@ export default class Scanner {
    * @returns a promise that resolves when the server has been scanned
    */
   async scanServer(server: Server): Promise<void> {
-    //console.log(`Scanning server ${server.getIP()} - ${server.getType()}`);
+    //logger.info(`Scanning server ${server.getIP()} - ${server.getType()}`);
     let response;
     let online = false;
 
@@ -99,7 +47,7 @@ export default class Scanner {
       }
       online = true;
     } catch (err) {
-      console.log(`Failed to ping ${server.getIP()}`, err);
+      logger.info(`Failed to ping ${server.getIP()}`, err);
       return;
     }
 
@@ -107,40 +55,7 @@ export default class Scanner {
       return; // Server is offline
     }
 
-    this.insertPing(server, response);
-    this.insertRecord(server, response);
-  }
-
-  /**
-   * Inserts a ping into the database.
-   *
-   * @param timestamp the timestamp of the ping
-   * @param ip the IP address of the server
-   * @param playerCount the number of players online
-   */
-  private insertPing(server: Server, response: PingResponse): void {
-    const { timestamp, players } = response;
-    const id = server.getID();
-    const ip = server.getIP();
-    const onlineCount = players.online;
-
-    const statement = this.db.prepare(INSERT_PING);
-    statement.run(id, timestamp, ip, onlineCount); // Insert the ping into the database
-  }
-
-  /**
-   * Inserts a record into the database.
-   *
-   * @param server the server to insert
-   * @param response the response to insert
-   */
-  private insertRecord(server: Server, response: PingResponse): void {
-    const { timestamp, players } = response;
-    const id = server.getID();
-    const ip = server.getIP();
-    const onlineCount = players.online;
-
-    const statement = this.db.prepare(INSERT_RECORD);
-    statement.run(id, timestamp, ip, onlineCount); // Insert the record into the database
+    database.insertPing(server, response);
+    database.insertRecord(server, response);
   }
 }

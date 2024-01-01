@@ -6,5 +6,8 @@
   "scanner": {
     "updateCron": "*/1 * * * *",
     "timeout": 2000
+  },
+  "backup": {
+    "cron": "0 0 * * *"
   }
 }
