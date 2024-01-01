@@ -1,0 +1,10 @@
+{
+  "api": {
+    "host": "localhost",
+    "port": 3000
+  },
+  "scanner": {
+    "updateCron": "*/1 * * * *",
+    "timeout": 2000
+  }
+}

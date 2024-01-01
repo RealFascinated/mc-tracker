@@ -1,0 +1,62 @@
+[
+  {
+    "name": "WildPrison",
+    "ip": "wildprison.net",
+    "type": "PC"
+  },
+  {
+    "name": "Hypixel",
+    "ip": "mc.hypixel.net",
+    "type": "PC"
+  },
+  {
+    "name": "CubeCraft",
+    "ip": "play.cubecraft.net",
+    "type": "PC"
+  },
+  {
+    "name": "Mineplex",
+    "ip": "mineplex.com",
+    "type": "PC"
+  },
+  {
+    "name": "2b2t",
+    "ip": "2b2t.org",
+    "type": "PC"
+  },
+  {
+    "name": "AkumaMC",
+    "ip": "akumamc.net",
+    "type": "PC"
+  },
+  {
+    "name": "Wynncraft",
+    "ip": "play.wynncraft.com",
+    "type": "PC"
+  },
+  {
+    "name": "Minehut",
+    "ip": "minehut.com",
+    "type": "PC"
+  },
+  {
+    "name": "Grand Theft Minecraft",
+    "ip": "gtm.network",
+    "type": "PC"
+  },
+  {
+    "name": "HiveMC",
+    "ip": "geo.hivebedrock.network",
+    "type": "PE"
+  },
+  {
+    "name": "Purple Prison",
+    "ip": "MCSL.PURPLE.WTF",
+    "type": "PC"
+  },
+  {
+    "name": "MinecraftOnline",
+    "ip": "minecraftonline.com",
+    "type": "PC"
+  }
+]
