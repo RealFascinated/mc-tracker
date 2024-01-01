@@ -1,6 +1,5 @@
 {
-  "api": {
-    "host": "localhost",
+  "websocket": {
     "port": 3000
   },
   "scanner": {
