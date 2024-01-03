@@ -12,4 +12,6 @@ COPY . .
 #RUN chown -R node /usr/src/app
 #USER node
 
+RUN pnpm run build
+
 CMD pnpm run start
