@@ -15,7 +15,6 @@ export default class ServerManager {
     logger.info("Loading servers");
     for (const configServer of Servers) {
       const server = new Server({
-        id: configServer.id,
         ip: configServer.ip,
         name: configServer.name,
         type: configServer.type as ServerType,

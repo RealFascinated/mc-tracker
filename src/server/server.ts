@@ -20,7 +20,6 @@ export enum ServerStatus {
 }
 
 type ServerOptions = {
-  id: number;
   name: string;
   ip: string;
   port?: number;
@@ -33,11 +32,6 @@ type DnsInfo = {
 };
 
 export default class Server {
-  /**
-   * The ID of the server.
-   */
-  private id: number;
-
   /**
    * The name of the server.
    */
@@ -71,8 +65,7 @@ export default class Server {
     hasResolved: false,
   };
 
-  constructor({ id, name, ip, port, type }: ServerOptions) {
-    this.id = id;
+  constructor({ name, ip, port, type }: ServerOptions) {
     this.name = name;
     this.ip = ip;
     this.port = port;
@@ -106,7 +99,7 @@ export default class Server {
       try {
         influx.writePoint(
           new Point("playerCount")
-            .tag("id", this.getID().toString())
+            .tag("name", this.getName())
             .tag("ip", this.getIP().toLowerCase())
             .intField("playerCount", response.playerCount)
             .timestamp(response.timestamp)
@@ -163,7 +156,6 @@ export default class Server {
 
         this.favicon = res.favicon; // Set the favicon
         resolve({
-          id: this.getID(),
           timestamp: Date.now(),
           ip: ip,
           playerCount: res.players.online,
@@ -189,7 +181,6 @@ export default class Server {
           }
 
           resolve({
-            id: this.getID(),
             timestamp: Date.now(),
             ip: this.getIP(),
             playerCount: res.currentPlayers,
@@ -197,15 +188,6 @@ export default class Server {
         }
       );
     });
-  }
-
-  /**
-   * Returns the ID of the server.
-   *
-   * @returns the ID
-   */
-  public getID(): number {
-    return this.id;
   }
 
   /**

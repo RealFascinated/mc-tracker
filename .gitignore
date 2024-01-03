@@ -230,4 +230,3 @@ data/db.sqlite-wal
 data/database-backups
 
 data/config.json
-data/servers.json

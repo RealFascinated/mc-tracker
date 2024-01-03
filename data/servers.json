@@ -2,73 +2,61 @@
   {
     "name": "WildPrison",
     "ip": "wildprison.net",
-    "type": "PC",
-    "id": 0
+    "type": "PC"
   },
   {
     "name": "Hypixel",
     "ip": "mc.hypixel.net",
-    "type": "PC",
-    "id": 1
+    "type": "PC"
   },
   {
-    "name": "CubeCraft",
+    "name": "Cubecraft",
     "ip": "play.cubecraft.net",
-    "type": "PC",
-    "id": 2
+    "type": "PC"
   },
   {
     "name": "Mineplex",
     "ip": "mineplex.com",
-    "type": "PC",
-    "id": 3
+    "type": "PC"
   },
   {
     "name": "2b2t",
     "ip": "2b2t.org",
-    "type": "PC",
-    "id": 4
+    "type": "PC"
   },
   {
     "name": "AkumaMC",
     "ip": "akumamc.net",
-    "type": "PC",
-    "id": 5
+    "type": "PC"
   },
   {
     "name": "Wynncraft",
     "ip": "play.wynncraft.com",
-    "type": "PC",
-    "id": 6
+    "type": "PC"
   },
   {
     "name": "Minehut",
     "ip": "minehut.com",
-    "type": "PC",
-    "id": 7
+    "type": "PC"
   },
   {
     "name": "Grand Theft Minecraft",
     "ip": "gtm.network",
-    "type": "PC",
-    "id": 8
+    "type": "PC"
   },
   {
     "name": "HiveMC",
     "ip": "geo.hivebedrock.network",
-    "type": "PE",
-    "id": 9
+    "type": "PE"
   },
   {
     "name": "Purple Prison",
     "ip": "MCSL.PURPLE.WTF",
-    "type": "PC",
-    "id": 10
+    "type": "PC"
   },
   {
     "name": "MinecraftOnline",
     "ip": "minecraftonline.com",
-    "type": "PC",
-    "id": 11
+    "type": "PC"
   }
 ]
