@@ -1,5 +1,22 @@
-version: "3.4"
+version: "3"
 
 services:
-  backend:
+  tracker:
+    restart: always
     image: fascinated/mc-tracker-backend:influx
+    volumes:
+      - ./data:/usr/src/app/data
+
+  influxdb:
+    image: influxdb:latest
+    container_name: influxdb
+    networks:
+      - default
+    security_opt:
+      - no-new-privileges:true
+    restart: always
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./influx/config:/etc/influxdb2
+      - ./influx/db:/var/lib/influxdb2
