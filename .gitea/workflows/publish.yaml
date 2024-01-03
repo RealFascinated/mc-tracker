@@ -44,7 +44,7 @@ jobs:
           key: ${{ runner.os }}-buildx
 
       - name: Build and Push (Latest)
-        uses: docker/build-push-action@v
+        uses: docker/build-push-action@v5
         with:
           push: true
           context: .
