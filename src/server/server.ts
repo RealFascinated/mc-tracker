@@ -180,6 +180,15 @@ export default class Server {
   }
 
   /**
+   * Invalidates the DNS cache for the server.
+   */
+  public invalidateDns() {
+    this.dnsInfo = {
+      hasResolved: false,
+    };
+  }
+
+  /**
    * Returns the name of the server.
    *
    * @returns the name

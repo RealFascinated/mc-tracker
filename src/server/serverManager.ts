@@ -23,6 +23,13 @@ export default class ServerManager {
     cron.schedule(Config.pinger.pingCron, () => {
       this.pingServers();
     });
+
+    cron.schedule(Config.pinger.dnsInvalidationCron, () => {
+      logger.info("Invalidating DNS cache for all servers");
+      for (const server of this.servers) {
+        server.invalidateDns();
+      }
+    });
   }
 
   /**

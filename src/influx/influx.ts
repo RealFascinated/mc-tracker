@@ -14,13 +14,13 @@ export default class Influx {
       url: Config.influx.url,
       token: Config.influx.token,
     });
-    logger.info("InfluxDB initialized");
-
     this.writeApi = this.influx.getWriteApi(
       Config.influx.org,
       Config.influx.bucket,
       "ms"
     );
+
+    logger.info("InfluxDB initialized");
   }
 
   /**
@@ -28,7 +28,7 @@ export default class Influx {
    *
    * @param point the point to write
    */
-  public async writePoint(point: Point): Promise<void> {
+  public writePoint(point: Point) {
     this.writeApi.writePoint(point);
   }
 }
