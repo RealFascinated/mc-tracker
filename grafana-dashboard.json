@@ -163,15 +163,15 @@
       "id": 1,
       "options": {
         "legend": {
-          "calcs": ["min", "max", "mean"],
+          "calcs": ["min", "max", "mean", "last"],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true,
-          "sortBy": "Mean",
+          "sortBy": "Last",
           "sortDesc": true
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -301,8 +301,8 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
@@ -310,6 +310,9 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
@@ -326,7 +329,6 @@
             }
           },
           "decimals": 0,
-          "displayName": "Players Online",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -334,16 +336,109 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
           "unit": "locale"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "1dAvg"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Average player count over 1 day"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 10
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "7dAvg"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Average player count over 7 days"
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 10
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "playerCount"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Players Online"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "highestPlayerCount"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Peak Player Count (All Time)"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 10
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": false,
+                  "viz": false
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -361,7 +456,7 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -373,8 +468,36 @@
             "type": "influxdb",
             "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
           },
+          "hide": false,
           "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+          },
+          "hide": false,
+          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: 0)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> map(fn: (r) => ({r with _value: r._value, _field: \"highestPlayerCount\"}))\r\n  |> max()",
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+          },
+          "hide": false,
+          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\r\n  |> map(fn: (r) => ({r with _value: r._value, _field: \"1dAvg\"}))\r\n  |> yield(name: \"mean\")\r\n",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+          },
+          "hide": false,
+          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: 7d, fn: mean, createEmpty: false)\r\n  |> map(fn: (r) => ({r with _value: r._value, _field: \"7dAvg\"}))\r\n  |> yield(name: \"mean\")",
+          "refId": "C"
         }
       ],
       "title": "Player Count (${server})",
@@ -411,8 +534,8 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
@@ -443,10 +566,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
@@ -469,7 +588,7 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -518,13 +637,13 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-12h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Mc Tracker",
   "uid": "c4d923ad-b588-4953-a302-2af1514fddd0",
-  "version": 27,
+  "version": 39,
   "weekStart": ""
 }

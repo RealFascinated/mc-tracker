@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - "master"
+    paths-ignore: # Files in here will not trigger a build
+      - "README.md"
+      - "LICENSE"
+      - "grafana-dashboard.json"
+      - "storage-tracker.sh"
+      - "useful-stuff.md"
 
 jobs:
   docker:
