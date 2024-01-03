@@ -2,8 +2,11 @@ import javaPing from "mcping-js";
 import { ResolvedServer, resolveDns } from "../utils/dnsResolver";
 const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
 
+import { Point } from "@influxdata/influxdb-client";
+import { influx } from "..";
 import Config from "../../data/config.json";
 import { Ping } from "../types/ping";
+import { logger } from "../utils/logger";
 
 /**
  * The type of server.
@@ -17,7 +20,6 @@ export enum ServerStatus {
 }
 
 type ServerOptions = {
-  id: number;
   name: string;
   ip: string;
   port?: number;
@@ -30,11 +32,6 @@ type DnsInfo = {
 };
 
 export default class Server {
-  /**
-   * The ID of the server.
-   */
-  private id: number;
-
   /**
    * The name of the server.
    */
@@ -68,8 +65,7 @@ export default class Server {
     hasResolved: false,
   };
 
-  constructor({ id, name, ip, port, type }: ServerOptions) {
-    this.id = id;
+  constructor({ name, ip, port, type }: ServerOptions) {
     this.name = name;
     this.ip = ip;
     this.port = port;
@@ -79,23 +75,42 @@ export default class Server {
   /**
    * Pings a server and gets the response.
    *
-   * @param server the server to ping
-   * @param insertPing whether to insert the ping into the database
    * @returns the ping response or undefined if the server is offline
    */
-  public pingServer(): Promise<Ping | undefined> {
-    switch (this.getType()) {
-      case "PC": {
-        return this.pingPCServer();
+  public async pingServer(): Promise<Ping | undefined> {
+    try {
+      let response;
+
+      switch (this.getType()) {
+        case "PC": {
+          response = await this.pingPCServer();
+          break;
+        }
+        case "PE": {
+          response = await this.pingPEServer();
+          break;
+        }
       }
-      case "PE": {
-        return this.pingPEServer();
+
+      if (!response) {
+        return Promise.resolve(undefined);
       }
-      default: {
-        throw new Error(
-          `Unknown server type ${this.getType()} for ${this.getName()}`
+
+      try {
+        influx.writePoint(
+          new Point("playerCount")
+            .tag("name", this.getName())
+            .intField("playerCount", response.playerCount)
+            .timestamp(response.timestamp)
         );
+      } catch (err) {
+        logger.warn(`Failed to write ping to influxdb`, err);
       }
+
+      return Promise.resolve(response);
+    } catch (err) {
+      logger.warn(`Failed to ping ${this.getIP()}`, err);
+      return Promise.resolve(undefined);
     }
   }
 
@@ -133,14 +148,13 @@ export default class Server {
     const serverPing = new javaPing.MinecraftServer(ip, port);
 
     return new Promise((resolve, reject) => {
-      serverPing.ping(Config.scanner.timeout, 700, (err, res) => {
+      serverPing.ping(Config.scanner.timeout, 765, (err, res) => {
         if (err || res == undefined) {
           return reject(err);
         }
 
         this.favicon = res.favicon; // Set the favicon
         resolve({
-          id: this.getID(),
           timestamp: Date.now(),
           ip: ip,
           playerCount: res.players.online,
@@ -166,7 +180,6 @@ export default class Server {
           }
 
           resolve({
-            id: this.getID(),
             timestamp: Date.now(),
             ip: this.getIP(),
             playerCount: res.currentPlayers,
@@ -174,15 +187,6 @@ export default class Server {
         }
       );
     });
-  }
-
-  /**
-   * Returns the ID of the server.
-   *
-   * @returns the ID
-   */
-  public getID(): number {
-    return this.id;
   }
 
   /**

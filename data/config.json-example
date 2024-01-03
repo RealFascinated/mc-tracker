@@ -1,6 +1,9 @@
 {
-  "websocket": {
-    "port": 3000
+  "influx": {
+    "url": "http://localhost:8086",
+    "token": "my-token",
+    "org": "my-org",
+    "bucket": "my-bucket"
   },
   "scanner": {
     "updateCron": "*/1 * * * *",
