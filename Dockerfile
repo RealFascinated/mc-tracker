@@ -8,6 +8,4 @@ COPY . .
 
 RUN pnpm install --production --silent
 
-RUN pnpm run build
-
-CMD pnpm run start
+CMD pnpm run build && pnpm run start
