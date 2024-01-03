@@ -1,15 +1,13 @@
 {
   "influx": {
     "url": "http://localhost:8086",
-    "token": "my-token",
-    "org": "my-org",
-    "bucket": "my-bucket"
+    "token": "setme",
+    "org": "setme",
+    "bucket": "mc-tracker"
   },
-  "scanner": {
-    "updateCron": "*/1 * * * *",
+  "pinger": {
+    "pingCron": "*/1 * * * *",
+    "dnsInvalidationCron": "0 */6 * * *",
     "timeout": 2000
-  },
-  "backup": {
-    "cron": "0 0 * * *"
   }
 }
