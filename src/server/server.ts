@@ -100,7 +100,6 @@ export default class Server {
         influx.writePoint(
           new Point("playerCount")
             .tag("name", this.getName())
-            .tag("ip", this.getIP().toLowerCase())
             .intField("playerCount", response.playerCount)
             .timestamp(response.timestamp)
         );
