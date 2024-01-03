@@ -22,14 +22,6 @@ export default class ServerManager {
       });
       this.servers.push(server);
     }
-    // do an inital ping of all servers to load data from them
-    await Promise.all(
-      this.servers.map((server) => {
-        try {
-          server.pingServer();
-        } catch (err) {}
-      })
-    );
     logger.info(`Loaded ${this.servers.length} servers`);
   }
 
