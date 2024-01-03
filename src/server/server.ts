@@ -15,10 +15,6 @@ import { logger } from "../utils/logger";
  */
 export type ServerType = "PC" | "PE";
 
-export enum ServerStatus {
-  OFFLINE = "Unable to reach host",
-}
-
 type ServerOptions = {
   name: string;
   ip: string;
@@ -51,11 +47,6 @@ export default class Server {
    * The type of server.
    */
   private type: ServerType;
-
-  /**
-   * The favicon of the server.
-   */
-  private favicon: string | undefined;
 
   /**
    * The resolved server information from
@@ -148,12 +139,11 @@ export default class Server {
     const serverPing = new javaPing.MinecraftServer(ip, port);
 
     return new Promise((resolve, reject) => {
-      serverPing.ping(Config.scanner.timeout, 765, (err, res) => {
+      serverPing.ping(Config.pinger.timeout, 765, (err, res) => {
         if (err || res == undefined) {
           return reject(err);
         }
 
-        this.favicon = res.favicon; // Set the favicon
         resolve({
           timestamp: Date.now(),
           ip: ip,
@@ -223,14 +213,5 @@ export default class Server {
    */
   public getType(): ServerType {
     return this.type;
-  }
-
-  /**
-   * Returns the favicon of the server.
-   *
-   * @returns the favicon
-   */
-  public getFavicon(): string | undefined {
-    return this.favicon;
   }
 }
