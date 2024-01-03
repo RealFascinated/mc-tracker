@@ -17,5 +17,5 @@ jobs:
       - name: Push to dokku
         uses: dokku/github-action@master
         with:
-          git_remote_url: "ssh://dokku@10.0.3.76:22/mc-tracker"
+          git_remote_url: "ssh://dokku@51.158.63.74:22/mc-tracker"
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}

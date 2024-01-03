@@ -7,6 +7,18 @@ services:
     volumes:
       - ./data:/usr/src/app/data
 
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_SERVER_DOMAIN=mc-tracker.fascinated.cc
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    ports:
+      - 3000:3000
+    volumes:
+      - /home/grafana/data:/var/lib/grafana
+    restart: always
+
   influxdb:
     image: influxdb:latest
     container_name: influxdb
