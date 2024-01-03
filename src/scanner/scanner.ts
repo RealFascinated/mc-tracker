@@ -6,8 +6,6 @@ import { logger } from "../utils/logger";
 
 export default class Scanner {
   constructor() {
-    logger.info("Loading scanner database");
-
     cron.schedule(Config.scanner.updateCron, () => {
       this.scanServers();
     });
