@@ -1,0 +1,15 @@
+{
+  "influx": {
+    "url": "http://localhost:8086",
+    "token": "my-token",
+    "org": "my-org",
+    "bucket": "my-bucket"
+  },
+  "scanner": {
+    "updateCron": "*/1 * * * *",
+    "timeout": 2000
+  },
+  "backup": {
+    "cron": "0 0 * * *"
+  }
+}
