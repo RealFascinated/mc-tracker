@@ -3,7 +3,7 @@ version: "3"
 services:
   tracker:
     restart: always
-    image: fascinated/mc-tracker-backend:influx
+    image: fascinated/mc-tracker:latest
     volumes:
       - ./data:/usr/src/app/data
 
