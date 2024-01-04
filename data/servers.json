@@ -63,5 +63,10 @@
     "name": "Hoplite",
     "ip": "hoplite.gg",
     "type": "PC"
+  },
+  {
+    "name": "Minemen Club",
+    "ip": "minemen.club",
+    "type": "PC"
   }
 ]
