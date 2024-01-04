@@ -9,7 +9,7 @@ interface LogInfo {
 }
 
 const customFormat = format.combine(
-  timestamp({ format: "YY-MM-DD HH:MM:SS" }),
+  timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
   printf((info: LogInfo) => {
     return `[${info.timestamp}] ${info.level}: ${info.message}`;
   })
