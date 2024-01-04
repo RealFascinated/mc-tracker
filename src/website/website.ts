@@ -52,7 +52,7 @@ export default class Website {
           .timestamp(Date.now())
       );
     } catch (err) {
-      logger.error(`Failed to ping ${this.name}:`, err);
+      logger.warn(`Failed to ping ${this.name}:`, err);
       influx.writePoint(
         new Point("websiteStatus")
           .tag("name", this.name)
