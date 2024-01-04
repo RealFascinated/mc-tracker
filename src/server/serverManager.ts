@@ -41,7 +41,7 @@ export default class ServerManager {
     // ping all servers in parallel
     await Promise.all(this.servers.map((server) => server.pingServer()));
 
-    logger.info("Finished pinging servers");
+    logger.info("Finished pinging servers!");
   }
 
   /**
