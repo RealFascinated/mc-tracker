@@ -78,5 +78,10 @@
     "name": "OPLegends",
     "ip": "play.oplegends.com",
     "type": "PC"
+  },
+  {
+    "name": "Minecadia",
+    "ip": "play.minecadia.com",
+    "type": "PC"
   }
 ]
