@@ -18,8 +18,21 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 7,
-  "links": [],
+  "id": 1,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Other Dashboards",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
   "liveNow": false,
   "panels": [
     {
@@ -32,13 +45,13 @@
       },
       "id": 2,
       "panels": [],
-      "title": "All Server Stats",
+      "title": "Global Server Stats",
       "type": "row"
     },
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+        "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
       },
       "fieldConfig": {
         "defaults": {
@@ -60,7 +73,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 0,
         "y": 1
@@ -76,14 +89,15 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "10.2.0",
+      "pluginVersion": "10.2.3",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+            "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
           "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: -1h)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> last()\r\n  |> map(fn: (r) => ({_value: r._value}))\r\n  |> group(columns: [])\r\n  |> sum()\r\n",
           "refId": "A"
@@ -95,7 +109,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+        "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
       },
       "fieldConfig": {
         "defaults": {
@@ -120,12 +134,12 @@
             "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
+            "pointSize": 1,
             "scaleDistribution": {
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -152,7 +166,31 @@
           },
           "unit": "locale"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "totalPlayerCombind"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total players across all servers"
+              },
+              {
+                "id": "mappings",
+                "value": []
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#ffffff",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 10,
@@ -163,7 +201,7 @@
       "id": 1,
       "options": {
         "legend": {
-          "calcs": ["min", "max", "mean", "last"],
+          "calcs": ["max", "mean", "last"],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true,
@@ -172,20 +210,29 @@
         },
         "tooltip": {
           "mode": "multi",
-          "sort": "none"
+          "sort": "desc"
         }
       },
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+            "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
+          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
+          },
+          "hide": false,
+          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\r\n  |> group(columns: [\"_measurement\"]) // Group by measurement to get a single result per measurement\r\n  |> aggregateWindow(every: 5m, fn: sum, createEmpty: false)\r\n  |> map(fn: (r) => ({ _time: r._time, totalPlayerCombind: r._value })) // Retain time and rename the column\r\n  |> yield(name: \"totalPlayerCombind\")\r\n",
+          "refId": "B"
         }
       ],
-      "title": "Player Counts",
+      "title": "Global Server Player Count (5m avg)",
       "type": "timeseries"
     },
     {
@@ -206,17 +253,17 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "Tracking historical data for Minecraft servers, this was inspired by [Minetrack](https://github.com/Cryptkeeper/Minetrack). <br/>\nPlease contact me on Discord if there is any issues: `fascinated7`.\n\nWant to add a server? Open a PR [here](https://git.fascinated.cc/Fascinated/mc-tracker/pulls)",
+        "content": "Tracking historical data for Minecraft servers, this was inspired by [Minetrack](https://github.com/Cryptkeeper/Minetrack). <br/>\nPlease contact me on Discord if there is any issues: `fascinated7`.\n\nWant to add a server? Open a PR [here](https://git.fascinated.cc/Fascinated/mc-tracker/pulls)\n\nSee other metrics [here](https://mc-tracker.fascinated.cc/dashboards)",
         "mode": "markdown"
       },
-      "pluginVersion": "10.2.0",
+      "pluginVersion": "10.2.3",
       "title": "Information",
       "type": "text"
     },
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+        "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
       },
       "fieldConfig": {
         "defaults": {
@@ -238,10 +285,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 3,
         "w": 4,
         "x": 0,
-        "y": 6
+        "y": 5
       },
       "id": 6,
       "options": {
@@ -254,20 +301,79 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "10.2.0",
+      "pluginVersion": "10.2.3",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+            "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: -1mo)\r\n  |> distinct(column: \"ip\")\r\n  |> group()\r\n  |> count()",
+          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: -1mo)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> distinct(column: \"ip\")\r\n  |> group()\r\n  |> count()",
           "refId": "A"
         }
       ],
       "title": "Total Tracked Servers",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 0,
+        "y": 8
+      },
+      "id": 40,
+      "interval": "1d",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "/^_time$/",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.2.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
+          },
+          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> group(columns: [\"_measurement\"]) // Group by server\r\n  |> last(column: \"_time\") // Get the latest timestamp for each server\r\n  |> group(columns: [\"_measurement\"]) // Group again to get each series\r\n  |> last() // Get the last value with that timestamp for each server\r\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Last Server Ping",
       "type": "stat"
     },
     {
@@ -278,6 +384,83 @@
         "x": 0,
         "y": 11
       },
+      "id": 59,
+      "panels": [],
+      "title": "Player Count (Now)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 12
+      },
+      "id": 58,
+      "maxPerRow": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "limit": 1,
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.2.3",
+      "repeat": "server",
+      "repeatDirection": "h",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
+          },
+          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> last()\r\n",
+          "refId": "Player Count"
+        }
+      ],
+      "title": "Player Count Now (${server})",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
       "id": 3,
       "panels": [],
       "title": "Per Server Stats",
@@ -286,7 +469,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+        "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
       },
       "fieldConfig": {
         "defaults": {
@@ -318,8 +501,8 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
-            "spanNulls": false,
+            "showPoints": "never",
+            "spanNulls": 300000,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -329,6 +512,7 @@
             }
           },
           "decimals": 0,
+          "fieldMinMax": false,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -444,7 +628,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 12
+        "y": 25
       },
       "id": 4,
       "maxPerRow": 3,
@@ -457,7 +641,7 @@
         },
         "tooltip": {
           "mode": "multi",
-          "sort": "none"
+          "sort": "desc"
         }
       },
       "repeat": "server",
@@ -466,148 +650,45 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+            "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
-          "hide": false,
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
-          "refId": "A"
+          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: true)\r\n  |> yield(name: \"mean\")",
+          "refId": "Player Count"
         },
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+            "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
+          },
+          "hide": true,
+          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\r\n  |> map(fn: (r) => ({r with _value: r._value, _field: \"1dAvg\"}))\r\n  |> yield(name: \"mean\")",
+          "refId": "Player Count (1d avg)"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
+          },
+          "hide": true,
+          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\r\n  |> map(fn: (r) => ({r with _value: r._value, _field: \"7dAvg\"}))\r\n  |> yield(name: \"mean\")",
+          "refId": "Player Count (7d avg)"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
           "hide": false,
           "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: 0)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> map(fn: (r) => ({r with _value: r._value, _field: \"highestPlayerCount\"}))\r\n  |> max()",
-          "refId": "D"
-        },
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
-          },
-          "hide": false,
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)\r\n  |> map(fn: (r) => ({r with _value: r._value, _field: \"1dAvg\"}))\r\n  |> yield(name: \"mean\")\r\n",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
-          },
-          "hide": false,
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: 7d, fn: mean, createEmpty: false)\r\n  |> map(fn: (r) => ({r with _value: r._value, _field: \"7dAvg\"}))\r\n  |> yield(name: \"mean\")",
-          "refId": "C"
+          "refId": "Player Count Peak (All time)"
         }
       ],
       "title": "Player Count (${server})",
       "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 44
-      },
-      "id": 29,
-      "panels": [],
-      "title": "Tracker Stats",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 15,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "displayName": "Storage Used",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "deckbytes"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 45
-      },
-      "id": 28,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
-          },
-          "query": "from(bucket: \"influx_metrics\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"storage_usage\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  |> filter(fn: (r) => r[\"db\"] == \"mc-tracker\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
-          "refId": "A"
-        }
-      ],
-      "title": "InfluxDB Storage Size",
-      "type": "timeseries"
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 38,
+  "schemaVersion": 39,
   "tags": [],
   "templating": {
     "list": [
@@ -619,15 +700,15 @@
         },
         "datasource": {
           "type": "influxdb",
-          "uid": "face5ed9-19c5-419c-ac67-e80ed8945e49"
+          "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
         },
-        "definition": "from(bucket: \"mc-tracker\")\r\n  |> range(start: -6h)\r\n  |> group()\r\n  |> distinct(column: \"name\")\r\n",
+        "definition": "from(bucket: \"mc-tracker\")\r\n  |> range(start: -6h)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> group()\r\n  |> distinct(column: \"name\")\r\n",
         "hide": 2,
         "includeAll": true,
         "multi": true,
         "name": "server",
         "options": [],
-        "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: -6h)\r\n  |> group()\r\n  |> distinct(column: \"name\")\r\n",
+        "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: -6h)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> group()\r\n  |> distinct(column: \"name\")\r\n",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -642,8 +723,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Mc Tracker",
-  "uid": "c4d923ad-b588-4953-a302-2af1514fddd0",
-  "version": 39,
+  "title": "Server Tracker",
+  "uid": "c4d923ad",
+  "version": 30,
   "weekStart": ""
 }
