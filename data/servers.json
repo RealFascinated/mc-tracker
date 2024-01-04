@@ -73,5 +73,10 @@
     "name": "Tubnet",
     "ip": "tubnet.gg",
     "type": "PC"
+  },
+  {
+    "name": "OPLegends",
+    "ip": "play.oplegends.com",
+    "type": "PC"
   }
 ]
