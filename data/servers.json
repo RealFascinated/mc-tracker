@@ -83,5 +83,10 @@
     "name": "Minecadia",
     "ip": "play.minecadia.com",
     "type": "PC"
+  },
+  {
+    "name": "Manacube",
+    "ip": "play.manacube.com",
+    "type": "PC"
   }
 ]
