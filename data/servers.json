@@ -58,5 +58,10 @@
     "name": "MinecraftOnline",
     "ip": "minecraftonline.com",
     "type": "PC"
+  },
+  {
+    "name": "Hoplite",
+    "ip": "hoplite.gg",
+    "type": "PC"
   }
 ]
