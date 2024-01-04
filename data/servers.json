@@ -88,5 +88,10 @@
     "name": "Manacube",
     "ip": "play.manacube.com",
     "type": "PC"
+  },
+  {
+    "name": "InvadedLands",
+    "ip": "invadedlands.net",
+    "type": "PC"
   }
 ]
