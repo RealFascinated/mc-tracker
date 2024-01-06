@@ -19,8 +19,8 @@ export default class WebsiteManager {
     }
     logger.info(`Loaded ${this.websites.length} websites!`);
 
-    cron.schedule(Config.pinger.pingCron, () => {
-      this.pingWebsites();
+    cron.schedule(Config.pinger.pingCron, async () => {
+      await this.pingWebsites();
     });
   }
 

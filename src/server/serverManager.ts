@@ -20,8 +20,8 @@ export default class ServerManager {
     }
     logger.info(`Loaded ${this.servers.length} servers!`);
 
-    cron.schedule(Config.pinger.pingCron, () => {
-      this.pingServers();
+    cron.schedule(Config.pinger.pingCron, async () => {
+      await this.pingServers();
     });
 
     cron.schedule(Config.pinger.dnsInvalidationCron, () => {
