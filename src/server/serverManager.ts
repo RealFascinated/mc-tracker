@@ -43,13 +43,4 @@ export default class ServerManager {
 
     logger.info("Finished pinging servers!");
   }
-
-  /**
-   * Returns the servers.
-   *
-   * @returns the servers
-   */
-  public getServers(): Server[] {
-    return this.servers;
-  }
 }

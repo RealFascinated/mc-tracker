@@ -35,13 +35,4 @@ export default class WebsiteManager {
 
     logger.info("Finished pinging websites!");
   }
-
-  /**
-   * Returns the websites.
-   *
-   * @returns the websites
-   */
-  public getWebsites(): Website[] {
-    return this.websites;
-  }
 }
