@@ -10,6 +10,7 @@ on:
       - "grafana-dashboard.json"
       - "storage-tracker.sh"
       - "useful-stuff.md"
+      - ".gitea/workflows/ci.yml"
 
 jobs:
   docker:

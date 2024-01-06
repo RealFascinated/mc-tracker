@@ -1,9 +1,16 @@
-name: "deploy"
+name: "Deploy CI"
 
 on:
   push:
     branches:
       - master
+    paths-ignore: # Files in here will not trigger a build
+      - "README.md"
+      - "LICENSE"
+      - "grafana-dashboard.json"
+      - "storage-tracker.sh"
+      - "useful-stuff.md"
+      - ".gitea/workflows/publish.yml"
 
 jobs:
   deploy:
