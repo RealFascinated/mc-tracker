@@ -93,5 +93,10 @@
     "name": "InvadedLands",
     "ip": "invadedlands.net",
     "type": "PC"
+  },
+  {
+    "name": "Rainpixel",
+    "ip": "mc.rainpixel.net",
+    "type": "PC"
   }
 ]

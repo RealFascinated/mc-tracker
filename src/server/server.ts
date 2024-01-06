@@ -31,22 +31,22 @@ export default class Server {
   /**
    * The name of the server.
    */
-  private name: string;
+  private readonly name: string;
 
   /**
    * The IP address of the server.
    */
-  private ip: string;
+  private readonly ip: string;
 
   /**
    * The port of the server.
    */
-  private port: number | undefined;
+  private readonly port: number | undefined;
 
   /**
    * The type of server.
    */
-  private type: ServerType;
+  private readonly type: ServerType;
 
   /**
    * The resolved server information from

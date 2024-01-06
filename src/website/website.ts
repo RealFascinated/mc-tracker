@@ -14,12 +14,12 @@ export default class Website {
   /**
    * The name of the website.
    */
-  private name: string;
+  private readonly name: string;
 
   /**
    * The url of the website.
    */
-  private url: string;
+  private readonly url: string;
 
   constructor({ name, url }: WebsiteOptions) {
     this.name = name;
