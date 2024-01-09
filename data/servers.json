@@ -5,6 +5,11 @@
     "type": "PE"
   },
   {
+    "name": "Cubecraft - Bedrock",
+    "ip": "play.cubecraft.net",
+    "type": "PE"
+  },
+  {
     "name": "WildNetwork",
     "ip": "play.wildnetwork.net",
     "type": "PC"
