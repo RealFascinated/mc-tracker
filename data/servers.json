@@ -1,5 +1,10 @@
 [
   {
+    "name": "HiveMC",
+    "ip": "geo.hivebedrock.network",
+    "type": "PE"
+  },
+  {
     "name": "WildNetwork",
     "ip": "play.wildnetwork.net",
     "type": "PC"
@@ -43,11 +48,6 @@
     "name": "Grand Theft Minecart",
     "ip": "gtm.network",
     "type": "PC"
-  },
-  {
-    "name": "HiveMC",
-    "ip": "geo.hivebedrock.network",
-    "type": "PE"
   },
   {
     "name": "Purple Prison",
