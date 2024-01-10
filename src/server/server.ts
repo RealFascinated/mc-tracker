@@ -69,6 +69,7 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   public async pingServer(): Promise<Ping | undefined> {
+    const before = Date.now();
     try {
       let response;
 
@@ -92,6 +93,7 @@ export default class Server {
           new Point("playerCount")
             .tag("name", this.getName())
             .intField("playerCount", response.playerCount)
+            .intField("latency", Date.now() - before)
             .timestamp(response.timestamp)
         );
       } catch (err) {
