@@ -97,7 +97,10 @@ export default class Server {
             .timestamp(response.timestamp)
         );
       } catch (err) {
-        logger.warn(`Failed to write ping to influxdb`, err);
+        logger.warn(
+          `Failed to write point to Influx for ${this.getName()} - ${this.getIP()}`,
+          err
+        );
       }
 
       return Promise.resolve(response);
