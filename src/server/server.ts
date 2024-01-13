@@ -143,6 +143,7 @@ export default class Server {
 
     const serverPing = new javaPing.MinecraftServer(ip, port);
 
+    // todo: do something to get the latest protocol? (is this even needed??)
     return new Promise((resolve, reject) => {
       serverPing.ping(Config.pinger.timeout, 765, (err, res) => {
         if (err || res == undefined) {
