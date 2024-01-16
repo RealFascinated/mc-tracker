@@ -113,5 +113,10 @@
     "name": "Shotbow",
     "ip": "play.shotbow.net",
     "type": "PC"
+  },
+  {
+    "name": "Stray",
+    "ip": "stray.gg",
+    "type": "PC"
   }
 ]
