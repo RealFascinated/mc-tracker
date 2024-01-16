@@ -103,5 +103,10 @@
     "name": "Complex Gaming",
     "ip": "hub.mc-complex.com",
     "type": "PC"
+  },
+  {
+    "name": "Monumenta",
+    "ip": "server.playmonumenta.com",
+    "type": "PC"
   }
 ]
