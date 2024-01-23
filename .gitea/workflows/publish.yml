@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Restore Docker Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: docker-cache
         with:
           path: /usr/bin/docker
@@ -44,7 +44,7 @@ jobs:
           password: ${{ secrets.REPO_TOKEN }}
 
       - name: Restore Docker Build Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: build-cache
         with:
           path: /tmp/.buildx-cache
