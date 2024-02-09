@@ -21,6 +21,7 @@
       }
     ]
   },
+  "description": "Minecraft server tracker. Shows current and past player counts.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -197,7 +198,7 @@
             "type": "influxdb",
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> aggregateWindow(every: ${global_interval}, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> aggregateWindow(every: ${global_interval}, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
         },
         {
@@ -206,7 +207,7 @@
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
           "hide": false,
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> aggregateWindow(every: ${global_interval}, fn: mean, createEmpty: false)\r\n  |> group(columns: [\"_measurement\"]) // Group by measurement to get a single result per measurement\r\n  |> aggregateWindow(every: ${global_interval}, fn: sum, createEmpty: false)\r\n  |> map(fn: (r) => ({ _time: r._time, totalPlayerCombind: r._value })) // Retain time and rename the column\r\n  |> yield(name: \"totalPlayerCombind\")\r\n",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> aggregateWindow(every: ${global_interval}, fn: mean, createEmpty: false)\r\n  |> group(columns: [\"_measurement\"]) // Group by measurement to get a single result per measurement\r\n  |> aggregateWindow(every: ${global_interval}, fn: sum, createEmpty: false)\r\n  |> map(fn: (r) => ({ _time: r._time, totalPlayerCombind: r._value })) // Retain time and rename the column\r\n  |> yield(name: \"totalPlayerCombind\")\r\n",
           "refId": "B"
         }
       ],
@@ -267,7 +268,7 @@
             "type": "influxdb",
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: -1h)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> last()\r\n  |> map(fn: (r) => ({_value: r._value}))\r\n  |> group(columns: [])\r\n  |> sum()\r\n",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: -1h)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> last()\r\n  |> map(fn: (r) => ({_value: r._value}))\r\n  |> group(columns: [])\r\n  |> sum()\r\n",
           "refId": "A"
         }
       ],
@@ -279,6 +280,7 @@
         "type": "influxdb",
         "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
       },
+      "description": "The total count of tracked servers in the last month",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -328,7 +330,7 @@
             "type": "influxdb",
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: -1mo)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> distinct(column: \"ip\")\r\n  |> group()\r\n  |> count()",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: -1mo)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> distinct(column: \"ip\")\r\n  |> group()\r\n  |> count()",
           "refId": "A"
         }
       ],
@@ -340,6 +342,7 @@
         "type": "influxdb",
         "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
       },
+      "description": "The total amount of times servers were pinged for their status",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -389,7 +392,7 @@
             "type": "influxdb",
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: 0)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> group(columns:[\"_measurement\"])\r\n  |> count()\r\n",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: 0)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> group(columns:[\"_measurement\"])\r\n  |> count()\r\n",
           "refId": "A"
         }
       ],
@@ -450,7 +453,7 @@
             "type": "influxdb",
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> group(columns: [\"_measurement\"]) // Group by server\r\n  |> last(column: \"_time\") // Get the latest timestamp for each server\r\n  |> group(columns: [\"_measurement\"]) // Group again to get each series\r\n  |> last() // Get the last value with that timestamp for each server\r\n",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> group(columns: [\"_measurement\"]) // Group by server\r\n  |> last(column: \"_time\") // Get the latest timestamp for each server\r\n  |> group(columns: [\"_measurement\"]) // Group again to get each series\r\n  |> last() // Get the last value with that timestamp for each server\r\n",
           "refId": "A"
         }
       ],
@@ -530,7 +533,7 @@
             "type": "influxdb",
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: -6h)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> last()\r\n",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: -6h)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> last()\r\n",
           "refId": "Player Count"
         }
       ],
@@ -619,7 +622,7 @@
             "properties": [
               {
                 "id": "displayName",
-                "value": "Players Online (1 Day Avg)"
+                "value": "Players Online (${server_player_count_avg_interval} Avg)"
               },
               {
                 "id": "custom.pointSize",
@@ -727,7 +730,7 @@
             "type": "influxdb",
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: ${server_interval}, fn: mean, createEmpty: true)\r\n  |> yield(name: \"mean\")",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: ${server_interval}, fn: mean, createEmpty: true)\r\n  |> yield(name: \"mean\")",
           "refId": "Player Count"
         },
         {
@@ -736,8 +739,8 @@
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
           "hide": false,
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: true)\r\n  |> map(fn: (r) => ({_time: r._time, \"1dayAvg\": r._value}))\r\n  |> yield(name: \"1dayAvg\")\r\n",
-          "refId": "Player Count (1 Day Avg)"
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: ${server_player_count_avg_interval}, fn: mean, createEmpty: true)\r\n  |> map(fn: (r) => ({_time: r._time, \"1dayAvg\": r._value}))\r\n  |> yield(name: \"1dayAvg\")\r\n",
+          "refId": "Player Count (Interval Avg)"
         },
         {
           "datasource": {
@@ -745,7 +748,7 @@
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
           "hide": false,
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: 0)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> map(fn: (r) => ({r with _value: r._value, _field: \"highestPlayerCount\"}))\r\n  |> max()",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: 0)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> map(fn: (r) => ({r with _value: r._value, _field: \"highestPlayerCount\"}))\r\n  |> max()",
           "refId": "Player Count Peak (All time)"
         }
       ],
@@ -941,7 +944,7 @@
             "type": "influxdb",
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: ${server_interval}, fn: mean, createEmpty: true)\r\n  |> yield(name: \"mean\")",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: ${server_interval}, fn: mean, createEmpty: true)\r\n  |> yield(name: \"mean\")",
           "refId": "Player Count"
         },
         {
@@ -950,7 +953,7 @@
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
           "hide": false,
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: true)\r\n  |> map(fn: (r) => ({_time: r._time, \"1dayAvg\": r._value}))\r\n  |> yield(name: \"1dayAvg\")\r\n",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: 1d, fn: mean, createEmpty: true)\r\n  |> map(fn: (r) => ({_time: r._time, \"1dayAvg\": r._value}))\r\n  |> yield(name: \"1dayAvg\")\r\n",
           "refId": "Player Count (1 Day Avg)"
         },
         {
@@ -959,7 +962,7 @@
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
           "hide": false,
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: 0)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> map(fn: (r) => ({r with _value: r._value, _field: \"highestPlayerCount\"}))\r\n  |> max()",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: 0)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> map(fn: (r) => ({r with _value: r._value, _field: \"highestPlayerCount\"}))\r\n  |> max()",
           "refId": "Player Count Peak (All time)"
         }
       ],
@@ -1058,7 +1061,7 @@
             "type": "influxdb",
             "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
           },
-          "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"latency\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: ${server_interval}, fn: mean, createEmpty: true)\r\n  |> yield(name: \"mean\")",
+          "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"latency\")\r\n  |> filter(fn: (r) => r[\"name\"] == \"${server}\")\r\n  |> aggregateWindow(every: ${server_interval}, fn: mean, createEmpty: true)\r\n  |> yield(name: \"mean\")",
           "refId": "Player Count"
         }
       ],
@@ -1073,6 +1076,26 @@
     "list": [
       {
         "current": {
+          "selected": false,
+          "text": "mc-tracker",
+          "value": "mc-tracker"
+        },
+        "hide": 2,
+        "label": "Influx Bucket",
+        "name": "influx_bucket",
+        "options": [
+          {
+            "selected": true,
+            "text": "mc-tracker",
+            "value": "mc-tracker"
+          }
+        ],
+        "query": "mc-tracker",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
           "selected": true,
           "text": [
             "All"
@@ -1085,14 +1108,14 @@
           "type": "influxdb",
           "uid": "a123f480-c065-4aa4-841e-6d00b4c98e2a"
         },
-        "definition": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> group()\r\n  |> distinct(column: \"name\")\r\n",
+        "definition": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> group()\r\n  |> distinct(column: \"name\")\r\n",
         "hide": 0,
         "includeAll": true,
         "label": "Server",
         "multi": true,
         "name": "server",
         "options": [],
-        "query": "from(bucket: \"mc-tracker\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> group()\r\n  |> distinct(column: \"name\")\r\n",
+        "query": "from(bucket: \"${influx_bucket}\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"playerCount\")\r\n  |> group()\r\n  |> distinct(column: \"name\")\r\n",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -1203,6 +1226,37 @@
         "refresh": 2,
         "skipUrlSync": false,
         "type": "interval"
+      },
+      {
+        "auto": false,
+        "auto_count": 30,
+        "auto_min": "10s",
+        "current": {
+          "selected": false,
+          "text": "1d",
+          "value": "1d"
+        },
+        "description": "The interval that is used in per server metrics for the average player count",
+        "hide": 0,
+        "label": "Player Count Avg Interval",
+        "name": "server_player_count_avg_interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          }
+        ],
+        "query": "1d,7d",
+        "queryValue": "",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
       }
     ]
   },
@@ -1210,10 +1264,19 @@
     "from": "now-30d",
     "to": "now"
   },
-  "timepicker": {},
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m"
+    ]
+  },
   "timezone": "",
   "title": "Server Tracker",
   "uid": "c4d923ad",
-  "version": 99,
+  "version": 111,
   "weekStart": ""
 }
