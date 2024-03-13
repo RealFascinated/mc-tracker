@@ -43,7 +43,7 @@ dependencies:
     version: 5.3.3
   winston:
     specifier: ^3.11.0
-    version: 3.11.0
+    version: 3.12.0
 
 packages:
 
@@ -2328,8 +2328,8 @@ packages:
       isexe: 2.0.0
     dev: false
 
-  /winston-transport@4.6.0:
-    resolution: {integrity: sha512-wbBA9PbPAHxKiygo7ub7BYRiKxms0tpfU2ljtWzb3SjRjv5yl6Ozuy/TkXf00HTAt+Uylo3gSkNwzc4ME0wiIg==}
+  /winston-transport@4.7.0:
+    resolution: {integrity: sha512-ajBj65K5I7denzer2IYW6+2bNIVqLGDHqDw3Ow8Ohh+vdW+rv4MZ6eiDvHoKhfJFZ2auyN8byXieDDJ96ViONg==}
     engines: {node: '>= 12.0.0'}
     dependencies:
       logform: 2.6.0
@@ -2350,8 +2350,8 @@ packages:
       stack-trace: 0.0.10
     dev: false
 
-  /winston@3.11.0:
-    resolution: {integrity: sha512-L3yR6/MzZAOl0DsysUXHVjOwv8mKZ71TrA/41EIduGpOOV5LQVodqN+QdQ6BS6PJ/RdIshZhq84P/fStEZkk7g==}
+  /winston@3.12.0:
+    resolution: {integrity: sha512-OwbxKaOlESDi01mC9rkM0dQqQt2I8DAUMRLZ/HpbwvDXm85IryEHgoogy5fziQy38PntgZsLlhAYHz//UPHZ5w==}
     engines: {node: '>= 12.0.0'}
     dependencies:
       '@colors/colors': 1.6.0
@@ -2364,7 +2364,7 @@ packages:
       safe-stable-stringify: 2.4.3
       stack-trace: 0.0.10
       triple-beam: 1.4.1
-      winston-transport: 4.6.0
+      winston-transport: 4.7.0
     dev: false
 
   /wordwrap@0.0.3:
