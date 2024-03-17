@@ -43,13 +43,6 @@ jobs:
           username: ${{ secrets.REPO_USERNAME }}
           password: ${{ secrets.REPO_TOKEN }}
 
-      - name: Restore Docker Build Cache
-        uses: actions/cache@v4
-        id: build-cache
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx
-
       - name: Build and Push (Latest)
         uses: docker/build-push-action@v5
         with:
@@ -58,11 +51,3 @@ jobs:
           tags: fascinated/mc-tracker:latest
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
-
-      - name: Save Docker Build Cache
-        if: steps.build-cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p /tmp/.buildx-cache
-          cp -r /tmp/.buildx-cache/. /tmp/.buildx-cache-new
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
