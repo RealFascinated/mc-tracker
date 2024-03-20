@@ -113,5 +113,10 @@
     "name": "Stray",
     "ip": "stray.gg",
     "type": "PC"
+  },
+  {
+    "name": "Aetheria Anarchy",
+    "ip": "aetheria.cc",
+    "type": "PC"
   }
 ]
