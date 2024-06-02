@@ -118,5 +118,10 @@
     "name": "Aetheria Anarchy",
     "ip": "aetheria.cc",
     "type": "PC"
+  },
+  {
+    "name": "VexedMC",
+    "ip": "play.vexedmc.com",
+    "type": "PC"
   }
 ]
