@@ -123,5 +123,10 @@
     "name": "VexedMC",
     "ip": "play.vexedmc.com",
     "type": "PC"
+  },
+  {
+    "name": "AzureMC",
+    "ip": "play.azuremc.org",
+    "type": "PC"
   }
 ]
