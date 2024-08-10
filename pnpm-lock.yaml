@@ -7,7 +7,7 @@ settings:
 dependencies:
   '@influxdata/influxdb-client':
     specifier: ^1.33.2
-    version: 1.33.2
+    version: 1.34.0
   '@types/mcping-js':
     specifier: ^1.5.4
     version: 1.5.4
@@ -274,8 +274,8 @@ packages:
     dev: false
     optional: true
 
-  /@influxdata/influxdb-client@1.33.2:
-    resolution: {integrity: sha512-RT5SxH+grHAazo/YK3UTuWK/frPWRM0N7vkrCUyqVprDgQzlLP+bSK4ak2Jv3QVF/pazTnsxWjvtKZdwskV5Xw==}
+  /@influxdata/influxdb-client@1.34.0:
+    resolution: {integrity: sha512-pZ0YW593az8wtPbwEYzpDZrQ+He+UmcQb30VZOYWftHsAUXY19NbfHuIJgly/h/qPfiN9zeJp7NbKFEJKMt/Ww==}
     dev: false
 
   /@isaacs/cliui@8.0.2:
