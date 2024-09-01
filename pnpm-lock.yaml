@@ -43,7 +43,7 @@ dependencies:
     version: 5.5.4
   winston:
     specifier: ^3.11.0
-    version: 3.14.1
+    version: 3.14.2
 
 packages:
 
@@ -2410,8 +2410,8 @@ packages:
       stack-trace: 0.0.10
     dev: false
 
-  /winston@3.14.1:
-    resolution: {integrity: sha512-CJi4Il/msz8HkdDfXOMu+r5Au/oyEjFiOZzbX2d23hRLY0narGjqfE5lFlrT5hfYJhPtM8b85/GNFsxIML/RVA==}
+  /winston@3.14.2:
+    resolution: {integrity: sha512-CO8cdpBB2yqzEf8v895L+GNKYJiEq8eKlHU38af3snQBQ+sdAIUepjMSguOIJC7ICbzm0ZI+Af2If4vIJrtmOg==}
     engines: {node: '>= 12.0.0'}
     dependencies:
       '@colors/colors': 1.6.0
