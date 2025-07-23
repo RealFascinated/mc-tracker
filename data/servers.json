@@ -5,7 +5,7 @@
     "type": "PE"
   },
   {
-    "name": "Cubecraft - Bedrock",
+    "name": "Cubecraft",
     "ip": "play.cubecraft.net",
     "type": "PE"
   },
@@ -30,7 +30,7 @@
     "type": "PC"
   },
   {
-    "name": "2b2t",
+    "name": "2B2T",
     "ip": "2b2t.org",
     "type": "PC"
   },
@@ -130,17 +130,17 @@
     "type": "PC"
   },
   {
-    "name": "Mineville - Bedrock",
+    "name": "Mineville",
     "ip": "play.inpvp.net",
     "type": "PE"
   },
   {
-    "name": "Lifeboat - Bedrock",
+    "name": "Lifeboat",
     "ip": "mco.lbsg.net",
     "type": "PE"
   },
   {
-    "name": "Galaxite - Bedrock",
+    "name": "Galaxite",
     "ip": "play.galaxite.net",
     "type": "PE"
   }
