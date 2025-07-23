@@ -133,5 +133,15 @@
     "name": "Mineville",
     "ip": "play.inpvp.net",
     "type": "PE"
+  },
+  {
+    "name": "Lifeboat",
+    "ip": "mco.lbsg.net",
+    "type": "PE"
+  },
+  {
+    "name": "Galaxite",
+    "ip": "play.galaxite.net",
+    "type": "PE"
   }
 ]
