@@ -37,4 +37,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
 
 WORKDIR /app/projects/tracker
-CMD ["bun", "dist/index.js"]
+CMD ["bun", "src/index.ts"]
