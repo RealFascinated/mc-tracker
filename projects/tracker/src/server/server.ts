@@ -16,6 +16,7 @@ import { influx } from "../influx/influx";
 export type ServerType = "PC" | "PE";
 
 type ServerOptions = {
+  id: string;
   name: string;
   ip: string;
   port?: number;
@@ -29,24 +30,29 @@ type DnsInfo = {
 
 export default class Server {
   /**
+   * The ID of the server.
+   */
+  public readonly id: string;
+
+  /**
    * The name of the server.
    */
-  private readonly name: string;
+  public readonly name: string;
 
   /**
    * The IP address of the server.
    */
-  private readonly ip: string;
+  public readonly ip: string;
 
   /**
    * The port of the server.
    */
-  private readonly port: number | undefined;
+  public readonly port: number | undefined;
 
   /**
    * The type of server.
    */
-  private readonly type: ServerType;
+  public readonly type: ServerType;
 
   /**
    * The resolved server information from
@@ -56,7 +62,8 @@ export default class Server {
     hasResolved: false,
   };
 
-  constructor({ name, ip, port, type }: ServerOptions) {
+  constructor({ id, name, ip, port, type }: ServerOptions) {
+    this.id = id;
     this.name = name;
     this.ip = ip;
     this.port = port;
@@ -73,7 +80,7 @@ export default class Server {
     try {
       let response;
 
-      switch (this.getType()) {
+      switch (this.type) {
         case "PC": {
           response = await this.pingPCServer();
           break;
@@ -90,22 +97,24 @@ export default class Server {
 
       try {
         influx.writePoint(
-          new Point("playerCount")
-            .tag("name", this.getName())
+          new Point("ping")
+            .tag("id", this.id)
+            .tag("name", this.name)
             .intField("playerCount", response.playerCount)
             .intField("latency", Date.now() - before)
+            .stringField("type", this.type)
             .timestamp(response.timestamp)
         );
       } catch (err) {
         logger.warn(
-          `Failed to write point to Influx for ${this.getName()} - ${this.getIP()}`,
+          `Failed to write point to Influx for ${this.name} - ${this.ip}`,
           err
         );
       }
 
       return Promise.resolve(response);
     } catch (err) {
-      logger.warn(`Failed to ping ${this.getIP()}`, err);
+      logger.warn(`Failed to ping ${this.ip}`, err);
       return Promise.resolve(undefined);
     }
   }
@@ -119,7 +128,7 @@ export default class Server {
   private async pingPCServer(): Promise<Ping | undefined> {
     if (this.dnsInfo.resolvedServer == undefined && !this.dnsInfo.hasResolved) {
       try {
-        const resolvedServer = await resolveDns(this.getIP());
+        const resolvedServer = await resolveDns(this.ip);
 
         this.dnsInfo = {
           hasResolved: true,
@@ -137,7 +146,7 @@ export default class Server {
       ip = resolvedServer.ip;
       port = resolvedServer.port;
     } else {
-      ip = this.getIP();
+      ip = this.ip;
       port = 25565; // The default port
     }
 
@@ -167,21 +176,17 @@ export default class Server {
    */
   private async pingPEServer(): Promise<Ping | undefined> {
     return new Promise((resolve, reject) => {
-      bedrockPing(
-        this.getIP(),
-        this.getPort() || 19132,
-        (err: any, res: any) => {
-          if (err || res == undefined) {
-            return reject(err);
-          }
-
-          resolve({
-            timestamp: Date.now(),
-            ip: this.getIP(),
-            playerCount: res.currentPlayers,
-          });
+      bedrockPing(this.ip, this.port || 19132, (err: any, res: any) => {
+        if (err || res == undefined) {
+          return reject(err);
         }
-      );
+
+        resolve({
+          timestamp: Date.now(),
+          ip: this.ip,
+          playerCount: res.currentPlayers,
+        });
+      });
     });
   }
 
@@ -192,41 +197,5 @@ export default class Server {
     this.dnsInfo = {
       hasResolved: false,
     };
-  }
-
-  /**
-   * Returns the name of the server.
-   *
-   * @returns the name
-   */
-  public getName(): string {
-    return this.name;
-  }
-
-  /**
-   * Returns the IP address of the server.
-   *
-   * @returns the IP address
-   */
-  public getIP(): string {
-    return this.ip;
-  }
-
-  /**
-   * Returns the port of the server.
-   *
-   * @returns the port
-   */
-  public getPort(): number | undefined {
-    return this.port;
-  }
-
-  /**
-   * Returns the type of server.
-   *
-   * @returns the type
-   */
-  public getType(): ServerType {
-    return this.type;
   }
 }

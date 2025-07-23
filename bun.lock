@@ -34,6 +34,7 @@
         "mcping-js": "^1.5.0",
         "node-cron": "^3.0.3",
         "typescript": "^5.8.3",
+        "uuid": "^11.1.0",
         "winston": "^3.17.0",
       },
       "devDependencies": {
@@ -425,7 +426,7 @@
 
     "utils-merge": ["utils-merge@1.0.0", "", {}, "sha512-HwU9SLQEtyo+0uoKXd1nkLqigUWLB+QuNQR4OcmB73eWqksM5ovuqcycks2x043W8XVb75rG1HQ0h93TMXkzQQ=="],
 
-    "uuid": ["uuid@8.3.2", "", { "bin": { "uuid": "dist/bin/uuid" } }, "sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg=="],
+    "uuid": ["uuid@11.1.0", "", { "bin": { "uuid": "dist/esm/bin/uuid" } }, "sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A=="],
 
     "vary": ["vary@0.1.0", "", {}, "sha512-tyyeG46NQdwyVP/RsWLSrT78ouwEuvwk9gK8vQK4jdXmqoXtTXW+vsCfNcnqRhigF8olV34QVZarmAi6wBV2Mw=="],
 
@@ -464,6 +465,8 @@
     "express/finalhandler": ["finalhandler@0.0.3", "", { "dependencies": { "debug": "1.0.3", "escape-html": "1.0.1" } }, "sha512-/fqgssseNfnD8Y77HWyJKQ+1xbKu7bZl2LXfhFjkgeGg91WRMMO9GN1KKL53NnIG9g1H2Xq3iKrZkuIcAmjd0A=="],
 
     "finalhandler/debug": ["debug@1.0.2", "", { "dependencies": { "ms": "0.6.2" } }, "sha512-T9bufXIzQvCa4VrTIpLvvwdLhH+wuBtvIJJA3xgzVcaVETGmTIWMfEXQEd1K4p8BaRmQJPn6MPut38H7YQ+iIA=="],
+
+    "node-cron/uuid": ["uuid@8.3.2", "", { "bin": { "uuid": "dist/bin/uuid" } }, "sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg=="],
 
     "portfinder/async": ["async@0.9.0", "", {}, "sha512-XQJ3MipmCHAIBBMFfu2jaSetneOrXbSyyqeU3Nod867oNOpS+i9FEms5PWgjMxSgBybRf2IVVLtr1YfrDO+okg=="],
 

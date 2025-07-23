@@ -1,146 +1,175 @@
 [
   {
     "name": "HiveMC",
+    "id": "1c24102e-5efc-4570-b125-e359133849a4",
     "ip": "geo.hivebedrock.network",
     "type": "PE"
   },
   {
     "name": "Cubecraft",
+    "id": "992fb382-728a-4e02-81ce-8019db2bd46a",
     "ip": "play.cubecraft.net",
     "type": "PE"
   },
   {
     "name": "WildNetwork",
+    "id": "ac1d02ff-129b-47b5-a14b-88b93e7a365e",
     "ip": "play.wildnetwork.net",
     "type": "PC"
   },
   {
     "name": "Hypixel",
+    "id": "39a1b051-326f-4ffe-8fe2-eb3f55b53a8e",
     "ip": "mc.hypixel.net",
     "type": "PC"
   },
   {
     "name": "Cubecraft",
+    "id": "5a74af54-6ede-4115-aa9a-6b42f7bd18c3",
     "ip": "play.cubecraft.net",
     "type": "PC"
   },
   {
     "name": "Mineplex",
+    "id": "a542ee87-44e4-4df8-87f4-f2bace276e87",
     "ip": "us.mineplex.com",
     "type": "PC"
   },
   {
     "name": "2B2T",
+    "id": "7f88e130-4ac3-4755-8a66-46b4d6d759ee",
     "ip": "2b2t.org",
     "type": "PC"
   },
   {
     "name": "AkumaMC",
+    "id": "b7f5435e-7239-4644-b80a-5129fe005886",
     "ip": "akumamc.net",
     "type": "PC"
   },
   {
     "name": "Wynncraft",
+    "id": "ddaa3f92-144e-4399-a5e8-79fd329a4b31",
     "ip": "play.wynncraft.com",
     "type": "PC"
   },
   {
     "name": "Minehut",
+    "id": "4d3bca27-a0a3-4127-b650-cd3900fe6903",
     "ip": "minehut.com",
     "type": "PC"
   },
   {
     "name": "Grand Theft Minecart",
+    "id": "da028e53-43ba-41e5-afba-1fb712dbe57f",
     "ip": "gtm.network",
     "type": "PC"
   },
   {
     "name": "Purple Prison",
+    "id": "ef980eff-3355-4b8f-8987-9101a44e3de6",
     "ip": "MCSL.PURPLE.WTF",
     "type": "PC"
   },
   {
     "name": "MinecraftOnline",
+    "id": "3e80bfd2-46c7-4b8e-8fb7-2147023cb95f",
     "ip": "minecraftonline.com",
     "type": "PC"
   },
   {
     "name": "Hoplite",
+    "id": "c8850c98-4ab6-4aba-9e3d-3e80ba8404da",
     "ip": "hoplite.gg",
     "type": "PC"
   },
   {
     "name": "Minemen Club",
+    "id": "0b0ca0e0-07b6-4e3a-99ef-6104262beb3d",
     "ip": "minemen.club",
     "type": "PC"
   },
   {
     "name": "OPLegends",
+    "id": "598428db-ce78-4bb3-8246-aa854445203b",
     "ip": "play.oplegends.com",
     "type": "PC"
   },
   {
     "name": "Minecadia",
+    "id": "e0f4756a-a6b9-49a6-9688-bdf19a67a54e",
     "ip": "play.minecadia.com",
     "type": "PC"
   },
   {
     "name": "Manacube",
+    "id": "801aae93-71a5-45e6-a660-08932e917e48",
     "ip": "play.manacube.com",
     "type": "PC"
   },
   {
     "name": "InvadedLands",
+    "id": "c6025681-d7d5-4af1-9ffe-a08e79090f46",
     "ip": "invadedlands.net",
     "type": "PC"
   },
   {
     "name": "Complex Gaming",
+    "id": "04df0d09-fbd8-47b7-8c8b-42b9461d85d5",
     "ip": "hub.mc-complex.com",
     "type": "PC"
   },
   {
     "name": "Monumenta",
+    "id": "cc797c24-5e0d-4d18-b9ca-c4b1701299c1",
     "ip": "server.playmonumenta.com",
     "type": "PC"
   },
   {
     "name": "Shotbow",
+    "id": "82de972a-3c30-4fc2-ad40-189062ac8f17",
     "ip": "play.shotbow.net",
     "type": "PC"
   },
   {
     "name": "Stray",
+    "id": "58899110-738f-4fc7-b51c-47bf836d98c0",
     "ip": "stray.gg",
     "type": "PC"
   },
   {
-    "name": "Aetheria Anarchy",
+    "name": "Aetheria",
+    "id": "cdfa52b8-610e-44e2-8056-9c2b50491dec",
     "ip": "aetheria.cc",
     "type": "PC"
   },
   {
     "name": "VexedMC",
+    "id": "52259dc8-bc86-4fae-8387-fa4c4601157a",
     "ip": "play.vexedmc.com",
     "type": "PC"
   },
   {
     "name": "EnchantedMC",
+    "id": "3a65ddb2-57c1-484c-83f7-d2eb7f6b8148",
     "ip": "play.enchantedmc.net",
     "type": "PC"
   },
   {
     "name": "Mineville",
+    "id": "236e9fb7-a4d1-4daf-b555-075264d772bb",
     "ip": "play.inpvp.net",
     "type": "PE"
   },
   {
     "name": "Lifeboat",
+    "id": "d158bf15-f681-4399-b48f-1d10b4e587e6",
     "ip": "mco.lbsg.net",
     "type": "PE"
   },
   {
     "name": "Galaxite",
+    "id": "4dbeb1e0-b76d-453e-96ac-0ed70e087152",
     "ip": "play.galaxite.net",
     "type": "PE"
   }
