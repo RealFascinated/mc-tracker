@@ -2,7 +2,7 @@
   "name": "mc-tracker",
   "version": "1.0.0",
   "workspaces": [
-    "packages/*"
+    "projects/*"
   ],
   "author": "fascinated7",
   "license": "MIT"

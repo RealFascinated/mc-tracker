@@ -4,7 +4,7 @@
     "": {
       "name": "backend",
     },
-    "packages/common": {
+    "projects/common": {
       "name": "@mc-tracker/common",
       "dependencies": {
         "@t3-oss/env-core": "^0.13.8",
@@ -17,7 +17,7 @@
         "typescript": "^5",
       },
     },
-    "packages/tracker": {
+    "projects/tracker": {
       "name": "tracker",
       "dependencies": {
         "@influxdata/influxdb-client": "^1.35.0",
@@ -49,7 +49,7 @@
 
     "@influxdata/influxdb-client": ["@influxdata/influxdb-client@1.35.0", "", {}, "sha512-woWMi8PDpPQpvTsRaUw4Ig+nOGS/CWwAwS66Fa1Vr/EkW+NEwxI8YfPBsdBMn33jK2Y86/qMiiuX/ROHIkJLTw=="],
 
-    "@mc-tracker/common": ["@mc-tracker/common@workspace:packages/common"],
+    "@mc-tracker/common": ["@mc-tracker/common@workspace:projects/common"],
 
     "@t3-oss/env-core": ["@t3-oss/env-core@0.13.8", "", { "peerDependencies": { "arktype": "^2.1.0", "typescript": ">=5.0.0", "valibot": "^1.0.0-beta.7 || ^1.0.0", "zod": "^3.24.0 || ^4.0.0-beta.0" }, "optionalPeers": ["arktype", "typescript", "valibot", "zod"] }, "sha512-L1inmpzLQyYu4+Q1DyrXsGJYCXbtXjC4cICw1uAKv0ppYPQv656lhZPU91Qd1VS6SO/bou1/q5ufVzBGbNsUpw=="],
 
@@ -375,7 +375,7 @@
 
     "tomahawk-plugin-kv-memory-store": ["tomahawk-plugin-kv-memory-store@0.0.3", "", {}, "sha512-opt82r6s+775jmrREiWruMVTQaGQYgPd6/zYTDRwwHhDGSqpFaZZgCSnI/BAIs8nC88puTK4PyodkSRpUDp/2Q=="],
 
-    "tracker": ["tracker@workspace:packages/tracker"],
+    "tracker": ["tracker@workspace:projects/tracker"],
 
     "triple-beam": ["triple-beam@1.4.1", "", {}, "sha512-aZbgViZrg1QNcG+LULa7nhZpJTZSLm/mXnHXnbAbjmN5aSa0y7V+wvv6+4WaBtpISJzThKy+PIPxc1Nq1EJ9mg=="],
 
