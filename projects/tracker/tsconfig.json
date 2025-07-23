@@ -1,17 +1,15 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "types": ["bun-types"],
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "target": "es2022",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "moduleDetection": "force",
+    "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "module": "NodeNext",
-    "noEmit": true,
-    "lib": ["es2022", "dom", "dom.iterable"]
-  },
-  "exclude": ["node_modules", "dist"]
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "jsx": "react"
+  }
 }
