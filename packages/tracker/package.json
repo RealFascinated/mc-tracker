@@ -1,0 +1,31 @@
+{
+  "name": "tracker",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@mc-tracker/common": "workspace:common",
+    "@influxdata/influxdb-client": "^1.35.0",
+    "@types/mcping-js": "^1.5.4",
+    "@types/node": "^20.19.9",
+    "@types/node-cron": "^3.0.11",
+    "axios": "^1.11.0",
+    "dns": "^0.2.2",
+    "dotenv": "^17.2.0",
+    "mcpe-ping-fixed": "^0.0.3",
+    "mcping-js": "^1.5.0",
+    "node-cron": "^3.0.3",
+    "typescript": "^5.8.3",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

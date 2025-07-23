@@ -1,29 +1,9 @@
 {
-  "name": "backend",
+  "name": "mc-tracker",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev": "nodemon --exec ts-node src/index.ts",
-    "build": "tsup src/index.ts --format cjs",
-    "start": "node dist/index.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@influxdata/influxdb-client": "^1.33.2",
-    "@types/mcping-js": "^1.5.4",
-    "@types/node": "^20.10.6",
-    "@types/node-cron": "^3.0.11",
-    "axios": "^1.6.4",
-    "dns": "^0.2.2",
-    "mcpe-ping-fixed": "^0.0.3",
-    "mcping-js": "^1.5.0",
-    "node-cron": "^3.0.3",
-    "ts-node": "^10.9.2",
-    "tsup": "^8.0.1",
-    "typescript": "^5.3.3",
-    "winston": "^3.11.0"
-  }
+  "workspaces": [
+    "packages/*"
+  ],
+  "author": "fascinated7",
+  "license": "MIT"
 }

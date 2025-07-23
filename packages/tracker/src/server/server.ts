@@ -1,10 +1,10 @@
 import javaPing from "mcping-js";
-import { ResolvedServer, resolveDns } from "../utils/dnsResolver";
+import { ResolvedServer, resolveDns } from "../utils/dns-resolver";
 const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
 
 import { Point } from "@influxdata/influxdb-client";
 import { influx } from "..";
-import Config from "../../data/config.json";
+import { env } from "@mc-tracker/common/env";
 import { Ping } from "../types/ping";
 import { logger } from "../utils/logger";
 
@@ -145,7 +145,7 @@ export default class Server {
 
     // todo: do something to get the latest protocol? (is this even needed??)
     return new Promise((resolve, reject) => {
-      serverPing.ping(Config.pinger.timeout, 765, (err, res) => {
+      serverPing.ping(env.PINGER_TIMEOUT, 765, (err, res) => {
         if (err || res == undefined) {
           return reject(err);
         }

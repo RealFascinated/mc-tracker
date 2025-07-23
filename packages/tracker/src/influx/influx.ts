@@ -1,7 +1,7 @@
 import { InfluxDB, Point, WriteApi } from "@influxdata/influxdb-client";
 
-import Config from "../../data/config.json";
 import { logger } from "../utils/logger";
+import { env } from "@mc-tracker/common/env";
 
 export default class Influx {
   private influx: InfluxDB;
@@ -11,12 +11,12 @@ export default class Influx {
     logger.info("Loading influx database");
 
     this.influx = new InfluxDB({
-      url: Config.influx.url,
-      token: Config.influx.token,
+      url: env.INFLUX_URL,
+      token: env.INFLUX_TOKEN,
     });
     this.writeApi = this.influx.getWriteApi(
-      Config.influx.org,
-      Config.influx.bucket,
+      env.INFLUX_ORG,
+      env.INFLUX_BUCKET,
       "ms"
     );
 

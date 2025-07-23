@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "module": "ES2022",
+    "target": "ES2022",
+    "outDir": "./dist",
+    "declaration": true,
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "isolatedModules": true,
+    "strict": true,
+    "incremental": true,
+    "sourceMap": true,
+    "declarationMap": true,
+    "baseUrl": "./",
+    "paths": {
+      "@mc-tracker/*": ["dist/*"] // This is crucial for resolving the imports correctly
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -16,7 +16,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - /home/grafana/data:/var/lib/grafana
+      - ./grafana:/var/lib/grafana
     restart: always
 
   influxdb:

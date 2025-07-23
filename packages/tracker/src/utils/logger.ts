@@ -1,17 +1,10 @@
 import Winston, { format } from "winston";
 const { colorize, timestamp, printf } = format;
 
-interface LogInfo {
-  level: string;
-  message: string;
-  label?: string;
-  timestamp?: string;
-}
-
 const customFormat = format.combine(
   timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-  printf((info: LogInfo) => {
-    return `[${info.timestamp}] ${info.level}: ${info.message}`;
+  printf((info) => {
+    return `[${info.timestamp}] ${info.level}: ${String(info.message)}`;
   })
 );
 
