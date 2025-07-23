@@ -11,10 +11,17 @@ export default class ServerManager {
 
   constructor() {
     logger.info("Loading servers...");
-    for (const configServer of Servers) {
+    for (const configServer of Servers.sort((a, b) =>
+      a.type.localeCompare(b.type)
+    )) {
       // Validate server id is a valid uuid
       if (!uuidValidate(configServer.id)) {
         throw new Error(`Invalid server id: ${configServer.id}`);
+      }
+
+      // Validate server type is valid
+      if (!["PC", "PE"].includes(configServer.type)) {
+        throw new Error(`Invalid server type: ${configServer.type}`);
       }
 
       const server = new Server({
@@ -24,7 +31,9 @@ export default class ServerManager {
         type: configServer.type as ServerType,
       });
       this.servers.push(server);
-      logger.info(`Loaded server ${configServer.name} (${configServer.id})`);
+      logger.info(
+        `Loaded ${configServer.type} server ${configServer.name} - ${configServer.ip} (${configServer.id})`
+      );
     }
 
     // Validate all server ids are unique

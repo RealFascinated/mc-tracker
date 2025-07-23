@@ -99,7 +99,7 @@ export default class Server {
         influx.writePoint(
           new Point("ping")
             .tag("id", this.id)
-            .tag("name", this.name)
+            .tag("name", this.name + " (" + this.type + ")")
             .intField("playerCount", response.playerCount)
             .intField("latency", Date.now() - before)
             .stringField("type", this.type)
