@@ -25,6 +25,9 @@ RUN bun --filter '@mc-tracker/common' build
 # Copy the tracker project
 COPY --from=depends /app/projects/tracker ./projects/tracker
 
+# Copy the data directory
+COPY --from=depends /app/data ./data
+
 ARG PORT=8080
 ENV PORT=$PORT
 EXPOSE $PORT
