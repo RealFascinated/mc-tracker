@@ -130,17 +130,17 @@
     "type": "PC"
   },
   {
-    "name": "Mineville",
+    "name": "Mineville - Bedrock",
     "ip": "play.inpvp.net",
     "type": "PE"
   },
   {
-    "name": "Lifeboat",
+    "name": "Lifeboat - Bedrock",
     "ip": "mco.lbsg.net",
     "type": "PE"
   },
   {
-    "name": "Galaxite",
+    "name": "Galaxite - Bedrock",
     "ip": "play.galaxite.net",
     "type": "PE"
   }
