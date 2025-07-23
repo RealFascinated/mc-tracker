@@ -28,13 +28,5 @@ RUN bun --filter '@mc-tracker/common' build
 # Copy the tracker project
 COPY --from=depends /app/projects/tracker ./projects/tracker
 
-ARG PORT=8080
-ENV PORT=$PORT
-EXPOSE $PORT
-
-# Add healthcheck
-# HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-#   CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
-
 WORKDIR /app/projects/tracker
 CMD ["bun", "src/index.ts"]
