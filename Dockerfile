@@ -13,6 +13,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV APP_ENV=tracker
 
+# Copy the data directory
+COPY --from=depends /app/data ./data
+
 # Copy the depends
 COPY --from=depends /app/package.json* /app/bun.lock* ./
 COPY --from=depends /app/node_modules ./node_modules
@@ -24,9 +27,6 @@ RUN bun --filter '@mc-tracker/common' build
 
 # Copy the tracker project
 COPY --from=depends /app/projects/tracker ./projects/tracker
-
-# Copy the data directory
-COPY --from=depends /app/data ./data
 
 ARG PORT=8080
 ENV PORT=$PORT
