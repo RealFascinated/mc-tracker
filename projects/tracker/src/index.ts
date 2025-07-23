@@ -1,12 +1,73 @@
+import Elysia, { ValidationError } from "elysia";
 import Influx from "./influx/influx";
 import ServerManager from "./server/server-manager";
 import { logger } from "./utils/logger";
+import { decorators } from "elysia-decorators";
+import AppController from "./controllers/app.controller";
+
+export const app = new Elysia();
 
 /**
- * The influx database instance.
+ * Custom error handler
  */
-export const influx = new Influx();
+app.onError({ as: "global" }, ({ code, error }) => {
+  // Return default error for type validation
+  if (code === "VALIDATION") {
+    return (error as ValidationError).all;
+  }
 
-new ServerManager();
+  // Assume unknown error is an internal server error
+  if (code === "UNKNOWN") {
+    code = "INTERNAL_SERVER_ERROR";
+  }
 
-logger.info("Done loading!");
+  let status: number | undefined = undefined;
+  if (typeof error === "object" && error !== null && "status" in error) {
+    status = (error as { status?: number }).status;
+  }
+
+  if (status === undefined) {
+    switch (code) {
+      case "INTERNAL_SERVER_ERROR":
+        status = 500;
+        break;
+      case "NOT_FOUND":
+        status = 404;
+        break;
+      case "PARSE":
+        status = 400;
+        break;
+      case "INVALID_COOKIE_SIGNATURE":
+        status = 401;
+        break;
+    }
+  }
+
+  if (code === 500) {
+    console.log(error);
+  }
+
+  return {
+    ...((status && { statusCode: status }) || { status: code }),
+    // @ts-expect-error - message is not in the error type
+    ...(error.message != code && { message: error.message }),
+    timestamp: new Date().toISOString(),
+  };
+});
+
+/**
+ * Controllers
+ */
+app.use(
+  decorators({
+    controllers: [AppController],
+  })
+);
+
+app.onStart(async () => {
+  new ServerManager();
+
+  logger.info("Done loading!");
+});
+
+app.listen(8080);

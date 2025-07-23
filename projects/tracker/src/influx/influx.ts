@@ -32,3 +32,8 @@ export default class Influx {
     this.writeApi.writePoint(point);
   }
 }
+
+/**
+ * The influx database instance.
+ */
+export const influx = new Influx();

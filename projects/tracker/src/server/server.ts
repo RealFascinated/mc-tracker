@@ -3,10 +3,10 @@ import { ResolvedServer, resolveDns } from "../utils/dns-resolver";
 const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
 
 import { Point } from "@influxdata/influxdb-client";
-import { influx } from "..";
 import { env } from "@mc-tracker/common/env";
 import { Ping } from "../types/ping";
 import { logger } from "../utils/logger";
+import { influx } from "../influx/influx";
 
 /**
  * The type of server.
