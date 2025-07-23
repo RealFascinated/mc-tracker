@@ -10,8 +10,8 @@ RUN bun install --frozen-lockfile --filter '@mc-tracker/common' --filter 'tracke
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV APP_ENV tracker
+ENV NODE_ENV=production
+ENV APP_ENV=tracker
 
 # Copy the depends
 COPY --from=depends /app/package.json* /app/bun.lock* ./
@@ -25,11 +25,8 @@ RUN bun --filter '@mc-tracker/common' build
 # Copy the tracker project
 COPY --from=depends /app/projects/tracker ./projects/tracker
 
-# Build the tracker
-RUN bun run --filter 'tracker' build
-
 ARG PORT=8080
-ENV PORT $PORT
+ENV PORT=$PORT
 EXPOSE $PORT
 
 # Add healthcheck
