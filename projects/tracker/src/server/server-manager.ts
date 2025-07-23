@@ -7,7 +7,7 @@ import { validate as uuidValidate } from "uuid";
 import Servers from "../../../../data/servers.json";
 
 export default class ServerManager {
-  private servers: Server[] = [];
+  public static SERVERS: Server[] = [];
 
   constructor() {
     logger.info("Loading servers...");
@@ -30,19 +30,19 @@ export default class ServerManager {
         name: configServer.name,
         type: configServer.type as ServerType,
       });
-      this.servers.push(server);
+      ServerManager.SERVERS.push(server);
       logger.info(
         `Loaded ${configServer.type} server ${configServer.name} - ${configServer.ip} (${configServer.id})`
       );
     }
 
     // Validate all server ids are unique
-    const serverIds = this.servers.map((server) => server.id);
+    const serverIds = ServerManager.SERVERS.map((server) => server.id);
     if (new Set(serverIds).size !== serverIds.length) {
       throw new Error(`Duplicate server ids found`);
     }
 
-    logger.info(`Loaded ${this.servers.length} servers!`);
+    logger.info(`Loaded ${ServerManager.SERVERS.length} servers!`);
 
     cron.schedule(env.PINGER_SERVER_CRON, async () => {
       await this.pingServers();
@@ -50,7 +50,7 @@ export default class ServerManager {
 
     cron.schedule(env.PINGER_DNS_INVALIDAION_CRON, () => {
       logger.info("Invalidating DNS cache for all servers");
-      for (const server of this.servers) {
+      for (const server of ServerManager.SERVERS) {
         server.invalidateDns();
       }
     });
@@ -60,11 +60,29 @@ export default class ServerManager {
    * Ping all servers to update their status.
    */
   private async pingServers(): Promise<void> {
-    logger.info(`Pinging servers ${this.servers.length}`);
+    logger.info(`Pinging servers ${ServerManager.SERVERS.length}`);
 
     // ping all servers in parallel
-    await Promise.all(this.servers.map((server) => server.pingServer()));
+    await Promise.all(
+      ServerManager.SERVERS.map((server) => server.pingServer())
+    );
 
     logger.info("Finished pinging servers!");
+  }
+
+  /**
+   * Get a server by its id.
+   *
+   * @param id the id of the server
+   * @returns the server or undefined if not found
+   */
+  public static getServerById(id: string): Server | undefined {
+    for (const server of ServerManager.SERVERS) {
+      if (server.id === id) {
+        return server;
+      }
+    }
+
+    return undefined;
   }
 }

@@ -4,6 +4,10 @@ import ServerManager from "./server/server-manager";
 import { logger } from "./utils/logger";
 import { decorators } from "elysia-decorators";
 import AppController from "./controllers/app.controller";
+import ServerController from "./controllers/server.controller";
+
+// Initialize the server manager
+new ServerManager();
 
 export const app = new Elysia();
 
@@ -60,13 +64,11 @@ app.onError({ as: "global" }, ({ code, error }) => {
  */
 app.use(
   decorators({
-    controllers: [AppController],
+    controllers: [AppController, ServerController],
   })
 );
 
 app.onStart(async () => {
-  new ServerManager();
-
   logger.info("Done loading!");
 });
 

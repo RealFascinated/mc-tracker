@@ -7,6 +7,9 @@ import { env } from "@mc-tracker/common/env";
 import { Ping } from "../types/ping";
 import { logger } from "../utils/logger";
 import { influx } from "../influx/influx";
+import { QueryBuilder } from "../common/influx/query-builder";
+import { executeQuery, InfluxQueryResultRow } from "../common/influx";
+import { PingResponse } from "@mc-tracker/common/types/response/ping-response";
 
 /**
  * The type of server.
@@ -198,4 +201,28 @@ export default class Server {
       hasResolved: false,
     };
   }
-}
+
+  /**
+   * Gets the pings for the server.
+   *
+   * @returns the pings
+   */
+  public async getPings(): Promise<PingResponse[]> {
+    const query = new QueryBuilder()
+      .rangeWithMinMax("-1h", "now()")
+      .filterByField("measurement", "ping")
+      .filterByField("field", "playerCount")
+      .filterByTag("id", this.id)
+      .aggregateWindow("1m", "mean", true)
+      .yield("mean")
+      .build();
+
+    const pings = await executeQuery<InfluxQueryResultRow>(query);
+    return pings.data
+      .map((ping) => ({
+        timestamp: new Date(ping.timestamp).getTime(),
+        playerCount: ping.value as number,
+      }))
+      .sort((a, b) => a.timestamp - b.timestamp);
+  }
+} 

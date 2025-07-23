@@ -1,4 +1,9 @@
-import { InfluxDB, Point, WriteApi } from "@influxdata/influxdb-client";
+import {
+  InfluxDB,
+  Point,
+  QueryApi,
+  WriteApi,
+} from "@influxdata/influxdb-client";
 
 import { logger } from "../utils/logger";
 import { env } from "@mc-tracker/common/env";
@@ -6,6 +11,7 @@ import { env } from "@mc-tracker/common/env";
 export default class Influx {
   private influx: InfluxDB;
   private writeApi: WriteApi;
+  private queryApi: QueryApi;
 
   constructor() {
     logger.info("Loading influx database");
@@ -19,6 +25,7 @@ export default class Influx {
       env.INFLUX_BUCKET,
       "ms"
     );
+    this.queryApi = this.influx.getQueryApi(env.INFLUX_ORG);
 
     logger.info("InfluxDB initialized");
   }
@@ -30,6 +37,16 @@ export default class Influx {
    */
   public writePoint(point: Point) {
     this.writeApi.writePoint(point);
+  }
+
+  /**
+   * Query the database.
+   *
+   * @param query the query to execute
+   * @returns the query results
+   */
+  public query<T>(query: string): Promise<T[]> {
+    return this.queryApi.collectRows(query);
   }
 }
 
