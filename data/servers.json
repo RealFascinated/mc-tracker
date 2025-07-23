@@ -128,5 +128,10 @@
     "name": "EnchantedMC",
     "ip": "play.enchantedmc.net",
     "type": "PC"
+  },
+  {
+    "name": "Mineville",
+    "ip": "play.inpvp.net",
+    "type": "PE"
   }
 ]
