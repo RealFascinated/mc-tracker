@@ -178,5 +178,11 @@
     "id": "ac517bbc-73a3-4455-a450-35750d8c2b64",
     "ip": "og-network.net",
     "type": "PC"
+  },
+  {
+    "name": "DonutSMP",
+    "id": "0ead06e0-d75a-469d-af43-1658bbec36f3",
+    "ip": "donutsmp.net",
+    "type": "PC"
   }
 ]
