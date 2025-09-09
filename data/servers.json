@@ -184,5 +184,11 @@
     "id": "0ead06e0-d75a-469d-af43-1658bbec36f3",
     "ip": "donutsmp.net",
     "type": "PC"
+  },
+  {
+    "name": "DemonMC",
+    "id": "63c18d44-86bf-43b7-854a-e594e318da6f",
+    "ip": "play.demonmc.net",
+    "type": "PC"
   }
 ]
