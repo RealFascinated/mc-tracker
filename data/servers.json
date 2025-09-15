@@ -190,5 +190,11 @@
     "id": "63c18d44-86bf-43b7-854a-e594e318da6f",
     "ip": "play.demonmc.net",
     "type": "PC"
+  },
+  {
+    "name": "DivinePrison",
+    "id": "64e7d487-f8a3-4794-bd0a-f759c234d87e ",
+    "ip": "divineprison.org",
+    "type": "PC"
   }
 ]
