@@ -193,8 +193,14 @@
   },
   {
     "name": "DivinePrison",
-    "id": "64e7d487-f8a3-4794-bd0a-f759c234d87e ",
+    "id": "64e7d487-f8a3-4794-bd0a-f759c234d87e",
     "ip": "divineprison.org",
+    "type": "PC"
+  },
+  {
+    "name": "TalonMC",
+    "id": "b57d4b65-3a99-4eda-9cc0-2587e131724f",
+    "ip": "play.talonmc.net",
     "type": "PC"
   }
 ]
