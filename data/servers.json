@@ -202,5 +202,11 @@
     "id": "b57d4b65-3a99-4eda-9cc0-2587e131724f",
     "ip": "play.talonmc.net",
     "type": "PC"
+  },
+  {
+    "name": "CosmosMC",
+    "id": "a75b8e75-77eb-4252-9f97-dc3b6ce3320c",
+    "ip": "join.cosmosmc.org",
+    "type": "PC"
   }
 ]
