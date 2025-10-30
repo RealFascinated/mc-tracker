@@ -202,5 +202,11 @@
     "id": "a75b8e75-77eb-4252-9f97-dc3b6ce3320c",
     "ip": "join.cosmosmc.org",
     "type": "PC"
+  },
+  {
+    "name": "Penguin GG",
+    "id": "87f01651-7a0a-43d6-808c-d9b95f19a02f",
+    "ip": "play.penguin.gg",
+    "type": "PC"
   }
 ]
