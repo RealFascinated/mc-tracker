@@ -232,5 +232,11 @@
     "id": "13e06bb0-73ed-4462-86f1-fc8aef5badca",
     "ip": "play.freshsmp.fun",
     "type": "PC"
+  },
+  {
+    "name": "JartexNetwork",
+    "id": "398393a7-cf63-43db-8dd2-842ce2fa8250",
+    "ip": "play.jartexnetwork.com",
+    "type": "PC"
   }
 ]
