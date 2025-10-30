@@ -220,5 +220,11 @@
     "id": "8fdb94f9-3433-4228-a24a-6d6a5b1db09b",
     "ip": "play.opblocks.com",
     "type": "PC"
+  },
+  {
+    "name": "PikaNetwork",
+    "id": "0ca4c012-3be8-4d7b-9554-69343fe5898f",
+    "ip": "play.pika-network.net",
+    "type": "PC"
   }
 ]
