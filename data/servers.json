@@ -226,5 +226,11 @@
     "id": "0ca4c012-3be8-4d7b-9554-69343fe5898f",
     "ip": "play.pika-network.net",
     "type": "PC"
+  },
+  {
+    "name": "FreshSMP",
+    "id": "13e06bb0-73ed-4462-86f1-fc8aef5badca",
+    "ip": "play.freshsmp.fun",
+    "type": "PC"
   }
 ]
