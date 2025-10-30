@@ -208,5 +208,11 @@
     "id": "87f01651-7a0a-43d6-808c-d9b95f19a02f",
     "ip": "play.penguin.gg",
     "type": "PC"
+  },
+  {
+    "name": "GommeHD",
+    "id": "ab60ff2f-bc44-4a59-bafd-22bc34baeab4",
+    "ip": "gommehd.net",
+    "type": "PC"
   }
 ]
