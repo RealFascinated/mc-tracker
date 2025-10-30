@@ -238,5 +238,23 @@
     "id": "398393a7-cf63-43db-8dd2-842ce2fa8250",
     "ip": "play.jartexnetwork.com",
     "type": "PC"
+  },
+  {
+    "name": "LifeStealSMP",
+    "id": "8c477681-d37e-449c-b2dc-dd9e7e7942cd",
+    "ip": "lifestealsmp.com",
+    "type": "PC"
+  },
+  {
+    "name": "PvP Legacy",
+    "id": "58a5e3fb-1f77-41b7-adc8-961caf5e1630",
+    "ip": "play.pvplegacy.net",
+    "type": "PC"
+  },
+  {
+    "name": "MCC Island",
+    "id": "52fd5e57-84f3-4c8f-b7df-0a6954b70175",
+    "ip": "play.mccisland.net",
+    "type": "PC"
   }
 ]
