@@ -256,5 +256,11 @@
     "id": "52fd5e57-84f3-4c8f-b7df-0a6954b70175",
     "ip": "play.mccisland.net",
     "type": "PC"
+  },
+  {
+    "name": "MunchyMC",
+    "id": "2d0c159c-465d-41e9-94b3-d328f9c80586",
+    "ip": "munchymc.com",
+    "type": "PC"
   }
 ]
