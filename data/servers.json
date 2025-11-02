@@ -262,5 +262,11 @@
     "id": "2d0c159c-465d-41e9-94b3-d328f9c80586",
     "ip": "munchymc.com",
     "type": "PC"
+  },
+  {
+    "name": "Minecraft Central",
+    "id": "56d0cd77-dd7f-4d4d-92f8-397a6a260e98",
+    "ip": "mccentral.org",
+    "type": "PC"
   }
 ]
