@@ -89,6 +89,9 @@ export default class Server {
       }
 
       if (!response) {
+        logger.info(
+          `Server ${this.name} failed to respond to ping attempt, retrying...`
+        );
         return this.pingServer(attempt + 1);
       }
 
