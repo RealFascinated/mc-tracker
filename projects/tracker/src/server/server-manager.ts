@@ -61,14 +61,20 @@ export default class ServerManager {
     const playerCountByAsn: Record<string, number> = {};
     const asns: Record<string, AsnData> = {};
 
+    let globalPlayerCount = 0;
+
     await Promise.all(
       ServerManager.SERVERS.map(async (server) => {
         const ping = await server.pingServer();
-        if (server.asnData && ping !== undefined) {
-          const playerCount =
-            (playerCountByAsn[server.asnData.asn] ?? 0) + ping.playerCount;
-          playerCountByAsn[server.asnData.asn] = playerCount;
-          asns[server.asnData.asn] = server.asnData;
+        if (ping) {
+          globalPlayerCount += ping.playerCount;
+
+          if (server.asnData) {
+            const playerCount =
+              (playerCountByAsn[server.asnData.asn] ?? 0) + ping.playerCount;
+            playerCountByAsn[server.asnData.asn] = playerCount;
+            asns[server.asnData.asn] = server.asnData;
+          }
         }
       })
     );
@@ -86,6 +92,19 @@ export default class ServerManager {
       } catch (err) {
         logger.warn(`Failed to write point to Influx for ${asnData.asn}`, err);
       }
+    }
+
+    try {
+      influx.writePoint(
+        new Point("globalPlayerCount")
+          .intField("playerCount", globalPlayerCount)
+          .timestamp(Date.now())
+      );
+    } catch (err) {
+      logger.warn(
+        `Failed to write point to Influx for Global player count`,
+        err
+      );
     }
 
     logger.info("Finished pinging servers!");
