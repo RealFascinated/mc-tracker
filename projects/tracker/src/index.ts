@@ -1,5 +1,4 @@
 import Elysia, { ValidationError } from "elysia";
-import Influx from "./influx/influx";
 import ServerManager from "./server/server-manager";
 import { logger } from "./utils/logger";
 import { decorators } from "elysia-decorators";

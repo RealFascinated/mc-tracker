@@ -10,7 +10,6 @@
   "dependencies": {
     "@influxdata/influxdb-client": "^1.35.0",
     "@mc-tracker/common": "workspace:*",
-    "@types/mcping-js": "^1.5.4",
     "@types/node": "^20.19.13",
     "@types/node-cron": "^3.0.11",
     "axios": "^1.11.0",
@@ -18,8 +17,7 @@
     "dotenv": "^17.2.2",
     "elysia": "^1.3.21",
     "elysia-decorators": "^1.0.2",
-    "mcpe-ping-fixed": "^0.0.3",
-    "mcping-js": "^1.5.0",
+    "mcutils-js-api": "^1.0.1",
     "node-cron": "^3.0.3",
     "typescript": "^5.9.2",
     "uuid": "^11.1.0",

@@ -5,6 +5,9 @@ import { env } from "@mc-tracker/common/env";
 import { validate as uuidValidate } from "uuid";
 
 import Servers from "../../../../data/servers.json";
+import { AsnData } from "mcutils-js-api/dist/types/server/server";
+import { influx } from "../influx/influx";
+import { Point } from "@influxdata/influxdb-client";
 
 export default class ServerManager {
   public static SERVERS: Server[] = [];
@@ -47,13 +50,6 @@ export default class ServerManager {
     cron.schedule(env.PINGER_SERVER_CRON, async () => {
       await this.pingServers();
     });
-
-    cron.schedule(env.PINGER_DNS_INVALIDAION_CRON, () => {
-      logger.info("Invalidating DNS cache for all servers");
-      for (const server of ServerManager.SERVERS) {
-        server.invalidateDns();
-      }
-    });
   }
 
   /**
@@ -62,10 +58,37 @@ export default class ServerManager {
   private async pingServers(): Promise<void> {
     logger.info(`Pinging servers ${ServerManager.SERVERS.length}`);
 
-    // ping all servers in parallel
+    const playerCountByAsn: Record<string, number> = {};
+    const asns: Record<string, AsnData> = {};
+
     await Promise.all(
-      ServerManager.SERVERS.map((server) => server.pingServer())
+      ServerManager.SERVERS.map(async (server) => {
+        const ping = await server.pingServer();
+        if (server.asnData && ping !== undefined) {
+          const playerCount =
+            (playerCountByAsn[server.asnData.asn] ?? 0) + ping.playerCount;
+          playerCountByAsn[server.asnData.asn] = playerCount;
+          asns[server.asnData.asn] = server.asnData;
+        }
+      })
     );
+
+    for (const [asn, playerCount] of Object.entries(playerCountByAsn)) {
+      const asnData = asns[asn];
+      console.log(`${asn} (${asnData.asnOrg}) - ${playerCount}`);
+
+      try {
+        influx.writePoint(
+          new Point("playerCountByAsn")
+            .tag("asn", asnData.asn)
+            .tag("asnOrg", asnData.asnOrg)
+            .intField("playerCount", playerCount)
+            .timestamp(Date.now())
+        );
+      } catch (err) {
+        logger.warn(`Failed to write point to Influx for ${asnData.asn}`, err);
+      }
+    }
 
     logger.info("Finished pinging servers!");
   }

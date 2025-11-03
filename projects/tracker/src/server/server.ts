@@ -1,15 +1,12 @@
-import javaPing from "mcping-js";
-import { ResolvedServer, resolveDns } from "../utils/dns-resolver";
-const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
-
 import { Point } from "@influxdata/influxdb-client";
-import { env } from "@mc-tracker/common/env";
 import { Ping } from "../types/ping";
 import { logger } from "../utils/logger";
 import { influx } from "../influx/influx";
 import { QueryBuilder } from "../common/influx/query-builder";
 import { executeQuery, InfluxQueryResultRow } from "../common/influx";
 import { PingResponse } from "@mc-tracker/common/types/response/ping-response";
+import { fetchJavaServer, fetchBedrockServer } from "mcutils-js-api";
+import { AsnData } from "mcutils-js-api/dist/types/server/server";
 
 /**
  * The type of server.
@@ -24,11 +21,6 @@ type ServerOptions = {
   ip: string;
   port?: number;
   type: ServerType;
-};
-
-type DnsInfo = {
-  hasResolved: boolean;
-  resolvedServer?: ResolvedServer;
 };
 
 export default class Server {
@@ -58,12 +50,9 @@ export default class Server {
   public readonly type: ServerType;
 
   /**
-   * The resolved server information from
-   * DNS records for a PC server.
+   * The ASN data for this server.
    */
-  private dnsInfo: DnsInfo = {
-    hasResolved: false,
-  };
+  public asnData?: AsnData;
 
   constructor({ id, name, ip, port, type }: ServerOptions) {
     this.id = id;
@@ -129,46 +118,18 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   private async pingPCServer(): Promise<Ping | undefined> {
-    if (this.dnsInfo.resolvedServer == undefined && !this.dnsInfo.hasResolved) {
-      try {
-        const resolvedServer = await resolveDns(this.ip);
-
-        this.dnsInfo = {
-          hasResolved: true,
-          resolvedServer: resolvedServer,
-        };
-      } catch (err) {}
+    const response = await fetchJavaServer(`${this.ip}:${this.port ?? 25565}`);
+    const { server, error } = response;
+    if (error || !server) {
+      return undefined;
     }
+    this.updateAsnData(server.asn);
 
-    const { hasResolved, resolvedServer } = this.dnsInfo;
-
-    let ip: string;
-    let port: number;
-
-    if (hasResolved && resolvedServer != undefined) {
-      ip = resolvedServer.ip;
-      port = resolvedServer.port;
-    } else {
-      ip = this.ip;
-      port = 25565; // The default port
-    }
-
-    const serverPing = new javaPing.MinecraftServer(ip, port);
-
-    // todo: do something to get the latest protocol? (is this even needed??)
-    return new Promise((resolve, reject) => {
-      serverPing.ping(env.PINGER_TIMEOUT, 765, (err, res) => {
-        if (err || res == undefined) {
-          return reject(err);
-        }
-
-        resolve({
-          timestamp: Date.now(),
-          ip: ip,
-          playerCount: res.players.online,
-        });
-      });
-    });
+    return {
+      ip: server.ip,
+      playerCount: server.players.online,
+      timestamp: Date.now(),
+    };
   }
 
   /**
@@ -178,28 +139,29 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   private async pingPEServer(): Promise<Ping | undefined> {
-    return new Promise((resolve, reject) => {
-      bedrockPing(this.ip, this.port || 19132, (err: any, res: any) => {
-        if (err || res == undefined) {
-          return reject(err);
-        }
+    const response = await fetchBedrockServer(
+      `${this.ip}:${this.port ?? 19132}`
+    );
+    const { server, error } = response;
+    if (error || !server) {
+      return undefined;
+    }
+    this.updateAsnData(server.asn);
 
-        resolve({
-          timestamp: Date.now(),
-          ip: this.ip,
-          playerCount: res.currentPlayers,
-        });
-      });
-    });
+    return {
+      ip: server.ip,
+      playerCount: server.players.online,
+      timestamp: Date.now(),
+    };
   }
 
   /**
-   * Invalidates the DNS cache for the server.
+   * Updates the cached asn data.
+   *
+   * @param data the new asn data
    */
-  public invalidateDns() {
-    this.dnsInfo = {
-      hasResolved: false,
-    };
+  private updateAsnData(data: AsnData) {
+    this.asnData = data;
   }
 
   /**
@@ -225,4 +187,4 @@ export default class Server {
       }))
       .sort((a, b) => a.timestamp - b.timestamp);
   }
-} 
+}

@@ -23,7 +23,10 @@ export default class Influx {
     this.writeApi = this.influx.getWriteApi(
       env.INFLUX_ORG,
       env.INFLUX_BUCKET,
-      "ms"
+      "ms",
+      {
+        batchSize: 100,
+      }
     );
     this.queryApi = this.influx.getQueryApi(env.INFLUX_ORG);
 
