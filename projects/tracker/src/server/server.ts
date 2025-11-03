@@ -52,7 +52,9 @@ export default class Server {
   /**
    * The ASN data for this server.
    */
-  public asnData?: AsnData;
+  public asnData?: AsnData & {
+    lastUpdated: Date;
+  };
 
   constructor({ id, name, ip, port, type }: ServerOptions) {
     this.id = id;
@@ -169,7 +171,20 @@ export default class Server {
    * @param data the new asn data
    */
   private updateAsnData(data: AsnData) {
-    this.asnData = data;
+    // Update if more than 3 hours ago
+    if (this.asnData && this.asnData.lastUpdated) {
+      const sixHoursInMs = 3 * 60 * 60 * 1000;
+      const timeSinceUpdate = Date.now() - this.asnData.lastUpdated.getTime();
+
+      if (timeSinceUpdate < sixHoursInMs) {
+        return; // Data is still fresh, no need to update
+      }
+    }
+
+    this.asnData = {
+      ...data,
+      lastUpdated: new Date(),
+    };
   }
 
   /**
