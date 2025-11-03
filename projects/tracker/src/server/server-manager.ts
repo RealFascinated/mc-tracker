@@ -100,6 +100,7 @@ export default class ServerManager {
           .intField("playerCount", globalPlayerCount)
           .timestamp(Date.now())
       );
+      console.log("wrote globalPlayerCount");
     } catch (err) {
       logger.warn(
         `Failed to write point to Influx for Global player count`,
