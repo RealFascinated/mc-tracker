@@ -67,7 +67,12 @@ export default class Server {
    *
    * @returns the ping response or undefined if the server is offline
    */
-  public async pingServer(): Promise<Ping | undefined> {
+  public async pingServer(attempt: number = 0): Promise<Ping | undefined> {
+    // Allow 1 re-try attempt
+    if (attempt >= 2) {
+      return undefined;
+    }
+
     const before = Date.now();
     try {
       let response;
@@ -84,7 +89,7 @@ export default class Server {
       }
 
       if (!response) {
-        return Promise.resolve(undefined);
+        return this.pingServer(attempt + 1);
       }
 
       try {
