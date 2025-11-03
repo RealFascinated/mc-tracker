@@ -65,6 +65,8 @@ export default class ServerManager {
 
     await Promise.all(
       ServerManager.SERVERS.map(async (server) => {
+        const previousAsnId = server.asnData?.asn;
+
         const ping = await server.pingServer();
         if (ping) {
           globalPlayerCount += ping.playerCount;
@@ -74,6 +76,12 @@ export default class ServerManager {
               (playerCountByAsn[server.asnData.asn] ?? 0) + ping.playerCount;
             playerCountByAsn[server.asnData.asn] = playerCount;
             asns[server.asnData.asn] = server.asnData;
+
+            if (previousAsnId != server.asnData.asn) {
+              logger.info(
+                `Server ${server.name} switched asn from ${previousAsnId} to ${server.asnData.asn}`
+              );
+            }
           }
         }
       })
