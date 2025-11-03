@@ -75,8 +75,6 @@ export default class ServerManager {
 
     for (const [asn, playerCount] of Object.entries(playerCountByAsn)) {
       const asnData = asns[asn];
-      console.log(`${asn} (${asnData.asnOrg}) - ${playerCount}`);
-
       try {
         influx.writePoint(
           new Point("playerCountByAsn")
