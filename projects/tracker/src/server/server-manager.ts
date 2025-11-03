@@ -77,7 +77,10 @@ export default class ServerManager {
             playerCountByAsn[server.asnData.asn] = playerCount;
             asns[server.asnData.asn] = server.asnData;
 
-            if (previousAsnId != server.asnData.asn) {
+            if (
+              previousAsnId !== undefined &&
+              previousAsnId !== server.asnData.asn
+            ) {
               logger.info(
                 `Server ${server.name} switched asn from ${previousAsnId} to ${server.asnData.asn}`
               );
