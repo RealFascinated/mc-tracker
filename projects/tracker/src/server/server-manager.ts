@@ -68,23 +68,36 @@ export default class ServerManager {
         const previousAsnId = server.asnData?.asn;
 
         const ping = await server.pingServer();
-        if (ping) {
-          globalPlayerCount += ping.playerCount;
 
-          if (server.asnData) {
-            const playerCount =
-              (playerCountByAsn[server.asnData.asn] ?? 0) + ping.playerCount;
-            playerCountByAsn[server.asnData.asn] = playerCount;
-            asns[server.asnData.asn] = server.asnData;
+        // if the previous ping returned results
+        // and this ping didn't respond. This should help with servers randomly
+        // not pinging for one time then responding the next time.
+        const usePreviousData: boolean =
+          server.previousPing !== undefined && ping === undefined;
+        const playerCount = usePreviousData
+          ? server.previousPing?.playerCount ?? ping?.playerCount
+          : ping?.playerCount;
 
-            if (
-              previousAsnId !== undefined &&
-              previousAsnId !== server.asnData.asn
-            ) {
-              logger.info(
-                `Server ${server.name} switched asn from ${previousAsnId} to ${server.asnData.asn}`
-              );
-            }
+        globalPlayerCount += playerCount ?? 0;
+        if (usePreviousData) {
+          logger.info(
+            `Server ${server.name} didn't reply to ping, using previous data for this ping to smooth out graphs. (only happens if previous ping was successful)`
+          );
+        }
+
+        if (server.asnData) {
+          const asnPlayerCount =
+            (playerCountByAsn[server.asnData.asn] ?? 0) + (playerCount ?? 0);
+          playerCountByAsn[server.asnData.asn] = asnPlayerCount;
+          asns[server.asnData.asn] = server.asnData;
+
+          if (
+            previousAsnId !== undefined &&
+            previousAsnId !== server.asnData.asn
+          ) {
+            logger.info(
+              `Server ${server.name} switched asn from ${previousAsnId} to ${server.asnData.asn}`
+            );
           }
         }
       })

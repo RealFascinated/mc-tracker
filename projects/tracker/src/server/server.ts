@@ -56,6 +56,11 @@ export default class Server {
     lastUpdated: Date;
   };
 
+  /**
+   * The previous ping attempt.
+   */
+  public previousPing: Ping | undefined;
+
   constructor({ id, name, ip, port, type }: ServerOptions) {
     this.id = id;
     this.name = name;
@@ -70,8 +75,11 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   public async pingServer(attempt: number = 0): Promise<Ping | undefined> {
-    // Allow 1 re-try attempt
-    if (attempt >= 2) {
+    // Allow 2 re-try attempts
+    if (attempt >= 3) {
+      logger.info(
+        `Giving up pinging ${this.name} after ${attempt - 1} attempts.`
+      );
       return undefined;
     }
 
@@ -135,11 +143,14 @@ export default class Server {
     }
     this.updateAsnData(server.asn);
 
-    return {
+    const ping = {
       ip: server.ip,
       playerCount: server.players.online,
       timestamp: Date.now(),
-    };
+    } as Ping;
+
+    this.previousPing = ping;
+    return ping;
   }
 
   /**
