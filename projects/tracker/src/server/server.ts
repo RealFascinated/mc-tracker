@@ -141,6 +141,7 @@ export default class Server {
     const response = await fetchJavaServer(`${this.ip}:${this.port ?? 25565}`);
     const { server, error } = response;
     if (error || !server) {
+      this.previousPing = undefined;
       return undefined;
     }
     this.updateAsnData(server.asn);
@@ -167,6 +168,7 @@ export default class Server {
     );
     const { server, error } = response;
     if (error || !server) {
+      this.previousPing = undefined;
       return undefined;
     }
     this.updateAsnData(server.asn);
