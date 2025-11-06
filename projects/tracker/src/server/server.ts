@@ -81,7 +81,6 @@ export default class Server {
       return undefined;
     }
 
-    const before = Date.now();
     try {
       let response;
 
@@ -112,13 +111,12 @@ export default class Server {
           .tag("id", this.id)
           .tag("name", this.name + " (" + this.type + ")")
           .intField("playerCount", response.playerCount)
-          .intField("latency", Date.now() - before)
           .stringField("type", this.type)
           .timestamp(response.timestamp);
 
         if (this.asnData?.asn) {
-          point.stringField("asn", this.asnData.asn);
-          point.stringField("asnOrg", this.asnData.asnOrg);
+          point.tag("asn", this.asnData.asn);
+          point.tag("asnOrg", this.asnData.asnOrg);
         }
 
         influx.writePoint(point);
