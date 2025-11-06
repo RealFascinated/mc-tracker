@@ -67,15 +67,16 @@ export default class ServerManager {
       ServerManager.SERVERS.map(async (server) => {
         const previousAsnId = server.asnData?.asn;
 
+        const previousPing = server.previousPing; // Fetch before the ping as it overrides the previous ping
         const ping = await server.pingServer();
 
         // if the previous ping returned results
         // and this ping didn't respond. This should help with servers randomly
         // not pinging for one time then responding the next time.
         const usePreviousData: boolean =
-          server.previousPing !== undefined && ping === undefined;
+          previousPing !== undefined && ping === undefined;
         const playerCount = usePreviousData
-          ? server.previousPing?.playerCount ?? ping?.playerCount
+          ? previousPing?.playerCount ?? ping?.playerCount
           : ping?.playerCount;
 
         globalPlayerCount += playerCount ?? 0;
