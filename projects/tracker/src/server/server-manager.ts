@@ -75,16 +75,17 @@ export default class ServerManager {
         // not pinging for one time then responding the next time.
         const usePreviousData: boolean =
           previousPing !== undefined && ping === undefined;
-        const playerCount = usePreviousData
-          ? previousPing?.playerCount ?? ping?.playerCount
-          : ping?.playerCount;
-
-        globalPlayerCount += playerCount ?? 0;
         if (usePreviousData) {
           logger.info(
             `Server ${server.name} didn't reply to ping, using previous data for this ping to smooth out graphs. (only happens if previous ping was successful)`
           );
         }
+
+        const playerCount = usePreviousData
+          ? previousPing?.playerCount ?? ping?.playerCount
+          : ping?.playerCount;
+
+        globalPlayerCount += playerCount ?? 0;
 
         if (server.asnData) {
           const asnPlayerCount =
