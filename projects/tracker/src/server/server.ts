@@ -84,15 +84,19 @@ export default class Server {
     try {
       let response;
 
-      switch (this.type) {
-        case "PC": {
-          response = await this.pingPCServer();
-          break;
+      try {
+        switch (this.type) {
+          case "PC": {
+            response = await this.pingPCServer();
+            break;
+          }
+          case "PE": {
+            response = await this.pingPEServer();
+            break;
+          }
         }
-        case "PE": {
-          response = await this.pingPEServer();
-          break;
-        }
+      } catch {
+        this.previousPing = undefined;
       }
 
       if (!response) {
