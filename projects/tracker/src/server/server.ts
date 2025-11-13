@@ -195,7 +195,7 @@ export default class Server {
    */
   private updateAsnData(data: AsnData) {
     // If no data, ignore the update
-    if (!data) {
+    if (!data || !data.asn || !data.asnOrg) {
       return;
     }
 
