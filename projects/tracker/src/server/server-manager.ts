@@ -87,18 +87,22 @@ export default class ServerManager {
 
         globalPlayerCount += playerCount ?? 0;
 
-        if (server.asnData) {
+        if (
+          server.asnData &&
+          server.asnData.asn &&
+          server.asnData.asn.trim() !== "" &&
+          server.asnData.asnOrg &&
+          server.asnData.asnOrg.trim() !== ""
+        ) {
+          const asn = server.asnData.asn;
           const asnPlayerCount =
-            (playerCountByAsn[server.asnData.asn] ?? 0) + (playerCount ?? 0);
-          playerCountByAsn[server.asnData.asn] = asnPlayerCount;
-          asns[server.asnData.asn] = server.asnData;
+            (playerCountByAsn[asn] ?? 0) + (playerCount ?? 0);
+          playerCountByAsn[asn] = asnPlayerCount;
+          asns[asn] = server.asnData;
 
-          if (
-            previousAsnId !== undefined &&
-            previousAsnId !== server.asnData.asn
-          ) {
+          if (previousAsnId !== undefined && previousAsnId !== asn) {
             logger.info(
-              `Server ${server.name} switched asn from ${previousAsnId} to ${server.asnData.asn}`
+              `Server ${server.name} switched asn from ${previousAsnId} to ${asn}`
             );
           }
         }
@@ -107,6 +111,11 @@ export default class ServerManager {
 
     for (const [asn, playerCount] of Object.entries(playerCountByAsn)) {
       const asnData = asns[asn];
+      if (!asnData) {
+        logger.warn(`Missing ASN data for asn "${asn}", skipping write`);
+        continue;
+      }
+
       try {
         influx.writePoint(
           new Point("playerCountByAsn")

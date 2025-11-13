@@ -119,7 +119,7 @@ export default class Server {
           .stringField("type", this.type)
           .timestamp(response.timestamp);
 
-        if (this.asnData?.asn) {
+        if (this.asnData?.asn && this.asnData?.asnOrg) {
           point.tag("asn", this.asnData.asn);
           point.tag("asnOrg", this.asnData.asnOrg);
         }
