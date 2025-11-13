@@ -194,6 +194,11 @@ export default class Server {
    * @param data the new asn data
    */
   private updateAsnData(data: AsnData) {
+    // If no data, ignore the update
+    if (!data) {
+      return;
+    }
+
     // Update if more than 3 hours ago
     if (this.asnData && this.asnData.lastUpdated) {
       const sixHoursInMs = 3 * 60 * 60 * 1000;
