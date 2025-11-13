@@ -62,6 +62,7 @@ export default class ServerManager {
     const asns: Record<string, AsnData> = {};
 
     let globalPlayerCount = 0;
+    let successfulPings = 0;
 
     await Promise.all(
       ServerManager.SERVERS.map(async (server) => {
@@ -69,6 +70,9 @@ export default class ServerManager {
 
         const previousPing = server.previousPing; // Fetch before the ping as it overrides the previous ping
         const ping = await server.pingServer();
+        if (ping) {
+          successfulPings++;
+        }
 
         // if the previous ping returned results
         // and this ping didn't respond. This should help with servers randomly
@@ -130,11 +134,13 @@ export default class ServerManager {
     }
 
     try {
-      influx.writePoint(
-        new Point("globalPlayerCount")
-          .intField("playerCount", globalPlayerCount)
-          .timestamp(Date.now())
-      );
+      if (successfulPings > 0) {
+        influx.writePoint(
+          new Point("globalPlayerCount")
+            .intField("playerCount", globalPlayerCount)
+            .timestamp(Date.now())
+        );
+      }
     } catch (err) {
       logger.warn(
         `Failed to write point to Influx for Global player count`,
@@ -142,7 +148,9 @@ export default class ServerManager {
       );
     }
 
-    logger.info("Finished pinging servers!");
+    logger.info(
+      `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping!`
+    );
   }
 
   /**
