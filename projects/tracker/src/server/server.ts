@@ -77,7 +77,7 @@ export default class Server {
   public async pingServer(attempt: number = 0): Promise<Ping | undefined> {
     // Allow 2 re-try attempts
     if (attempt >= 3) {
-      logger.info(`Failed to ping ${this.name} after ${attempt - 1} attempts.`);
+      logger.info(`Failed to ping ${this.name} after ${attempt} attempts.`);
       return undefined;
     }
 
@@ -107,6 +107,7 @@ export default class Server {
             attempt + 1
           })`
         );
+        await Bun.sleep(50); // 50ms delay between attempts
         return this.pingServer(attempt + 1);
       }
 
