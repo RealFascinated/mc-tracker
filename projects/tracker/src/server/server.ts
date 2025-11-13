@@ -75,8 +75,7 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   public async pingServer(attempt: number = 0): Promise<Ping | undefined> {
-    // Allow 2 re-try attempts
-    if (attempt >= 3) {
+    if (attempt >= 4) {
       logger.info(`Failed to ping ${this.name} after ${attempt} attempts.`);
       return undefined;
     }
