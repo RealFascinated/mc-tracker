@@ -98,6 +98,7 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   public async pingServer(): Promise<Ping | undefined> {
+    const before = performance.now();
     try {
       let response;
 
@@ -142,7 +143,7 @@ export default class Server {
 
       return Promise.resolve(response);
     } catch (err) {
-      logger.warn(`Failed to ping ${this.ip}`, err);
+      logger.warn(`Failed to ping ${this.ip}: "${err}" after ${Math.round(performance.now() - before)}ms`);
       return Promise.resolve(undefined);
     }
   }
