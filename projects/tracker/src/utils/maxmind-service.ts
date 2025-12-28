@@ -95,7 +95,7 @@ export class MaxMindService {
       }
 
       return {
-        asn,
+        asn: `AS${asn}`,
         asnOrg,
       };
     } catch (err) {
