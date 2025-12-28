@@ -13,6 +13,9 @@ export const env = createEnv({
     PINGER_SERVER_CRON: z.string(),
     PINGER_DNS_INVALIDAION_CRON: z.string(),
     PINGER_TIMEOUT: z.number(),
+
+    // MaxMind
+    MAXMIND_LICENSE_KEY: z.string().optional(),
   },
 
   client: {},
@@ -31,6 +34,9 @@ export const env = createEnv({
     PINGER_SERVER_CRON: process.env.PINGER_SERVER_CRON,
     PINGER_DNS_INVALIDAION_CRON: process.env.PINGER_DNS_INVALIDAION_CRON,
     PINGER_TIMEOUT: process.env.PINGER_TIMEOUT,
+
+    // MaxMind
+    MAXMIND_LICENSE_KEY: process.env.MAXMIND_LICENSE_KEY,
   },
 
   /**

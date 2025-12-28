@@ -15,8 +15,8 @@ export default class ServerController {
     return {
       servers: ServerManager.SERVERS.map((server) => ({
         id: server.id,
-        name: server.name,
-        type: server.type,
+        name: server.getName(),
+        type: server.getType(),
       })),
     };
   }

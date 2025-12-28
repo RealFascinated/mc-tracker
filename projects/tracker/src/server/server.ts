@@ -1,12 +1,16 @@
+import javaPing from "mcping-js";
+import { ResolvedServer, resolveDns } from "../utils/dns-resolver";
+const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
+
 import { Point } from "@influxdata/influxdb-client";
+import { influx } from "../influx/influx";
+import { env } from "@mc-tracker/common/env";
 import { Ping } from "../types/ping";
 import { logger } from "../utils/logger";
-import { influx } from "../influx/influx";
 import { QueryBuilder } from "../common/influx/query-builder";
 import { executeQuery, InfluxQueryResultRow } from "../common/influx";
 import { PingResponse } from "@mc-tracker/common/types/response/ping-response";
-import { fetchJavaServer, fetchBedrockServer } from "mcutils-js-api";
-import { AsnData } from "mcutils-js-api/dist/types/server/server";
+import { AsnData, MaxMindService } from "../utils/maxmind-service";
 
 /**
  * The type of server.
@@ -21,6 +25,11 @@ type ServerOptions = {
   ip: string;
   port?: number;
   type: ServerType;
+};
+
+type DnsInfo = {
+  hasResolved: boolean;
+  resolvedServer?: ResolvedServer;
 };
 
 export default class Server {
@@ -50,16 +59,19 @@ export default class Server {
   public readonly type: ServerType;
 
   /**
+   * The resolved server information from
+   * DNS records for a PC server.
+   */
+  public dnsInfo: DnsInfo = {
+    hasResolved: false,
+  };
+
+  /**
    * The ASN data for this server.
    */
   public asnData?: AsnData & {
     lastUpdated: Date;
   };
-
-  /**
-   * The previous ping attempt.
-   */
-  public previousPing: Ping | undefined;
 
   constructor({ id, name, ip, port, type }: ServerOptions) {
     this.id = id;
@@ -70,45 +82,40 @@ export default class Server {
   }
 
   /**
+   * Invalidates the DNS cache for the server.
+   */
+  public invalidateDns() {
+    this.dnsInfo = {
+      hasResolved: false,
+    };
+  }
+
+  /**
    * Pings a server and gets the response.
    *
    * @returns the ping response or undefined if the server is offline
    */
-  public async pingServer(attempt: number = 0): Promise<Ping | undefined> {
-    if (attempt >= 4) {
-      logger.info(`Failed to ping ${this.name} after ${attempt} attempts.`);
-      return undefined;
-    }
-
+  public async pingServer(): Promise<Ping | undefined> {
     try {
       let response;
 
-      try {
-        switch (this.type) {
-          case "PC": {
-            response = await this.pingPCServer();
-            break;
-          }
-          case "PE": {
-            response = await this.pingPEServer();
-            break;
-          }
+      switch (this.type) {
+        case "PC": {
+          response = await this.pingPCServer();
+          break;
         }
-      } catch {
-        this.previousPing = undefined;
+        case "PE": {
+          response = await this.pingPEServer();
+          break;
+        }
       }
 
       if (!response) {
-        logger.info(
-          `Server ${
-            this.name
-          } failed to respond to ping attempt, retrying... (attempt ${
-            attempt + 1
-          })`
-        );
-        await Bun.sleep(50); // 50ms delay between attempts
-        return this.pingServer(attempt + 1);
+        return Promise.resolve(undefined);
       }
+
+      // Update ASN data if needed
+      this.updateAsnData(response.ip);
 
       try {
         const point = new Point("ping")
@@ -145,22 +152,46 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   private async pingPCServer(): Promise<Ping | undefined> {
-    const response = await fetchJavaServer(`${this.ip}:${this.port ?? 25565}`);
-    const { server, error } = response;
-    if (error || !server) {
-      this.previousPing = undefined;
-      return undefined;
+    if (this.dnsInfo.resolvedServer == undefined && !this.dnsInfo.hasResolved) {
+      try {
+        const resolvedServer = await resolveDns(this.ip);
+
+        this.dnsInfo = {
+          hasResolved: true,
+          resolvedServer: resolvedServer,
+        };
+      } catch (err) {}
     }
-    this.updateAsnData(server.asn);
 
-    const ping = {
-      ip: server.ip,
-      playerCount: server.players.online,
-      timestamp: Date.now(),
-    } as Ping;
+    const { hasResolved, resolvedServer } = this.dnsInfo;
 
-    this.previousPing = ping;
-    return ping;
+    let ip: string;
+    let port: number;
+
+    if (hasResolved && resolvedServer != undefined) {
+      ip = resolvedServer.ip;
+      port = resolvedServer.port;
+    } else {
+      ip = this.ip;
+      port = 25565; // The default port
+    }
+
+    const serverPing = new javaPing.MinecraftServer(ip, port);
+
+    // todo: do something to get the latest protocol? (is this even needed??)
+    return new Promise((resolve, reject) => {
+      serverPing.ping(env.PINGER_TIMEOUT, 765, (err, res) => {
+        if (err || res == undefined) {
+          return reject(err);
+        }
+
+        resolve({
+          timestamp: Date.now(),
+          ip: ip,
+          playerCount: Number(res.players.online),
+        });
+      });
+    });
   }
 
   /**
@@ -170,48 +201,44 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   private async pingPEServer(): Promise<Ping | undefined> {
-    const response = await fetchBedrockServer(
-      `${this.ip}:${this.port ?? 19132}`
-    );
-    const { server, error } = response;
-    if (error || !server) {
-      this.previousPing = undefined;
-      return undefined;
-    }
-    this.updateAsnData(server.asn);
+    return new Promise((resolve, reject) => {
+      bedrockPing(this.ip, this.port || 19132, (err: any, res: any) => {
+        if (err || res == undefined) {
+          return reject(err);
+        }
 
-    return {
-      ip: server.ip,
-      playerCount: server.players.online,
-      timestamp: Date.now(),
-    };
+        resolve({
+          timestamp: Date.now(),
+          ip: this.ip,
+          playerCount: Number(res.currentPlayers),
+        });
+      });
+    });
   }
 
   /**
-   * Updates the cached asn data.
+   * Updates the cached ASN data.
    *
-   * @param data the new asn data
+   * @param ip the IP address to resolve
    */
-  private updateAsnData(data: AsnData) {
-    // If no data, ignore the update
-    if (!data || !data.asn || !data.asnOrg) {
-      return;
-    }
-
-    // Update if more than 3 hours ago
+  private updateAsnData(ip: string) {
+    // Update if more than 3 hours ago or if not set
     if (this.asnData && this.asnData.lastUpdated) {
-      const sixHoursInMs = 3 * 60 * 60 * 1000;
+      const threeHoursInMs = 3 * 60 * 60 * 1000;
       const timeSinceUpdate = Date.now() - this.asnData.lastUpdated.getTime();
 
-      if (timeSinceUpdate < sixHoursInMs) {
+      if (timeSinceUpdate < threeHoursInMs) {
         return; // Data is still fresh, no need to update
       }
     }
 
-    this.asnData = {
-      ...data,
-      lastUpdated: new Date(),
-    };
+    const asnData = MaxMindService.resolveAsn(ip);
+    if (asnData) {
+      this.asnData = {
+        ...asnData,
+        lastUpdated: new Date(),
+      };
+    }
   }
 
   /**

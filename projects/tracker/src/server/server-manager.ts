@@ -1,11 +1,8 @@
-import cron from "node-cron";
 import { logger } from "../utils/logger";
 import Server, { ServerType } from "./server";
-import { env } from "@mc-tracker/common/env";
 import { validate as uuidValidate } from "uuid";
 
 import Servers from "../../../../data/servers.json";
-import { AsnData } from "mcutils-js-api/dist/types/server/server";
 import { influx } from "../influx/influx";
 import { Point } from "@influxdata/influxdb-client";
 
@@ -46,20 +43,16 @@ export default class ServerManager {
     }
 
     logger.info(`Loaded ${ServerManager.SERVERS.length} servers!`);
-
-    cron.schedule(env.PINGER_SERVER_CRON, async () => {
-      await this.pingServers();
-    });
   }
 
   /**
    * Ping all servers to update their status.
    */
-  private async pingServers(): Promise<void> {
+  public async pingServers(): Promise<void> {
     logger.info(`Pinging servers ${ServerManager.SERVERS.length}`);
 
     const playerCountByAsn: Record<string, number> = {};
-    const asns: Record<string, AsnData> = {};
+    const asns: Record<string, { asn: string; asnOrg: string }> = {};
 
     let globalPlayerCount = 0;
     let successfulPings = 0;
@@ -68,28 +61,13 @@ export default class ServerManager {
       ServerManager.SERVERS.map(async (server) => {
         const previousAsnId = server.asnData?.asn;
 
-        const previousPing = server.previousPing; // Fetch before the ping as it overrides the previous ping
         const ping = await server.pingServer();
         if (ping) {
           successfulPings++;
+          globalPlayerCount += ping.playerCount;
         }
 
-        // if the previous ping returned results
-        // and this ping didn't respond. This should help with servers randomly
-        // not pinging for one time then responding the next time.
-        const usePreviousData: boolean =
-          previousPing !== undefined && ping === undefined;
-        if (usePreviousData) {
-          logger.info(
-            `Server ${server.name} didn't reply to ping, using previous data for this ping to smooth out graphs. (only happens if previous ping was successful)`
-          );
-        }
-
-        const playerCount = usePreviousData
-          ? previousPing?.playerCount ?? ping?.playerCount
-          : ping?.playerCount;
-
-        globalPlayerCount += playerCount ?? 0;
+        const playerCount = ping?.playerCount ?? 0;
 
         if (
           server.asnData &&
@@ -100,9 +78,12 @@ export default class ServerManager {
         ) {
           const asn = server.asnData.asn;
           const asnPlayerCount =
-            (playerCountByAsn[asn] ?? 0) + (playerCount ?? 0);
+            (playerCountByAsn[asn] ?? 0) + playerCount;
           playerCountByAsn[asn] = asnPlayerCount;
-          asns[asn] = server.asnData;
+          asns[asn] = {
+            asn: server.asnData.asn,
+            asnOrg: server.asnData.asnOrg,
+          };
 
           if (previousAsnId !== undefined && previousAsnId !== asn) {
             logger.info(

@@ -1,14 +1,40 @@
 import Elysia, { ValidationError } from "elysia";
+import { cron } from "@elysiajs/cron";
 import ServerManager from "./server/server-manager";
 import { logger } from "./utils/logger";
 import { decorators } from "elysia-decorators";
 import AppController from "./controllers/app.controller";
 import ServerController from "./controllers/server.controller";
+import { MaxMindService } from "./utils/maxmind-service";
+import { env } from "@mc-tracker/common/env";
+
+// Initialize the ASN database
+await MaxMindService.init();
 
 // Initialize the server manager
-new ServerManager();
+const serverManager = new ServerManager();
 
-export const app = new Elysia();
+export const app = new Elysia()
+  // Schedule database updates daily at 2 AM
+  .use(
+    cron({
+      name: "maxmind-update",
+      pattern: "0 2 * * *", // Daily at 2 AM
+      run: async () => {
+        await MaxMindService.scheduledUpdate();
+      },
+    })
+  )
+  // Schedule server pings
+  .use(
+    cron({
+      name: "server-ping",
+      pattern: env.PINGER_SERVER_CRON,
+      run: async () => {
+        await serverManager.pingServers();
+      },
+    })
+  );
 
 /**
  * Custom error handler
