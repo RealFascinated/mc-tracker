@@ -1,5 +1,6 @@
 import javaPing from "mcping-js";
 import { ResolvedServer, resolveDns } from "../utils/dns-resolver";
+import dns from "dns";
 const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
 
 import { Point } from "@influxdata/influxdb-client";
@@ -11,6 +12,7 @@ import { QueryBuilder } from "../common/influx/query-builder";
 import { executeQuery, InfluxQueryResultRow } from "../common/influx";
 import { PingResponse } from "@mc-tracker/common/types/response/ping-response";
 import { AsnData, MaxMindService } from "../utils/maxmind-service";
+import { isIpAddress } from "@mc-tracker/common/utils";
 
 /**
  * The type of server.
@@ -115,7 +117,7 @@ export default class Server {
       }
 
       // Update ASN data if needed
-      this.updateAsnData(response.ip);
+      await this.updateAsnData(response.ip);
 
       try {
         const point = new Point("ping")
@@ -134,7 +136,7 @@ export default class Server {
       } catch (err) {
         logger.warn(
           `Failed to write point to Influx for ${this.name} - ${this.ip}`,
-          err
+          err,
         );
       }
 
@@ -219,9 +221,9 @@ export default class Server {
   /**
    * Updates the cached ASN data.
    *
-   * @param ip the IP address to resolve
+   * @param ipOrDomain the IP address or domain name to resolve
    */
-  private updateAsnData(ip: string) {
+  private async updateAsnData(ipOrDomain: string) {
     // Update if more than 3 hours ago or if not set
     if (this.asnData && this.asnData.lastUpdated) {
       const threeHoursInMs = 3 * 60 * 60 * 1000;
@@ -232,6 +234,25 @@ export default class Server {
       }
     }
 
+    // Resolve domain name to IP if needed
+    let ip = ipOrDomain;
+    if (!isIpAddress(ipOrDomain)) {
+      try {
+        const resolved = await this.resolveDomainToIp(ipOrDomain);
+        if (resolved) {
+          ip = resolved;
+        } else {
+          logger.warn(
+            `Failed to resolve domain ${ipOrDomain} to IP, skipping ASN lookup`,
+          );
+          return;
+        }
+      } catch (err) {
+        logger.warn(`Failed to resolve domain ${ipOrDomain} to IP`, err);
+        return;
+      }
+    }
+
     const asnData = MaxMindService.resolveAsn(ip);
     if (asnData) {
       this.asnData = {
@@ -239,6 +260,27 @@ export default class Server {
         lastUpdated: new Date(),
       };
     }
+  }
+
+  /**
+   * Resolves a domain name to an IP address.
+   *
+   * @param domain the domain name to resolve
+   * @returns the IP address or undefined if failed
+   */
+  private async resolveDomainToIp(domain: string): Promise<string | undefined> {
+    return new Promise((resolve) => {
+      dns.lookup(
+        domain,
+        (err: NodeJS.ErrnoException | null, address: string) => {
+          if (err) {
+            resolve(undefined);
+          } else {
+            resolve(address);
+          }
+        },
+      );
+    });
   }
 
   /**

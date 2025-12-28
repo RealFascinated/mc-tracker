@@ -36,7 +36,7 @@ export class QueryBuilder {
    */
   public rangeWithMinMax(timeRangeMin: string, timeRangeMax: string) {
     return this.operation(
-      `range(start: ${timeRangeMin}, stop: ${timeRangeMax})`
+      `range(start: ${timeRangeMin}, stop: ${timeRangeMax})`,
     );
   }
 
@@ -124,10 +124,10 @@ export class QueryBuilder {
   public aggregateWindow(
     window: string,
     fn: FunctionTypes = "mean",
-    createEmpty: boolean = false
+    createEmpty: boolean = false,
   ) {
     return this.operation(
-      `aggregateWindow(every: ${window}, fn: ${fn}, createEmpty: ${createEmpty})`
+      `aggregateWindow(every: ${window}, fn: ${fn}, createEmpty: ${createEmpty})`,
     );
   }
 

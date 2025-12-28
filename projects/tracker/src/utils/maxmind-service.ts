@@ -16,7 +16,10 @@ export type AsnData = {
  * MaxMind service for ASN database management and lookups.
  */
 export class MaxMindService {
-  private static readonly DATABASES_DIRECTORY = join(process.cwd(), "databases");
+  private static readonly DATABASES_DIRECTORY = join(
+    process.cwd(),
+    "databases",
+  );
   private static readonly DATABASE_DOWNLOAD_ENDPOINT =
     "https://download.maxmind.com/app/geoip_download?edition_id={edition}&license_key={license}&suffix=tar.gz";
   private static readonly MAX_DATABASE_AGE_MS = 3 * 24 * 60 * 60 * 1000;
@@ -30,7 +33,9 @@ export class MaxMindService {
   public static async init(): Promise<void> {
     const license = this.getLicenseKey();
     if (!license) {
-      logger.warn("MAXMIND_LICENSE_KEY not set or is CHANGE_ME, ASN tracking will be disabled");
+      logger.warn(
+        "MAXMIND_LICENSE_KEY not set or is CHANGE_ME, ASN tracking will be disabled",
+      );
       return;
     }
 
@@ -68,12 +73,14 @@ export class MaxMindService {
    */
   public static resolveAsn(ip: string): AsnData | undefined {
     if (!this.asnReader) {
+      logger.debug("ASN database not loaded, cannot resolve ASN");
       return undefined;
     }
 
     try {
       const result = this.asnReader.get(ip);
       if (!result) {
+        logger.debug(`No ASN data found for IP ${ip}`);
         return undefined;
       }
 
@@ -81,6 +88,9 @@ export class MaxMindService {
       const asnOrg = result.autonomous_system_organization ?? "";
 
       if (!asn || !asnOrg) {
+        logger.debug(
+          `Incomplete ASN data for IP ${ip}: asn=${asn}, asnOrg=${asnOrg}`,
+        );
         return undefined;
       }
 
@@ -118,7 +128,10 @@ export class MaxMindService {
    * @param license the MaxMind license key
    * @param forceUpdate whether to force an update
    */
-  private static async loadDatabase(license: string, forceUpdate: boolean = false): Promise<void> {
+  private static async loadDatabase(
+    license: string,
+    forceUpdate: boolean = false,
+  ): Promise<void> {
     // Ensure directory exists
     await fs.mkdir(this.DATABASES_DIRECTORY, { recursive: true });
 
@@ -137,13 +150,15 @@ export class MaxMindService {
 
       if (ageInMillis > this.MAX_DATABASE_AGE_MS || forceUpdate) {
         logger.info(
-          `Database ${this.EDITION} is ${daysOld} days old (max 3 days), updating...`
+          `Database ${this.EDITION} is ${daysOld} days old (max 3 days), updating...`,
         );
 
         this.asnReader = null;
         await Bun.$`rm -f ${databaseFile}`.quiet();
       } else {
-        logger.debug(`Database ${this.EDITION} is ${daysOld} days old, no update needed`);
+        logger.debug(
+          `Database ${this.EDITION} is ${daysOld} days old, no update needed`,
+        );
       }
     }
 
@@ -166,22 +181,29 @@ export class MaxMindService {
    * @param license the MaxMind license key
    * @param databaseFile the file path to save the database to
    */
-  private static async downloadDatabase(license: string, databaseFile: string): Promise<void> {
-    const downloadedFile = join(this.DATABASES_DIRECTORY, `${this.EDITION}.tar.gz`);
+  private static async downloadDatabase(
+    license: string,
+    databaseFile: string,
+  ): Promise<void> {
+    const downloadedFile = join(
+      this.DATABASES_DIRECTORY,
+      `${this.EDITION}.tar.gz`,
+    );
 
     // Download the database if required
     if (!(await Bun.file(downloadedFile).exists())) {
       logger.info(`Downloading database ${this.EDITION}...`);
       const before = Date.now();
 
-      const url = this.DATABASE_DOWNLOAD_ENDPOINT
-        .replace("{edition}", this.EDITION)
-        .replace("{license}", license);
+      const url = this.DATABASE_DOWNLOAD_ENDPOINT.replace(
+        "{edition}",
+        this.EDITION,
+      ).replace("{license}", license);
 
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(
-          `Failed to download database: ${response.status} ${response.statusText}`
+          `Failed to download database: ${response.status} ${response.statusText}`,
         );
       }
 
@@ -193,7 +215,9 @@ export class MaxMindService {
       const arrayBuffer = await response.arrayBuffer();
       await Bun.write(downloadedFile, arrayBuffer);
 
-      logger.info(`Downloaded database ${this.EDITION} in ${Date.now() - before}ms`);
+      logger.info(
+        `Downloaded database ${this.EDITION} in ${Date.now() - before}ms`,
+      );
     }
 
     // Extract the database
@@ -213,26 +237,26 @@ export class MaxMindService {
    */
   private static async extractDatabase(
     archivePath: string,
-    outputPath: string
+    outputPath: string,
   ): Promise<void> {
     const extractStream = extract();
     const gunzip = createGunzip();
-    
+
     // Use Bun's file reading
     const archiveFile = Bun.file(archivePath);
     const buffer = await archiveFile.arrayBuffer();
     const { Readable } = await import("stream");
     const nodeStream = Readable.from(Buffer.from(buffer));
-    
+
     return new Promise((resolve, reject) => {
       extractStream.on("entry", (header, stream, next) => {
         if (header.name.endsWith(".mmdb")) {
           const chunks: Buffer[] = [];
-          
+
           stream.on("data", (chunk: Buffer) => {
             chunks.push(chunk);
           });
-          
+
           stream.on("end", async () => {
             try {
               const data = Buffer.concat(chunks);
@@ -243,7 +267,7 @@ export class MaxMindService {
               reject(err);
             }
           });
-          
+
           stream.on("error", (err: Error) => {
             reject(err);
           });

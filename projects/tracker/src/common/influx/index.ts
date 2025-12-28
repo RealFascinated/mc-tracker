@@ -69,7 +69,7 @@ export type InfluxQueryResultRow = {
  */
 export const executeQuery = async <T>(
   query: string,
-  groupBy?: string
+  groupBy?: string,
 ): Promise<InfluxQueryResult<T>> => {
   // Execute the query and collect the results
   const result: Array<T> = await influx.query<T>(query);

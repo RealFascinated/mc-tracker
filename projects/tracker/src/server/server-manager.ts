@@ -12,7 +12,7 @@ export default class ServerManager {
   constructor() {
     logger.info("Loading servers...");
     for (const configServer of Servers.sort((a, b) =>
-      a.type.localeCompare(b.type)
+      a.type.localeCompare(b.type),
     )) {
       // Validate server id is a valid uuid
       if (!uuidValidate(configServer.id)) {
@@ -32,7 +32,7 @@ export default class ServerManager {
       });
       ServerManager.SERVERS.push(server);
       logger.info(
-        `Loaded ${configServer.type} server ${configServer.name} - ${configServer.ip} (${configServer.id})`
+        `Loaded ${configServer.type} server ${configServer.name} - ${configServer.ip} (${configServer.id})`,
       );
     }
 
@@ -77,8 +77,7 @@ export default class ServerManager {
           server.asnData.asnOrg.trim() !== ""
         ) {
           const asn = server.asnData.asn;
-          const asnPlayerCount =
-            (playerCountByAsn[asn] ?? 0) + playerCount;
+          const asnPlayerCount = (playerCountByAsn[asn] ?? 0) + playerCount;
           playerCountByAsn[asn] = asnPlayerCount;
           asns[asn] = {
             asn: server.asnData.asn,
@@ -87,11 +86,11 @@ export default class ServerManager {
 
           if (previousAsnId !== undefined && previousAsnId !== asn) {
             logger.info(
-              `Server ${server.name} switched asn from ${previousAsnId} to ${asn}`
+              `Server ${server.name} switched asn from ${previousAsnId} to ${asn}`,
             );
           }
         }
-      })
+      }),
     );
 
     for (const [asn, playerCount] of Object.entries(playerCountByAsn)) {
@@ -107,7 +106,7 @@ export default class ServerManager {
             .tag("asn", asnData.asn)
             .tag("asnOrg", asnData.asnOrg)
             .intField("playerCount", playerCount)
-            .timestamp(Date.now())
+            .timestamp(Date.now()),
         );
       } catch (err) {
         logger.warn(`Failed to write point to Influx for ${asnData.asn}`, err);
@@ -119,18 +118,18 @@ export default class ServerManager {
         influx.writePoint(
           new Point("globalPlayerCount")
             .intField("playerCount", globalPlayerCount)
-            .timestamp(Date.now())
+            .timestamp(Date.now()),
         );
       }
     } catch (err) {
       logger.warn(
         `Failed to write point to Influx for Global player count`,
-        err
+        err,
       );
     }
 
     logger.info(
-      `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping!`
+      `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping!`,
     );
   }
 

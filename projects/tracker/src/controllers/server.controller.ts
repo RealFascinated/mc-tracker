@@ -38,7 +38,7 @@ export default class ServerController {
         error: "Server not found",
       };
     }
-    
+
     return {
       pings: await server.getPings(),
     };

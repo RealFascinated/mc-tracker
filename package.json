@@ -4,6 +4,13 @@
   "workspaces": [
     "projects/*"
   ],
+  "scripts": {
+    "prettier": "prettier --write ."
+  },
   "author": "fascinated7",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "prettier-plugin-tailwindcss": "^0.7.2"
+  }
 }

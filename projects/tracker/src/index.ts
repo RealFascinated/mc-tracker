@@ -23,7 +23,7 @@ export const app = new Elysia()
       run: async () => {
         await MaxMindService.scheduledUpdate();
       },
-    })
+    }),
   )
   // Schedule server pings
   .use(
@@ -33,7 +33,7 @@ export const app = new Elysia()
       run: async () => {
         await serverManager.pingServers();
       },
-    })
+    }),
   );
 
 /**
@@ -90,7 +90,7 @@ app.onError({ as: "global" }, ({ code, error }) => {
 app.use(
   decorators({
     controllers: [AppController, ServerController],
-  })
+  }),
 );
 
 app.onStart(async () => {

@@ -5,7 +5,7 @@ const customFormat = format.combine(
   timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
   printf((info) => {
     return `[${info.timestamp}] ${info.level}: ${String(info.message)}`;
-  })
+  }),
 );
 
 /**
