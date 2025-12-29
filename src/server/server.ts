@@ -14,6 +14,8 @@ import { PingResponse } from "../common/types/response/ping-response";
 import { isIpAddress } from "../common/utils";
 import { AsnData, MaxMindService } from "../service/maxmind-service";
 
+const MAX_PING_ATTEMPTS = 2;
+
 /**
  * The type of server.
  *
@@ -97,7 +99,7 @@ export default class Server {
    *
    * @returns the ping response or undefined if the server is offline
    */
-  public async pingServer(): Promise<Ping | undefined> {
+  public async pingServer(attempt: number = 0): Promise<Ping | undefined> {
     const before = performance.now();
     try {
       let response;
@@ -112,8 +114,14 @@ export default class Server {
           break;
         }
       }
-
       if (!response) {
+        // Try to ping the server again if it failed
+        if (attempt < MAX_PING_ATTEMPTS) {
+          logger.warn(
+            `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms, retrying... (attempt ${attempt + 1}/${MAX_PING_ATTEMPTS})`,
+          );
+          return this.pingServer(attempt + 1);
+        }
         return Promise.resolve(undefined);
       }
 
@@ -143,7 +151,9 @@ export default class Server {
 
       return Promise.resolve(response);
     } catch (err) {
-      logger.warn(`Failed to ping ${this.ip}: "${err}" after ${Math.round(performance.now() - before)}ms`);
+      logger.warn(
+        `Failed to ping ${this.ip}: "${err}" after ${Math.round(performance.now() - before)}ms`,
+      );
       return Promise.resolve(undefined);
     }
   }
