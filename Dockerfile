@@ -15,9 +15,6 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy the data directory
-COPY --from=depends /app/data ./data
-
 # Copy the compiled binary
 COPY --from=depends /app/tracker ./
 
