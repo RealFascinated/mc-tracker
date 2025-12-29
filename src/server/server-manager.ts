@@ -1,18 +1,27 @@
 import { logger } from "../common/logger";
 import Server, { ServerType } from "./server";
 import { validate as uuidValidate } from "uuid";
-
-import Servers from "../../data/servers.json";
+import { join } from "path";
+import { readFileSync } from "fs";
 import { influx } from "../influx/influx";
 import { Point } from "@influxdata/influxdb-client";
+
+interface ServerConfig {
+  name: string;
+  id: string;
+  ip: string;
+  type: "PC" | "PE";
+}
 
 export default class ServerManager {
   public static SERVERS: Server[] = [];
 
   constructor() {
     logger.info("Loading servers...");
+    const Servers = ServerManager.loadServers();
+
     for (const configServer of Servers.sort((a, b) =>
-      a.type.localeCompare(b.type),
+      a.type.localeCompare(b.type)
     )) {
       // Validate server id is a valid uuid
       if (!uuidValidate(configServer.id)) {
@@ -32,7 +41,7 @@ export default class ServerManager {
       });
       ServerManager.SERVERS.push(server);
       logger.info(
-        `Loaded ${configServer.type} server ${configServer.name} - ${configServer.ip} (${configServer.id})`,
+        `Loaded ${configServer.type} server ${configServer.name} - ${configServer.ip} (${configServer.id})`
       );
     }
 
@@ -43,6 +52,24 @@ export default class ServerManager {
     }
 
     logger.info(`Loaded ${ServerManager.SERVERS.length} servers!`);
+  }
+
+  /**
+   * Load the servers from the servers.json file.
+   *
+   * @returns the servers
+   */
+  private static loadServers(): ServerConfig[] {
+    const serversPath = join(process.cwd(), "data", "servers.json");
+
+    try {
+      const fileContent = readFileSync(serversPath, "utf-8");
+      return JSON.parse(fileContent) as ServerConfig[];
+    } catch (error) {
+      throw new Error(
+        `Failed to load servers.json from ${serversPath}: ${error}`
+      );
+    }
   }
 
   /**
@@ -86,11 +113,11 @@ export default class ServerManager {
 
           if (previousAsnId !== undefined && previousAsnId !== asn) {
             logger.info(
-              `Server ${server.name} switched asn from ${previousAsnId} to ${asn}`,
+              `Server ${server.name} switched asn from ${previousAsnId} to ${asn}`
             );
           }
         }
-      }),
+      })
     );
 
     for (const [asn, playerCount] of Object.entries(playerCountByAsn)) {
@@ -106,7 +133,7 @@ export default class ServerManager {
             .tag("asn", asnData.asn)
             .tag("asnOrg", asnData.asnOrg)
             .intField("playerCount", playerCount)
-            .timestamp(Date.now()),
+            .timestamp(Date.now())
         );
       } catch (err) {
         logger.warn(`Failed to write point to Influx for ${asnData.asn}`, err);
@@ -118,18 +145,18 @@ export default class ServerManager {
         influx.writePoint(
           new Point("globalPlayerCount")
             .intField("playerCount", globalPlayerCount)
-            .timestamp(Date.now()),
+            .timestamp(Date.now())
         );
       }
     } catch (err) {
       logger.warn(
         `Failed to write point to Influx for Global player count`,
-        err,
+        err
       );
     }
 
     logger.info(
-      `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping!`,
+      `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping!`
     );
   }
 
