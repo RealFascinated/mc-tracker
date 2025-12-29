@@ -18,8 +18,6 @@ export const env = createEnv({
     MAXMIND_LICENSE_KEY: z.string().optional(),
   },
 
-  client: {},
-
   /**
    * This is the environment variables that are available on the server.
    */
@@ -38,11 +36,6 @@ export const env = createEnv({
     // MaxMind
     MAXMIND_LICENSE_KEY: process.env.MAXMIND_LICENSE_KEY,
   },
-
-  /**
-   * This is the prefix for the environment variables that are available on the client.
-   */
-  clientPrefix: "NEXT_PUBLIC_",
 
   /**
    * Makes it so that empty strings are treated as undefined.
