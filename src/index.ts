@@ -12,7 +12,6 @@ const serverManager = new ServerManager();
 cron.schedule("0 2 * * *", async () => {
   await MaxMindService.scheduledUpdate();
 });
-
 cron.schedule(env.PINGER_SERVER_CRON, async () => {
   await serverManager.pingServers();
 });
