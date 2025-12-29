@@ -9,11 +9,17 @@ COPY src ./src
 COPY tsconfig.json ./
 RUN bun run build
 
+# Copy the servers.json file
+COPY data/servers.json ./data/servers.json
+
 # Run the app
 FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+
+# Copy the servers.json file
+COPY --from=depends /app/data/servers.json ./data/servers.json
 
 # Copy the compiled binary
 COPY --from=depends /app/tracker ./
