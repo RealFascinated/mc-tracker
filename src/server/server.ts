@@ -120,6 +120,8 @@ export default class Server {
           logger.warn(
             `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms, retrying... (attempt ${attempt + 1}/${MAX_PING_ATTEMPTS})`,
           );
+
+          await Bun.sleep(500);
           return this.pingServer(attempt + 1);
         }
         return Promise.resolve(undefined);
