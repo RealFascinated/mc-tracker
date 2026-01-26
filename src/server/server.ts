@@ -8,9 +8,6 @@ import { influx } from "../influx/influx";
 import { env } from "../common/env";
 import { Ping } from "../common/types/ping";
 import { logger } from "../common/logger";
-import { QueryBuilder } from "../common/influx/query-builder";
-import { executeQuery, InfluxQueryResultRow } from "../common/influx";
-import { PingResponse } from "../common/types/response/ping-response";
 import { isIpAddress } from "../common/utils";
 import { AsnData, MaxMindService } from "../service/maxmind-service";
 
@@ -294,29 +291,5 @@ export default class Server {
         },
       );
     });
-  }
-
-  /**
-   * Gets the pings for the server.
-   *
-   * @returns the pings
-   */
-  public async getPings(): Promise<PingResponse[]> {
-    const query = new QueryBuilder()
-      .rangeWithMinMax("-1h", "now()")
-      .filterByField("measurement", "ping")
-      .filterByField("field", "playerCount")
-      .filterByTag("id", this.id)
-      .aggregateWindow("1m", "mean", true)
-      .yield("mean")
-      .build();
-
-    const pings = await executeQuery<InfluxQueryResultRow>(query);
-    return pings.data
-      .map((ping) => ({
-        timestamp: new Date(ping.timestamp).getTime(),
-        playerCount: ping.value as number,
-      }))
-      .sort((a, b) => a.timestamp - b.timestamp);
   }
 }

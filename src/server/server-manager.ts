@@ -3,8 +3,6 @@ import Server, { ServerType } from "./server";
 import { validate as uuidValidate } from "uuid";
 import { join } from "path";
 import { readFileSync } from "fs";
-import { influx } from "../influx/influx";
-import { Point } from "@influxdata/influxdb-client";
 
 interface ServerConfig {
   name: string;
@@ -78,82 +76,15 @@ export default class ServerManager {
   public async pingServers(): Promise<void> {
     logger.info(`Pinging servers ${ServerManager.SERVERS.length}`);
 
-    const playerCountByAsn: Record<string, number> = {};
-    const asns: Record<string, { asn: string; asnOrg: string }> = {};
-
-    let globalPlayerCount = 0;
     let successfulPings = 0;
-
     await Promise.all(
       ServerManager.SERVERS.map(async (server) => {
-        const previousAsnId = server.asnData?.asn;
-
         const ping = await server.pingServer();
         if (ping) {
           successfulPings++;
-          globalPlayerCount += ping.playerCount;
-        }
-
-        const playerCount = ping?.playerCount ?? 0;
-
-        if (
-          server.asnData &&
-          server.asnData.asn &&
-          server.asnData.asn.trim() !== "" &&
-          server.asnData.asnOrg &&
-          server.asnData.asnOrg.trim() !== ""
-        ) {
-          const asn = server.asnData.asn;
-          const asnPlayerCount = (playerCountByAsn[asn] ?? 0) + playerCount;
-          playerCountByAsn[asn] = asnPlayerCount;
-          asns[asn] = {
-            asn: server.asnData.asn,
-            asnOrg: server.asnData.asnOrg,
-          };
-
-          if (previousAsnId !== undefined && previousAsnId !== asn) {
-            logger.info(
-              `Server ${server.name} switched asn from ${previousAsnId} to ${asn}`
-            );
-          }
         }
       })
     );
-
-    for (const [asn, playerCount] of Object.entries(playerCountByAsn)) {
-      const asnData = asns[asn];
-      if (!asnData) {
-        logger.warn(`Missing ASN data for asn "${asn}", skipping write`);
-        continue;
-      }
-
-      try {
-        influx.writePoint(
-          new Point("playerCountByAsn")
-            .tag("asn", asnData.asn)
-            .tag("asnOrg", asnData.asnOrg)
-            .intField("playerCount", playerCount)
-            .timestamp(Date.now())
-        );
-      } catch (err) {
-        logger.warn(`Failed to write point to Influx for ${asnData.asn}`, err);
-      }
-    }
-
-    try {
-      if (successfulPings > 0) {
-        influx.writePoint(
-          new Point("globalPlayerCount")
-            .intField("playerCount", globalPlayerCount)
-            .timestamp(Date.now())
-        );
-      }
-    } catch (err) {
-      logger.warn(
-        `Failed to write point to Influx for Global player count`,
-        err
-      );
-    }
 
     logger.info(
       `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping!`
