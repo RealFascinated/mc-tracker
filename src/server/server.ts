@@ -133,7 +133,7 @@ export default class Server {
           .setTag("name", this.name)
           .setTag("type", this.type)
           .setIntegerField("player_count", response.playerCount)
-          .setTimestamp(response.timestamp);
+          .setTimestamp(new Date(response.timestamp));
 
         if (this.asnData?.asn && this.asnData?.asnOrg) {
           point.setTag("asn", this.asnData.asn);
