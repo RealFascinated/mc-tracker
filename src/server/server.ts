@@ -3,7 +3,7 @@ import { ResolvedServer, resolveDns } from "../common/dns-resolver";
 import dns from "dns";
 const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
 
-import { Point } from "@influxdata/influxdb-client";
+import { Point } from "@influxdata/influxdb3-client";
 import { influx } from "../influx/influx";
 import { env } from "../common/env";
 import { Ping } from "../common/types/ping";
@@ -128,16 +128,16 @@ export default class Server {
       await this.updateAsnData(response.ip);
 
       try {
-        const point = new Point("ping")
-          .tag("id", this.id)
-          .tag("name", this.name + " (" + this.type + ")")
-          .intField("playerCount", response.playerCount)
-          .stringField("type", this.type)
-          .timestamp(response.timestamp);
+        const point = Point.measurement("ping")
+          .setTag("id", this.id)
+          .setTag("name", this.name + " (" + this.type + ")")
+          .setIntegerField("playerCount", response.playerCount)
+          .setStringField("type", this.type)
+          .setTimestamp(response.timestamp);
 
         if (this.asnData?.asn && this.asnData?.asnOrg) {
-          point.tag("asn", this.asnData.asn);
-          point.tag("asnOrg", this.asnData.asnOrg);
+          point.setTag("asn", this.asnData.asn);
+          point.setTag("asnOrg", this.asnData.asnOrg);
         }
 
         influx.writePoint(point);

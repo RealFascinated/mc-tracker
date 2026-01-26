@@ -1,28 +1,22 @@
 import {
-  InfluxDB,
+  InfluxDBClient,
   Point,
-  WriteApi,
-} from "@influxdata/influxdb-client";
+} from "@influxdata/influxdb3-client";
 
 import { logger } from "../common/logger";
 import { env } from "../common/env";
 
 export default class Influx {
-  private influx: InfluxDB;
-  private writeApi: WriteApi;
+  private influx: InfluxDBClient;
 
   constructor() {
     logger.info("Loading influx database");
 
-    this.influx = new InfluxDB({
-      url: env.INFLUX_URL,
+    this.influx = new InfluxDBClient({
+      host: env.INFLUX_URL,
       token: env.INFLUX_TOKEN,
+      database: env.INFLUX_DATABASE,
     });
-    this.writeApi = this.influx.getWriteApi(
-      env.INFLUX_ORG,
-      env.INFLUX_BUCKET,
-      "ms",
-    );
 
     logger.info("InfluxDB initialized");
   }
@@ -33,7 +27,7 @@ export default class Influx {
    * @param point the point to write
    */
   public writePoint(point: Point) {
-    this.writeApi.writePoint(point);
+    this.influx.write(point);
   }
 }
 

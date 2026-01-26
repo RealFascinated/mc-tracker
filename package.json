@@ -10,7 +10,7 @@
     "prettier": "prettier --write ."
   },
   "dependencies": {
-    "@influxdata/influxdb-client": "^1.35.0",
+    "@influxdata/influxdb3-client": "^2.0.0",
     "@t3-oss/env-core": "^0.13.10",
     "@types/node": "^20.19.24",
     "axios": "^1.13.2",

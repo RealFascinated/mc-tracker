@@ -6,8 +6,7 @@ export const env = createEnv({
     // Influx
     INFLUX_URL: z.string(),
     INFLUX_TOKEN: z.string(),
-    INFLUX_ORG: z.string(),
-    INFLUX_BUCKET: z.string(),
+    INFLUX_DATABASE: z.string(),
 
     // Pinger
     PINGER_SERVER_CRON: z.string(),
@@ -25,8 +24,7 @@ export const env = createEnv({
     // Influx
     INFLUX_URL: process.env.INFLUX_URL,
     INFLUX_TOKEN: process.env.INFLUX_TOKEN,
-    INFLUX_ORG: process.env.INFLUX_ORG,
-    INFLUX_BUCKET: process.env.INFLUX_BUCKET,
+    INFLUX_DATABASE: process.env.INFLUX_DATABASE,
 
     // Pinger
     PINGER_SERVER_CRON: process.env.PINGER_SERVER_CRON,
