@@ -256,5 +256,11 @@
     "id": "56d0cd77-dd7f-4d4d-92f8-397a6a260e98",
     "ip": "mccentral.org",
     "type": "PC"
+  },
+  {
+    "name": "OPPRISON",
+    "id": "0ee296d1-d181-49a4-b8ec-420f423ecf91",
+    "ip": "play.opprison.net",
+    "type": "PC"
   }
 ]
