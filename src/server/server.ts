@@ -130,14 +130,14 @@ export default class Server {
       try {
         const point = Point.measurement("ping")
           .setTag("id", this.id)
-          .setTag("name", this.name + " (" + this.type + ")")
-          .setIntegerField("playerCount", response.playerCount)
-          .setStringField("type", this.type)
+          .setTag("name", this.name)
+          .setTag("type", this.type)
+          .setIntegerField("player_count", response.playerCount)
           .setTimestamp(response.timestamp);
 
         if (this.asnData?.asn && this.asnData?.asnOrg) {
           point.setTag("asn", this.asnData.asn);
-          point.setTag("asnOrg", this.asnData.asnOrg);
+          point.setTag("asn_org", this.asnData.asnOrg);
         }
 
         influx.writePoint(point);
