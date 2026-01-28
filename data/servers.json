@@ -262,5 +262,11 @@
     "id": "0ee296d1-d181-49a4-b8ec-420f423ecf91",
     "ip": "play.opprison.net",
     "type": "PC"
+  },
+  {
+    "name": "CatPvP",
+    "id": "dce73d90-80d5-4142-826b-bd0c345ff929",
+    "ip": "catpvp.xyz",
+    "type": "PC"
   }
 ]
