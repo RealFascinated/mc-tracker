@@ -15,6 +15,7 @@ interface ServerConfig {
 
 export default class ServerManager {
   public static SERVERS: Server[] = [];
+  public static pingingServers: boolean = false;
 
   constructor() {
     logger.info("Loading servers...");
@@ -76,6 +77,12 @@ export default class ServerManager {
    * Ping all servers to update their status.
    */
   public async pingServers(): Promise<void> {
+    if (ServerManager.pingingServers) {
+      logger.warn("Ping already in progress, skipping...");
+      return;
+    }
+
+    ServerManager.pingingServers = true;
     const date = new Date();
     logger.info(`Pinging servers ${ServerManager.SERVERS.length}`);
 
@@ -123,6 +130,7 @@ export default class ServerManager {
     logger.info(
       `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping! ${successfulWrites}/${pings.length} points written to Influx!`,
     );
+    ServerManager.pingingServers = false;
   }
 
   /**
