@@ -1,4 +1,4 @@
-import javaPing from "mcping-js";
+
 import { ResolvedServer, resolveDns } from "../common/dns-resolver";
 import dns from "dns";
 import { Ping } from "../common/types/ping";
@@ -6,7 +6,7 @@ import { env } from "../common/env";
 import { logger } from "../common/logger";
 import { isIpAddress } from "../common/utils";
 import { AsnData, MaxMindService } from "../service/maxmind-service";
-const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
+const { JavaPingClient, BedrockPingClient } = require("craftping");
 
 /**
  * The type of server.
@@ -168,46 +168,28 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   private async pingPCServer(): Promise<Ping | undefined> {
-    if (this.dnsInfo.resolvedServer == undefined && !this.dnsInfo.hasResolved) {
-      try {
-        const resolvedServer = await resolveDns(this.ip);
+    const client = new JavaPingClient();
 
-        this.dnsInfo = {
-          hasResolved: true,
-          resolvedServer: resolvedServer,
-        };
-      } catch (err) {}
-    }
-
-    const { hasResolved, resolvedServer } = this.dnsInfo;
-
-    let ip: string;
-    let port: number;
-
-    if (hasResolved && resolvedServer != undefined) {
-      ip = resolvedServer.ip;
-      port = resolvedServer.port;
-    } else {
-      ip = this.ip;
-      port = 25565; // The default port
-    }
-
-    const serverPing = new javaPing.MinecraftServer(ip, port);
-
-    // todo: do something to get the latest protocol? (is this even needed??)
-    return new Promise((resolve) => {
-      serverPing.ping(env.PINGER_TIMEOUT, 765, (err, res) => {
-        if (err || res == undefined) {
-          return resolve(undefined);
-        }
-
-        resolve({
-          timestamp: Date.now(),
-          ip: ip,
-          playerCount: Number(res.players.online),
-        });
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout')), env.PINGER_TIMEOUT);
       });
-    });
+
+      const pingPromise = client.ping(this.ip, this.port || 25565, {
+        signal: AbortSignal.timeout(env.PINGER_TIMEOUT),
+        resolveSrvRecords: true,
+      });
+
+      const response = await Promise.race([pingPromise, timeoutPromise]);
+
+      return {
+        timestamp: Date.now(),
+        ip: this.ip,
+        playerCount: Number(response.players.online),
+      };
+    } catch (err) {
+      return undefined;
+    }
   }
 
   /**
@@ -217,19 +199,29 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   private async pingPEServer(): Promise<Ping | undefined> {
-    return new Promise((resolve) => {
-      bedrockPing(this.ip, this.port || 19132, (err: any, res: any) => {
-        if (err || res == undefined) {
-          return resolve(undefined);
-        }
+    const client = new BedrockPingClient();
 
-        resolve({
-          timestamp: Date.now(),
-          ip: this.ip,
-          playerCount: Number(res.currentPlayers),
-        });
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout')), env.PINGER_TIMEOUT);
       });
-    });
+
+      const pingPromise = client.ping(
+        this.ip,
+        this.port || 19132,
+        AbortSignal.timeout(env.PINGER_TIMEOUT),
+      );
+
+      const response = await Promise.race([pingPromise, timeoutPromise]);
+
+      return {
+        timestamp: Date.now(),
+        ip: this.ip,
+        playerCount: Number(response.playerCount),
+      };
+    } catch (err) {
+      return undefined;
+    }
   }
 
   /**
