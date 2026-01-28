@@ -96,14 +96,16 @@ export default class ServerManager {
     );
 
     let successfulWrites = 0;
+    const date = new Date();
     for (const { server, ping } of pings.filter((ping) => ping !== undefined)) {
       try {
+        console.log(ping.playerCount)
         const point = Point.measurement("ping")
           .setTag("id", server.id)
           .setTag("name", server.name)
           .setTag("type", server.type)
           .setIntegerField("player_count", ping.playerCount)
-          .setTimestamp(new Date(ping.timestamp));
+          .setTimestamp(date);
 
         if (server.asnData?.asn && server.asnData?.asnOrg) {
           point.setTag("asn", server.asnData.asn);
