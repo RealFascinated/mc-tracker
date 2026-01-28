@@ -1,5 +1,4 @@
 
-import javaPing from "mcping-js";
 import { ResolvedServer, resolveDns } from "../common/dns-resolver";
 import dns from "dns";
 import { Ping } from "../common/types/ping";
@@ -7,7 +6,7 @@ import { env } from "../common/env";
 import { logger } from "../common/logger";
 import { isIpAddress } from "../common/utils";
 import { AsnData, MaxMindService } from "../service/maxmind-service";
-const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
+import { pingPC, pingPE } from "../common/minecraft-ping";
 
 /**
  * The type of server.
@@ -193,22 +192,7 @@ export default class Server {
       port = 25565; // The default port
     }
 
-    const serverPing = new javaPing.MinecraftServer(ip, port);
-
-    // todo: do something to get the latest protocol? (is this even needed??)
-    return new Promise((resolve) => {
-      serverPing.ping(env.PINGER_TIMEOUT, 765, (err, res) => {
-        if (err || res == undefined) {
-          return resolve(undefined);
-        }
-
-        resolve({
-          timestamp: Date.now(),
-          ip: ip,
-          playerCount: Number(res.players.online),
-        });
-      });
-    });
+    return pingPC(ip, port, env.PINGER_TIMEOUT);
   }
 
   /**
@@ -218,25 +202,7 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   private async pingPEServer(): Promise<Ping | undefined> {
-    const timeoutPromise = new Promise<undefined>((resolve) => {
-      setTimeout(() => resolve(undefined), env.PINGER_TIMEOUT);
-    });
-
-    const pingPromise = new Promise<Ping | undefined>((resolve) => {
-      bedrockPing(this.ip, this.port || 19132, (err: any, res: any) => {
-        if (err || res == undefined) {
-          return resolve(undefined);
-        }
-
-        resolve({
-          timestamp: Date.now(),
-          ip: this.ip,
-          playerCount: Number(res.currentPlayers),
-        });
-      });
-    });
-
-    return Promise.race([pingPromise, timeoutPromise]);
+    return pingPE(this.ip, this.port || 19132, env.PINGER_TIMEOUT);
   }
 
   /**
