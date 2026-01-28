@@ -79,10 +79,12 @@ export default class ServerManager {
     let successfulPings = 0;
     await Promise.all(
       ServerManager.SERVERS.map(async (server) => {
-        const ping = await server.pingServer();
-        if (ping) {
-          successfulPings++;
-        }
+        try {
+          const ping = await server.pingServer();
+          if (ping) {
+            successfulPings++;
+          }
+        } catch (err) { } // Ignore the error, continue fetching servers
       })
     );
 
