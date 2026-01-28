@@ -298,5 +298,11 @@
     "id": "019c04c9-cb37-7000-85a0-3e394269176c",
     "ip": "vanillaeuropa.com",
     "type": "PC"
+  },
+  {
+    "name": "Skyblock",
+    "id": "019c04ca-3a76-7000-864f-92d478a6ba40",
+    "ip": "skyblock.net",
+    "type": "PC"
   }
 ]
