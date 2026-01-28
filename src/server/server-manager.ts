@@ -76,6 +76,7 @@ export default class ServerManager {
    * Ping all servers to update their status.
    */
   public async pingServers(): Promise<void> {
+    const date = new Date();
     logger.info(`Pinging servers ${ServerManager.SERVERS.length}`);
 
     let successfulPings = 0;
@@ -95,7 +96,6 @@ export default class ServerManager {
     );
 
     let successfulWrites = 0;
-    const date = new Date();
     for (const { server, ping } of pings.filter((ping) => ping !== undefined)) {
       try {
         const point = Point.measurement("ping")
