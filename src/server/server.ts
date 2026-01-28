@@ -84,6 +84,13 @@ export default class Server {
   }
 
   /**
+   * Returns a formatted identifier for logging: <name> (<type>)
+   */
+  public getIdentifier(): string {
+    return `${this.name} (${this.type})`;
+  }
+
+  /**
    * Invalidates the DNS cache for the server.
    */
   public invalidateDns() {
@@ -116,7 +123,7 @@ export default class Server {
         // Try to ping the server again if it failed
         if (attempt < env.PINGER_RETRY_ATTEMPTS) {
           logger.warn(
-            `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms, retrying... (attempt ${attempt + 1}/${env.PINGER_RETRY_ATTEMPTS})`,
+            `Failed to ping ${this.getIdentifier()} after ${Math.round(performance.now() - before)}ms, retrying... (attempt ${attempt + 1}/${env.PINGER_RETRY_ATTEMPTS})`,
           );
 
           await Bun.sleep(env.PINGER_RETRY_DELAY);
@@ -127,7 +134,7 @@ export default class Server {
         const ping = this.previousPing;
         if (ping) {
           logger.warn(
-            `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms, using fallback ping`,
+            `Failed to ping ${this.getIdentifier()} after ${Math.round(performance.now() - before)}ms, using fallback ping`,
           );
           this.previousPing = undefined; // Clear the previous ping
           response = ping;
@@ -147,7 +154,7 @@ export default class Server {
       return Promise.resolve(response);
     } catch (err) {
       logger.warn(
-        `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms: ${err}`,
+        `Failed to ping ${this.getIdentifier()} after ${Math.round(performance.now() - before)}ms: ${err}`,
         err,
       );
       return Promise.resolve(undefined);
@@ -250,12 +257,12 @@ export default class Server {
           ip = resolved;
         } else {
           logger.warn(
-            `Failed to resolve domain ${ipOrDomain} to IP, skipping ASN lookup`,
+            `Failed to resolve domain ${ipOrDomain} to IP for ${this.getIdentifier()}, skipping ASN lookup`,
           );
           return;
         }
       } catch (err) {
-        logger.warn(`Failed to resolve domain ${ipOrDomain} to IP`, err);
+        logger.warn(`Failed to resolve domain ${ipOrDomain} to IP for ${this.getIdentifier()}`, err);
         return;
       }
     }

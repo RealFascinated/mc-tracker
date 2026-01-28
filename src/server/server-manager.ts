@@ -42,7 +42,7 @@ export default class ServerManager {
       });
       ServerManager.SERVERS.push(server);
       logger.info(
-        `Loaded ${configServer.type} server ${configServer.name} - ${configServer.ip} (${configServer.id})`,
+        `Loaded ${server.getIdentifier()} (${configServer.id})`,
       );
     }
 
@@ -121,7 +121,7 @@ export default class ServerManager {
         successfulWrites++;
       } catch (err) {
         logger.warn(
-          `Failed to write point to Influx for ${server.name} - ${server.ip}`,
+          `Failed to write point to Influx for ${server.getIdentifier()}`,
           err,
         );
       }
