@@ -74,6 +74,12 @@ export default class Server {
     lastUpdated: Date;
   };
 
+  /**
+   * This is used for when a server doesn't respond to a
+   * ping so we can fallback if they fail to respond to 1 ping.
+   */
+  public previousPing?: Ping;
+
   constructor({ id, name, ip, port, type }: ServerOptions) {
     this.id = id;
     this.name = name;
@@ -121,7 +127,18 @@ export default class Server {
           await Bun.sleep(500);
           return this.pingServer(attempt + 1);
         }
-        return Promise.resolve(undefined);
+
+        // If the server failed to respond to the ping, return the previous ping
+        const ping = this.previousPing;
+        if (ping) {
+          logger.warn(
+            `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms, using fallback ping`,
+          );
+          this.previousPing = undefined; // Clear the previous ping
+          return Promise.resolve(ping); 
+        }
+
+        return Promise.resolve(undefined); // No ping data to return
       }
 
       // Update ASN data if needed
@@ -148,6 +165,7 @@ export default class Server {
         );
       }
 
+      this.previousPing = response; // Update the previous ping
       return Promise.resolve(response);
     } catch (err) {
       logger.warn(
