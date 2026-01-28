@@ -274,5 +274,11 @@
     "id": "1d2c471c-931e-4023-9882-e54cda9feb7d",
     "ip": "mcpvp.club",
     "type": "PC"
+  },
+  {
+    "name": "Performium",
+    "id": "019c042b-ec56-7000-8f20-0c9a35ce7c55",
+    "ip": "mc.performium.net",
+    "type": "PC"
   }
 ]
