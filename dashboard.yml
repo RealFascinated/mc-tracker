@@ -17,22 +17,814 @@
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "id": 0,
   "links": [],
   "panels": [
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cfbdts8z8o7i8f"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "Seconds Ago"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "dfbdm46gnahvka"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \r\n  EXTRACT(EPOCH FROM (NOW() - MAX(time))) as seconds_since_last_update\r\nFROM ping;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          }
+        }
+      ],
+      "title": "Last Updated",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cfbdts8z8o7i8f"
+      },
+      "description": "Is not affected by ASN selection.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "dfbdm46gnahvka"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n  SUM(CASE WHEN type = 'PC' THEN player_count ELSE 0 END) AS java,\r\n  SUM(CASE WHEN type = 'PE' THEN player_count ELSE 0 END) AS bedrock\r\nFROM (\r\n  SELECT\r\n    player_count,\r\n    type,\r\n    ROW_NUMBER() OVER (PARTITION BY id ORDER BY time DESC) AS rn\r\n  FROM ping\r\n) AS latest_per_server\r\nWHERE rn = 1;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          }
+        }
+      ],
+      "title": "Players Online (now, per platform)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cfbdts8z8o7i8f"
+      },
+      "description": "Is not affected by ASN selection.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "dfbdm46gnahvka"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT SUM(player_count) AS total_players_now\r\nFROM (\r\n  SELECT player_count, ROW_NUMBER() OVER (PARTITION BY id ORDER BY time DESC) AS rn\r\n  FROM ping\r\n) AS latest_per_server\r\nWHERE rn = 1;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          }
+        }
+      ],
+      "title": "Players Online (now)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cfbdts8z8o7i8f"
+      },
+      "description": "Is not affected by ASN selection.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "dfbdm46gnahvka"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT MAX(total_players) AS peak_players_today\r\nFROM (\r\n  SELECT \r\n    bucket,\r\n    SUM(player_count) AS total_players\r\n  FROM (\r\n    SELECT DISTINCT ON (\r\n      date_bin(INTERVAL '5 minutes', time, TIMESTAMP '1970-01-01 00:00:00'),\r\n      id\r\n    )\r\n      date_bin(INTERVAL '5 minutes', time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,\r\n      id,\r\n      player_count\r\n    FROM ping\r\n    WHERE time >= DATE_TRUNC('day', NOW())\r\n      AND time <= NOW()\r\n    ORDER BY \r\n      date_bin(INTERVAL '5 minutes', time, TIMESTAMP '1970-01-01 00:00:00'),\r\n      id,\r\n      time DESC\r\n  ) AS latest_per_bucket\r\n  GROUP BY bucket\r\n) AS totals_per_bucket;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          }
+        }
+      ],
+      "title": "Peak Players (Last 24h)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cfbdts8z8o7i8f"
+      },
+      "description": "Is not affected by ASN selection.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "dfbdm46gnahvka"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT MAX(total_players) AS peak_players_this_month\r\nFROM (\r\n  SELECT \r\n    bucket,\r\n    SUM(player_count) AS total_players\r\n  FROM (\r\n    SELECT DISTINCT ON (\r\n      date_bin(INTERVAL '5 minutes', time, TIMESTAMP '1970-01-01 00:00:00'),\r\n      id\r\n    )\r\n      date_bin(INTERVAL '5 minutes', time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,\r\n      id,\r\n      player_count\r\n    FROM ping\r\n    WHERE time >= DATE_TRUNC('month', NOW())\r\n      AND time <= NOW()\r\n    ORDER BY\r\n      date_bin(INTERVAL '5 minutes', time, TIMESTAMP '1970-01-01 00:00:00'),\r\n      id,\r\n      time DESC\r\n  ) AS latest_per_bucket\r\n  GROUP BY bucket\r\n) AS totals_per_bucket;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          }
+        }
+      ],
+      "title": "Peak Players (Last Month)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cfbdts8z8o7i8f"
+      },
+      "description": "Is not affected by ASN selection.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "dfbdm46gnahvka"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS total_servers\r\nFROM (\r\n  SELECT id, ROW_NUMBER() OVER (PARTITION BY id ORDER BY time DESC) AS rn\r\n  FROM ping\r\n) AS latest_per_server\r\nWHERE rn = 1;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          }
+        }
+      ],
+      "title": "Tracked Servers",
+      "type": "stat"
+    },
     {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 5
       },
       "id": 2,
       "panels": [],
       "title": "Overview",
       "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cfbdts8z8o7i8f"
+      },
+      "description": "Is not affected by ASN selection.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "total_players"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Players"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "daily_peak"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Daily Peak"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 7
+              },
+              {
+                "id": "custom.insertNulls",
+                "value": 3600000
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "sortBy": "Last *",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "dfbdm46gnahvka"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH latest_per_bucket AS (\r\n    SELECT DISTINCT ON (\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), \r\n        id\r\n    )\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,\r\n        id,\r\n        player_count\r\n    FROM ping\r\n    WHERE time >= $__timeFrom\r\n      AND time <= $__timeTo\r\n    ORDER BY date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), id, time DESC\r\n)\r\nSELECT\r\n    bucket AS time,\r\n    SUM(player_count) AS total_players\r\nFROM latest_per_bucket\r\nGROUP BY bucket\r\nORDER BY bucket;",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          }
+        },
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "dfbdm46gnahvka"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH latest_per_bucket AS (\r\n    SELECT DISTINCT ON (\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), \r\n        id\r\n    )\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,\r\n        id,\r\n        player_count\r\n    FROM ping\r\n    WHERE time >= $__timeFrom\r\n      AND time <= $__timeTo\r\n    ORDER BY date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), id, time DESC\r\n),\r\nbucket_totals AS (\r\n    SELECT\r\n        bucket,\r\n        SUM(player_count) AS total_players\r\n    FROM latest_per_bucket\r\n    GROUP BY bucket\r\n)\r\nSELECT\r\n    DATE_TRUNC('day', bucket) AS time,\r\n    MAX(total_players) AS daily_peak\r\nFROM bucket_totals\r\nGROUP BY DATE_TRUNC('day', bucket)\r\nORDER BY time;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          }
+        }
+      ],
+      "title": "Overall Player Count",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "cfbdts8z8o7i8f"
+      },
+      "description": "Is not affected by ASN selection.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels.asn_org}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Last *",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "dfbdm46gnahvka"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH latest_per_bucket AS (\r\n    SELECT DISTINCT ON (\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), \r\n        id\r\n    )\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,\r\n        id,\r\n        asn_org,\r\n        player_count\r\n    FROM ping\r\n    WHERE time >= $__timeFrom\r\n      AND time <= $__timeTo\r\n    ORDER BY date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), id, time DESC\r\n)\r\nSELECT\r\n    bucket AS time,\r\n    asn_org,\r\n    SUM(player_count) AS total_players\r\nFROM latest_per_bucket\r\nGROUP BY bucket, asn_org\r\nORDER BY bucket, asn_org;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          }
+        }
+      ],
+      "title": "Per ASN Player Count",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -95,11 +887,11 @@
       },
       "gridPos": {
         "h": 14,
-        "w": 20,
-        "x": 0,
-        "y": 1
+        "w": 12,
+        "x": 12,
+        "y": 20
       },
-      "id": 1,
+      "id": 7,
       "options": {
         "legend": {
           "calcs": [
@@ -117,7 +909,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.1",
+      "pluginVersion": "12.3.2",
       "targets": [
         {
           "dataset": "iox",
@@ -128,7 +920,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS time,\r\n  name,\r\n  type,\r\n  AVG(player_count) AS player_count\r\nFROM ping\r\nWHERE time >= $__timeFrom\r\n  AND time <= $__timeTo\r\nGROUP BY time, name, type\r\nORDER BY time;\r\n",
+          "rawSql": "SELECT\r\n  date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS time,\r\n  name,\r\n  type,\r\n  AVG(player_count) AS player_count\r\nFROM ping\r\nWHERE time >= $__timeFrom\r\n  AND time <= $__timeTo\r\n  AND asn_org IN (${asn:sqlstring})\r\nGROUP BY time, name, type\r\nORDER BY time;\r\n",
           "refId": "A",
           "sql": {
             "columns": [
@@ -148,171 +940,8 @@
           }
         }
       ],
-      "title": "Server Overview",
+      "title": "Per Server Player Count",
       "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cfbdts8z8o7i8f"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "locale"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 20,
-        "y": 1
-      },
-      "id": 5,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "dataset": "iox",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT SUM(player_count) AS total_players_now\r\nFROM (\r\n  SELECT player_count, ROW_NUMBER() OVER (PARTITION BY id ORDER BY time DESC) AS rn\r\n  FROM ping\r\n) AS latest_per_server\r\nWHERE rn = 1;\r\n",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
-        }
-      ],
-      "title": "Players Online (now)",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "cfbdts8z8o7i8f"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 20,
-        "y": 8
-      },
-      "id": 6,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "dataset": "iox",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT COUNT(*) AS total_servers\r\nFROM (\r\n  SELECT id, ROW_NUMBER() OVER (PARTITION BY id ORDER BY time DESC) AS rn\r\n  FROM ping\r\n) AS latest_per_server\r\nWHERE rn = 1;\r\n",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
-        }
-      ],
-      "title": "Tracked Servers",
-      "type": "stat"
     },
     {
       "collapsed": false,
@@ -320,7 +949,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 34
       },
       "id": 3,
       "panels": [],
@@ -393,7 +1022,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 35
       },
       "id": 4,
       "maxPerRow": 3,
@@ -410,7 +1039,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.1",
+      "pluginVersion": "12.3.2",
       "repeat": "server",
       "repeatDirection": "h",
       "targets": [
@@ -448,6 +1077,7 @@
     }
   ],
   "preload": false,
+  "refresh": "10s",
   "schemaVersion": 42,
   "tags": [],
   "templating": {
@@ -462,29 +1092,48 @@
           "type": "influxdb",
           "uid": "cfbdts8z8o7i8f"
         },
-        "definition": "SELECT\n  name || ' (' || type || ') - ' || asn_org || ' : ' || id AS display_name\nFROM (\n  SELECT\n    id,\n    name,\n    type,\n    asn_org,\n    ROW_NUMBER() OVER (PARTITION BY id, name, type, asn_org ORDER BY time DESC) AS rn\n  FROM ping\n  WHERE time >= NOW() - INTERVAL '7 days'\n) AS sub\nWHERE rn = 1;\n",
+        "definition": "SELECT\n  name || ' (' || type || ') - ' || asn_org || ' : ' || id AS display_name\nFROM (\n  SELECT\n    id,\n    name,\n    type,\n    asn_org,\n    ROW_NUMBER() OVER (\n      PARTITION BY id, name, type, asn_org\n      ORDER BY time DESC\n    ) AS rn\n  FROM ping\n  WHERE time >= NOW() - INTERVAL '7 days'\n    AND asn_org IN (${asn:sqlstring})\n) AS sub\nWHERE rn = 1;\n",
         "includeAll": true,
         "label": "Server",
         "name": "server",
         "options": [],
         "query": {
-          "query": "SELECT\n  name || ' (' || type || ') - ' || asn_org || ' : ' || id AS display_name\nFROM (\n  SELECT\n    id,\n    name,\n    type,\n    asn_org,\n    ROW_NUMBER() OVER (PARTITION BY id, name, type, asn_org ORDER BY time DESC) AS rn\n  FROM ping\n  WHERE time >= NOW() - INTERVAL '7 days'\n) AS sub\nWHERE rn = 1;\n",
+          "query": "SELECT\n  name || ' (' || type || ') - ' || asn_org || ' : ' || id AS display_name\nFROM (\n  SELECT\n    id,\n    name,\n    type,\n    asn_org,\n    ROW_NUMBER() OVER (\n      PARTITION BY id, name, type, asn_org\n      ORDER BY time DESC\n    ) AS rn\n  FROM ping\n  WHERE time >= NOW() - INTERVAL '7 days'\n    AND asn_org IN (${asn:sqlstring})\n) AS sub\nWHERE rn = 1;\n",
           "refId": "InfluxVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
         "regex": "/^(?<text>.*?) : (?<value>.*)$/",
         "sort": 1,
         "type": "query"
+      },
+      {
+        "allowCustomValue": false,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "definition": "SELECT\n  asn_org AS display_name\nFROM (\n  SELECT\n    asn_org,\n    ROW_NUMBER() OVER (\n      PARTITION BY asn_org\n      ORDER BY time DESC\n    ) AS rn\n  FROM ping\n  WHERE time >= NOW() - INTERVAL '7 days'\n    AND asn_org IS NOT NULL\n) AS sub\nWHERE rn = 1;",
+        "includeAll": true,
+        "label": "ASN",
+        "name": "asn",
+        "options": [],
+        "query": {
+          "query": "SELECT\n  asn_org AS display_name\nFROM (\n  SELECT\n    asn_org,\n    ROW_NUMBER() OVER (\n      PARTITION BY asn_org\n      ORDER BY time DESC\n    ) AS rn\n  FROM ping\n  WHERE time >= NOW() - INTERVAL '7 days'\n    AND asn_org IS NOT NULL\n) AS sub\nWHERE rn = 1;",
+          "refId": "InfluxVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
       }
     ]
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Mc Tracker",
   "uid": "957b2932-bacc-4bfe-88b0-c41817513a61",
-  "version": 12
+  "version": 48
 }
