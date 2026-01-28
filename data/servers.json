@@ -268,5 +268,11 @@
     "id": "dce73d90-80d5-4142-826b-bd0c345ff929",
     "ip": "catpvp.xyz",
     "type": "PC"
+  },
+  {
+    "name": "PvP Club",
+    "id": "1d2c471c-931e-4023-9882-e54cda9feb7d",
+    "ip": "mcpvp.club",
+    "type": "PC"
   }
 ]
