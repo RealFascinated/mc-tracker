@@ -168,6 +168,30 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   private async pingPCServer(): Promise<Ping | undefined> {
+    if (this.dnsInfo.resolvedServer == undefined && !this.dnsInfo.hasResolved) {
+      try {
+        const resolvedServer = await resolveDns(this.ip);
+
+        this.dnsInfo = {
+          hasResolved: true,
+          resolvedServer: resolvedServer,
+        };
+      } catch (err) {}
+    }
+
+    const { hasResolved, resolvedServer } = this.dnsInfo;
+
+    let ip: string;
+    let port: number;
+
+    if (hasResolved && resolvedServer != undefined) {
+      ip = resolvedServer.ip;
+      port = resolvedServer.port;
+    } else {
+      ip = this.ip;
+      port = 25565; // The default port
+    }
+
     const client = new JavaPingClient();
 
     try {
@@ -175,16 +199,15 @@ export default class Server {
         setTimeout(() => reject(new Error('Timeout')), env.PINGER_TIMEOUT);
       });
 
-      const pingPromise = client.ping(this.ip, this.port || 25565, {
+      const pingPromise = client.ping(ip, port, {
         signal: AbortSignal.timeout(env.PINGER_TIMEOUT),
-        resolveSrvRecords: true,
       });
 
       const response = await Promise.race([pingPromise, timeoutPromise]);
 
       return {
         timestamp: Date.now(),
-        ip: this.ip,
+        ip: ip,
         playerCount: Number(response.players.online),
       };
     } catch (err) {
