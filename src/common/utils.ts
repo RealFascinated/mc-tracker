@@ -9,3 +9,40 @@ export function isIpAddress(str: string): boolean {
   const ipv6Regex = /^([0-9a-fA-F]{0,4}:){7}[0-9a-fA-F]{0,4}$/;
   return ipv4Regex.test(str) || ipv6Regex.test(str);
 }
+
+import * as net from "net";
+
+/**
+ * TCP-pings a host:port. Resolves on connect, rejects on error/timeout.
+ */
+export function tcpPing(host: string, port: number, timeout = 3000): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const socket = net.createConnection(port, host);
+    let settled = false;
+    const clean = () => {
+      socket.removeAllListeners();
+      try { socket.destroy(); } catch {}
+    };
+
+    socket.once("connect", () => {
+      if (settled) return;
+      settled = true;
+      clean();
+      resolve();
+    });
+
+    socket.once("error", (err) => {
+      if (settled) return;
+      settled = true;
+      clean();
+      reject(err);
+    });
+
+    socket.setTimeout(timeout, () => {
+      if (settled) return;
+      settled = true;
+      clean();
+      reject(new Error("timeout"));
+    });
+  });
+}

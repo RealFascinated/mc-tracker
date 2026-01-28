@@ -7,13 +7,15 @@
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
     "build": "bun build --compile --target bun --outfile tracker src/index.ts",
-    "prettier": "prettier --write ."
+    "prettier": "prettier --write .",
+    "cli": "bun ./cli/index.ts"
   },
   "dependencies": {
     "@influxdata/influxdb3-client": "^2.0.0",
     "@t3-oss/env-core": "^0.13.10",
     "@types/node": "^20.19.24",
     "axios": "^1.13.2",
+    "commander": "^14.0.2",
     "dns": "^0.2.2",
     "dotenv": "^17.2.3",
     "maxmind": "^5.0.1",
