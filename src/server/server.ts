@@ -103,7 +103,7 @@ export default class Server {
   public async pingServer(attempt: number = 0): Promise<Ping | undefined> {
     const before = performance.now();
     try {
-      let response;
+      let response: Ping | undefined;
 
       switch (this.type) {
         case "PC": {
@@ -133,37 +133,20 @@ export default class Server {
             `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms, using fallback ping`,
           );
           this.previousPing = undefined; // Clear the previous ping
-          return Promise.resolve(ping);
+          response = ping;
         }
 
-        return Promise.resolve(undefined); // No ping data to return
+        if (!response) {
+          return Promise.resolve(undefined);
+        }
       }
 
       // Update ASN data if needed
       await this.updateAsnData(response.ip);
+      
+      // Update the previous ping
+      this.previousPing = response; 
 
-      try {
-        const point = Point.measurement("ping")
-          .setTag("id", this.id)
-          .setTag("name", this.name)
-          .setTag("type", this.type)
-          .setIntegerField("player_count", response.playerCount)
-          .setTimestamp(new Date(response.timestamp));
-
-        if (this.asnData?.asn && this.asnData?.asnOrg) {
-          point.setTag("asn", this.asnData.asn);
-          point.setTag("asn_org", this.asnData.asnOrg);
-        }
-
-        influx.writePoint(point);
-      } catch (err) {
-        logger.warn(
-          `Failed to write point to Influx for ${this.name} - ${this.ip}`,
-          err,
-        );
-      }
-
-      this.previousPing = response; // Update the previous ping
       return Promise.resolve(response);
     } catch (err) {
       logger.warn(
