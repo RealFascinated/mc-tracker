@@ -286,5 +286,11 @@
     "id": "019c042c-6d24-7000-92ea-84e2236c4a1c",
     "ip": "purityvanilla.com",
     "type": "PC"
+  },
+  {
+    "name": "NetherGames",
+    "id": "019c04c5-7cb2-7000-8ccf-277bb9724ef2",
+    "ip": "play.nethergames.org",
+    "type": "PE"
   }
 ]
