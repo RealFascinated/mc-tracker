@@ -11,8 +11,6 @@ import { logger } from "../common/logger";
 import { isIpAddress } from "../common/utils";
 import { AsnData, MaxMindService } from "../service/maxmind-service";
 
-const MAX_PING_ATTEMPTS = 2;
-
 /**
  * The type of server.
  *
@@ -118,12 +116,12 @@ export default class Server {
     }
     if (!response) {
       // Try to ping the server again if it failed
-      if (attempt < MAX_PING_ATTEMPTS) {
+      if (attempt < env.PINGER_RETRY_ATTEMPTS) {
         logger.warn(
-          `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms, retrying... (attempt ${attempt + 1}/${MAX_PING_ATTEMPTS})`,
+          `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms, retrying... (attempt ${attempt + 1}/${env.PINGER_RETRY_ATTEMPTS})`,
         );
 
-        await Bun.sleep(500);
+        await Bun.sleep(env.PINGER_RETRY_DELAY);
         return this.pingServer(attempt + 1);
       }
 
@@ -202,7 +200,7 @@ export default class Server {
     const serverPing = new javaPing.MinecraftServer(ip, port);
 
     // todo: do something to get the latest protocol? (is this even needed??)
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       serverPing.ping(env.PINGER_TIMEOUT, 765, (err, res) => {
         if (err || res == undefined) {
           return resolve(undefined);
@@ -224,7 +222,7 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   private async pingPEServer(): Promise<Ping | undefined> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       bedrockPing(this.ip, this.port || 19132, (err: any, res: any) => {
         if (err || res == undefined) {
           return resolve(undefined);

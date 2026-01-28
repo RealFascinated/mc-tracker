@@ -12,6 +12,8 @@ export const env = createEnv({
     PINGER_SERVER_CRON: z.string(),
     PINGER_DNS_INVALIDAION_CRON: z.string(),
     PINGER_TIMEOUT: z.number(),
+    PINGER_RETRY_ATTEMPTS: z.number(),
+    PINGER_RETRY_DELAY: z.number(),
 
     // MaxMind
     MAXMIND_LICENSE_KEY: z.string().optional(),
@@ -30,6 +32,8 @@ export const env = createEnv({
     PINGER_SERVER_CRON: process.env.PINGER_SERVER_CRON,
     PINGER_DNS_INVALIDAION_CRON: process.env.PINGER_DNS_INVALIDAION_CRON,
     PINGER_TIMEOUT: process.env.PINGER_TIMEOUT,
+    PINGER_RETRY_ATTEMPTS: process.env.PINGER_RETRY_ATTEMPTS,
+    PINGER_RETRY_DELAY: process.env.PINGER_RETRY_DELAY,
 
     // MaxMind
     MAXMIND_LICENSE_KEY: process.env.MAXMIND_LICENSE_KEY,
@@ -40,9 +44,4 @@ export const env = createEnv({
    * `SOME_VAR: z.string()` and `SOME_VAR=''` will throw an error.
    */
   emptyStringAsUndefined: true,
-
-  /**
-   * Whether to skip validation of the environment variables.
-   */
-  skipValidation: true,
 });
