@@ -1,8 +1,8 @@
 import { Command } from "commander";
 import { promises as fs } from "fs";
 import path from "path";
-import { randomUUID } from "crypto";
 import { tcpPing } from "../../src/common/utils";
+import { randomUUIDv7 } from "bun";
 
 const addServerCommand = new Command("add-server")
   .description("Add a server to be tracked")
@@ -36,7 +36,7 @@ const addServerCommand = new Command("add-server")
         return;
       }
 
-      const id = randomUUID();
+      const id = randomUUIDv7();
 
       const entry: Record<string, unknown> = { name, id, ip: host, type };
 
