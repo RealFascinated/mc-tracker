@@ -1,15 +1,12 @@
 import javaPing from "mcping-js";
 import { ResolvedServer, resolveDns } from "../common/dns-resolver";
 import dns from "dns";
-const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
-
-import { Point } from "@influxdata/influxdb3-client";
-import { influx } from "../influx/influx";
-import { env } from "../common/env";
 import { Ping } from "../common/types/ping";
+import { env } from "../common/env";
 import { logger } from "../common/logger";
 import { isIpAddress } from "../common/utils";
 import { AsnData, MaxMindService } from "../service/maxmind-service";
+const bedrockPing = require("mcpe-ping-fixed"); // Doesn't have typescript definitions
 
 /**
  * The type of server.
@@ -143,9 +140,9 @@ export default class Server {
 
       // Update ASN data if needed
       await this.updateAsnData(response.ip);
-      
+
       // Update the previous ping
-      this.previousPing = response; 
+      this.previousPing = response;
 
       return Promise.resolve(response);
     } catch (err) {
@@ -172,7 +169,7 @@ export default class Server {
           hasResolved: true,
           resolvedServer: resolvedServer,
         };
-      } catch (err) { }
+      } catch (err) {}
     }
 
     const { hasResolved, resolvedServer } = this.dnsInfo;

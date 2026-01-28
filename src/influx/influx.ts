@@ -1,7 +1,4 @@
-import {
-  InfluxDBClient,
-  Point,
-} from "@influxdata/influxdb3-client";
+import { InfluxDBClient, Point } from "@influxdata/influxdb3-client";
 
 import { logger } from "../common/logger";
 import { env } from "../common/env";

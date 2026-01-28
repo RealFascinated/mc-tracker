@@ -21,7 +21,7 @@ export default class ServerManager {
     const Servers = ServerManager.loadServers();
 
     for (const configServer of Servers.sort((a, b) =>
-      a.type.localeCompare(b.type)
+      a.type.localeCompare(b.type),
     )) {
       // Validate server id is a valid uuid
       if (!uuidValidate(configServer.id)) {
@@ -41,7 +41,7 @@ export default class ServerManager {
       });
       ServerManager.SERVERS.push(server);
       logger.info(
-        `Loaded ${configServer.type} server ${configServer.name} - ${configServer.ip} (${configServer.id})`
+        `Loaded ${configServer.type} server ${configServer.name} - ${configServer.ip} (${configServer.id})`,
       );
     }
 
@@ -67,7 +67,7 @@ export default class ServerManager {
       return JSON.parse(fileContent) as ServerConfig[];
     } catch (error) {
       throw new Error(
-        `Failed to load servers.json from ${serversPath}: ${error}`
+        `Failed to load servers.json from ${serversPath}: ${error}`,
       );
     }
   }
@@ -88,11 +88,10 @@ export default class ServerManager {
             return {
               server: server,
               ping: ping,
-            }
+            };
           }
-
-        } catch (err) { } // Ignore the error, continue fetching servers
-      })
+        } catch (err) {} // Ignore the error, continue fetching servers
+      }),
     );
 
     let successfulWrites = 0;
@@ -122,7 +121,7 @@ export default class ServerManager {
     }
 
     logger.info(
-      `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping! ${successfulWrites}/${pings.length} points written to Influx!`
+      `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping! ${successfulWrites}/${pings.length} points written to Influx!`,
     );
   }
 
