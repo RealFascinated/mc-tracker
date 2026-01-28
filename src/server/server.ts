@@ -104,75 +104,68 @@ export default class Server {
    */
   public async pingServer(attempt: number = 0): Promise<Ping | undefined> {
     const before = performance.now();
-    try {
-      let response;
+    let response;
 
-      switch (this.type) {
-        case "PC": {
-          response = await this.pingPCServer();
-          break;
-        }
-        case "PE": {
-          response = await this.pingPEServer();
-          break;
-        }
+    switch (this.type) {
+      case "PC": {
+        response = await this.pingPCServer();
+        break;
       }
-      if (!response) {
-        // Try to ping the server again if it failed
-        if (attempt < MAX_PING_ATTEMPTS) {
-          logger.warn(
-            `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms, retrying... (attempt ${attempt + 1}/${MAX_PING_ATTEMPTS})`,
-          );
-
-          await Bun.sleep(500);
-          return this.pingServer(attempt + 1);
-        }
-
-        // If the server failed to respond to the ping, return the previous ping
-        const ping = this.previousPing;
-        if (ping) {
-          logger.warn(
-            `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms, using fallback ping`,
-          );
-          this.previousPing = undefined; // Clear the previous ping
-          return Promise.resolve(ping); 
-        }
-
-        return Promise.resolve(undefined); // No ping data to return
+      case "PE": {
+        response = await this.pingPEServer();
+        break;
       }
-
-      // Update ASN data if needed
-      await this.updateAsnData(response.ip);
-
-      try {
-        const point = Point.measurement("ping")
-          .setTag("id", this.id)
-          .setTag("name", this.name)
-          .setTag("type", this.type)
-          .setIntegerField("player_count", response.playerCount)
-          .setTimestamp(new Date(response.timestamp));
-
-        if (this.asnData?.asn && this.asnData?.asnOrg) {
-          point.setTag("asn", this.asnData.asn);
-          point.setTag("asn_org", this.asnData.asnOrg);
-        }
-
-        influx.writePoint(point);
-      } catch (err) {
+    }
+    if (!response) {
+      // Try to ping the server again if it failed
+      if (attempt < MAX_PING_ATTEMPTS) {
         logger.warn(
-          `Failed to write point to Influx for ${this.name} - ${this.ip}`,
-          err,
+          `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms, retrying... (attempt ${attempt + 1}/${MAX_PING_ATTEMPTS})`,
         );
+
+        await Bun.sleep(500);
+        return this.pingServer(attempt + 1);
       }
 
-      this.previousPing = response; // Update the previous ping
-      return Promise.resolve(response);
+      // If the server failed to respond to the ping, return the previous ping
+      const ping = this.previousPing;
+      if (ping) {
+        logger.warn(
+          `Failed to ping ${this.ip} after ${Math.round(performance.now() - before)}ms, using fallback ping`,
+        );
+        this.previousPing = undefined; // Clear the previous ping
+        return Promise.resolve(ping);
+      }
+
+      return Promise.resolve(undefined); // No ping data to return
+    }
+
+    // Update ASN data if needed
+    await this.updateAsnData(response.ip);
+
+    try {
+      const point = Point.measurement("ping")
+        .setTag("id", this.id)
+        .setTag("name", this.name)
+        .setTag("type", this.type)
+        .setIntegerField("player_count", response.playerCount)
+        .setTimestamp(new Date(response.timestamp));
+
+      if (this.asnData?.asn && this.asnData?.asnOrg) {
+        point.setTag("asn", this.asnData.asn);
+        point.setTag("asn_org", this.asnData.asnOrg);
+      }
+
+      influx.writePoint(point);
     } catch (err) {
       logger.warn(
-        `Failed to ping ${this.ip}: "${err}" after ${Math.round(performance.now() - before)}ms`,
+        `Failed to write point to Influx for ${this.name} - ${this.ip}`,
+        err,
       );
-      return Promise.resolve(undefined);
     }
+
+    this.previousPing = response; // Update the previous ping
+    return Promise.resolve(response);
   }
 
   /**
@@ -190,7 +183,7 @@ export default class Server {
           hasResolved: true,
           resolvedServer: resolvedServer,
         };
-      } catch (err) {}
+      } catch (err) { }
     }
 
     const { hasResolved, resolvedServer } = this.dnsInfo;
@@ -212,7 +205,7 @@ export default class Server {
     return new Promise((resolve, reject) => {
       serverPing.ping(env.PINGER_TIMEOUT, 765, (err, res) => {
         if (err || res == undefined) {
-          return reject(undefined);
+          return resolve(undefined);
         }
 
         resolve({
@@ -234,7 +227,7 @@ export default class Server {
     return new Promise((resolve, reject) => {
       bedrockPing(this.ip, this.port || 19132, (err: any, res: any) => {
         if (err || res == undefined) {
-          return reject(undefined);
+          return resolve(undefined);
         }
 
         resolve({
