@@ -292,5 +292,11 @@
     "id": "019c04c5-7cb2-7000-8ccf-277bb9724ef2",
     "ip": "play.nethergames.org",
     "type": "PE"
+  },
+  {
+    "name": "Vanilla Europa",
+    "id": "019c04c9-cb37-7000-85a0-3e394269176c",
+    "ip": "vanillaeuropa.com",
+    "type": "PC"
   }
 ]
