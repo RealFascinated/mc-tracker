@@ -212,7 +212,7 @@ export default class Server {
     return new Promise((resolve, reject) => {
       serverPing.ping(env.PINGER_TIMEOUT, 765, (err, res) => {
         if (err || res == undefined) {
-          return reject(err);
+          return reject(undefined);
         }
 
         resolve({
@@ -234,7 +234,7 @@ export default class Server {
     return new Promise((resolve, reject) => {
       bedrockPing(this.ip, this.port || 19132, (err: any, res: any) => {
         if (err || res == undefined) {
-          return reject(err);
+          return reject(undefined);
         }
 
         resolve({
