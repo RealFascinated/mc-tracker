@@ -310,5 +310,11 @@
     "id": "019c04ca-cd86-7000-aeaa-41d2cd8c62fb",
     "ip": "ms.loverfella.com",
     "type": "PC"
+  },
+  {
+    "name": "KingMC",
+    "id": "019c0723-d229-7000-af95-d0632ff3edb3",
+    "ip": "kingmc.vn",
+    "type": "PC"
   }
 ]
