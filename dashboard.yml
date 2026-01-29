@@ -667,7 +667,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (asn_org) (max by (id, name, type, asn_org) (minecraft_server_player_count{environment=\"production\"}))",
+          "expr": "sum by (asn_org) (max by (id, type, asn_org) (minecraft_server_player_count{environment=\"production\"}))",
           "legendFormat": "{{asn_org}}",
           "refId": "A"
         }
@@ -766,7 +766,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (id, name, type, asn_org) (minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"})",
+          "expr": "max by (id, type, asn_org) (minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"})",
           "legendFormat": "{{name}} ({{type}})",
           "refId": "A"
         }
@@ -865,7 +865,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (asn_org) (max by (id, name, type, asn_org) (minecraft_server_player_count{environment=\"production\"}))",
+          "expr": "sum by (asn_org) (max by (id, type, asn_org) (minecraft_server_player_count{environment=\"production\"}))",
           "legendFormat": "{{asn_org}}",
           "refId": "A"
         }
@@ -963,7 +963,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (id, name, type, asn_org) (minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"})",
+          "expr": "max by (id, type, asn_org) (minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"})",
           "legendFormat": "{{name}} ({{type}})",
           "refId": "A"
         }
@@ -1077,7 +1077,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "max by (id, name, type) (minecraft_server_player_count{id=\"$server\",environment=\"production\"})",
+          "expr": "max by (id, type) (minecraft_server_player_count{id=\"$server\",environment=\"production\"})",
           "format": "time_series",
           "legendFormat": "{{name}} ({{type}})",
           "range": true,
