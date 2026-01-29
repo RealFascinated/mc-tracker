@@ -65,9 +65,7 @@ export default class Server {
   /**
    * The ASN data for this server.
    */
-  public asnData?: AsnData & {
-    lastUpdated: Date;
-  };
+  public asnData?: AsnData;
 
   /**
    * This is used for when a server doesn't respond to a
@@ -211,14 +209,9 @@ export default class Server {
    * @param ipOrDomain the IP address or domain name to resolve
    */
   private async updateAsnData(ipOrDomain: string) {
-    // Update if more than 3 hours ago or if not set
-    if (this.asnData && this.asnData.lastUpdated) {
-      const threeHoursInMs = 3 * 60 * 60 * 1000;
-      const timeSinceUpdate = Date.now() - this.asnData.lastUpdated.getTime();
-
-      if (timeSinceUpdate < threeHoursInMs) {
-        return; // Data is still fresh, no need to update
-      }
+    // Skip ASN update if we have data and IP hasn't changed
+    if (this.asnData && this.previousPing?.ip === ipOrDomain) {
+      return;
     }
 
     // Resolve domain name to IP if needed
@@ -242,10 +235,11 @@ export default class Server {
 
     const asnData = MaxMindService.resolveAsn(ip);
     if (asnData) {
-      this.asnData = {
-        ...asnData,
-        lastUpdated: new Date(),
-      };
+      // Log if ASN data has changed, ignore initial set
+      if (this.asnData) {
+        logger.info(`Updated ASN data for ${this.getIdentifier()}: ASN ${asnData.asn} (${asnData.asnOrg})`);
+      }
+      this.asnData = asnData;
     }
   }
 
