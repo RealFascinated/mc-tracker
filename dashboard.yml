@@ -1340,7 +1340,7 @@
         "allowCustomValue": false,
         "current": {
           "text": "influxdb-mc_tracker",
-          "value": "cfbdts8z8o7i8f"
+          "value": "${datasource}"
         },
         "hide": 2,
         "label": "Datasource",
@@ -1359,7 +1359,7 @@
         },
         "datasource": {
           "type": "influxdb",
-          "uid": "cfbdts8z8o7i8f"
+          "uid": "${datasource}"
         },
         "definition": "SELECT\n  name || ' (' || type || ') - ' || asn_org || ' : ' || id AS display_name\nFROM (\n  SELECT\n    id,\n    name,\n    type,\n    asn_org,\n    ROW_NUMBER() OVER (\n      PARTITION BY id, name, type, asn_org\n      ORDER BY time DESC\n    ) AS rn\n  FROM ping\n  WHERE time >= NOW() - INTERVAL '7 days'\n    AND asn_org IN (${asn:sqlstring})\n) AS sub\nWHERE rn = 1;\n",
         "includeAll": true,
