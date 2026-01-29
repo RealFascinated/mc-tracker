@@ -89,7 +89,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "time() - max(timestamp(minecraft_server_player_count))",
+          "expr": "time() - max(timestamp(minecraft_server_player_count{environment=\"production\"}))",
           "instant": true,
           "refId": "A"
         }
@@ -153,7 +153,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(minecraft_server_player_count{type=\"PC\"})",
+          "expr": "sum(minecraft_server_player_count{type=\"PC\",environment=\"production\"})",
           "instant": true,
           "legendFormat": "Java",
           "refId": "A"
@@ -163,7 +163,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(minecraft_server_player_count{type=\"PE\"})",
+          "expr": "sum(minecraft_server_player_count{type=\"PE\",environment=\"production\"})",
           "instant": true,
           "legendFormat": "Bedrock",
           "refId": "B"
@@ -228,7 +228,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(minecraft_server_player_count)",
+          "expr": "sum(minecraft_server_player_count{environment=\"production\"})",
           "instant": true,
           "refId": "A"
         }
@@ -292,7 +292,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(minecraft_server_player_count)",
+          "expr": "sum(minecraft_server_player_count{environment=\"production\"})",
           "instant": true,
           "refId": "A"
         }
@@ -357,7 +357,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(minecraft_server_player_count)",
+          "expr": "sum(minecraft_server_player_count{environment=\"production\"})",
           "format": "time_series",
           "instant": true,
           "refId": "A"
@@ -421,7 +421,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "count(minecraft_server_player_count)",
+          "expr": "count(minecraft_server_player_count{environment=\"production\"})",
           "instant": true,
           "refId": "A"
         }
@@ -567,7 +567,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(minecraft_server_player_count)",
+          "expr": "sum(minecraft_server_player_count{environment=\"production\"})",
           "legendFormat": "Total Players",
           "refId": "B"
         }
@@ -667,7 +667,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (asn_org) (minecraft_server_player_count)",
+          "expr": "sum by (asn_org) (max by (id, name, type, asn_org) (minecraft_server_player_count{environment=\"production\"}))",
           "legendFormat": "{{asn_org}}",
           "refId": "A"
         }
@@ -766,7 +766,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "minecraft_server_player_count{asn_org=~\"$asn\"}",
+          "expr": "max by (id, name, type, asn_org) (minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"})",
           "legendFormat": "{{name}} ({{type}})",
           "refId": "A"
         }
@@ -865,7 +865,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (asn_org) (minecraft_server_player_count)",
+          "expr": "sum by (asn_org) (max by (id, name, type, asn_org) (minecraft_server_player_count{environment=\"production\"}))",
           "legendFormat": "{{asn_org}}",
           "refId": "A"
         }
@@ -963,7 +963,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "minecraft_server_player_count{asn_org=~\"$asn\"}",
+          "expr": "max by (id, name, type, asn_org) (minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"})",
           "legendFormat": "{{name}} ({{type}})",
           "refId": "A"
         }
@@ -1077,7 +1077,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "minecraft_server_player_count{id=\"$server\"}",
+          "expr": "max by (id, name, type) (minecraft_server_player_count{id=\"$server\",environment=\"production\"})",
           "format": "time_series",
           "legendFormat": "{{name}} ({{type}})",
           "range": true,
@@ -1097,7 +1097,7 @@
       {
         "allowCustomValue": false,
         "current": {
-          "text": "victoriametrics-metrics-datasource",
+          "text": "victoria-metrics",
           "value": "ffbm9for4d62oe"
         },
         "hide": 2,
@@ -1119,13 +1119,13 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "query_result(label_join(label_join(minecraft_server_player_count{asn_org=~\"$asn\"}, \"temp\", \" (\", \"name\", \"type\"), \"display_name\", \") \", \"temp\", \"asn_org\"))",
+        "definition": "query_result(label_join(label_join(minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"}, \"temp\", \" (\", \"name\", \"type\"), \"display_name\", \") \", \"temp\", \"asn_org\"))",
         "includeAll": true,
         "label": "Server",
         "name": "server",
         "options": [],
         "query": {
-          "query": "query_result(label_join(label_join(minecraft_server_player_count{asn_org=~\"$asn\"}, \"temp\", \" (\", \"name\", \"type\"), \"display_name\", \") \", \"temp\", \"asn_org\"))",
+          "query": "query_result(label_join(label_join(minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"}, \"temp\", \" (\", \"name\", \"type\"), \"display_name\", \") \", \"temp\", \"asn_org\"))",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
@@ -1143,13 +1143,13 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "label_values(minecraft_server_player_count{asn_org!=\"\"}, asn_org)",
+        "definition": "label_values(minecraft_server_player_count{asn_org!=\"\",environment=\"production\"}, asn_org)",
         "includeAll": true,
         "label": "ASN",
         "name": "asn",
         "options": [],
         "query": {
-          "query": "label_values(minecraft_server_player_count{asn_org!=\"\"}, asn_org)",
+          "query": "label_values(minecraft_server_player_count{asn_org!=\"\",environment=\"production\"}, asn_org)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
@@ -1159,12 +1159,12 @@
     ]
   },
   "time": {
-    "from": "now-7d",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Mc Tracker",
   "uid": "957b2932-bacc-4bfe-88b0-c41817513a61",
-  "version": 71
+  "version": 77
 }

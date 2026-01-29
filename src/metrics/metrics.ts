@@ -2,9 +2,18 @@ import { Registry, Gauge } from "prom-client";
 import { logger } from "../common/logger";
 import { env } from "../common/env";
 
+function labelsEqual(
+  a: Record<string, string>,
+  b: Record<string, string>,
+): boolean {
+  const keys = ["id", "name", "type", "asn", "asn_org", "environment"];
+  return keys.every((key) => a[key] === b[key]);
+}
+
 export default class Metrics {
   private registry: Registry;
   private playerCountGauge: Gauge;
+  private lastLabelsByServerId: Map<string, Record<string, string>> = new Map();
 
   constructor() {
     logger.info("Initializing Prometheus metrics");
@@ -49,7 +58,12 @@ export default class Metrics {
       environment: env.ENVIRONMENT,
     };
 
+    const previousLabels = this.lastLabelsByServerId.get(id);
+    if (previousLabels && !labelsEqual(previousLabels, labels)) {
+      this.playerCountGauge.remove(previousLabels);
+    }
     this.playerCountGauge.set(labels, playerCount);
+    this.lastLabelsByServerId.set(id, labels);
   }
 
   /**
