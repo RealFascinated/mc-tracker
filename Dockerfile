@@ -18,6 +18,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Expose metrics port
+EXPOSE 3000
+
 # Copy the servers.json file
 COPY --from=depends /app/data/servers.json ./data/servers.json
 

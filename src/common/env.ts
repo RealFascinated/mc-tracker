@@ -3,10 +3,8 @@ import { z } from "zod";
 
 export const env = createEnv({
   server: {
-    // Influx
-    INFLUX_URL: z.string(),
-    INFLUX_TOKEN: z.string(),
-    INFLUX_DATABASE: z.string(),
+    // Environment
+    ENVIRONMENT: z.string().default("development"),
 
     // Pinger
     PINGER_SERVER_CRON: z.string(),
@@ -23,10 +21,8 @@ export const env = createEnv({
    * This is the environment variables that are available on the server.
    */
   runtimeEnv: {
-    // Influx
-    INFLUX_URL: process.env.INFLUX_URL,
-    INFLUX_TOKEN: process.env.INFLUX_TOKEN,
-    INFLUX_DATABASE: process.env.INFLUX_DATABASE,
+    // Environment
+    ENVIRONMENT: process.env.ENVIRONMENT,
 
     // Pinger
     PINGER_SERVER_CRON: process.env.PINGER_SERVER_CRON,

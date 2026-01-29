@@ -3,8 +3,7 @@ import Server, { ServerType } from "./server";
 import { validate as uuidValidate } from "uuid";
 import { join } from "path";
 import { readFileSync } from "fs";
-import { Point } from "@influxdata/influxdb3-client";
-import { influx } from "../influx/influx";
+import { metrics } from "../metrics/metrics";
 
 interface ServerConfig {
   name: string;
@@ -83,7 +82,6 @@ export default class ServerManager {
     }
 
     ServerManager.pingingServers = true;
-    const date = new Date();
     logger.info(`Pinging servers ${ServerManager.SERVERS.length}`);
 
     let successfulPings = 0;
@@ -105,30 +103,25 @@ export default class ServerManager {
     let successfulWrites = 0;
     for (const { server, ping } of pings.filter((ping) => ping !== undefined)) {
       try {
-        const point = Point.measurement("ping")
-          .setTag("id", server.id)
-          .setTag("name", server.name)
-          .setTag("type", server.type)
-          .setIntegerField("player_count", ping.playerCount)
-          .setTimestamp(date);
-
-        if (server.asnData?.asn && server.asnData?.asnOrg) {
-          point.setTag("asn", server.asnData.asn);
-          point.setTag("asn_org", server.asnData.asnOrg);
-        }
-
-        influx.writePoint(point);
+        metrics.writeMetric(
+          server.id,
+          server.name,
+          server.type,
+          ping.playerCount,
+          server.asnData?.asn,
+          server.asnData?.asnOrg,
+        );
         successfulWrites++;
       } catch (err) {
         logger.warn(
-          `Failed to write point to Influx for ${server.getIdentifier()}`,
+          `Failed to write metric for ${server.getIdentifier()}`,
           err,
         );
       }
     }
 
     logger.info(
-      `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping! ${successfulWrites}/${pings.length} points written to Influx!`,
+      `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping! ${successfulWrites}/${pings.length} metrics written!`,
     );
     ServerManager.pingingServers = false;
   }

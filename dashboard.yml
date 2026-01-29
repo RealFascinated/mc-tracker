@@ -36,7 +36,7 @@
   "panels": [
     {
       "datasource": {
-        "type": "influxdb",
+        "type": "prometheus",
         "uid": "${datasource}"
       },
       "fieldConfig": {
@@ -85,32 +85,12 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
+            "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT \r\n  EXTRACT(EPOCH FROM (NOW() - MAX(time))) as seconds_since_last_update\r\nFROM ping;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "time() - max(timestamp(minecraft_server_player_count))",
+          "refId": "A"
         }
       ],
       "title": "Last Updated",
@@ -118,7 +98,7 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
+        "type": "prometheus",
         "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
@@ -168,32 +148,22 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
+            "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT\r\n  SUM(CASE WHEN type = 'PC' THEN player_count ELSE 0 END) AS java,\r\n  SUM(CASE WHEN type = 'PE' THEN player_count ELSE 0 END) AS bedrock\r\nFROM (\r\n  SELECT\r\n    player_count,\r\n    type,\r\n    ROW_NUMBER() OVER (PARTITION BY id ORDER BY time DESC) AS rn\r\n  FROM ping\r\n) AS latest_per_server\r\nWHERE rn = 1;\r\n",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "sum(minecraft_server_player_count{type=\"PC\"})",
+          "legendFormat": "Java",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum(minecraft_server_player_count{type=\"PE\"})",
+          "legendFormat": "Bedrock",
+          "refId": "B"
         }
       ],
       "title": "Players Online (now, per platform)",
@@ -201,7 +171,7 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
+        "type": "prometheus",
         "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
@@ -251,32 +221,12 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
+            "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT SUM(player_count) AS total_players_now\r\nFROM (\r\n  SELECT player_count, ROW_NUMBER() OVER (PARTITION BY id ORDER BY time DESC) AS rn\r\n  FROM ping\r\n) AS latest_per_server\r\nWHERE rn = 1;\r\n",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "sum(minecraft_server_player_count)",
+          "refId": "A"
         }
       ],
       "title": "Players Online (now)",
@@ -284,7 +234,7 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
+        "type": "prometheus",
         "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
@@ -334,32 +284,12 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
+            "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT MAX(total_players) AS peak_players_today\r\nFROM (\r\n  SELECT \r\n    bucket,\r\n    SUM(player_count) AS total_players\r\n  FROM (\r\n    SELECT DISTINCT ON (\r\n      date_bin(INTERVAL '5 minutes', time, TIMESTAMP '1970-01-01 00:00:00'),\r\n      id\r\n    )\r\n      date_bin(INTERVAL '5 minutes', time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,\r\n      id,\r\n      player_count\r\n    FROM ping\r\n    WHERE time >= DATE_TRUNC('day', NOW())\r\n      AND time <= NOW()\r\n    ORDER BY \r\n      date_bin(INTERVAL '5 minutes', time, TIMESTAMP '1970-01-01 00:00:00'),\r\n      id,\r\n      time DESC\r\n  ) AS latest_per_bucket\r\n  GROUP BY bucket\r\n) AS totals_per_bucket;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "max_over_time(sum(minecraft_server_player_count)[1d:5m])",
+          "refId": "A"
         }
       ],
       "title": "Peak Players (Last 24h)",
@@ -367,7 +297,7 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
+        "type": "prometheus",
         "uid": "cfbdts8z8o7i8f"
       },
       "description": "Is not affected by ASN selection.",
@@ -417,32 +347,12 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
+            "type": "prometheus",
+            "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT MAX(total_players) AS peak_players_this_month\r\nFROM (\r\n  SELECT \r\n    bucket,\r\n    SUM(player_count) AS total_players\r\n  FROM (\r\n    SELECT DISTINCT ON (\r\n      date_bin(INTERVAL '5 minutes', time, TIMESTAMP '1970-01-01 00:00:00'),\r\n      id\r\n    )\r\n      date_bin(INTERVAL '5 minutes', time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,\r\n      id,\r\n      player_count\r\n    FROM ping\r\n    WHERE time >= DATE_TRUNC('month', NOW())\r\n      AND time <= NOW()\r\n    ORDER BY\r\n      date_bin(INTERVAL '5 minutes', time, TIMESTAMP '1970-01-01 00:00:00'),\r\n      id,\r\n      time DESC\r\n  ) AS latest_per_bucket\r\n  GROUP BY bucket\r\n) AS totals_per_bucket;\r\n",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "max_over_time(sum(minecraft_server_player_count)[30d:5m])",
+          "refId": "A"
         }
       ],
       "title": "Peak Players (Last Month)",
@@ -450,7 +360,7 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
+        "type": "prometheus",
         "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
@@ -499,32 +409,12 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
+            "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT COUNT(*) AS total_servers\r\nFROM (\r\n  SELECT id, ROW_NUMBER() OVER (PARTITION BY id ORDER BY time DESC) AS rn\r\n  FROM ping\r\n) AS latest_per_server\r\nWHERE rn = 1;\r\n",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "count(minecraft_server_player_count)",
+          "refId": "A"
         }
       ],
       "title": "Tracked Servers",
@@ -545,7 +435,7 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
+        "type": "prometheus",
         "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
@@ -664,62 +554,22 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
+            "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "time_series",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "WITH latest_per_bucket AS (\r\n    SELECT DISTINCT ON (\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), \r\n        id\r\n    )\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,\r\n        id,\r\n        player_count\r\n    FROM ping\r\n    WHERE time >= $__timeFrom\r\n      AND time <= $__timeTo\r\n    ORDER BY date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), id, time DESC\r\n)\r\nSELECT\r\n    bucket AS time,\r\n    SUM(player_count) AS total_players\r\nFROM latest_per_bucket\r\nGROUP BY bucket\r\nORDER BY bucket;",
-          "refId": "B",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "sum(minecraft_server_player_count)",
+          "legendFormat": "Total Players",
+          "refId": "B"
         },
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
+            "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "time_series",
-          "hide": false,
-          "rawQuery": true,
-          "rawSql": "WITH latest_per_bucket AS (\r\n    SELECT DISTINCT ON (\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), \r\n        id\r\n    )\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,\r\n        id,\r\n        player_count\r\n    FROM ping\r\n    WHERE time >= $__timeFrom\r\n      AND time <= $__timeTo\r\n    ORDER BY date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), id, time DESC\r\n),\r\nbucket_totals AS (\r\n    SELECT\r\n        bucket,\r\n        SUM(player_count) AS total_players\r\n    FROM latest_per_bucket\r\n    GROUP BY bucket\r\n)\r\nSELECT\r\n    DATE_TRUNC('day', bucket) AS time,\r\n    MAX(total_players) AS daily_peak\r\nFROM bucket_totals\r\nGROUP BY DATE_TRUNC('day', bucket)\r\nORDER BY time;",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "max_over_time(sum(minecraft_server_player_count)[1d:5m])",
+          "legendFormat": "Daily Peak",
+          "refId": "A"
         }
       ],
       "title": "Overall Player Count",
@@ -727,7 +577,7 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
+        "type": "prometheus",
         "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
@@ -813,32 +663,13 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
+            "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "WITH latest_per_bucket AS (\r\n    SELECT DISTINCT ON (\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), \r\n        id\r\n    )\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,\r\n        id,\r\n        asn_org,\r\n        player_count\r\n    FROM ping\r\n    WHERE time >= $__timeFrom\r\n      AND time <= $__timeTo\r\n    ORDER BY date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), id, time DESC\r\n)\r\nSELECT\r\n    bucket AS time,\r\n    asn_org,\r\n    SUM(player_count) AS total_players\r\nFROM latest_per_bucket\r\nGROUP BY bucket, asn_org\r\nORDER BY bucket, asn_org;\r\n",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "sum by (asn_org) (minecraft_server_player_count)",
+          "legendFormat": "{{asn_org}}",
+          "refId": "A"
         }
       ],
       "title": "Per ASN Player Count (logarithmic)",
@@ -846,7 +677,7 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
+        "type": "prometheus",
         "uid": "${datasource}"
       },
       "fieldConfig": {
@@ -931,32 +762,13 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
+            "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\r\n  date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS time,\r\n  name,\r\n  type,\r\n  AVG(player_count) AS player_count\r\nFROM ping\r\nWHERE time >= $__timeFrom\r\n  AND time <= $__timeTo\r\n  AND asn_org IN (${asn:sqlstring})\r\nGROUP BY time, name, type\r\nORDER BY time;\r\n",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "minecraft_server_player_count{asn_org=~\"$asn\"}",
+          "legendFormat": "{{name}} ({{type}})",
+          "refId": "A"
         }
       ],
       "title": "Per Server Player Count (logarithmic)",
@@ -964,7 +776,7 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
+        "type": "prometheus",
         "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
@@ -1049,32 +861,13 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
+            "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "WITH latest_per_bucket AS (\r\n    SELECT DISTINCT ON (\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), \r\n        id\r\n    )\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,\r\n        id,\r\n        asn_org,\r\n        player_count\r\n    FROM ping\r\n    WHERE time >= $__timeFrom\r\n      AND time <= $__timeTo\r\n    ORDER BY date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), id, time DESC\r\n)\r\nSELECT\r\n    bucket AS time,\r\n    asn_org,\r\n    SUM(player_count) AS total_players\r\nFROM latest_per_bucket\r\nGROUP BY bucket, asn_org\r\nORDER BY bucket, asn_org;\r\n",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "sum by (asn_org) (minecraft_server_player_count)",
+          "legendFormat": "{{asn_org}}",
+          "refId": "A"
         }
       ],
       "title": "Per ASN Player Count (linear)",
@@ -1082,7 +875,7 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
+        "type": "prometheus",
         "uid": "${datasource}"
       },
       "fieldConfig": {
@@ -1166,32 +959,13 @@
       "pluginVersion": "12.3.2",
       "targets": [
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
+            "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\r\n  date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS time,\r\n  name,\r\n  type,\r\n  AVG(player_count) AS player_count\r\nFROM ping\r\nWHERE time >= $__timeFrom\r\n  AND time <= $__timeTo\r\n  AND asn_org IN (${asn:sqlstring})\r\nGROUP BY time, name, type\r\nORDER BY time;\r\n",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "minecraft_server_player_count{asn_org=~\"$asn\"}",
+          "legendFormat": "{{name}} ({{type}})",
+          "refId": "A"
         }
       ],
       "title": "Per Server Player Count (linear)",
@@ -1212,7 +986,7 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
+        "type": "prometheus",
         "uid": "${datasource}"
       },
       "fieldConfig": {
@@ -1298,32 +1072,13 @@
       "repeatDirection": "h",
       "targets": [
         {
-          "dataset": "iox",
           "datasource": {
-            "type": "influxdb",
+            "type": "prometheus",
             "uid": "${datasource}"
           },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT\r\n  date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS time,\r\n  name,\r\n  type,\r\n  AVG(player_count) AS player_count\r\nFROM ping\r\nWHERE id = '$server'\r\n  AND time >= $__timeFrom\r\n  AND time <= $__timeTo\r\nGROUP BY time, name, type\r\nORDER BY time;\r\n",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ]
-          }
+          "expr": "minecraft_server_player_count{id=\"$server\"}",
+          "legendFormat": "{{name}} ({{type}})",
+          "refId": "A"
         }
       ],
       "title": "$server",
@@ -1339,14 +1094,14 @@
       {
         "allowCustomValue": false,
         "current": {
-          "text": "influxdb-mc_tracker",
+          "text": "Prometheus",
           "value": "${datasource}"
         },
         "hide": 2,
         "label": "Datasource",
         "name": "datasource",
         "options": [],
-        "query": "influxdb",
+        "query": "prometheus",
         "refresh": 1,
         "regex": "",
         "type": "datasource"
@@ -1358,20 +1113,20 @@
           "value": "$__all"
         },
         "datasource": {
-          "type": "influxdb",
+          "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "SELECT\n  name || ' (' || type || ') - ' || asn_org || ' : ' || id AS display_name\nFROM (\n  SELECT\n    id,\n    name,\n    type,\n    asn_org,\n    ROW_NUMBER() OVER (\n      PARTITION BY id, name, type, asn_org\n      ORDER BY time DESC\n    ) AS rn\n  FROM ping\n  WHERE time >= NOW() - INTERVAL '7 days'\n    AND asn_org IN (${asn:sqlstring})\n) AS sub\nWHERE rn = 1;\n",
+        "definition": "label_values(minecraft_server_player_count{asn_org=~\"$asn\"}, id)",
         "includeAll": true,
         "label": "Server",
         "name": "server",
         "options": [],
         "query": {
-          "query": "SELECT\n  name || ' (' || type || ') - ' || asn_org || ' : ' || id AS display_name\nFROM (\n  SELECT\n    id,\n    name,\n    type,\n    asn_org,\n    ROW_NUMBER() OVER (\n      PARTITION BY id, name, type, asn_org\n      ORDER BY time DESC\n    ) AS rn\n  FROM ping\n  WHERE time >= NOW() - INTERVAL '7 days'\n    AND asn_org IN (${asn:sqlstring})\n) AS sub\nWHERE rn = 1;\n",
-          "refId": "InfluxVariableQueryEditor-VariableQuery"
+          "query": "label_values(minecraft_server_player_count{asn_org=~\"$asn\"}, id)",
+          "refId": "StandardVariableQuery"
         },
         "refresh": 1,
-        "regex": "/^(?<text>.*?) : (?<value>.*)$/",
+        "regex": "",
         "sort": 1,
         "type": "query"
       },
@@ -1381,14 +1136,18 @@
           "text": "All",
           "value": "$__all"
         },
-        "definition": "SELECT\n  asn_org AS display_name\nFROM (\n  SELECT\n    asn_org,\n    ROW_NUMBER() OVER (\n      PARTITION BY asn_org\n      ORDER BY time DESC\n    ) AS rn\n  FROM ping\n  WHERE time >= NOW() - INTERVAL '7 days'\n    AND asn_org IS NOT NULL\n) AS sub\nWHERE rn = 1;",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(minecraft_server_player_count{asn_org!=\"\"}, asn_org)",
         "includeAll": true,
         "label": "ASN",
         "name": "asn",
         "options": [],
         "query": {
-          "query": "SELECT\n  asn_org AS display_name\nFROM (\n  SELECT\n    asn_org,\n    ROW_NUMBER() OVER (\n      PARTITION BY asn_org\n      ORDER BY time DESC\n    ) AS rn\n  FROM ping\n  WHERE time >= NOW() - INTERVAL '7 days'\n    AND asn_org IS NOT NULL\n) AS sub\nWHERE rn = 1;",
-          "refId": "InfluxVariableQueryEditor-VariableQuery"
+          "query": "label_values(minecraft_server_player_count{asn_org!=\"\"}, asn_org)",
+          "refId": "StandardVariableQuery"
         },
         "refresh": 1,
         "regex": "",
