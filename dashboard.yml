@@ -90,6 +90,7 @@
             "uid": "${datasource}"
           },
           "expr": "time() - max(timestamp(minecraft_server_player_count))",
+          "instant": true,
           "refId": "A"
         }
       ],
@@ -153,6 +154,7 @@
             "uid": "${datasource}"
           },
           "expr": "sum(minecraft_server_player_count{type=\"PC\"})",
+          "instant": true,
           "legendFormat": "Java",
           "refId": "A"
         },
@@ -162,6 +164,7 @@
             "uid": "${datasource}"
           },
           "expr": "sum(minecraft_server_player_count{type=\"PE\"})",
+          "instant": true,
           "legendFormat": "Bedrock",
           "refId": "B"
         }
@@ -226,6 +229,7 @@
             "uid": "${datasource}"
           },
           "expr": "sum(minecraft_server_player_count)",
+          "instant": true,
           "refId": "A"
         }
       ],
@@ -288,7 +292,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max_over_time(sum(minecraft_server_player_count)[1d:5m])",
+          "expr": "sum(minecraft_server_player_count)",
+          "instant": true,
           "refId": "A"
         }
       ],
@@ -297,8 +302,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "cfbdts8z8o7i8f"
+        "type": "victoriametrics-metrics-datasource",
+        "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
       "fieldConfig": {
@@ -351,7 +356,10 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max_over_time(sum(minecraft_server_player_count)[30d:5m])",
+          "editorMode": "code",
+          "expr": "sum(minecraft_server_player_count)",
+          "format": "time_series",
+          "instant": true,
           "refId": "A"
         }
       ],
@@ -414,6 +422,7 @@
             "uid": "${datasource}"
           },
           "expr": "count(minecraft_server_player_count)",
+          "instant": true,
           "refId": "A"
         }
       ],
@@ -561,15 +570,6 @@
           "expr": "sum(minecraft_server_player_count)",
           "legendFormat": "Total Players",
           "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "max_over_time(sum(minecraft_server_player_count)[1d:5m])",
-          "legendFormat": "Daily Peak",
-          "refId": "A"
         }
       ],
       "title": "Overall Player Count",
@@ -1076,8 +1076,11 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
+          "editorMode": "code",
           "expr": "minecraft_server_player_count{id=\"$server\"}",
+          "format": "time_series",
           "legendFormat": "{{name}} ({{type}})",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -1094,14 +1097,14 @@
       {
         "allowCustomValue": false,
         "current": {
-          "text": "Prometheus",
-          "value": "${datasource}"
+          "text": "victoriametrics-metrics-datasource",
+          "value": "ffbm9for4d62oe"
         },
         "hide": 2,
         "label": "Datasource",
         "name": "datasource",
         "options": [],
-        "query": "prometheus",
+        "query": "victoriametrics-metrics-datasource",
         "refresh": 1,
         "regex": "",
         "type": "datasource"
@@ -1116,17 +1119,17 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "label_values(minecraft_server_player_count{asn_org=~\"$asn\"}, id)",
+        "definition": "query_result(label_join(label_join(minecraft_server_player_count{asn_org=~\"$asn\"}, \"temp\", \" (\", \"name\", \"type\"), \"display_name\", \") \", \"temp\", \"asn_org\"))",
         "includeAll": true,
         "label": "Server",
         "name": "server",
         "options": [],
         "query": {
-          "query": "label_values(minecraft_server_player_count{asn_org=~\"$asn\"}, id)",
+          "query": "query_result(label_join(label_join(minecraft_server_player_count{asn_org=~\"$asn\"}, \"temp\", \" (\", \"name\", \"type\"), \"display_name\", \") \", \"temp\", \"asn_org\"))",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
-        "regex": "",
+        "regex": "/.*display_name=\\\"(?<text>[^\\\"]+)\\\".*id=\\\"(?<value>[^\\\"]+)\\\".*/",
         "sort": 1,
         "type": "query"
       },
@@ -1163,5 +1166,5 @@
   "timezone": "browser",
   "title": "Mc Tracker",
   "uid": "957b2932-bacc-4bfe-88b0-c41817513a61",
-  "version": 61
+  "version": 71
 }

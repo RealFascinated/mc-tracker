@@ -100,28 +100,19 @@ export default class ServerManager {
       }),
     );
 
-    let successfulWrites = 0;
     for (const { server, ping } of pings.filter((ping) => ping !== undefined)) {
-      try {
-        metrics.writeMetric(
-          server.id,
-          server.name,
-          server.type,
-          ping.playerCount,
-          server.asnData?.asn,
-          server.asnData?.asnOrg,
-        );
-        successfulWrites++;
-      } catch (err) {
-        logger.warn(
-          `Failed to write metric for ${server.getIdentifier()}`,
-          err,
-        );
-      }
+      metrics.writeMetric(
+        server.id,
+        server.name,
+        server.type,
+        ping.playerCount,
+        server.asnData?.asn,
+        server.asnData?.asnOrg,
+      );
     }
 
     logger.info(
-      `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping! ${successfulWrites}/${pings.length} metrics written!`,
+      `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping!`,
     );
     ServerManager.pingingServers = false;
   }
