@@ -18,13 +18,26 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 0,
-  "links": [],
+  "id": 25,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Github",
+      "tooltip": "",
+      "type": "link",
+      "url": "https://github.com/RealFascinated/mc-tracker"
+    }
+  ],
   "panels": [
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "cfbdts8z8o7i8f"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -75,7 +88,7 @@
           "dataset": "iox",
           "datasource": {
             "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "table",
@@ -106,7 +119,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "cfbdts8z8o7i8f"
+        "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
       "fieldConfig": {
@@ -158,7 +171,7 @@
           "dataset": "iox",
           "datasource": {
             "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "table",
@@ -189,7 +202,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "cfbdts8z8o7i8f"
+        "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
       "fieldConfig": {
@@ -241,7 +254,7 @@
           "dataset": "iox",
           "datasource": {
             "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "table",
@@ -272,7 +285,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "cfbdts8z8o7i8f"
+        "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
       "fieldConfig": {
@@ -324,7 +337,7 @@
           "dataset": "iox",
           "datasource": {
             "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "table",
@@ -438,7 +451,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "cfbdts8z8o7i8f"
+        "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
       "fieldConfig": {
@@ -489,7 +502,7 @@
           "dataset": "iox",
           "datasource": {
             "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "table",
@@ -533,7 +546,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "cfbdts8z8o7i8f"
+        "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
       "fieldConfig": {
@@ -617,6 +630,10 @@
               {
                 "id": "custom.insertNulls",
                 "value": 3600000
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
               }
             ]
           }
@@ -650,7 +667,7 @@
           "dataset": "iox",
           "datasource": {
             "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -679,7 +696,7 @@
           "dataset": "iox",
           "datasource": {
             "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -711,7 +728,244 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "cfbdts8z8o7i8f"
+        "uid": "${datasource}"
+      },
+      "description": "Is not affected by ASN selection.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 10,
+              "type": "log"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels.asn_org}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Last *",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH latest_per_bucket AS (\r\n    SELECT DISTINCT ON (\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), \r\n        id\r\n    )\r\n        date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS bucket,\r\n        id,\r\n        asn_org,\r\n        player_count\r\n    FROM ping\r\n    WHERE time >= $__timeFrom\r\n      AND time <= $__timeTo\r\n    ORDER BY date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00'), id, time DESC\r\n)\r\nSELECT\r\n    bucket AS time,\r\n    asn_org,\r\n    SUM(player_count) AS total_players\r\nFROM latest_per_bucket\r\nGROUP BY bucket, asn_org\r\nORDER BY bucket, asn_org;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          }
+        }
+      ],
+      "title": "Per ASN Player Count (logarithmic)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 10,
+              "type": "log"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels.name}  (${__field.labels.type})",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "locale"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Last *",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.2",
+      "targets": [
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n  date_bin($__interval, time, TIMESTAMP '1970-01-01 00:00:00') AS time,\r\n  name,\r\n  type,\r\n  AVG(player_count) AS player_count\r\nFROM ping\r\nWHERE time >= $__timeFrom\r\n  AND time <= $__timeTo\r\n  AND asn_org IN (${asn:sqlstring})\r\nGROUP BY time, name, type\r\nORDER BY time;\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          }
+        }
+      ],
+      "title": "Per Server Player Count (logarithmic)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
       },
       "description": "Is not affected by ASN selection.",
       "fieldConfig": {
@@ -772,9 +1026,9 @@
         "h": 14,
         "w": 12,
         "x": 0,
-        "y": 20
+        "y": 34
       },
-      "id": 8,
+      "id": 14,
       "options": {
         "legend": {
           "calcs": [
@@ -798,7 +1052,7 @@
           "dataset": "iox",
           "datasource": {
             "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -823,13 +1077,13 @@
           }
         }
       ],
-      "title": "Per ASN Player Count",
+      "title": "Per ASN Player Count (linear)",
       "type": "timeseries"
     },
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "cfbdts8z8o7i8f"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -889,9 +1143,9 @@
         "h": 14,
         "w": 12,
         "x": 12,
-        "y": 20
+        "y": 34
       },
-      "id": 7,
+      "id": 13,
       "options": {
         "legend": {
           "calcs": [
@@ -915,7 +1169,7 @@
           "dataset": "iox",
           "datasource": {
             "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "time_series",
@@ -940,7 +1194,7 @@
           }
         }
       ],
-      "title": "Per Server Player Count",
+      "title": "Per Server Player Count (linear)",
       "type": "timeseries"
     },
     {
@@ -949,7 +1203,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 48
       },
       "id": 3,
       "panels": [],
@@ -959,7 +1213,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "cfbdts8z8o7i8f"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1022,7 +1276,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 49
       },
       "id": 4,
       "maxPerRow": 3,
@@ -1047,7 +1301,7 @@
           "dataset": "iox",
           "datasource": {
             "type": "influxdb",
-            "uid": "dfbdm46gnahvka"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "format": "table",
@@ -1082,6 +1336,21 @@
   "tags": [],
   "templating": {
     "list": [
+      {
+        "allowCustomValue": false,
+        "current": {
+          "text": "influxdb-mc_tracker",
+          "value": "cfbdts8z8o7i8f"
+        },
+        "hide": 2,
+        "label": "Datasource",
+        "name": "datasource",
+        "options": [],
+        "query": "influxdb",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      },
       {
         "allowCustomValue": false,
         "current": {
@@ -1128,12 +1397,12 @@
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-7d",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Mc Tracker",
   "uid": "957b2932-bacc-4bfe-88b0-c41817513a61",
-  "version": 48
+  "version": 61
 }
