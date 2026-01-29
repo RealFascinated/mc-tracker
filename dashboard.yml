@@ -766,7 +766,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (id, type, asn_org) (minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"})",
+          "expr": "max by (id, name, type, asn_org) (minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"})",
           "legendFormat": "{{name}} ({{type}})",
           "refId": "A"
         }
@@ -963,7 +963,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max by (id, type, asn_org) (minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"})",
+          "expr": "max by (id, name, type, asn_org) (minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"})",
           "legendFormat": "{{name}} ({{type}})",
           "refId": "A"
         }
@@ -1079,7 +1079,7 @@
           "editorMode": "code",
           "expr": "max by (id, type) (minecraft_server_player_count{id=\"$server\",environment=\"production\"})",
           "format": "time_series",
-          "legendFormat": "{{name}} ({{type}})",
+          "legendFormat": "{{type}}",
           "range": true,
           "refId": "A"
         }
