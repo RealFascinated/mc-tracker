@@ -9,7 +9,7 @@ interface ServerConfig {
   name: string;
   id: string;
   ip: string;
-  type: "PC" | "PE";
+  type: ServerType;
 }
 
 export default class ServerManager {
@@ -37,7 +37,7 @@ export default class ServerManager {
         id: configServer.id,
         ip: configServer.ip,
         name: configServer.name,
-        type: configServer.type as ServerType,
+        type: configServer.type,
       });
       ServerManager.SERVERS.push(server);
       logger.info(
