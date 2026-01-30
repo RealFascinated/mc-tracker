@@ -50,16 +50,9 @@ export default class Server {
   public asnData?: AsnData;
 
   /**
-   * This is used for when a server doesn't respond to a
-   * ping so we can fallback if they fail to respond to 1 ping.
+   * Last IP we resolved ASN for; used to skip redundant ASN lookups.
    */
-  public previousPing?: Ping;
-
-  /**
-   * When true, this server has been determined to require fallback ping
-   * (regular ping fails). Skip retries and use cached previousPing directly.
-   */
-  private requiresFallbackPing: boolean = false;
+  private lastAsnIp?: string;
 
   constructor({ id, name, ip, port, type }: ServerOptions) {
     this.id = id;
@@ -93,12 +86,6 @@ export default class Server {
   public async pingServer(attempt: number = 0): Promise<Ping | undefined> {
     const before = performance.now();
     try {
-      // Server already requires fallback: use cached ping directly, no retries
-      if (this.requiresFallbackPing && this.previousPing) {
-        await this.updateAsnData(this.previousPing.ip);
-        return Promise.resolve(this.previousPing);
-      }
-
       let response: Ping | undefined;
 
       switch (this.type) {
@@ -112,7 +99,6 @@ export default class Server {
         }
       }
       if (!response) {
-        // Try to ping the server again if it failed (only for first-time discovery)
         if (attempt < env.PINGER_RETRY_ATTEMPTS) {
           logger.warn(
             `Failed to ping ${this.getIdentifier()} after ${Math.round(performance.now() - before)}ms, retrying... (attempt ${attempt + 1}/${env.PINGER_RETRY_ATTEMPTS})`,
@@ -122,27 +108,10 @@ export default class Server {
           return this.pingServer(attempt + 1);
         }
 
-        // If the server failed to respond to the ping, return the previous ping
-        const ping = this.previousPing;
-        if (ping) {
-          logger.warn(
-            `Failed to ping ${this.getIdentifier()} after ${Math.round(performance.now() - before)}ms, using fallback ping`,
-          );
-          this.requiresFallbackPing = true; // Skip retries on future ping cycles
-          response = ping;
-        }
-
-        if (!response) {
-          return Promise.resolve(undefined);
-        }
+        return Promise.resolve(undefined);
       }
 
-      // Update ASN data if needed
       await this.updateAsnData(response.ip);
-
-      // Update the previous ping
-      this.previousPing = response;
-
       return Promise.resolve(response);
     } catch (err) {
       logger.warn(
@@ -203,8 +172,7 @@ export default class Server {
    * @param ipOrDomain the IP address or domain name to resolve
    */
   private async updateAsnData(ipOrDomain: string) {
-    // Skip ASN update if we have data and IP hasn't changed
-    if (this.asnData && this.previousPing?.ip === ipOrDomain) {
+    if (this.asnData && this.lastAsnIp === ipOrDomain) {
       return;
     }
 
@@ -232,13 +200,13 @@ export default class Server {
 
     const asnData = MaxMindService.resolveAsn(ip);
     if (asnData) {
-      // Log if ASN data has changed, ignore initial set
       if (this.asnData) {
         logger.info(
           `Updated ASN data for ${this.getIdentifier()}: ASN ${asnData.asn} (${asnData.asnOrg})`,
         );
       }
       this.asnData = asnData;
+      this.lastAsnIp = ip;
     }
   }
 
