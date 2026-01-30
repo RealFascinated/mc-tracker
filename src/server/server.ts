@@ -73,6 +73,12 @@ export default class Server {
    */
   public previousPing?: Ping;
 
+  /**
+   * When true, this server has been determined to require fallback ping
+   * (regular ping fails). Skip retries and use cached previousPing directly.
+   */
+  private requiresFallbackPing: boolean = false;
+
   constructor({ id, name, ip, port, type }: ServerOptions) {
     this.id = id;
     this.name = name;
@@ -105,6 +111,12 @@ export default class Server {
   public async pingServer(attempt: number = 0): Promise<Ping | undefined> {
     const before = performance.now();
     try {
+      // Server already requires fallback: use cached ping directly, no retries
+      if (this.requiresFallbackPing && this.previousPing) {
+        await this.updateAsnData(this.previousPing.ip);
+        return Promise.resolve(this.previousPing);
+      }
+
       let response: Ping | undefined;
 
       switch (this.type) {
@@ -118,7 +130,7 @@ export default class Server {
         }
       }
       if (!response) {
-        // Try to ping the server again if it failed
+        // Try to ping the server again if it failed (only for first-time discovery)
         if (attempt < env.PINGER_RETRY_ATTEMPTS) {
           logger.warn(
             `Failed to ping ${this.getIdentifier()} after ${Math.round(performance.now() - before)}ms, retrying... (attempt ${attempt + 1}/${env.PINGER_RETRY_ATTEMPTS})`,
@@ -134,7 +146,7 @@ export default class Server {
           logger.warn(
             `Failed to ping ${this.getIdentifier()} after ${Math.round(performance.now() - before)}ms, using fallback ping`,
           );
-          this.previousPing = undefined; // Clear the previous ping
+          this.requiresFallbackPing = true; // Skip retries on future ping cycles
           response = ping;
         }
 
