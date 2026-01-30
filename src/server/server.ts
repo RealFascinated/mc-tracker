@@ -200,17 +200,13 @@ export default class Server {
 
     const asnData = MaxMindService.resolveAsn(ip);
     if (asnData) {
-      const changed =
-        !this.asnData ||
-        this.asnData.asn !== asnData.asn ||
-        this.asnData.asnOrg !== asnData.asnOrg;
-      if (changed && this.asnData) {
+      if (this.asnData) {
         logger.info(
           `Updated ASN data for ${this.getIdentifier()}: ASN ${asnData.asn} (${asnData.asnOrg})`,
         );
       }
       this.asnData = asnData;
-      this.lastAsnIp = ip;
+      this.lastAsnIp = ipOrDomain;
     }
   }
 
