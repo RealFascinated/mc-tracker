@@ -1,16 +1,12 @@
 import { open, Reader } from "maxmind";
 import type { AsnResponse } from "mmdb-lib";
+import type { AsnData } from "../common/types/asn";
 import { logger } from "../common/logger";
 import { env } from "../common/env";
 import { join } from "path";
 import { extract } from "tar-stream";
 import { createGunzip } from "zlib";
 import fs from "fs/promises";
-
-export type AsnData = {
-  asn: string;
-  asnOrg: string;
-};
 
 /**
  * MaxMind service for ASN database management and lookups.

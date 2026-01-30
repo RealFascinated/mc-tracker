@@ -1,1172 +1,861 @@
 {
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
+  "annotations":
+    {
+      "list":
+        [
+          {
+            "builtIn": 1,
+            "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard",
+          },
+        ],
+    },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": 0,
-  "links": [
-    {
-      "asDropdown": false,
-      "icon": "external link",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": true,
-      "title": "Github",
-      "tooltip": "",
-      "type": "link",
-      "url": "https://github.com/RealFascinated/mc-tracker"
-    }
-  ],
-  "panels": [
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
+  "links":
+    [
+      {
+        "asDropdown": false,
+        "icon": "external link",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": true,
+        "title": "Github",
+        "tooltip": "",
+        "type": "link",
+        "url": "https://github.com/RealFascinated/mc-tracker",
       },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "Seconds Ago"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 0,
-        "y": 0
-      },
-      "id": 5,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "time() - max(timestamp(minecraft_server_player_count{environment=\"production\"}))",
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Last Updated",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "Is not affected by ASN selection.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "locale"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 4,
-        "y": 0
-      },
-      "id": 12,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "horizontal",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "sum(minecraft_server_player_count{type=\"PC\",environment=\"production\"})",
-          "instant": true,
-          "legendFormat": "Java",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "sum(minecraft_server_player_count{type=\"PE\",environment=\"production\"})",
-          "instant": true,
-          "legendFormat": "Bedrock",
-          "refId": "B"
-        }
-      ],
-      "title": "Players Online (now, per platform)",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "Is not affected by ASN selection.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "locale"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 8,
-        "y": 0
-      },
-      "id": 9,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "sum(minecraft_server_player_count{environment=\"production\"})",
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Players Online (now)",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "Is not affected by ASN selection.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "locale"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 12,
-        "y": 0
-      },
-      "id": 10,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "max_over_time(\r\n  sum(minecraft_server_player_count{environment=\"production\"})\r\n  [24h:]\r\n)",
-          "format": "time_series",
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Peak Players (Last 24h)",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "victoriametrics-metrics-datasource",
-        "uid": "${datasource}"
-      },
-      "description": "Is not affected by ASN selection.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "locale"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 16,
-        "y": 0
-      },
-      "id": 11,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "max_over_time(\r\n  sum(minecraft_server_player_count{environment=\"production\"})\r\n  [30d:]\r\n)",
-          "format": "time_series",
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Peak Players (Last Month)",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "Is not affected by ASN selection.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 20,
-        "y": 0
-      },
-      "id": 6,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "count(minecraft_server_player_count{environment=\"production\"})",
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Tracked Servers",
-      "type": "stat"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 5
-      },
-      "id": 2,
-      "panels": [],
-      "title": "Overview",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "Is not affected by ASN selection.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "locale"
-        },
-        "overrides": [
+    ],
+  "panels":
+    [
+      {
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "fieldConfig":
           {
-            "matcher": {
-              "id": "byName",
-              "options": "total_players"
-            },
-            "properties": [
+            "defaults":
               {
-                "id": "displayName",
-                "value": "Total Players"
-              }
-            ]
+                "color": { "mode": "thresholds" },
+                "mappings": [],
+                "thresholds":
+                  {
+                    "mode": "absolute",
+                    "steps": [{ "color": "green", "value": 0 }],
+                  },
+                "unit": "Seconds Ago",
+              },
+            "overrides": [],
           },
+        "gridPos": { "h": 5, "w": 4, "x": 0, "y": 0 },
+        "id": 5,
+        "options":
           {
-            "matcher": {
-              "id": "byName",
-              "options": "daily_peak"
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions":
+              { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true,
+          },
+        "pluginVersion": "12.3.2",
+        "targets":
+          [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": 'time() - max(timestamp(minecraft_server_player_count{environment="production"}))',
+              "instant": true,
+              "refId": "A",
             },
-            "properties": [
+          ],
+        "title": "Last Updated",
+        "type": "stat",
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "description": "Is not affected by ASN selection.",
+        "fieldConfig":
+          {
+            "defaults":
               {
-                "id": "displayName",
-                "value": "Daily Peak"
+                "color": { "mode": "thresholds" },
+                "mappings": [],
+                "thresholds":
+                  {
+                    "mode": "absolute",
+                    "steps": [{ "color": "green", "value": 0 }],
+                  },
+                "unit": "locale",
               },
+            "overrides": [],
+          },
+        "gridPos": { "h": 5, "w": 4, "x": 4, "y": 0 },
+        "id": 12,
+        "options":
+          {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "orientation": "horizontal",
+            "percentChangeColorMode": "standard",
+            "reduceOptions":
+              { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true,
+          },
+        "pluginVersion": "12.3.2",
+        "targets":
+          [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": 'sum(minecraft_server_player_count{type="PC",environment="production"})',
+              "instant": true,
+              "legendFormat": "Java",
+              "refId": "A",
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": 'sum(minecraft_server_player_count{type="PE",environment="production"})',
+              "instant": true,
+              "legendFormat": "Bedrock",
+              "refId": "B",
+            },
+          ],
+        "title": "Players Online (now, per platform)",
+        "type": "stat",
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "description": "Is not affected by ASN selection.",
+        "fieldConfig":
+          {
+            "defaults":
               {
-                "id": "custom.pointSize",
-                "value": 7
+                "color": { "mode": "thresholds" },
+                "mappings": [],
+                "thresholds":
+                  {
+                    "mode": "absolute",
+                    "steps": [{ "color": "green", "value": 0 }],
+                  },
+                "unit": "locale",
               },
+            "overrides": [],
+          },
+        "gridPos": { "h": 5, "w": 4, "x": 8, "y": 0 },
+        "id": 9,
+        "options":
+          {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions":
+              { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true,
+          },
+        "pluginVersion": "12.3.2",
+        "targets":
+          [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": 'sum(minecraft_server_player_count{environment="production"})',
+              "instant": true,
+              "refId": "A",
+            },
+          ],
+        "title": "Players Online (now)",
+        "type": "stat",
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "description": "Is not affected by ASN selection.",
+        "fieldConfig":
+          {
+            "defaults":
               {
-                "id": "custom.insertNulls",
-                "value": 3600000
+                "color": { "mode": "thresholds" },
+                "mappings": [],
+                "thresholds":
+                  {
+                    "mode": "absolute",
+                    "steps": [{ "color": "green", "value": 0 }],
+                  },
+                "unit": "locale",
               },
-              {
-                "id": "custom.showPoints",
-                "value": "always"
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 14,
-        "w": 24,
-        "x": 0,
-        "y": 6
-      },
-      "id": 1,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true,
-          "sortBy": "Last *",
-          "sortDesc": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.3.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
+            "overrides": [],
           },
-          "expr": "sum(minecraft_server_player_count{environment=\"production\"})",
-          "legendFormat": "Total Players",
-          "refId": "B"
-        }
-      ],
-      "title": "Overall Player Count",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "Is not affected by ASN selection.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
+        "gridPos": { "h": 5, "w": 4, "x": 12, "y": 0 },
+        "id": 10,
+        "options":
+          {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions":
+              { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true,
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
+        "pluginVersion": "12.3.2",
+        "targets":
+          [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "editorMode": "code",
+              "expr": "max_over_time(\r\n  sum(minecraft_server_player_count{environment=\"production\"})\r\n  [24h:]\r\n)",
+              "format": "time_series",
+              "instant": true,
+              "refId": "A",
             },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "log": 10,
-              "type": "log"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "displayName": "${__field.labels.asn_org}",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "locale"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 14,
-        "w": 12,
-        "x": 0,
-        "y": 20
-      },
-      "id": 8,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
           ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true,
-          "sortBy": "Last *",
-          "sortDesc": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
+        "title": "Peak Players (Last 24h)",
+        "type": "stat",
       },
-      "pluginVersion": "12.3.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
+      {
+        "datasource":
+          {
+            "type": "victoriametrics-metrics-datasource",
+            "uid": "${datasource}",
           },
-          "expr": "sum by (asn_org) (max by (id, type, asn_org) (minecraft_server_player_count{environment=\"production\"}))",
-          "legendFormat": "{{asn_org}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Per ASN Player Count (logarithmic)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "log": 10,
-              "type": "log"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "displayName": "${__field.labels.name}  (${__field.labels.type})",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+        "description": "Is not affected by ASN selection.",
+        "fieldConfig":
+          {
+            "defaults":
               {
-                "color": "green",
-                "value": 0
-              }
-            ]
+                "color": { "mode": "thresholds" },
+                "mappings": [],
+                "thresholds":
+                  {
+                    "mode": "absolute",
+                    "steps": [{ "color": "green", "value": 0 }],
+                  },
+                "unit": "locale",
+              },
+            "overrides": [],
           },
-          "unit": "locale"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 14,
-        "w": 12,
-        "x": 12,
-        "y": 20
-      },
-      "id": 7,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
+        "gridPos": { "h": 5, "w": 4, "x": 16, "y": 0 },
+        "id": 11,
+        "options":
+          {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions":
+              { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true,
+          },
+        "pluginVersion": "12.3.2",
+        "targets":
+          [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "editorMode": "code",
+              "expr": "max_over_time(\r\n  sum(minecraft_server_player_count{environment=\"production\"})\r\n  [30d:]\r\n)",
+              "format": "time_series",
+              "instant": true,
+              "refId": "A",
+            },
           ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true,
-          "sortBy": "Last *",
-          "sortDesc": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
+        "title": "Peak Players (Last Month)",
+        "type": "stat",
       },
-      "pluginVersion": "12.3.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "max by (id, name, type, asn_org) (minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"})",
-          "legendFormat": "{{name}} ({{type}})",
-          "refId": "A"
-        }
-      ],
-      "title": "Per Server Player Count (logarithmic)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "Is not affected by ASN selection.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "displayName": "${__field.labels.asn_org}",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+      {
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "description": "Is not affected by ASN selection.",
+        "fieldConfig":
+          {
+            "defaults":
               {
-                "color": "green",
-                "value": 0
-              }
-            ]
+                "color": { "mode": "thresholds" },
+                "mappings": [],
+                "thresholds":
+                  {
+                    "mode": "absolute",
+                    "steps": [{ "color": "green", "value": 0 }],
+                  },
+              },
+            "overrides": [],
           },
-          "unit": "locale"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 14,
-        "w": 12,
-        "x": 0,
-        "y": 34
-      },
-      "id": 14,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
+        "gridPos": { "h": 5, "w": 4, "x": 20, "y": 0 },
+        "id": 6,
+        "options":
+          {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions":
+              { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true,
+          },
+        "pluginVersion": "12.3.2",
+        "targets":
+          [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": 'count(minecraft_server_player_count{environment="production"})',
+              "instant": true,
+              "refId": "A",
+            },
           ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true,
-          "sortBy": "Last *",
-          "sortDesc": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
+        "title": "Tracked Servers",
+        "type": "stat",
       },
-      "pluginVersion": "12.3.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "sum by (asn_org) (max by (id, type, asn_org) (minecraft_server_player_count{environment=\"production\"}))",
-          "legendFormat": "{{asn_org}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Per ASN Player Count (linear)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
+      {
+        "collapsed": false,
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+        "id": 2,
+        "panels": [],
+        "title": "Overview",
+        "type": "row",
       },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "displayName": "${__field.labels.name}  (${__field.labels.type})",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+      {
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "description": "Is not affected by ASN selection.",
+        "fieldConfig":
+          {
+            "defaults":
               {
-                "color": "green",
-                "value": 0
-              }
-            ]
+                "color": { "mode": "palette-classic" },
+                "custom":
+                  {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom":
+                      { "legend": false, "tooltip": false, "viz": false },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": { "type": "linear" },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": { "group": "A", "mode": "none" },
+                    "thresholdsStyle": { "mode": "off" },
+                  },
+                "mappings": [],
+                "thresholds":
+                  {
+                    "mode": "absolute",
+                    "steps": [{ "color": "green", "value": 0 }],
+                  },
+                "unit": "locale",
+              },
+            "overrides":
+              [
+                {
+                  "matcher": { "id": "byName", "options": "total_players" },
+                  "properties":
+                    [{ "id": "displayName", "value": "Total Players" }],
+                },
+                {
+                  "matcher": { "id": "byName", "options": "daily_peak" },
+                  "properties":
+                    [
+                      { "id": "displayName", "value": "Daily Peak" },
+                      { "id": "custom.pointSize", "value": 7 },
+                      { "id": "custom.insertNulls", "value": 3600000 },
+                      { "id": "custom.showPoints", "value": "always" },
+                    ],
+                },
+              ],
           },
-          "unit": "locale"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 14,
-        "w": 12,
-        "x": 12,
-        "y": 34
-      },
-      "id": 13,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull"
+        "gridPos": { "h": 14, "w": 24, "x": 0, "y": 6 },
+        "id": 1,
+        "options":
+          {
+            "legend":
+              {
+                "calcs": [],
+                "displayMode": "list",
+                "placement": "bottom",
+                "showLegend": true,
+                "sortBy": "Last *",
+                "sortDesc": true,
+              },
+            "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" },
+          },
+        "pluginVersion": "12.3.2",
+        "targets":
+          [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": 'sum(minecraft_server_player_count{environment="production"})',
+              "legendFormat": "Total Players",
+              "refId": "B",
+            },
           ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true,
-          "sortBy": "Last *",
-          "sortDesc": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
+        "title": "Overall Player Count",
+        "type": "timeseries",
       },
-      "pluginVersion": "12.3.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "expr": "max by (id, name, type, asn_org) (minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"})",
-          "legendFormat": "{{name}} ({{type}})",
-          "refId": "A"
-        }
-      ],
-      "title": "Per Server Player Count (linear)",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 48
-      },
-      "id": 3,
-      "panels": [],
-      "title": "Servers",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 25,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineStyle": {
-              "fill": "solid"
-            },
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "displayName": "Player Count",
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+      {
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "description": "Is not affected by ASN selection.",
+        "fieldConfig":
+          {
+            "defaults":
               {
-                "color": "green",
-                "value": 0
-              }
-            ]
+                "color": { "mode": "palette-classic" },
+                "custom":
+                  {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom":
+                      { "legend": false, "tooltip": false, "viz": false },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": { "log": 10, "type": "log" },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": { "group": "A", "mode": "none" },
+                    "thresholdsStyle": { "mode": "off" },
+                  },
+                "displayName": "${__field.labels.asn_org}",
+                "mappings": [],
+                "thresholds":
+                  {
+                    "mode": "absolute",
+                    "steps": [{ "color": "green", "value": 0 }],
+                  },
+                "unit": "locale",
+              },
+            "overrides": [],
           },
-          "unit": "locale"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 24,
-        "x": 0,
-        "y": 49
-      },
-      "id": 4,
-      "maxPerRow": 3,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.3.2",
-      "repeat": "server",
-      "repeatDirection": "h",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
+        "gridPos": { "h": 14, "w": 12, "x": 0, "y": 20 },
+        "id": 8,
+        "options":
+          {
+            "legend":
+              {
+                "calcs": ["lastNotNull"],
+                "displayMode": "table",
+                "placement": "right",
+                "showLegend": true,
+                "sortBy": "Last *",
+                "sortDesc": true,
+              },
+            "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" },
           },
-          "editorMode": "code",
-          "expr": "max by (id, type) (minecraft_server_player_count{id=\"$server\",environment=\"production\"})",
-          "format": "time_series",
-          "legendFormat": "{{type}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "$server",
-      "type": "timeseries"
-    }
-  ],
+        "pluginVersion": "12.3.2",
+        "targets":
+          [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": 'sum by (asn_org) (max by (id, type, asn_org) (minecraft_server_player_count{environment="production"}))',
+              "legendFormat": "{{asn_org}}",
+              "refId": "A",
+            },
+          ],
+        "title": "Per ASN Player Count (logarithmic)",
+        "type": "timeseries",
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "fieldConfig":
+          {
+            "defaults":
+              {
+                "color": { "mode": "palette-classic" },
+                "custom":
+                  {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom":
+                      { "legend": false, "tooltip": false, "viz": false },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": { "log": 10, "type": "log" },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": { "group": "A", "mode": "none" },
+                    "thresholdsStyle": { "mode": "off" },
+                  },
+                "displayName": "${__field.labels.name}  (${__field.labels.type})",
+                "mappings": [],
+                "thresholds":
+                  {
+                    "mode": "absolute",
+                    "steps": [{ "color": "green", "value": 0 }],
+                  },
+                "unit": "locale",
+              },
+            "overrides": [],
+          },
+        "gridPos": { "h": 14, "w": 12, "x": 12, "y": 20 },
+        "id": 7,
+        "options":
+          {
+            "legend":
+              {
+                "calcs": ["lastNotNull"],
+                "displayMode": "table",
+                "placement": "right",
+                "showLegend": true,
+                "sortBy": "Last *",
+                "sortDesc": true,
+              },
+            "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" },
+          },
+        "pluginVersion": "12.3.2",
+        "targets":
+          [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": 'max by (id, name, type, asn_org) (minecraft_server_player_count{asn_org=~"$asn",environment="production"})',
+              "legendFormat": "{{name}} ({{type}})",
+              "refId": "A",
+            },
+          ],
+        "title": "Per Server Player Count (logarithmic)",
+        "type": "timeseries",
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "description": "Is not affected by ASN selection.",
+        "fieldConfig":
+          {
+            "defaults":
+              {
+                "color": { "mode": "palette-classic" },
+                "custom":
+                  {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom":
+                      { "legend": false, "tooltip": false, "viz": false },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": { "type": "linear" },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": { "group": "A", "mode": "none" },
+                    "thresholdsStyle": { "mode": "off" },
+                  },
+                "displayName": "${__field.labels.asn_org}",
+                "mappings": [],
+                "thresholds":
+                  {
+                    "mode": "absolute",
+                    "steps": [{ "color": "green", "value": 0 }],
+                  },
+                "unit": "locale",
+              },
+            "overrides": [],
+          },
+        "gridPos": { "h": 14, "w": 12, "x": 0, "y": 34 },
+        "id": 14,
+        "options":
+          {
+            "legend":
+              {
+                "calcs": ["lastNotNull"],
+                "displayMode": "table",
+                "placement": "right",
+                "showLegend": true,
+                "sortBy": "Last *",
+                "sortDesc": true,
+              },
+            "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" },
+          },
+        "pluginVersion": "12.3.2",
+        "targets":
+          [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": 'sum by (asn_org) (max by (id, type, asn_org) (minecraft_server_player_count{environment="production"}))',
+              "legendFormat": "{{asn_org}}",
+              "refId": "A",
+            },
+          ],
+        "title": "Per ASN Player Count (linear)",
+        "type": "timeseries",
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "fieldConfig":
+          {
+            "defaults":
+              {
+                "color": { "mode": "palette-classic" },
+                "custom":
+                  {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom":
+                      { "legend": false, "tooltip": false, "viz": false },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": { "type": "linear" },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": { "group": "A", "mode": "none" },
+                    "thresholdsStyle": { "mode": "off" },
+                  },
+                "displayName": "${__field.labels.name}  (${__field.labels.type})",
+                "mappings": [],
+                "thresholds":
+                  {
+                    "mode": "absolute",
+                    "steps": [{ "color": "green", "value": 0 }],
+                  },
+                "unit": "locale",
+              },
+            "overrides": [],
+          },
+        "gridPos": { "h": 14, "w": 12, "x": 12, "y": 34 },
+        "id": 13,
+        "options":
+          {
+            "legend":
+              {
+                "calcs": ["lastNotNull"],
+                "displayMode": "table",
+                "placement": "right",
+                "showLegend": true,
+                "sortBy": "Last *",
+                "sortDesc": true,
+              },
+            "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" },
+          },
+        "pluginVersion": "12.3.2",
+        "targets":
+          [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": 'max by (id, name, type, asn_org) (minecraft_server_player_count{asn_org=~"$asn",environment="production"})',
+              "legendFormat": "{{name}} ({{type}})",
+              "refId": "A",
+            },
+          ],
+        "title": "Per Server Player Count (linear)",
+        "type": "timeseries",
+      },
+      {
+        "collapsed": false,
+        "gridPos": { "h": 1, "w": 24, "x": 0, "y": 48 },
+        "id": 3,
+        "panels": [],
+        "title": "Servers",
+        "type": "row",
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "fieldConfig":
+          {
+            "defaults":
+              {
+                "color": { "mode": "palette-classic" },
+                "custom":
+                  {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 25,
+                    "gradientMode": "opacity",
+                    "hideFrom":
+                      { "legend": false, "tooltip": false, "viz": false },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineStyle": { "fill": "solid" },
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": { "type": "linear" },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": { "group": "A", "mode": "none" },
+                    "thresholdsStyle": { "mode": "off" },
+                  },
+                "displayName": "Player Count",
+                "mappings": [],
+                "thresholds":
+                  {
+                    "mode": "absolute",
+                    "steps": [{ "color": "green", "value": 0 }],
+                  },
+                "unit": "locale",
+              },
+            "overrides": [],
+          },
+        "gridPos": { "h": 10, "w": 24, "x": 0, "y": 49 },
+        "id": 4,
+        "maxPerRow": 3,
+        "options":
+          {
+            "legend":
+              {
+                "calcs": [],
+                "displayMode": "list",
+                "placement": "bottom",
+                "showLegend": true,
+              },
+            "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" },
+          },
+        "pluginVersion": "12.3.2",
+        "repeat": "server",
+        "repeatDirection": "h",
+        "targets":
+          [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "editorMode": "code",
+              "expr": 'max by (id, type) (minecraft_server_player_count{id="$server",environment="production"})',
+              "format": "time_series",
+              "legendFormat": "{{type}}",
+              "range": true,
+              "refId": "A",
+            },
+          ],
+        "title": "$server",
+        "type": "timeseries",
+      },
+    ],
   "preload": false,
   "refresh": "10s",
   "schemaVersion": 42,
   "tags": [],
-  "templating": {
-    "list": [
-      {
-        "allowCustomValue": false,
-        "current": {
-          "text": "victoria-metrics",
-          "value": "ffbm9for4d62oe"
-        },
-        "hide": 2,
-        "label": "Datasource",
-        "name": "datasource",
-        "options": [],
-        "query": "victoriametrics-metrics-datasource",
-        "refresh": 1,
-        "regex": "",
-        "type": "datasource"
-      },
-      {
-        "allowCustomValue": false,
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
-        "definition": "query_result(label_join(label_join(minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"}, \"temp\", \" (\", \"name\", \"type\"), \"display_name\", \") \", \"temp\", \"asn_org\"))",
-        "includeAll": true,
-        "label": "Server",
-        "name": "server",
-        "options": [],
-        "query": {
-          "query": "query_result(label_join(label_join(minecraft_server_player_count{asn_org=~\"$asn\",environment=\"production\"}, \"temp\", \" (\", \"name\", \"type\"), \"display_name\", \") \", \"temp\", \"asn_org\"))",
-          "refId": "StandardVariableQuery"
-        },
-        "refresh": 1,
-        "regex": "/.*display_name=\\\"(?<text>[^\\\"]+)\\\".*id=\\\"(?<value>[^\\\"]+)\\\".*/",
-        "sort": 1,
-        "type": "query"
-      },
-      {
-        "allowCustomValue": false,
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
-        "definition": "label_values(minecraft_server_player_count{asn_org!=\"\",environment=\"production\"}, asn_org)",
-        "includeAll": true,
-        "label": "ASN",
-        "name": "asn",
-        "options": [],
-        "query": {
-          "query": "label_values(minecraft_server_player_count{asn_org!=\"\",environment=\"production\"}, asn_org)",
-          "refId": "StandardVariableQuery"
-        },
-        "refresh": 1,
-        "regex": "",
-        "type": "query"
-      }
-    ]
-  },
-  "time": {
-    "from": "now-30d",
-    "to": "now"
-  },
+  "templating":
+    {
+      "list":
+        [
+          {
+            "allowCustomValue": false,
+            "current":
+              { "text": "victoria-metrics", "value": "ffbm9for4d62oe" },
+            "hide": 2,
+            "label": "Datasource",
+            "name": "datasource",
+            "options": [],
+            "query": "victoriametrics-metrics-datasource",
+            "refresh": 1,
+            "regex": "",
+            "type": "datasource",
+          },
+          {
+            "allowCustomValue": false,
+            "current": { "text": "All", "value": "$__all" },
+            "datasource": { "type": "prometheus", "uid": "${datasource}" },
+            "definition": 'query_result(label_join(label_join(minecraft_server_player_count{asn_org=~"$asn",environment="production"}, "temp", " (", "name", "type"), "display_name", ") ", "temp", "asn_org"))',
+            "includeAll": true,
+            "label": "Server",
+            "name": "server",
+            "options": [],
+            "query":
+              {
+                "query": 'query_result(label_join(label_join(minecraft_server_player_count{asn_org=~"$asn",environment="production"}, "temp", " (", "name", "type"), "display_name", ") ", "temp", "asn_org"))',
+                "refId": "StandardVariableQuery",
+              },
+            "refresh": 1,
+            "regex": "/.*display_name=\\\"(?<text>[^\\\"]+)\\\".*id=\\\"(?<value>[^\\\"]+)\\\".*/",
+            "sort": 1,
+            "type": "query",
+          },
+          {
+            "allowCustomValue": false,
+            "current": { "text": "All", "value": "$__all" },
+            "datasource": { "type": "prometheus", "uid": "${datasource}" },
+            "definition": 'label_values(minecraft_server_player_count{asn_org!="",environment="production"}, asn_org)',
+            "includeAll": true,
+            "label": "ASN",
+            "name": "asn",
+            "options": [],
+            "query":
+              {
+                "query": 'label_values(minecraft_server_player_count{asn_org!="",environment="production"}, asn_org)',
+                "refId": "StandardVariableQuery",
+              },
+            "refresh": 1,
+            "regex": "",
+            "type": "query",
+          },
+        ],
+    },
+  "time": { "from": "now-30d", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
   "title": "Mc Tracker",
   "uid": "957b2932-bacc-4bfe-88b0-c41817513a61",
-  "version": 84
+  "version": 84,
 }

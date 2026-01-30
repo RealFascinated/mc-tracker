@@ -7,7 +7,6 @@ export const env = createEnv({
     ENVIRONMENT: z.string().default("development"),
 
     // Pinger
-    PINGER_SERVER_CRON: z.string(),
     PINGER_DNS_INVALIDAION_CRON: z.string(),
     PINGER_TIMEOUT: z.coerce.number(),
     PINGER_RETRY_ATTEMPTS: z.coerce.number(),
@@ -25,7 +24,6 @@ export const env = createEnv({
     ENVIRONMENT: process.env.ENVIRONMENT,
 
     // Pinger
-    PINGER_SERVER_CRON: process.env.PINGER_SERVER_CRON,
     PINGER_DNS_INVALIDAION_CRON: process.env.PINGER_DNS_INVALIDAION_CRON,
     PINGER_TIMEOUT: process.env.PINGER_TIMEOUT,
     PINGER_RETRY_ATTEMPTS: process.env.PINGER_RETRY_ATTEMPTS,

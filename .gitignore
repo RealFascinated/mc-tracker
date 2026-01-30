@@ -36,3 +36,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # data
 data/
 !data/servers.json
+
+# build files
+tracker.exe

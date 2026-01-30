@@ -1,32 +1,14 @@
-
-import { ResolvedServer, resolveDns } from "../common/dns-resolver";
+import { resolveDns } from "../common/dns-resolver";
 import dns from "dns";
-import { Ping } from "../common/types/ping";
+import type { Ping } from "../common/types/ping";
+import type { ServerOptions, ServerType } from "../common/types/server";
+import type { AsnData } from "../common/types/asn";
+import type { DnsInfo } from "../common/types/dns";
 import { env } from "../common/env";
 import { logger } from "../common/logger";
 import { isIpAddress } from "../common/utils";
-import { AsnData, MaxMindService } from "../service/maxmind-service";
+import { MaxMindService } from "../service/maxmind-service";
 import { pingPC, pingPE } from "../common/minecraft-ping";
-
-/**
- * The type of server.
- *
- * PC: Java Edition - PE: Bedrock Edition
- */
-export type ServerType = "PC" | "PE";
-
-type ServerOptions = {
-  id: string;
-  name: string;
-  ip: string;
-  port?: number;
-  type: ServerType;
-};
-
-type DnsInfo = {
-  hasResolved: boolean;
-  resolvedServer?: ResolvedServer;
-};
 
 export default class Server {
   /**
@@ -240,7 +222,10 @@ export default class Server {
           return;
         }
       } catch (err) {
-        logger.warn(`Failed to resolve domain ${ipOrDomain} to IP for ${this.getIdentifier()}`, err);
+        logger.warn(
+          `Failed to resolve domain ${ipOrDomain} to IP for ${this.getIdentifier()}`,
+          err,
+        );
         return;
       }
     }
@@ -249,7 +234,9 @@ export default class Server {
     if (asnData) {
       // Log if ASN data has changed, ignore initial set
       if (this.asnData) {
-        logger.info(`Updated ASN data for ${this.getIdentifier()}: ASN ${asnData.asn} (${asnData.asnOrg})`);
+        logger.info(
+          `Updated ASN data for ${this.getIdentifier()}: ASN ${asnData.asn} (${asnData.asnOrg})`,
+        );
       }
       this.asnData = asnData;
     }

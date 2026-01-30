@@ -1,20 +1,14 @@
 import { logger } from "../common/logger";
-import Server, { ServerType } from "./server";
+import Server from "./server";
+import type { ServerConfig } from "../common/types/server";
+import type { ServerPing, ServerPingResult } from "../common/types/server-ping";
 import { validate as uuidValidate } from "uuid";
 import { join } from "path";
 import { readFileSync } from "fs";
-import { metrics } from "../metrics/metrics";
-
-interface ServerConfig {
-  name: string;
-  id: string;
-  ip: string;
-  type: ServerType;
-}
 
 export default class ServerManager {
   public static SERVERS: Server[] = [];
-  public static pingingServers: boolean = false;
+  private static pingPromise: Promise<ServerPingResult[]> | null = null;
 
   constructor() {
     logger.info("Loading servers...");
@@ -40,9 +34,7 @@ export default class ServerManager {
         type: configServer.type,
       });
       ServerManager.SERVERS.push(server);
-      logger.info(
-        `Loaded ${server.getIdentifier()} (${configServer.id})`,
-      );
+      logger.info(`Loaded ${server.getIdentifier()} (${configServer.id})`);
     }
 
     // Validate all server ids are unique
@@ -73,48 +65,45 @@ export default class ServerManager {
   }
 
   /**
-   * Ping all servers to update their status.
+   * Ping all servers and return successful results.
+   * Concurrent calls share the same in-flight ping.
    */
-  public async pingServers(): Promise<void> {
-    if (ServerManager.pingingServers) {
-      logger.warn("Ping already in progress, skipping...");
-      return;
+  public async getServerPings(): Promise<ServerPingResult[]> {
+    if (ServerManager.pingPromise) {
+      return ServerManager.pingPromise;
     }
 
-    ServerManager.pingingServers = true;
+    ServerManager.pingPromise = this.executePings();
+    try {
+      return await ServerManager.pingPromise;
+    } finally {
+      ServerManager.pingPromise = null;
+    }
+  }
+
+  private async executePings(): Promise<ServerPingResult[]> {
     logger.info(`Pinging servers ${ServerManager.SERVERS.length}`);
 
-    let successfulPings = 0;
     const pings = await Promise.all(
       ServerManager.SERVERS.map(async (server) => {
         try {
           const ping = await server.pingServer();
           if (ping) {
-            successfulPings++;
-            return {
-              server: server,
-              ping: ping,
-            };
+            return { server, ping };
           }
-        } catch (err) {} // Ignore the error, continue fetching servers
+        } catch (err) {
+          // Ignore the error, continue fetching servers
+        }
       }),
     );
 
-    for (const { server, ping } of pings.filter((ping) => ping !== undefined)) {
-      metrics.writeMetric(
-        server.id,
-        server.name,
-        server.type,
-        ping.playerCount,
-        server.asnData?.asn,
-        server.asnData?.asnOrg,
-      );
-    }
+    const results = pings.filter((p): p is ServerPing => p !== undefined);
 
     logger.info(
-      `Finished pinging servers! ${successfulPings}/${ServerManager.SERVERS.length} servers responded to ping!`,
+      `Finished pinging servers! ${results.length}/${ServerManager.SERVERS.length} servers responded to ping!`,
     );
-    ServerManager.pingingServers = false;
+
+    return results;
   }
 
   /**

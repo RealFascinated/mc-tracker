@@ -1,16 +1,5 @@
 import dns from "dns";
-
-export type ResolvedServer = {
-  /**
-   * The IP address of the server.
-   */
-  ip: string;
-
-  /**
-   * The port of the server.
-   */
-  port: number;
-};
+import type { ResolvedServer } from "./types/dns";
 
 /**
  * Resolves a minecraft server domain to an

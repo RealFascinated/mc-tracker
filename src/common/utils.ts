@@ -1,3 +1,5 @@
+import * as net from "net";
+
 /**
  * Checks if a string is an IP address.
  *
@@ -10,18 +12,22 @@ export function isIpAddress(str: string): boolean {
   return ipv4Regex.test(str) || ipv6Regex.test(str);
 }
 
-import * as net from "net";
-
 /**
  * TCP-pings a host:port. Resolves on connect, rejects on error/timeout.
  */
-export function tcpPing(host: string, port: number, timeout = 3000): Promise<void> {
+export function tcpPing(
+  host: string,
+  port: number,
+  timeout = 3000,
+): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const socket = net.createConnection(port, host);
     let settled = false;
     const clean = () => {
       socket.removeAllListeners();
-      try { socket.destroy(); } catch {}
+      try {
+        socket.destroy();
+      } catch {}
     };
 
     socket.once("connect", () => {
