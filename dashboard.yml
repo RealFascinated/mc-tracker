@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 25,
+  "id": 0,
   "links": [
     {
       "asDropdown": false,
@@ -292,7 +292,9 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(minecraft_server_player_count{environment=\"production\"})",
+          "editorMode": "code",
+          "expr": "max_over_time(\r\n  sum(minecraft_server_player_count{environment=\"production\"})\r\n  [24h:]\r\n)",
+          "format": "time_series",
           "instant": true,
           "refId": "A"
         }
@@ -357,7 +359,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(minecraft_server_player_count{environment=\"production\"})",
+          "expr": "max_over_time(\r\n  sum(minecraft_server_player_count{environment=\"production\"})\r\n  [30d:]\r\n)",
           "format": "time_series",
           "instant": true,
           "refId": "A"
@@ -1159,12 +1161,12 @@
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-30d",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Mc Tracker",
   "uid": "957b2932-bacc-4bfe-88b0-c41817513a61",
-  "version": 77
+  "version": 84
 }
