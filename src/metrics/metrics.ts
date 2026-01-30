@@ -1,12 +1,13 @@
 import { Registry, Gauge } from "prom-client";
 import { logger } from "../common/logger";
 import { env } from "../common/env";
+import { ServerType } from "../server/server";
 
 function labelsEqual(
   a: Record<string, string>,
   b: Record<string, string>,
 ): boolean {
-  const keys = ["id", "name", "type", "asn", "asn_org", "environment"];
+  const keys = ["id", "name", "type", "asn", "asn_org"];
   return keys.every((key) => a[key] === b[key]);
 }
 
@@ -19,12 +20,15 @@ export default class Metrics {
     logger.info("Initializing Prometheus metrics");
 
     this.registry = new Registry();
+    this.registry.setDefaultLabels({
+      environment: env.ENVIRONMENT,
+    });
 
     // Create Gauge metric for player count
     this.playerCountGauge = new Gauge({
       name: "minecraft_server_player_count",
       help: "Number of players on Minecraft server",
-      labelNames: ["id", "name", "type", "asn", "asn_org", "environment"],
+      labelNames: ["id", "name", "type", "asn", "asn_org"],
       registers: [this.registry],
     });
 
@@ -44,7 +48,7 @@ export default class Metrics {
   public writeMetric(
     id: string,
     name: string,
-    type: string,
+    type: ServerType,
     playerCount: number,
     asn?: string,
     asnOrg?: string,
@@ -55,7 +59,6 @@ export default class Metrics {
       type,
       asn: asn || "",
       asn_org: asnOrg || "",
-      environment: env.ENVIRONMENT,
     };
 
     const previousLabels = this.lastLabelsByServerId.get(id);
