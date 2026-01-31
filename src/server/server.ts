@@ -3,7 +3,6 @@ import dns from "dns";
 import type { Ping } from "../common/types/ping";
 import type { ServerOptions, ServerType } from "../common/types/server";
 import type { AsnData } from "../common/types/asn";
-import type { DnsInfo } from "../common/types/dns";
 import { env } from "../common/env";
 import { logger } from "../common/logger";
 import { isIpAddress } from "../common/utils";
