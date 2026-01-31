@@ -37,14 +37,6 @@ export default class Server {
   public readonly type: ServerType;
 
   /**
-   * The resolved server information from
-   * DNS records for a PC server.
-   */
-  public dnsInfo: DnsInfo = {
-    hasResolved: false,
-  };
-
-  /**
    * The ASN data for this server.
    */
   public asnData?: AsnData;
@@ -67,15 +59,6 @@ export default class Server {
    */
   public getIdentifier(): string {
     return `${this.name} (${this.type})`;
-  }
-
-  /**
-   * Invalidates the DNS cache for the server.
-   */
-  public invalidateDns() {
-    this.dnsInfo = {
-      hasResolved: false,
-    };
   }
 
   /**
@@ -129,23 +112,12 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   private async pingPCServer(): Promise<Ping | undefined> {
-    if (this.dnsInfo.resolvedServer == undefined && !this.dnsInfo.hasResolved) {
-      try {
-        const resolvedServer = await resolveDns(this.ip);
-
-        this.dnsInfo = {
-          hasResolved: true,
-          resolvedServer: resolvedServer,
-        };
-      } catch (err) {}
-    }
-
-    const { hasResolved, resolvedServer } = this.dnsInfo;
+    const resolvedServer = await resolveDns(this.ip);
 
     let ip: string;
     let port: number;
 
-    if (hasResolved && resolvedServer != undefined) {
+    if (resolvedServer != undefined) {
       ip = resolvedServer.ip;
       port = resolvedServer.port;
     } else {
