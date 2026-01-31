@@ -128,6 +128,7 @@ export class MaxMindService {
         this.DATABASES_DIRECTORY,
         `${database.edition}.mmdb`,
       );
+      logger.info(`Checking database ${database.edition}... (location: ${databaseFile})`);
       const exists = await this.fileExists(databaseFile);
       const needsUpdate = await this.shouldUpdateDatabase(
         databaseFile,
