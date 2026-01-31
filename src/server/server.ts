@@ -112,15 +112,14 @@ export default class Server {
    * @returns the ping response or undefined if the server is offline
    */
   private async pingPCServer(): Promise<Ping | undefined> {
-    const resolvedServer = await resolveDns(this.ip);
-
     let ip: string;
     let port: number;
 
-    if (resolvedServer != undefined) {
+    try {
+      const resolvedServer = await resolveDns(this.ip);
       ip = resolvedServer.ip;
       port = resolvedServer.port;
-    } else {
+    } catch {
       ip = this.ip;
       port = 25565; // The default port
     }
