@@ -1,5 +1,5 @@
 import { open, Reader } from "maxmind";
-import type { AsnResponse, CityResponse } from "mmdb-lib";
+import type { AsnResponse } from "mmdb-lib";
 import type { AsnData } from "../common/types/asn";
 import { logger } from "../common/logger";
 import { env } from "../common/env";
@@ -7,10 +7,10 @@ import { join, dirname } from "path";
 import { extract } from "tar-stream";
 import { createGunzip } from "zlib";
 import fs from "fs/promises";
-import { createReadStream } from "fs";
+import { createReadStream, createWriteStream } from "fs";
 
 /**
- * MaxMind service for GeoIP database management and lookups (City and ASN).
+ * MaxMind service for GeoIP database management and lookups (ASN).
  */
 export class MaxMindService {
   /**
@@ -22,21 +22,15 @@ export class MaxMindService {
     "databases",
   );
 
-  /**
-   * The endpoint to download database files from.
-   */
-  private static readonly DATABASE_DOWNLOAD_ENDPOINT =
-    "https://download.maxmind.com/app/geoip_download?edition_id=%s&license_key=%s&suffix=tar.gz";
-
-  private static readonly MAX_DATABASE_AGE_MS = 3 * 24 * 60 * 60 * 1000;
+  private static readonly MAX_DATABASE_AGE_DAYS = 3;
+  private static readonly MAX_DATABASE_AGE_MS =
+    MaxMindService.MAX_DATABASE_AGE_DAYS * 24 * 60 * 60 * 1000;
+  private static readonly READER_CACHE_MAX = 4096;
 
   /**
    * The currently loaded databases.
    */
-  private static databases: Map<
-    Database,
-    Reader<CityResponse> | Reader<AsnResponse>
-  > = new Map();
+  private static databases: Map<Database, Reader<AsnResponse>> = new Map();
 
   /**
    * Initializes the MaxMind databases.
@@ -80,9 +74,7 @@ export class MaxMindService {
    * @returns the ASN response, null if none
    */
   public static lookupAsn(ip: string): AsnResponse | null {
-    const database = this.getDatabase(Database.ASN) as
-      | Reader<AsnResponse>
-      | undefined;
+    const database = this.getDatabase(Database.ASN);
     if (!database) return null;
     try {
       return database.get(ip) ?? null;
@@ -106,15 +98,9 @@ export class MaxMindService {
     };
   }
 
-  /**
-   * Get the reader for the given database.
-   *
-   * @param database the database to get
-   * @returns the database reader, undefined if none
-   */
-  public static getDatabase(
+  private static getDatabase(
     database: Database,
-  ): (Reader<CityResponse> | Reader<AsnResponse>) | undefined {
+  ): Reader<AsnResponse> | undefined {
     return this.databases.get(database);
   }
 
@@ -135,61 +121,30 @@ export class MaxMindService {
 
     await fs.mkdir(this.DATABASES_DIRECTORY, { recursive: true });
     let updatedCount = 0;
-    let loadedCount = 0;
+    let newCount = 0;
 
     for (const database of Object.values(Database)) {
       const databaseFile = join(
         this.DATABASES_DIRECTORY,
         `${database.edition}.mmdb`,
       );
-      let needsUpdate = false;
       const exists = await this.fileExists(databaseFile);
-      if (exists) {
-        const stats = await fs.stat(databaseFile);
-        const ageInMillis = Date.now() - stats.mtimeMs;
-        const daysOld = Math.floor(
-          ageInMillis / (24 * 60 * 60 * 1000),
-        );
-
-        if (ageInMillis > this.MAX_DATABASE_AGE_MS) {
-          needsUpdate = true;
+      const needsUpdate = await this.shouldUpdateDatabase(
+        databaseFile,
+        database,
+        isScheduled,
+      );
+      if (needsUpdate) {
+        if (exists) updatedCount++;
+        else {
+          newCount++;
           logger.info(
-            `Database ${database.edition} is ${daysOld} days old (max 3 days), updating...`,
-          );
-
-          this.databases.delete(database);
-          await fs.rm(databaseFile, { force: true });
-          updatedCount++;
-        } else if (isScheduled) {
-          logger.debug(
-            "Database %s is %d days old, no update needed",
-            database.edition,
-            daysOld,
+            `Database ${database.edition} not found, downloading for the first time...`,
           );
         }
       }
 
-      if (!exists && !needsUpdate) {
-        logger.info(
-          `Database ${database.edition} not found, downloading for the first time...`,
-        );
-        loadedCount++;
-      }
-
-      if (!(await this.fileExists(databaseFile))) {
-        await this.downloadDatabase(license, database, databaseFile);
-      }
-
-      if (this.databases.has(database)) continue;
-
-      const reader = await open<CityResponse | AsnResponse>(databaseFile, {
-        cache: { max: 4096 },
-      });
-      this.databases.set(
-        database,
-        reader as Reader<CityResponse> | Reader<AsnResponse>,
-      );
-      logger.info(`Successfully loaded database: ${database.edition}`);
+      await this.ensureDatabaseLoaded(license, database, databaseFile);
     }
 
     if (isScheduled && updatedCount > 0) {
@@ -202,9 +157,64 @@ export class MaxMindService {
 
     if (!isScheduled) {
       logger.info(
-        `Initialization complete: ${this.databases.size} database(s) active (${loadedCount} new, ${updatedCount} updated)`,
+        `Initialization complete: ${this.databases.size} database(s) active (${newCount} new, ${updatedCount} updated)`,
       );
     }
+  }
+
+  /**
+   * Returns true if the database file is missing or older than MAX_DATABASE_AGE_DAYS.
+   * When stale, deletes the file and removes from the in-memory map.
+   */
+  private static async shouldUpdateDatabase(
+    databaseFile: string,
+    database: Database,
+    isScheduled: boolean,
+  ): Promise<boolean> {
+    if (!(await this.fileExists(databaseFile))) return true;
+
+    const stats = await fs.stat(databaseFile);
+    const ageInMillis = Date.now() - stats.mtimeMs;
+    const daysOld = Math.floor(ageInMillis / (24 * 60 * 60 * 1000));
+
+    if (ageInMillis > this.MAX_DATABASE_AGE_MS) {
+      logger.info(
+        `Database ${database.edition} is ${daysOld} days old (max ${this.MAX_DATABASE_AGE_DAYS} days), updating...`,
+      );
+      this.databases.delete(database);
+      await fs.rm(databaseFile, { force: true });
+      return true;
+    }
+
+    if (isScheduled) {
+      logger.debug(
+        "Database %s is %d days old, no update needed",
+        database.edition,
+        daysOld,
+      );
+    }
+    return false;
+  }
+
+  /**
+   * Ensures the database file exists (downloads if needed) and is loaded into memory.
+   */
+  private static async ensureDatabaseLoaded(
+    license: string,
+    database: Database,
+    databaseFile: string,
+  ): Promise<void> {
+    if (!(await this.fileExists(databaseFile))) {
+      await this.downloadDatabase(license, database, databaseFile);
+    }
+
+    if (this.databases.has(database)) return;
+
+    const reader = await open<AsnResponse>(databaseFile, {
+      cache: { max: this.READER_CACHE_MAX },
+    });
+    this.databases.set(database, reader);
+    logger.info(`Successfully loaded database: ${database.edition}`);
   }
 
   /**
@@ -223,10 +233,7 @@ export class MaxMindService {
     if (!(await this.fileExists(downloadedFile))) {
       logger.info(`Downloading database ${database.edition}...`);
       const before = Date.now();
-      const url = this.DATABASE_DOWNLOAD_ENDPOINT.replace(
-        "%s",
-        database.edition,
-      ).replace("%s", license);
+      const url = `https://download.maxmind.com/app/geoip_download?edition_id=${encodeURIComponent(database.edition)}&license_key=${encodeURIComponent(license)}&suffix=tar.gz`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(
@@ -278,13 +285,12 @@ export class MaxMindService {
         }
         if (header.type === "file") {
           fs.mkdir(dirname(destPath), { recursive: true })
-            .then(async () => {
-              const chunks: Buffer[] = [];
-              for await (const chunk of stream) {
-                chunks.push(Buffer.from(chunk));
-              }
-              await fs.writeFile(destPath, Buffer.concat(chunks));
-              done();
+            .then(() => {
+              const writeStream = createWriteStream(destPath);
+              stream.pipe(writeStream);
+              writeStream.on("finish", () => done());
+              writeStream.on("error", done);
+              stream.on("error", done);
             })
             .catch(done);
           return;
@@ -314,6 +320,11 @@ export class MaxMindService {
         }
       }
     }
+
+    await fs.rm(archivePath, { force: true });
+    throw new Error(
+      `Extracted archive for ${edition} but could not find ${edition}.mmdb in expected layout`,
+    );
   }
 
   private static getLicenseKey(): string | undefined {
