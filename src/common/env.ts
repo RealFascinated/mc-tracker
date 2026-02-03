@@ -11,9 +11,6 @@ export const env = createEnv({
     PINGER_TIMEOUT: z.coerce.number(),
     PINGER_RETRY_ATTEMPTS: z.coerce.number(),
     PINGER_RETRY_DELAY: z.coerce.number(),
-
-    // MaxMind
-    MAXMIND_LICENSE_KEY: z.string().optional(),
   },
 
   /**
@@ -28,9 +25,6 @@ export const env = createEnv({
     PINGER_TIMEOUT: process.env.PINGER_TIMEOUT,
     PINGER_RETRY_ATTEMPTS: process.env.PINGER_RETRY_ATTEMPTS,
     PINGER_RETRY_DELAY: process.env.PINGER_RETRY_DELAY,
-
-    // MaxMind
-    MAXMIND_LICENSE_KEY: process.env.MAXMIND_LICENSE_KEY,
   },
 
   /**

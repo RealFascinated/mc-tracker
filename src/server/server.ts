@@ -2,12 +2,12 @@ import { resolveDns } from "../common/dns-resolver";
 import dns from "dns";
 import type { Ping } from "../common/types/ping";
 import type { ServerOptions, ServerType } from "../common/types/server";
-import type { AsnData } from "../common/types/asn";
 import { env } from "../common/env";
 import { logger } from "../common/logger";
 import { isIpAddress } from "../common/utils";
-import { MaxMindService } from "../service/maxmind-service";
 import { pingPC, pingPE } from "../common/minecraft-ping";
+import { AsnLookup } from "mcutils-js-api/dist/types/server/server";
+import { mcUtils } from "..";
 
 export default class Server {
   /**
@@ -38,7 +38,7 @@ export default class Server {
   /**
    * The ASN data for this server.
    */
-  public asnData?: AsnData;
+  public asnData?: AsnLookup;
 
   /**
    * Last IP we resolved ASN for; used to skip redundant ASN lookups.
@@ -168,14 +168,18 @@ export default class Server {
       }
     }
 
-    const asnData = MaxMindService.resolveAsn(ip);
-    if (asnData) {
+    const { data, error } = await mcUtils.fetchIpLookup(ip);
+    if (error) {
+      return;
+    }
+    const asn = data?.asn;
+    if (asn) {
       if (this.asnData) {
         logger.info(
-          `Updated ASN data for ${this.getIdentifier()}: ASN ${asnData.asn} (${asnData.asnOrg})`,
+          `Updated ASN data for ${this.getIdentifier()}: ASN ${asn.asn} (${asn.asnOrg})`,
         );
       }
-      this.asnData = asnData;
+      this.asnData = asn;
       this.lastAsnIp = ipOrDomain;
     }
   }

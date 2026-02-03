@@ -1,10 +1,8 @@
-import ServerManager from "./server/server-manager";
-import { MaxMindService } from "./service/maxmind-service";
+import McUtilsAPI from "mcutils-js-api";
 import { metrics } from "./metrics/metrics";
-import cron from "node-cron";
+import ServerManager from "./server/server-manager";
 
-// Initialize the ASN database
-await MaxMindService.init();
+export const mcUtils = new McUtilsAPI();
 
 // Initialize the server manager
 const serverManager = new ServerManager();
@@ -32,7 +30,3 @@ const server = Bun.serve({
 console.log(
   `Metrics server running on http://localhost:${server.port}/metrics`,
 );
-
-cron.schedule("0 2 * * *", async () => {
-  await MaxMindService.scheduledUpdate();
-});
