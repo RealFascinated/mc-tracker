@@ -1,12 +1,10 @@
-import { resolveDns } from "../common/dns-resolver";
-import dns from "dns";
-import type { Ping } from "../common/types/ping";
-import type { ServerOptions, ServerType } from "../common/types/server";
+import { AsnLookup } from "mcutils-js-api/dist/types/server/server";
 import { env } from "../common/env";
 import { logger } from "../common/logger";
-import { isIpAddress } from "../common/utils";
-import { pingPC, pingPE } from "../common/minecraft-ping";
-import { AsnLookup } from "mcutils-js-api/dist/types/server/server";
+import type { ServerOptions, ServerType } from "../common/types/server";
+import { Server as MinecraftServer } from "mcutils-js-api/dist/types/server/server";
+import { JavaServer } from "mcutils-js-api/dist/types/server/impl/java-server";
+import { BedrockServer } from "mcutils-js-api/dist/types/server/impl/bedrock-server";
 import { mcUtils } from "..";
 
 export default class Server {
@@ -40,11 +38,6 @@ export default class Server {
    */
   public asnData?: AsnLookup;
 
-  /**
-   * Last IP we resolved ASN for; used to skip redundant ASN lookups.
-   */
-  private lastAsnIp?: string;
-
   constructor({ id, name, ip, port, type }: ServerOptions) {
     this.id = id;
     this.name = name;
@@ -65,10 +58,12 @@ export default class Server {
    *
    * @returns the ping response or undefined if the server is offline
    */
-  public async pingServer(attempt: number = 0): Promise<Ping | undefined> {
+  public async pingServer(
+    attempt: number = 0,
+  ): Promise<MinecraftServer | undefined> {
     const before = performance.now();
     try {
-      let response: Ping | undefined;
+      let response: MinecraftServer | undefined;
 
       switch (this.type) {
         case "PC": {
@@ -80,7 +75,8 @@ export default class Server {
           break;
         }
       }
-      if (!response) {
+
+      if (response == undefined) {
         if (attempt < env.PINGER_RETRY_ATTEMPTS) {
           logger.warn(
             `Failed to ping ${this.getIdentifier()} after ${Math.round(performance.now() - before)}ms, retrying... (attempt ${attempt + 1}/${env.PINGER_RETRY_ATTEMPTS})`,
@@ -92,8 +88,7 @@ export default class Server {
 
         return Promise.resolve(undefined);
       }
-
-      await this.updateAsnData(response.ip);
+      this.asnData = response.asn ?? this.asnData;
       return Promise.resolve(response);
     } catch (err) {
       logger.warn(
@@ -110,20 +105,14 @@ export default class Server {
    * @param server the server to ping
    * @returns the ping response or undefined if the server is offline
    */
-  private async pingPCServer(): Promise<Ping | undefined> {
-    let ip: string;
-    let port: number;
-
-    try {
-      const resolvedServer = await resolveDns(this.ip);
-      ip = resolvedServer.ip;
-      port = resolvedServer.port;
-    } catch {
-      ip = this.ip;
-      port = 25565; // The default port
+  private async pingPCServer(): Promise<JavaServer | undefined> {
+    const response = await mcUtils.fetchJavaServer(
+      `${this.ip}:${this.port || 25565}`,
+    );
+    if (response.error || !response.server) {
+      return undefined;
     }
-
-    return pingPC(ip, port, env.PINGER_TIMEOUT);
+    return response.server;
   }
 
   /**
@@ -132,76 +121,13 @@ export default class Server {
    * @param server the server to ping
    * @returns the ping response or undefined if the server is offline
    */
-  private async pingPEServer(): Promise<Ping | undefined> {
-    return pingPE(this.ip, this.port || 19132, env.PINGER_TIMEOUT);
-  }
-
-  /**
-   * Updates the cached ASN data.
-   *
-   * @param ipOrDomain the IP address or domain name to resolve
-   */
-  private async updateAsnData(ipOrDomain: string) {
-    if (this.asnData && this.lastAsnIp === ipOrDomain) {
-      return;
+  private async pingPEServer(): Promise<BedrockServer | undefined> {
+    const response = await mcUtils.fetchBedrockServer(
+      `${this.ip}:${this.port || 19132}`,
+    );
+    if (response.error || !response.server) {
+      return undefined;
     }
-
-    // Resolve domain name to IP if needed
-    let ip = ipOrDomain;
-    if (!isIpAddress(ipOrDomain)) {
-      try {
-        const resolved = await this.resolveDomainToIp(ipOrDomain);
-        if (resolved) {
-          ip = resolved;
-        } else {
-          logger.warn(
-            `Failed to resolve domain ${ipOrDomain} to IP for ${this.getIdentifier()}, skipping ASN lookup`,
-          );
-          return;
-        }
-      } catch (err) {
-        logger.warn(
-          `Failed to resolve domain ${ipOrDomain} to IP for ${this.getIdentifier()}`,
-          err,
-        );
-        return;
-      }
-    }
-
-    const { data, error } = await mcUtils.fetchIpLookup(ip);
-    if (error) {
-      return;
-    }
-    const asn = data?.asn;
-    if (asn) {
-      if (this.asnData) {
-        logger.info(
-          `Updated ASN data for ${this.getIdentifier()}: ASN ${asn.asn} (${asn.asnOrg})`,
-        );
-      }
-      this.asnData = asn;
-      this.lastAsnIp = ipOrDomain;
-    }
-  }
-
-  /**
-   * Resolves a domain name to an IP address.
-   *
-   * @param domain the domain name to resolve
-   * @returns the IP address or undefined if failed
-   */
-  private async resolveDomainToIp(domain: string): Promise<string | undefined> {
-    return new Promise((resolve) => {
-      dns.lookup(
-        domain,
-        (err: NodeJS.ErrnoException | null, address: string) => {
-          if (err) {
-            resolve(undefined);
-          } else {
-            resolve(address);
-          }
-        },
-      );
-    });
+    return response.server;
   }
 }

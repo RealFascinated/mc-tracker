@@ -50,7 +50,7 @@ export default class Metrics {
           asn: server.asnData?.asn ?? "",
           asn_org: server.asnData?.asnOrg ?? "",
         },
-        ping.playerCount,
+        ping.players.online,
       );
     }
   }

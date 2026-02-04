@@ -1,14 +1,14 @@
-import { logger } from "../common/logger";
-import Server from "./server";
-import type { ServerConfig } from "../common/types/server";
-import type { ServerPing, ServerPingResult } from "../common/types/server-ping";
-import { validate as uuidValidate } from "uuid";
-import { join } from "path";
 import { readFileSync } from "fs";
+import { join } from "path";
+import { validate as uuidValidate } from "uuid";
+import { logger } from "../common/logger";
+import type { ServerConfig } from "../common/types/server";
+import { PingResult } from "../common/types/server-ping";
+import Server from "./server";
 
 export default class ServerManager {
   public static SERVERS: Server[] = [];
-  private static pingPromise: Promise<ServerPingResult[]> | null = null;
+  private static pingPromise: Promise<PingResult[]> | null = null;
 
   constructor() {
     logger.info("Loading servers...");
@@ -68,7 +68,7 @@ export default class ServerManager {
    * Ping all servers and return successful results.
    * Concurrent calls share the same in-flight ping.
    */
-  public async getServerPings(): Promise<ServerPingResult[]> {
+  public async getServerPings(): Promise<PingResult[]> {
     if (ServerManager.pingPromise) {
       return ServerManager.pingPromise;
     }
@@ -81,23 +81,27 @@ export default class ServerManager {
     }
   }
 
-  private async executePings(): Promise<ServerPingResult[]> {
+  private async executePings(): Promise<PingResult[]> {
     logger.info(`Pinging servers ${ServerManager.SERVERS.length}`);
 
     const pings = await Promise.all(
       ServerManager.SERVERS.map(async (server) => {
         try {
           const ping = await server.pingServer();
-          if (ping) {
-            return { server, ping };
+          if (!ping) {
+            return undefined;
           }
+          return {
+            server,
+            ping,
+          } as PingResult;
         } catch (err) {
           // Ignore the error, continue fetching servers
         }
       }),
     );
 
-    const results = pings.filter((p): p is ServerPing => p !== undefined);
+    const results = pings.filter((p): p is PingResult => p !== undefined);
 
     logger.info(
       `Finished pinging servers! ${results.length}/${ServerManager.SERVERS.length} servers responded to ping!`,
