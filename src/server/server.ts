@@ -173,14 +173,16 @@ export default class Server {
       return;
     }
     const asn = data?.asn;
-    if (asn) {
-      if (this.asnData) {
-        logger.info(
-          `Updated ASN data for ${this.getIdentifier()}: ASN ${asn.asn} (${asn.asnOrg})`,
-        );
-      }
+    if (asn && asn.asnOrg !== this.asnData?.asnOrg) {
       this.asnData = asn;
       this.lastAsnIp = ipOrDomain;
+      logger.info(
+        `Updated ASN data for ${this.getIdentifier()}: ASN ${asn.asn} (${asn.asnOrg})`,
+      );
+    } else {
+      logger.info(
+        `No ASN data found for ${this.getIdentifier()}, skipping ASN lookup`,
+      );
     }
   }
 
