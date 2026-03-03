@@ -328,5 +328,11 @@
     "id": "019cb16b-85c1-7000-9ebd-7dffbc664429",
     "ip": "lemoncloud.net",
     "type": "PC"
+  },
+  {
+    "name": "EarthMC",
+    "id": "019cb16b-c1d4-7000-9ce2-4ee80f7be7ff",
+    "ip": "earthmc.net",
+    "type": "PC"
   }
 ]
