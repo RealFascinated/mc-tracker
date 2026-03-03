@@ -382,5 +382,11 @@
     "id": "019cb4d1-fd50-7000-a4b5-038800d2f511",
     "ip": "phoenix-pe.ru",
     "type": "PE"
+  },
+  {
+    "name": "FrizMine",
+    "id": "019cb4d2-979a-7000-8dff-e9e63dfd34be",
+    "ip": "frizmine.com",
+    "type": "PE"
   }
 ]
