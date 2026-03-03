@@ -352,5 +352,11 @@
     "id": "019cb16d-9ebc-7000-ae57-1cb045dff8a9",
     "ip": "premium.blocksmc.com",
     "type": "PC"
+  },
+  {
+    "name": "Fakepixel",
+    "id": "019cb4cf-af75-7000-baec-71c3eabbfec2",
+    "ip": "fakepixel.fun",
+    "type": "PC"
   }
 ]
