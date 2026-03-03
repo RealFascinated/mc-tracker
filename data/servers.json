@@ -388,5 +388,11 @@
     "id": "019cb4d2-979a-7000-8dff-e9e63dfd34be",
     "ip": "frizmine.com",
     "type": "PE"
+  },
+  {
+    "name": "MineBlaze",
+    "id": "019cb4d3-dd40-7000-aecf-0df652e15b09",
+    "ip": "mc.mineblaze.net",
+    "type": "PC"
   }
 ]
