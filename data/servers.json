@@ -394,5 +394,11 @@
     "id": "019cb4d3-dd40-7000-aecf-0df652e15b09",
     "ip": "mc.mineblaze.net",
     "type": "PC"
+  },
+  {
+    "name": "VimeMC",
+    "id": "019cb4d4-ebfd-7000-a3c1-c059545ee4af",
+    "ip": "mc.vimemc.ru",
+    "type": "PC"
   }
 ]
