@@ -376,5 +376,11 @@
     "id": "019cb4d1-b837-7000-bd1f-92fc42f0d38c",
     "ip": "mc.nevertime.su",
     "type": "PE"
+  },
+  {
+    "name": "Phoenix",
+    "id": "019cb4d1-fd50-7000-a4b5-038800d2f511",
+    "ip": "phoenix-pe.ru",
+    "type": "PE"
   }
 ]
