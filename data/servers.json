@@ -340,5 +340,11 @@
     "id": "019cb16c-afd6-7000-bd08-a75fbaa532de",
     "ip": "pvp.land",
     "type": "PC"
+  },
+  {
+    "name": "ExtremeCraft",
+    "id": "019cb16d-53b6-7000-951d-bf4222e7ffd8",
+    "ip": "extremecraft.net",
+    "type": "PC"
   }
 ]
