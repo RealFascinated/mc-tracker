@@ -364,5 +364,11 @@
     "id": "019cb4d0-4e84-7000-8449-4aeb03d62f80",
     "ip": "mc.funtime.su",
     "type": "PC"
+  },
+  {
+    "name": "MCZone",
+    "id": "019cb4d1-6ea0-7000-927a-6df613ec100b",
+    "ip": "mc-zone.org",
+    "type": "PE"
   }
 ]
