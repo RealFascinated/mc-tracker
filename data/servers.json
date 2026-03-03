@@ -346,5 +346,11 @@
     "id": "019cb16d-53b6-7000-951d-bf4222e7ffd8",
     "ip": "extremecraft.net",
     "type": "PC"
+  },
+  {
+    "name": "BlocksMC",
+    "id": "019cb16d-9ebc-7000-ae57-1cb045dff8a9",
+    "ip": "premium.blocksmc.com",
+    "type": "PC"
   }
 ]
