@@ -334,5 +334,11 @@
     "id": "019cb16b-c1d4-7000-9ce2-4ee80f7be7ff",
     "ip": "earthmc.net",
     "type": "PC"
+  },
+  {
+    "name": "PvP Land",
+    "id": "019cb16c-afd6-7000-bd08-a75fbaa532de",
+    "ip": "pvp.land",
+    "type": "PC"
   }
 ]
