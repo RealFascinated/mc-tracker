@@ -370,5 +370,11 @@
     "id": "019cb4d1-6ea0-7000-927a-6df613ec100b",
     "ip": "mc-zone.org",
     "type": "PE"
+  },
+  {
+    "name": "NeverTime",
+    "id": "019cb4d1-b837-7000-bd1f-92fc42f0d38c",
+    "ip": "mc.nevertime.su",
+    "type": "PE"
   }
 ]
