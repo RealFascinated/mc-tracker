@@ -322,5 +322,11 @@
     "id": "019cb16a-e528-7000-87f2-4c7645c0381c",
     "ip": "gommehd.net",
     "type": "PC"
+  },
+  {
+    "name": "LemonCloud",
+    "id": "019cb16b-85c1-7000-9ebd-7dffbc664429",
+    "ip": "lemoncloud.net",
+    "type": "PC"
   }
 ]
