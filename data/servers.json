@@ -400,5 +400,11 @@
     "id": "019cb4d4-ebfd-7000-a3c1-c059545ee4af",
     "ip": "mc.vimemc.ru",
     "type": "PC"
+  },
+  {
+    "name": "MineKeep",
+    "id": "019ce819-59ee-7000-835f-1cbd076e7ed6",
+    "ip": "play.minekeep.net",
+    "type": "PC"
   }
 ]
