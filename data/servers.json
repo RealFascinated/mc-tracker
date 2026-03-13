@@ -406,5 +406,11 @@
     "id": "019ce819-59ee-7000-835f-1cbd076e7ed6",
     "ip": "play.minekeep.net",
     "type": "PC"
+  },
+  {
+    "name": "SwiftServers",
+    "id": "019ce82e-c855-7000-96f4-2c1bba57e2cf",
+    "ip": "play.swiftservers.org",
+    "type": "PC"
   }
 ]
