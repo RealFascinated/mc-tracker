@@ -412,5 +412,11 @@
     "id": "019ce82e-c855-7000-96f4-2c1bba57e2cf",
     "ip": "play.swiftservers.org",
     "type": "PC"
+  },
+  {
+    "name": "PlayBlocks",
+    "id": "019dde41-541f-7000-a14e-89bd5907fdca",
+    "ip": "playblocks.net",
+    "type": "PC"
   }
 ]
