@@ -418,5 +418,11 @@
     "id": "019dde41-541f-7000-a14e-89bd5907fdca",
     "ip": "playblocks.net",
     "type": "PC"
+  },
+  {
+    "name": "Eternal Network",
+    "id": "019e7a12-d73b-7000-952e-7df1eb011277",
+    "ip": "eternalnetwork.club",
+    "type": "PC"
   }
 ]
