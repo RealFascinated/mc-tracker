@@ -424,5 +424,11 @@
     "id": "019e7a12-d73b-7000-952e-7df1eb011277",
     "ip": "eternalnetwork.club",
     "type": "PC"
+  },
+  {
+    "name": "Minebox",
+    "id": "019e82d5-a073-7000-9348-849ab999690a",
+    "ip": "play.minebox.co",
+    "type": "PC"
   }
 ]
