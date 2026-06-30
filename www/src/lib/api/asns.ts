@@ -51,7 +51,3 @@ export function getAsnTimeseries(
     credentials: "omit",
   });
 }
-
-export function asnListKey(asn: AsnListItem): string {
-  return `${asn.asn}\u0000${asn.asnOrg}`;
-}

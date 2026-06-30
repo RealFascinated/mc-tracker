@@ -2,8 +2,11 @@ import { useMemo } from "react";
 
 import { LoadingState } from "@/components/loading-state";
 import { MetricChartView } from "@/components/metrics/metric-chart-view";
-import { useVisibleTotalTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
+import { useIntersectionVisible } from "@/hooks/use-intersection-visible";
+import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
 import { EMPTY_METRIC_TIME_SERIES } from "@/lib/api/metric-timeseries";
+import { totalTimeseriesQueryOptions } from "@/lib/api/servers.queries";
+import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
 import { playersTimeseriesToMetric } from "@/lib/metrics/adapters";
 import { totalPlayersChart } from "@/lib/metrics/charts/players";
 import {
@@ -23,8 +26,15 @@ export function TotalPlayersChart({
   window,
   height = 300,
 }: TotalPlayersChartProps) {
-  const { ref, isVisible, data, isPending, isError } =
-    useVisibleTotalTimeseriesQuery(window);
+  const { ref, isVisible } = useIntersectionVisible();
+  const timeseriesOptions = useMemo(
+    () => toVisibleTimeseriesOptions(totalTimeseriesQueryOptions(window)),
+    [window],
+  );
+  const { data, isPending, isError } = useVisibleTimeseriesQuery(
+    timeseriesOptions,
+    isVisible,
+  );
 
   const chartData = useMemo(
     () => (data ? playersTimeseriesToMetric(data) : null),

@@ -3,10 +3,9 @@ import {
   EntityMetricsGrid,
 } from "@/components/dashboard/grids/entity-metrics-grid";
 import type { AsnListItem, AsnTimeseriesResponse } from "@/lib/api/asns";
-import { asnListKey } from "@/lib/api/asns";
 import { asnTimeseriesQueryOptions } from "@/lib/api/asns.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
-import { asnPlayersChart } from "@/lib/metrics/charts/players";
+import { createPlayersChart } from "@/lib/metrics/charts/players";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 
 type AsnMetricsGridProps = {
@@ -64,9 +63,12 @@ export function AsnMetricsGrid({
       hasActiveSearch={hasActiveSearch}
       trackedCount={trackedAsns}
       isLoading={isLoading}
-      getKey={asnListKey}
+      getKey={(asn) => `${asn.asn}\u0000${asn.asnOrg}`}
       renderHeader={(asn) => <AsnMetricsCardHeader asn={asn} />}
-      chartDef={(asn) => asnPlayersChart(asn.asn, asn.asnOrg)}
+      chartDef={(asn) => {
+        const slug = `${asn.asn}-${asn.asnOrg}`.replace(/[^a-zA-Z0-9_-]+/g, "-");
+        return createPlayersChart(`asn-players-${slug}`);
+      }}
       timeseriesOptions={(asn, timeWindow) =>
         toVisibleTimeseriesOptions(
           asnTimeseriesQueryOptions(asn.asn, asn.asnOrg, timeWindow) as {

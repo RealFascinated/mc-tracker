@@ -1,13 +1,3 @@
-import type { MetricTimeSeries } from "@/lib/api/metric-timeseries";
-
-export const EMPTY_METRIC_TIME_SERIES: MetricTimeSeries = {
-  from: 0,
-  to: 0,
-  step: null,
-  timestamps: [],
-  series: {},
-};
-
 export const DASHBOARD_CARD_CHART_HEIGHT = 220;
 
 export const DASHBOARD_CHART_PROPS = {

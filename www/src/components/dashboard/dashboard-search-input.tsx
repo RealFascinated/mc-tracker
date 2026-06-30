@@ -1,7 +1,8 @@
 import { Search, X } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
-import type { DashboardView } from "@/components/dashboard/dashboard-view-toggle";
+
+export type DashboardView = "server" | "asn";
 
 type DashboardSearchInputProps = {
   value: string;

@@ -7,9 +7,7 @@ export type PeakPlayersRecord = {
 
 export type PlayersPeakSummary = {
   players24h: number | null;
-  players30d: number | null;
   players7d: number | null;
-  allTime: PeakPlayersRecord | null;
 };
 
 export type EntityPeakStats = {

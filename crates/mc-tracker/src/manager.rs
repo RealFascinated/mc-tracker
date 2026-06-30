@@ -17,7 +17,7 @@ use mc_db::db::repos::servers;
 use mc_db::DbPool;
 use mc_metrics::{
     align_samples_to_window, labels, peak_players_24h, peak_players_24h_by_asn,
-    peak_players_24h_by_server, peak_players_30d, peak_players_7d, player_count_series,
+    peak_players_24h_by_server, peak_players_7d, player_count_series,
     players_for_asn_series, total_players_series, MetricQueryWindow, MetricsError,
     PlayerCountEntry, PlayerCountRegistry, VmPushClient, VmQueryBuilder, VmQueryClient,
 };
@@ -320,7 +320,6 @@ impl ServerManager {
     ) -> ServersListResponse {
         let summary = self.summary().await;
         let all_tracked = self.servers.read().await.clone();
-        let global_all_time = global_peak_all_time(&all_tracked);
         let tracked = all_tracked
             .iter()
             .filter(|server| matches_server_search(server, search))
@@ -328,9 +327,8 @@ impl ServerManager {
             .collect::<Vec<_>>();
 
         let environment = self.environment();
-        let (peak_players24h, peak_players30d, peak_players_7d, peaks_24h) = tokio::join!(
+        let (peak_players24h, peak_players_7d, peaks_24h) = tokio::join!(
             self.peak_players_24h(),
-            self.peak_players_30d(),
             self.peak_players_7d(),
             self.peaks_24h_by_server_id(environment),
         );
@@ -367,9 +365,7 @@ impl ServerManager {
                 last_updated: summary.last_updated,
                 peaks: PlayersPeakSummary {
                     players_24h: peak_players24h,
-                    players_30d: peak_players30d,
                     players_7d: peak_players_7d,
-                    all_time: global_all_time,
                 },
             },
             servers,
@@ -378,8 +374,7 @@ impl ServerManager {
 
     pub async fn asns_list_response(&self, search: Option<&str>) -> AsnsListResponse {
         let summary = self.summary().await;
-        let all_tracked = self.servers.read().await;
-        let global_all_time = global_peak_all_time(&all_tracked);
+        let all_tracked = self.servers.read().await.clone();
         let tracked = all_tracked.clone();
 
         let mut aggregates: BTreeMap<AsnAggregateKey, AsnAggregate> = BTreeMap::new();
@@ -415,9 +410,8 @@ impl ServerManager {
         }
 
         let environment = self.environment();
-        let (peak_players24h, peak_players30d, peak_players_7d, peaks_24h) = tokio::join!(
+        let (peak_players24h, peak_players_7d, peaks_24h) = tokio::join!(
             self.peak_players_24h(),
-            self.peak_players_30d(),
             self.peak_players_7d(),
             self.peaks_24h_by_asn_key(environment),
         );
@@ -450,9 +444,7 @@ impl ServerManager {
                 last_updated: summary.last_updated,
                 peaks: PlayersPeakSummary {
                     players_24h: peak_players24h,
-                    players_30d: peak_players30d,
                     players_7d: peak_players_7d,
-                    all_time: global_all_time,
                 },
             },
             asns,
@@ -753,10 +745,6 @@ impl ServerManager {
         self.query_scalar(peak_players_24h).await
     }
 
-    async fn peak_players_30d(&self) -> Option<f64> {
-        self.query_scalar(peak_players_30d).await
-    }
-
     async fn peak_players_7d(&self) -> Option<f64> {
         self.query_scalar(peak_players_7d).await
     }
@@ -894,15 +882,6 @@ fn entity_peak_stats_with_all_time(
         players_24h,
         all_time,
     }
-}
-
-fn global_peak_all_time(servers: &[TrackedServer]) -> Option<PeakPlayersRecord> {
-    servers
-        .iter()
-        .filter_map(|server| {
-            peak_players_record(server.peak_players, server.peak_players_timestamp)
-        })
-        .max_by_key(|peak| peak.players)
 }
 
 fn asn_peak_all_time(

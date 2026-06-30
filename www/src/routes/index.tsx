@@ -3,9 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AsnMetricsGrid } from "@/components/dashboard/grids/asn-metrics-grid";
+import {
+  DashboardRangeToggle,
+  type DashboardRangeOption,
+} from "@/components/dashboard/dashboard-card";
 import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-row";
-import { DashboardViewToggle } from "@/components/dashboard/dashboard-view-toggle";
-import type { DashboardView } from "@/components/dashboard/dashboard-view-toggle";
+import type { DashboardView } from "@/components/dashboard/dashboard-search-input";
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
 import { DashboardSearchInput } from "@/components/dashboard/dashboard-search-input";
@@ -21,6 +24,11 @@ import type { MetricTimeRange } from "@/lib/metrics/range";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 
 const SEARCH_DEBOUNCE_MS = 300;
+
+const DASHBOARD_VIEW_OPTIONS: Array<DashboardRangeOption<DashboardView>> = [
+  { value: "server", shortLabel: "Per server", label: "Per server" },
+  { value: "asn", shortLabel: "Per ASN", label: "Per ASN" },
+];
 
 type DashboardSearch = {
   range?: MetricTimeRange;
@@ -153,9 +161,11 @@ function DashboardPage() {
   return (
     <main className="dashboard-shell">
       <div className="dashboard-toolbar">
-        <DashboardViewToggle
+        <DashboardRangeToggle
           value={dashboardView}
+          options={DASHBOARD_VIEW_OPTIONS}
           onValueChange={setDashboardView}
+          aria-label="Dashboard view"
         />
         <DashboardSearchInput
           value={searchInput}

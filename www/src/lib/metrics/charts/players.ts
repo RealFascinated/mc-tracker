@@ -1,6 +1,6 @@
 import type { ChartDefinition, YRangeSpec } from "@/lib/metrics/charts/types";
 
-function createPlayersChart(
+export function createPlayersChart(
   id: string,
   yRange: YRangeSpec = "auto",
 ): ChartDefinition {
@@ -38,12 +38,3 @@ export const totalPlayersChart: ChartDefinition = {
     left: { unit: "count", yRange: "autoMin" },
   },
 };
-
-export function serverPlayersChart(id: string): ChartDefinition {
-  return createPlayersChart(`server-players-${id}`);
-}
-
-export function asnPlayersChart(asn: string, asnOrg: string): ChartDefinition {
-  const slug = `${asn}-${asnOrg}`.replace(/[^a-zA-Z0-9_-]+/g, "-");
-  return createPlayersChart(`asn-players-${slug}`);
-}

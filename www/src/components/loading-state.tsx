@@ -1,4 +1,5 @@
-import { Spinner } from "@/components/spinner";
+import { Loader2 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 type LoadingStateProps = {
@@ -22,7 +23,10 @@ function LoadingState({
         className,
       )}
     >
-      <Spinner />
+      <Loader2
+        className="size-4 animate-spin text-monitor dark:text-warning"
+        aria-hidden
+      />
       <span>{message}</span>
     </div>
   );

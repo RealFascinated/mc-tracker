@@ -3,12 +3,12 @@ import {
   EntityMetricsGrid,
 } from "@/components/dashboard/grids/entity-metrics-grid";
 import { ServerFavicon } from "@/components/dashboard/server-favicon";
-import { ServerPlatformBadge } from "@/components/dashboard/server-platform-badge";
 import type { ServerListItem, ServerTimeseriesResponse } from "@/lib/api/servers";
 import { serverTimeseriesQueryOptions } from "@/lib/api/servers.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
-import { serverPlayersChart } from "@/lib/metrics/charts/players";
+import { createPlayersChart } from "@/lib/metrics/charts/players";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
+import { cn } from "@/lib/utils";
 
 type ServerMetricsGridProps = {
   servers: ServerListItem[];
@@ -26,7 +26,14 @@ function ServerMetricsCardHeader({ server }: { server: ServerListItem }) {
         <div className="min-w-0">
           <div className="entity-metrics-title-row">
             <div className="entity-metrics-name">{server.name}</div>
-            <ServerPlatformBadge type={server.type} />
+            <span
+              className={cn(
+                "server-platform-badge",
+                server.type === "PE" && "server-platform-badge-pe",
+              )}
+            >
+              {server.type}
+            </span>
           </div>
           <div className="entity-metrics-subtitle">
             {server.host}
@@ -59,7 +66,7 @@ export function ServerMetricsGrid({
       isLoading={isLoading}
       getKey={(server) => server.id}
       renderHeader={(server) => <ServerMetricsCardHeader server={server} />}
-      chartDef={(server) => serverPlayersChart(server.id)}
+      chartDef={(server) => createPlayersChart(`server-players-${server.id}`)}
       timeseriesOptions={(server, timeWindow) =>
         toVisibleTimeseriesOptions(
           serverTimeseriesQueryOptions(server.id, timeWindow) as {

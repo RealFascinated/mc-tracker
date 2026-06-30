@@ -1,6 +1,10 @@
 import { Monitor, Moon, Sun } from "lucide-react";
 
-import { SimpleTooltip } from "@/components/simple-tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { ThemePreference } from "@/lib/theme";
 import { useTheme } from "@/lib/theme";
@@ -31,22 +35,25 @@ export function ThemeSwitcher({ className }: { className?: string }) {
         const isActive = theme === value;
 
         return (
-          <SimpleTooltip key={value} content={`${label} theme`}>
-            <button
-              type="button"
-              onClick={() => setTheme(value)}
-              aria-label={label}
-              aria-pressed={isActive}
-              className={cn(
-                "flex size-6 shrink-0 cursor-help items-center justify-center rounded-sm transition-colors",
-                isActive
-                  ? "bg-card text-monitor dark:bg-accent dark:text-warning"
-                  : "text-muted-foreground hover:text-muted-foreground dark:text-muted-foreground dark:hover:text-foreground",
-              )}
-            >
-              <Icon className="size-3.5" />
-            </button>
-          </SimpleTooltip>
+          <Tooltip key={value}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setTheme(value)}
+                aria-label={label}
+                aria-pressed={isActive}
+                className={cn(
+                  "flex size-6 shrink-0 cursor-help items-center justify-center rounded-sm transition-colors",
+                  isActive
+                    ? "bg-card text-monitor dark:bg-accent dark:text-warning"
+                    : "text-muted-foreground hover:text-muted-foreground dark:text-muted-foreground dark:hover:text-foreground",
+                )}
+              >
+                <Icon className="size-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">{`${label} theme`}</TooltipContent>
+          </Tooltip>
         );
       })}
     </div>

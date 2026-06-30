@@ -5,7 +5,7 @@ import type {ReactNode} from "react";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { LazyMetricChartBody } from "@/components/dashboard/charts/lazy-metric-chart-body";
 import { LazyVisibleMount } from "@/components/dashboard/lazy-visible-mount";
-import { CardStat } from "@/components/dashboard/stats/card-stat";
+import { StatValueTooltip } from "@/components/dashboard/stats/stat-value-tooltip";
 import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
 import { EMPTY_METRIC_TIME_SERIES } from "@/lib/api/metric-timeseries";
 import type { EntityPeakStats, PlayersTimeseriesPayload } from "@/lib/api/types";
@@ -223,13 +223,28 @@ export function EntityCardStats({
 }) {
   return (
     <div className="entity-card-stats">
-      <CardStat label="Now" value={formatPlayers(playersOnline)} />
-      <CardStat label="Peak 24h" value={formatPlayers(peaks.players24h)} />
-      <CardStat
-        label="All-time"
-        value={formatPlayers(peaks.allTime?.players ?? null)}
-        valueTooltip={peakTimestampTooltip(peaks.allTime?.timestamp)}
-      />
+      <div className="entity-card-stat">
+        <span className="entity-card-stat-label">Now</span>
+        <StatValueTooltip
+          value={formatPlayers(playersOnline)}
+          className="entity-card-stat-value"
+        />
+      </div>
+      <div className="entity-card-stat">
+        <span className="entity-card-stat-label">Peak 24h</span>
+        <StatValueTooltip
+          value={formatPlayers(peaks.players24h)}
+          className="entity-card-stat-value"
+        />
+      </div>
+      <div className="entity-card-stat">
+        <span className="entity-card-stat-label">All-time</span>
+        <StatValueTooltip
+          tooltip={peakTimestampTooltip(peaks.allTime?.timestamp)}
+          value={formatPlayers(peaks.allTime?.players ?? null)}
+          className="entity-card-stat-value"
+        />
+      </div>
     </div>
   );
 }

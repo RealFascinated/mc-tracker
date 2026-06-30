@@ -11,9 +11,7 @@ pub struct PeakPlayersRecord {
 #[serde(rename_all = "camelCase")]
 pub struct PlayersPeakSummary {
     pub players_24h: Option<f64>,
-    pub players_30d: Option<f64>,
     pub players_7d: Option<f64>,
-    pub all_time: Option<PeakPlayersRecord>,
 }
 
 #[derive(Debug, Clone, Serialize)]

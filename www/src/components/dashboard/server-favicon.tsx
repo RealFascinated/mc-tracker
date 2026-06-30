@@ -1,7 +1,8 @@
 import { useState } from "react";
 
-import { MINECRAFT_DEFAULT_SERVER_FAVICON } from "@/lib/minecraft-default-favicon";
 import { cn } from "@/lib/utils";
+
+const MINECRAFT_DEFAULT_SERVER_FAVICON = `${import.meta.env.BASE_URL}minecraft-unknown-server.png`;
 
 type ServerFaviconProps = {
   name: string;
