@@ -1,6 +1,6 @@
 import type { VisibleTimeseriesQueryOptions } from "@/lib/api/visible-timeseries-options";
-import { useMemo  } from "react";
-import type {ReactNode} from "react";
+import { useMemo } from "react";
+import type { ReactNode } from "react";
 
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { LazyMetricChartBody } from "@/components/dashboard/charts/lazy-metric-chart-body";
@@ -8,7 +8,10 @@ import { LazyVisibleMount } from "@/components/dashboard/lazy-visible-mount";
 import { StatValueTooltip } from "@/components/dashboard/stats/stat-value-tooltip";
 import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
 import { EMPTY_METRIC_TIME_SERIES } from "@/lib/api/metric-timeseries";
-import type { EntityPeakStats, PlayersTimeseriesPayload } from "@/lib/api/types";
+import type {
+  EntityPeakStats,
+  PlayersTimeseriesPayload,
+} from "@/lib/api/types";
 import { playersTimeseriesToMetric } from "@/lib/metrics/adapters";
 import type { ChartDefinition } from "@/lib/metrics/charts/types";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
@@ -44,10 +47,7 @@ export type EntityMetricsGridConfig<
   section: EntityMetricsSectionCopy;
 };
 
-type EntityMetricsCardProps<
-  T,
-  TTimeseries extends PlayersTimeseriesPayload,
-> = {
+type EntityMetricsCardProps<T, TTimeseries extends PlayersTimeseriesPayload> = {
   item: T;
   window: MetricTimeWindow;
   isVisible: boolean;
@@ -60,10 +60,7 @@ type EntityMetricsCardProps<
   timeseriesEnabled?: (item: T) => boolean;
 };
 
-function EntityMetricsCard<
-  T,
-  TTimeseries extends PlayersTimeseriesPayload,
->({
+function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
   item,
   window,
   isVisible,

@@ -9,7 +9,8 @@ export type DashboardRefreshIntervalOption = {
   ms: number | false;
 };
 
-export const DEFAULT_DASHBOARD_REFRESH_INTERVAL: DashboardRefreshInterval = "30s";
+export const DEFAULT_DASHBOARD_REFRESH_INTERVAL: DashboardRefreshInterval =
+  "30s";
 
 export const DASHBOARD_REFRESH_INTERVAL_OPTIONS: Array<DashboardRefreshIntervalOption> =
   [

@@ -75,7 +75,11 @@ export function metricTimeWindowFromSearch(
   if (from != null && to != null) {
     const error = validateMetricEpochWindow(from, to);
     if (!error) {
-      return { kind: "custom", from, to: Math.min(to, Math.floor(Date.now() / 1000)) };
+      return {
+        kind: "custom",
+        from,
+        to: Math.min(to, Math.floor(Date.now() / 1000)),
+      };
     }
   }
 

@@ -56,11 +56,7 @@ const METRIC_RANGE_ALIASES: Record<string, MetricTimeRange> = {
 export const DEFAULT_METRIC_TIME_RANGE: MetricTimeRange = "1mo";
 
 export type MetricRangeGroupId =
-  | "hours"
-  | "days"
-  | "weeks"
-  | "months"
-  | "years";
+  "hours" | "days" | "weeks" | "months" | "years";
 
 export type MetricRangeOption = {
   value: MetricTimeRange;
@@ -136,10 +132,12 @@ export function getMetricRangeOption(
   return METRIC_RANGE_BY_VALUE[value];
 }
 
-export function normalizeMetricRange(value: string): MetricTimeRange | undefined {
+export function normalizeMetricRange(
+  value: string,
+): MetricTimeRange | undefined {
   const canonical = METRIC_RANGE_ALIASES[value] ?? value;
-  if (METRIC_RANGES.includes(canonical as MetricTimeRange)) {
-    return canonical as MetricTimeRange;
+  if (METRIC_RANGES.includes(canonical)) {
+    return canonical;
   }
 
   return undefined;

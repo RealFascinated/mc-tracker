@@ -13,17 +13,15 @@ import {
   datetimeLocalValueToEpoch,
   epochToDatetimeLocalValue,
 } from "@/lib/metrics/datetime-local";
-import {
-  METRIC_RANGE_GROUPS,
-  type MetricTimeRange,
-} from "@/lib/metrics/range";
+import { METRIC_RANGE_GROUPS } from "@/lib/metrics/range";
+import type { MetricTimeRange } from "@/lib/metrics/range";
 import {
   formatMetricTimeWindowLabel,
   isPresetMetricTimeWindow,
   metricTimeWindowToEpochWindow,
   validateMetricEpochWindow,
-  type MetricTimeWindow,
 } from "@/lib/metrics/time-window";
+import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 import { cn } from "@/lib/utils";
 
 type DashboardTimeRangePickerProps = {
@@ -106,10 +104,7 @@ export function DashboardTimeRangePicker({
           <span className="truncate">
             {formatMetricTimeWindowLabel(window)}
           </span>
-          <ChevronDown
-            className="size-3 shrink-0 opacity-70"
-            aria-hidden
-          />
+          <ChevronDown className="size-3 shrink-0 opacity-70" aria-hidden />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -124,7 +119,10 @@ export function DashboardTimeRangePicker({
             </header>
             <div className="dashboard-time-range-picker-groups">
               {METRIC_RANGE_GROUPS.map((group) => (
-                <div key={group.id} className="dashboard-time-range-picker-group">
+                <div
+                  key={group.id}
+                  className="dashboard-time-range-picker-group"
+                >
                   <p className="dashboard-time-range-picker-group-label">
                     {group.label}
                   </p>

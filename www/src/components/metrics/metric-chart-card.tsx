@@ -363,9 +363,7 @@ function MetricChartCard({
           {seriesLegendNode}
         </div>
       ) : null}
-      <div
-        className={cn("overflow-visible", flush ? "p-0" : "px-3 pt-2 pb-3")}
-      >
+      <div className={cn("overflow-visible", flush ? "p-0" : "px-3 pt-2 pb-3")}>
         <MetricChartPanel
           containerRef={containerRef}
           height={chartHeight}

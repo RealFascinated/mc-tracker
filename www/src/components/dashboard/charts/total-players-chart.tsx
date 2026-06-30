@@ -27,10 +27,10 @@ export function TotalPlayersChart({
   height = 300,
 }: TotalPlayersChartProps) {
   const { ref, isVisible } = useIntersectionVisible();
-  const timeseriesOptions = useMemo(
-    () => toVisibleTimeseriesOptions(totalTimeseriesQueryOptions(window)),
-    [window],
-  );
+  const timeseriesOptions = useMemo(() => {
+    const { queryKey, queryFn } = totalTimeseriesQueryOptions(window);
+    return toVisibleTimeseriesOptions({ queryKey, queryFn });
+  }, [window]);
   const { data, isPending, isError } = useVisibleTimeseriesQuery(
     timeseriesOptions,
     isVisible,
@@ -59,11 +59,7 @@ export function TotalPlayersChart({
 
   if (isError) {
     return (
-      <div
-        ref={ref}
-        className="flex items-center px-4"
-        style={{ height }}
-      >
+      <div ref={ref} className="flex items-center px-4" style={{ height }}>
         <p className="text-sm text-destructive">
           Failed to load player history.
         </p>

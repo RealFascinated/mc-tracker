@@ -1,13 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 
 import { ServerFavicon } from "@/components/dashboard/server-favicon";
 import { Input } from "@/components/ui/input";
@@ -23,17 +17,19 @@ type DashboardSearchInputProps = {
   view?: DashboardView;
 };
 
-const PLACEHOLDERS: Record<DashboardView, { placeholder: string; label: string }> =
-  {
-    server: {
-      placeholder: "Search servers…",
-      label: "Search servers",
-    },
-    asn: {
-      placeholder: "Search networks…",
-      label: "Search networks",
-    },
-  };
+const PLACEHOLDERS: Record<
+  DashboardView,
+  { placeholder: string; label: string }
+> = {
+  server: {
+    placeholder: "Search servers…",
+    label: "Search servers",
+  },
+  asn: {
+    placeholder: "Search networks…",
+    label: "Search networks",
+  },
+};
 
 const AUTOCOMPLETE_DEBOUNCE_MS = 150;
 const AUTOCOMPLETE_MIN_CHARS = 1;
@@ -73,7 +69,8 @@ export function DashboardSearchInput({
       debouncedQuery.length >= AUTOCOMPLETE_MIN_CHARS,
   });
 
-  const suggestions = view === "server" ? (searchQuery.data?.servers ?? []) : [];
+  const suggestions =
+    view === "server" ? (searchQuery.data?.servers ?? []) : [];
   const showSuggestions =
     view === "server" &&
     isOpen &&
@@ -118,10 +115,7 @@ export function DashboardSearchInput({
 
     if (event.key === "Enter" && activeIndex >= 0) {
       event.preventDefault();
-      const selected = suggestions[activeIndex];
-      if (selected) {
-        selectSuggestion(selected);
-      }
+      selectSuggestion(suggestions[activeIndex]);
       return;
     }
 

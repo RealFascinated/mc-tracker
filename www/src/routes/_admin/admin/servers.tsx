@@ -22,10 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  createAdminServer,
-  deleteAdminServer,
-} from "@/lib/api/admin/servers";
+import { createAdminServer, deleteAdminServer } from "@/lib/api/admin/servers";
 import type { AdminServer, CreateServerRequest } from "@/lib/api/admin/servers";
 import {
   adminServersQueryKey,

@@ -32,12 +32,8 @@ export function DashboardTimeControls({
   onCustomChange,
   className,
 }: DashboardTimeControlsProps) {
-  const {
-    refreshInterval,
-    setRefreshInterval,
-    refreshAll,
-    isRefreshing,
-  } = useDashboardRefresh();
+  const { refreshInterval, setRefreshInterval, refreshAll, isRefreshing } =
+    useDashboardRefresh();
 
   const refreshIntervalLabel =
     DASHBOARD_REFRESH_INTERVAL_OPTIONS.find(
@@ -63,10 +59,7 @@ export function DashboardTimeControls({
           >
             <Timer className="size-3.5 shrink-0" aria-hidden />
             <span className="truncate">{refreshIntervalLabel}</span>
-            <ChevronDown
-              className="size-3 shrink-0 opacity-70"
-              aria-hidden
-            />
+            <ChevronDown className="size-3 shrink-0 opacity-70" aria-hidden />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

@@ -1,4 +1,7 @@
-import { DashboardCard, DashboardCardHeader } from "@/components/dashboard/dashboard-card";
+import {
+  DashboardCard,
+  DashboardCardHeader,
+} from "@/components/dashboard/dashboard-card";
 import { TotalPlayersChart } from "@/components/dashboard/charts/total-players-chart";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 

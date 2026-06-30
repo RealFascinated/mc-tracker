@@ -3,7 +3,10 @@ import {
   EntityMetricsGrid,
 } from "@/components/dashboard/grids/entity-metrics-grid";
 import { ServerFavicon } from "@/components/dashboard/server-favicon";
-import type { ServerListItem, ServerTimeseriesResponse } from "@/lib/api/servers";
+import type {
+  ServerListItem,
+  ServerTimeseriesResponse,
+} from "@/lib/api/servers";
 import { serverTimeseriesQueryOptions } from "@/lib/api/servers.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
 import { createPlayersChart } from "@/lib/metrics/charts/players";

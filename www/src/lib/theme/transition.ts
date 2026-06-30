@@ -3,7 +3,7 @@ function prefersReducedMotion(): boolean {
 }
 
 export function startThemeViewTransition(updateDom: () => void): void {
-  if (prefersReducedMotion() || !document.startViewTransition) {
+  if (prefersReducedMotion() || !("startViewTransition" in document)) {
     updateDom();
     return;
   }

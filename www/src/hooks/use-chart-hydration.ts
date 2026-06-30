@@ -4,9 +4,7 @@ import { enqueueChartHydration } from "@/lib/metrics/chart-hydration-queue";
 
 const VIEWPORT_ROOT_MARGIN = "120px 0px";
 
-function scheduleHydration(
-  onHydrated: () => void,
-): { cancel: () => void } {
+function scheduleHydration(onHydrated: () => void): { cancel: () => void } {
   let cancelled = false;
   const dequeue = enqueueChartHydration(() => {
     if (!cancelled) onHydrated();

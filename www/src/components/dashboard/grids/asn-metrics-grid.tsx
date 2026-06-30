@@ -41,10 +41,7 @@ function AsnMetricsCardHeader({ asn }: { asn: AsnListItem }) {
         </div>
       </div>
 
-      <EntityCardStats
-        playersOnline={asn.playersOnline}
-        peaks={asn.peaks}
-      />
+      <EntityCardStats playersOnline={asn.playersOnline} peaks={asn.peaks} />
     </div>
   );
 }
@@ -66,14 +63,19 @@ export function AsnMetricsGrid({
       getKey={(asn) => `${asn.asn}\u0000${asn.asnOrg}`}
       renderHeader={(asn) => <AsnMetricsCardHeader asn={asn} />}
       chartDef={(asn) => {
-        const slug = `${asn.asn}-${asn.asnOrg}`.replace(/[^a-zA-Z0-9_-]+/g, "-");
+        const slug = `${asn.asn}-${asn.asnOrg}`.replace(
+          /[^a-zA-Z0-9_-]+/g,
+          "-",
+        );
         return createPlayersChart(`asn-players-${slug}`);
       }}
       timeseriesOptions={(asn, timeWindow) =>
         toVisibleTimeseriesOptions(
           asnTimeseriesQueryOptions(asn.asn, asn.asnOrg, timeWindow) as {
             queryKey: readonly unknown[];
-            queryFn?: (context: never) => AsnTimeseriesResponse | Promise<AsnTimeseriesResponse>;
+            queryFn?: (
+              context: never,
+            ) => AsnTimeseriesResponse | Promise<AsnTimeseriesResponse>;
             enabled?: boolean;
           },
         )

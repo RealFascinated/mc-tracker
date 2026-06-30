@@ -4,13 +4,11 @@ export type VisibleTimeseriesQueryOptions<TData> = {
   enabled?: boolean;
 };
 
-export function toVisibleTimeseriesOptions<TData>(
-  options: {
-    queryKey: readonly unknown[];
-    queryFn?: (context: never) => TData | Promise<TData>;
-    enabled?: boolean;
-  },
-): VisibleTimeseriesQueryOptions<TData> {
+export function toVisibleTimeseriesOptions<TData>(options: {
+  queryKey: readonly unknown[];
+  queryFn?: (context: never) => TData | Promise<TData>;
+  enabled?: boolean;
+}): VisibleTimeseriesQueryOptions<TData> {
   return {
     queryKey: options.queryKey,
     queryFn: options.queryFn

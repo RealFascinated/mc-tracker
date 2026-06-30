@@ -4,25 +4,24 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AsnMetricsGrid } from "@/components/dashboard/grids/asn-metrics-grid";
 import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
-import {
-  DashboardRangeToggle,
-  type DashboardRangeOption,
-} from "@/components/dashboard/dashboard-card";
+import { DashboardRangeToggle } from "@/components/dashboard/dashboard-card";
+import type { DashboardRangeOption } from "@/components/dashboard/dashboard-card";
 import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-row";
 import type { DashboardView } from "@/components/dashboard/dashboard-search-input";
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
 import { DashboardSearchInput } from "@/components/dashboard/dashboard-search-input";
 import { LoadingState } from "@/components/loading-state";
-import { SiteHeaderNav, SiteHeaderToolbar } from "@/components/site-header-toolbar";
+import {
+  SiteHeaderNav,
+  SiteHeaderToolbar,
+} from "@/components/site-header-toolbar";
 import { useDashboardRefresh } from "@/lib/dashboard/refresh-context";
 import { asnsQueryOptions } from "@/lib/api/asns.queries";
 import { serversQueryOptions } from "@/lib/api/servers.queries";
 import { pageTitle } from "@/lib/page-title";
-import {
-  DEFAULT_METRIC_TIME_RANGE,
-  type MetricTimeRange,
-} from "@/lib/metrics/range";
+import { DEFAULT_METRIC_TIME_RANGE } from "@/lib/metrics/range";
+import type { MetricTimeRange } from "@/lib/metrics/range";
 import {
   metricTimeWindowFromSearch,
   parseMetricTimeWindowSearch,
@@ -114,14 +113,12 @@ function DashboardPage() {
   const serversQuery = useQuery({
     ...serversQueryOptions(activeSearch),
     enabled: dashboardView === "server",
-    refetchInterval:
-      refreshIntervalMs === false ? false : refreshIntervalMs,
+    refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
   const asnsQuery = useQuery({
     ...asnsQueryOptions(activeSearch),
     enabled: dashboardView === "asn",
-    refetchInterval:
-      refreshIntervalMs === false ? false : refreshIntervalMs,
+    refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
 
   const timeWindow = useMemo(
@@ -184,11 +181,11 @@ function DashboardPage() {
     <>
       <SiteHeaderNav>
         <div className="site-header-controls">
-        <DashboardTimeControls
-          window={timeWindow}
-          onPresetChange={setPresetTimeRange}
-          onCustomChange={setCustomTimeRange}
-        />
+          <DashboardTimeControls
+            window={timeWindow}
+            onPresetChange={setPresetTimeRange}
+            onCustomChange={setCustomTimeRange}
+          />
           <DashboardRangeToggle
             value={dashboardView}
             options={DASHBOARD_VIEW_OPTIONS}

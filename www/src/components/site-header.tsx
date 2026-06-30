@@ -12,11 +12,7 @@ type SiteHeaderProps = {
   className?: string;
 };
 
-function SiteHeaderActions({
-  iconOnly = false,
-}: {
-  iconOnly?: boolean;
-}) {
+function SiteHeaderActions({ iconOnly = false }: { iconOnly?: boolean }) {
   const { user, isAuthenticated } = useAuth();
 
   return (
@@ -35,7 +31,9 @@ function SiteHeaderActions({
                 className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
                 aria-hidden
               />
-              <span className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}>
+              <span
+                className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}
+              >
                 Account
               </span>
             </Link>
@@ -52,7 +50,9 @@ function SiteHeaderActions({
                   className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
                   aria-hidden
                 />
-                <span className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}>
+                <span
+                  className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}
+                >
                   Admin
                 </span>
               </Link>
@@ -71,7 +71,9 @@ function SiteHeaderActions({
               className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
               aria-hidden
             />
-            <span className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}>
+            <span
+              className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}
+            >
               Sign in
             </span>
           </Link>
@@ -94,7 +96,9 @@ function SiteHeader({ className }: SiteHeaderProps) {
       <div
         className={cn(
           "site-header-inner mx-auto max-w-7xl px-3 sm:px-5",
-          toolbar ? "site-header-inner--with-toolbar" : "site-header-inner--simple",
+          toolbar
+            ? "site-header-inner--with-toolbar"
+            : "site-header-inner--simple",
         )}
       >
         <Link

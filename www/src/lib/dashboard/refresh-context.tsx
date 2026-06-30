@@ -5,16 +5,16 @@ import {
   useContext,
   useMemo,
   useState,
-  type ReactNode,
 } from "react";
+import type { ReactNode } from "react";
 
 import {
   DASHBOARD_REFRESH_STORAGE_KEY,
   DEFAULT_DASHBOARD_REFRESH_INTERVAL,
   dashboardRefreshIntervalToMs,
   getStoredDashboardRefreshInterval,
-  type DashboardRefreshInterval,
 } from "@/lib/dashboard/refresh-interval";
+import type { DashboardRefreshInterval } from "@/lib/dashboard/refresh-interval";
 
 type DashboardRefreshContextValue = {
   refreshInterval: DashboardRefreshInterval;
@@ -32,7 +32,8 @@ function DashboardRefreshProvider({ children }: { children: ReactNode }) {
   const [refreshInterval, setRefreshIntervalState] =
     useState<DashboardRefreshInterval>(
       () =>
-        getStoredDashboardRefreshInterval() ?? DEFAULT_DASHBOARD_REFRESH_INTERVAL,
+        getStoredDashboardRefreshInterval() ??
+        DEFAULT_DASHBOARD_REFRESH_INTERVAL,
     );
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
@@ -103,8 +104,9 @@ function useDashboardRefresh(): DashboardRefreshContextValue {
 
 function useDashboardRefreshIntervalMs(): number | false {
   const context = useContext(DashboardRefreshContext);
-  return context?.refreshIntervalMs ?? dashboardRefreshIntervalToMs(
-    DEFAULT_DASHBOARD_REFRESH_INTERVAL,
+  return (
+    context?.refreshIntervalMs ??
+    dashboardRefreshIntervalToMs(DEFAULT_DASHBOARD_REFRESH_INTERVAL)
   );
 }
 
