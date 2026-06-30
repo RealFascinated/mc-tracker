@@ -8,7 +8,7 @@ export function peakTimestampTooltip(
   const formatted = new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(timestamp * 1000));
+  }).format(new Date(timestamp));
 
   return `Peak on ${formatted}`;
 }
