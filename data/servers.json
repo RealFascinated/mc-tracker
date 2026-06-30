@@ -312,12 +312,6 @@
     "type": "PC"
   },
   {
-    "name": "KingMC",
-    "id": "019c0723-d229-7000-af95-d0632ff3edb3",
-    "ip": "kingmc.vn",
-    "type": "PC"
-  },
-  {
     "name": "GommeHD",
     "id": "019cb16a-e528-7000-87f2-4c7645c0381c",
     "ip": "gommehd.net",
@@ -393,12 +387,6 @@
     "name": "MineBlaze",
     "id": "019cb4d3-dd40-7000-aecf-0df652e15b09",
     "ip": "mc.mineblaze.net",
-    "type": "PC"
-  },
-  {
-    "name": "VimeMC",
-    "id": "019cb4d4-ebfd-7000-a3c1-c059545ee4af",
-    "ip": "mc.vimemc.ru",
     "type": "PC"
   },
   {
