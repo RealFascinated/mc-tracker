@@ -175,7 +175,10 @@ function DashboardPage() {
   );
   const activeQuery = dashboardView === "asn" ? asnsQuery : serversQuery;
   const showInitialLoading = activeQuery.isPending && !activeQuery.data;
-  const isSearchLoading = activeQuery.isFetching && !showInitialLoading;
+  const isSearchLoading =
+    activeQuery.isFetching &&
+    activeQuery.isPlaceholderData &&
+    !showInitialLoading;
 
   return (
     <>

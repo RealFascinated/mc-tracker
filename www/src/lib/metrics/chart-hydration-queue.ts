@@ -1,6 +1,7 @@
 import type uPlot from "uplot";
 
-const CHARTS_PER_FRAME = 4;
+/** uPlot init is heavy; keep scroll bursts from saturating the main thread. */
+const CHARTS_PER_FRAME = 2;
 
 type HydrationCallback = () => void;
 

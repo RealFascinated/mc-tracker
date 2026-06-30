@@ -64,7 +64,7 @@ export function DashboardTimeControls({
             <Timer className="size-3.5 shrink-0" aria-hidden />
             <span className="truncate">{refreshIntervalLabel}</span>
             <ChevronDown
-              className="size-3 max-lg:hidden shrink-0 opacity-70"
+              className="size-3 shrink-0 opacity-70"
               aria-hidden
             />
           </button>

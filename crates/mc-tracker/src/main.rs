@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use clap::Parser;
@@ -105,7 +106,9 @@ async fn main() -> anyhow::Result<()> {
 
     let push_loop = spawn_push_loop(Arc::clone(&manager));
 
-    let bind_addr = app_settings.api_socket_addr().map_err(anyhow::Error::msg)?;
+    let bind_addr: SocketAddr = "0.0.0.0:3000"
+        .parse()
+        .expect("hardcoded API bind address");
     let secure_cookies = config.environment != "development";
     let sessions = Arc::new(SessionManager::new(
         config.session_secret.as_bytes(),

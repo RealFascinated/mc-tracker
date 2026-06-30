@@ -3,6 +3,7 @@ export const DASHBOARD_CARD_CHART_HEIGHT = 220;
 export const DASHBOARD_CHART_PROPS = {
   hideHeader: true,
   showCurrentValues: false,
+  flush: true,
 } as const;
 
 export const DASHBOARD_CHART_EMPTY_MESSAGE = "No player history yet.";

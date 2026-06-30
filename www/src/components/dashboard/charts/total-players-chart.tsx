@@ -57,39 +57,38 @@ export function TotalPlayersChart({
     return <div ref={ref} style={{ height }} aria-hidden />;
   }
 
-  const showLoading = isVisible && isPending && !data;
-
-  if (showLoading) {
+  if (isError) {
     return (
       <div
         ref={ref}
-        className="flex items-center justify-center"
+        className="flex items-center px-4"
         style={{ height }}
       >
-        <LoadingState message="Loading player history…" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div ref={ref}>
-        <p className="px-4 py-8 text-sm text-destructive">
+        <p className="text-sm text-destructive">
           Failed to load player history.
         </p>
       </div>
     );
   }
 
+  const showLoading = isVisible && isPending && !data;
+
   return (
-    <div ref={ref}>
+    <div ref={ref} className="relative" style={{ height }}>
       <MetricChartView
         def={totalPlayersChart}
         data={chartData ?? EMPTY_METRIC_TIME_SERIES}
         height={height}
         emptyMessage={DASHBOARD_CHART_EMPTY_MESSAGE}
+        className="h-full"
+        hydrateWhen={isVisible}
         {...DASHBOARD_CHART_PROPS}
       />
+      {showLoading ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
+          <LoadingState message="Loading player history…" />
+        </div>
+      ) : null}
     </div>
   );
 }

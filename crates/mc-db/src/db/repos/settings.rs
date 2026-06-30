@@ -65,8 +65,6 @@ pub async fn save(pool: &DbPool, settings: &AppSettings) -> Result<(), DbError> 
     let settings = settings.clone();
     let mut conn = get_conn(pool).await?;
     conn.transaction::<(), DbError, _>(async |conn| {
-        upsert(conn, "api_port", &settings.api_port.to_string()).await?;
-        upsert(conn, "api_address", &settings.api_address).await?;
         upsert(
             conn,
             "pinger_timeout_ms",

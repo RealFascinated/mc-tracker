@@ -3,8 +3,6 @@ use serde::Deserialize;
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PatchSettingsRequest {
-    pub api_port: Option<u16>,
-    pub api_address: Option<String>,
     pub pinger_timeout_ms: Option<u64>,
     pub pinger_retry_attempts: Option<u32>,
     pub pinger_retry_delay_ms: Option<u64>,

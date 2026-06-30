@@ -944,8 +944,6 @@ fn dns_cache_for(settings: &AppSettings) -> Option<mc_ping::DnsCache> {
 
 pub(crate) fn settings_response(settings: &AppSettings) -> mc_api_types::SettingsResponse {
     mc_api_types::SettingsResponse {
-        api_port: settings.api_port,
-        api_address: settings.api_address.clone(),
         pinger_timeout_ms: settings.pinger_timeout_ms,
         pinger_retry_attempts: settings.pinger_retry_attempts,
         pinger_retry_delay_ms: settings.pinger_retry_delay_ms,

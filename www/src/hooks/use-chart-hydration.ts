@@ -4,36 +4,67 @@ import { enqueueChartHydration } from "@/lib/metrics/chart-hydration-queue";
 
 const VIEWPORT_ROOT_MARGIN = "120px 0px";
 
-function useChartHydration() {
+function scheduleHydration(
+  onHydrated: () => void,
+): { cancel: () => void } {
+  let cancelled = false;
+  const dequeue = enqueueChartHydration(() => {
+    if (!cancelled) onHydrated();
+  });
+
+  return {
+    cancel: () => {
+      cancelled = true;
+      dequeue();
+    },
+  };
+}
+
+/**
+ * When `visible` is passed, defers to that signal (e.g. parent IntersectionObserver)
+ * instead of attaching a second observer on the chart container.
+ */
+function useChartHydration(visible?: boolean) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
-  const pendingRef = useRef(false);
+  const usesExternalVisible = visible !== undefined;
 
   useEffect(() => {
+    if (!usesExternalVisible) return;
+
+    if (!visible) {
+      setInView(false);
+      return;
+    }
+
+    const { cancel } = scheduleHydration(() => setInView(true));
+    return cancel;
+  }, [usesExternalVisible, visible]);
+
+  useEffect(() => {
+    if (usesExternalVisible) return;
+
     const element = containerRef.current;
     if (!element) return;
 
     let cancelled = false;
-    let dequeue: (() => void) | undefined;
+    let hydration: { cancel: () => void } | undefined;
 
     const observer = new IntersectionObserver(
       (entries) => {
         const intersecting = entries.some((entry) => entry.isIntersecting);
 
         if (!intersecting) {
-          pendingRef.current = false;
-          dequeue?.();
-          dequeue = undefined;
+          hydration?.cancel();
+          hydration = undefined;
           setInView(false);
           return;
         }
 
-        if (pendingRef.current) return;
+        if (hydration) return;
 
-        pendingRef.current = true;
-        dequeue = enqueueChartHydration(() => {
-          pendingRef.current = false;
-          dequeue = undefined;
+        hydration = scheduleHydration(() => {
+          hydration = undefined;
           if (!cancelled) setInView(true);
         });
       },
@@ -45,9 +76,9 @@ function useChartHydration() {
     return () => {
       cancelled = true;
       observer.disconnect();
-      dequeue?.();
+      hydration?.cancel();
     };
-  }, []);
+  }, [usesExternalVisible]);
 
   return { inView, containerRef };
 }

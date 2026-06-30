@@ -192,7 +192,6 @@ function MetricChart({
     showTooltip,
     tooltipColumnSize,
     tooltipSort,
-    layoutDensity,
     setLayoutDensity,
     xMin,
     xMax,

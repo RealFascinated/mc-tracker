@@ -98,8 +98,6 @@ function AdminSettingsPage() {
     event.preventDefault();
     const next = currentValues();
     saveMutation.mutate({
-      apiPort: next.apiPort,
-      apiAddress: next.apiAddress,
       pingerTimeoutMs: next.pingerTimeoutMs,
       pingerRetryAttempts: next.pingerRetryAttempts,
       pingerRetryDelayMs: next.pingerRetryDelayMs,
@@ -148,24 +146,6 @@ function AdminSettingsPage() {
               }
               placeholder="https://tracker.example.com"
             />
-          </Field>
-          <Field label="API bind">
-            <div className="flex gap-2">
-              <Input
-                value={values.apiAddress}
-                onChange={(event) =>
-                  updateString("apiAddress", event.target.value)
-                }
-              />
-              <Input
-                type="number"
-                className="w-24"
-                value={values.apiPort}
-                onChange={(event) =>
-                  updateNumber("apiPort", event.target.value)
-                }
-              />
-            </div>
           </Field>
           <Field label="Pinger timeout (ms)">
             <Input

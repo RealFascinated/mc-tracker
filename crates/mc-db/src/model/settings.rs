@@ -1,11 +1,7 @@
-use std::net::{IpAddr, SocketAddr};
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AppSettings {
-    pub api_port: u16,
-    pub api_address: String,
     pub pinger_timeout_ms: u64,
     pub pinger_retry_attempts: u32,
     pub pinger_retry_delay_ms: u64,
@@ -22,8 +18,6 @@ pub struct AppSettings {
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
-            api_port: 3000,
-            api_address: "0.0.0.0".to_string(),
             pinger_timeout_ms: 5000,
             pinger_retry_attempts: 3,
             pinger_retry_delay_ms: 1000,
@@ -38,17 +32,6 @@ impl Default for AppSettings {
 }
 
 impl AppSettings {
-    pub fn api_socket_addr(&self) -> Result<SocketAddr, String> {
-        let ip: IpAddr = self
-            .api_address
-            .parse()
-            .map_err(|e| format!("invalid api_address: {e}"))?;
-        SocketAddr::new(ip, self.api_port)
-            .to_string()
-            .parse::<SocketAddr>()
-            .map_err(|e| format!("invalid api socket: {e}"))
-    }
-
     pub fn victoriametrics_base_url(&self) -> &str {
         self.victoriametrics_url.trim_end_matches('/')
     }
@@ -89,8 +72,6 @@ impl AppSettings {
         };
 
         Ok(Self {
-            api_port: Self::parse_u16(get("api_port")?, "api_port")?,
-            api_address: get("api_address")?.to_string(),
             pinger_timeout_ms: Self::parse_u64(get("pinger_timeout_ms")?, "pinger_timeout_ms")?,
             pinger_retry_attempts: Self::parse_u32(
                 get("pinger_retry_attempts")?,
@@ -161,15 +142,6 @@ impl AppSettings {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn default_api_socket_parses() {
-        let settings = AppSettings::default();
-        assert_eq!(
-            settings.api_socket_addr().unwrap(),
-            SocketAddr::new(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED), 3000)
-        );
-    }
 
     #[test]
     fn victoriametrics_urls_derived_from_base() {

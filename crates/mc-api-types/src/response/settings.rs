@@ -3,8 +3,6 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SettingsResponse {
-    pub api_port: u16,
-    pub api_address: String,
     pub pinger_timeout_ms: u64,
     pub pinger_retry_attempts: u32,
     pub pinger_retry_delay_ms: u64,

@@ -19,7 +19,6 @@ import {
 } from "@/lib/metrics/range";
 import {
   formatMetricTimeWindowLabel,
-  formatMetricTimeWindowShortLabel,
   isPresetMetricTimeWindow,
   metricTimeWindowToEpochWindow,
   validateMetricEpochWindow,
@@ -104,14 +103,11 @@ export function DashboardTimeRangePicker({
           onMouseDown={(event) => event.preventDefault()}
         >
           <Clock3 className="size-3.5 shrink-0" aria-hidden />
-          <span className="truncate lg:hidden">
-            {formatMetricTimeWindowShortLabel(window)}
-          </span>
-          <span className="truncate max-lg:hidden">
+          <span className="truncate">
             {formatMetricTimeWindowLabel(window)}
           </span>
           <ChevronDown
-            className="size-3 max-lg:hidden shrink-0 opacity-70"
+            className="size-3 shrink-0 opacity-70"
             aria-hidden
           />
         </button>
@@ -121,7 +117,7 @@ export function DashboardTimeRangePicker({
         className="dashboard-time-range-picker w-[min(100vw-1.5rem,42rem)] p-0"
       >
         <div className="dashboard-time-range-picker-layout">
-          <section className="dashboard-time-range-picker-quick">
+          <aside className="dashboard-time-range-picker-quick">
             <header className="dashboard-time-range-picker-section-header">
               <Clock3 className="size-3.5 shrink-0" aria-hidden />
               <span>Quick ranges</span>
@@ -165,58 +161,60 @@ export function DashboardTimeRangePicker({
                 </div>
               ))}
             </div>
-          </section>
+          </aside>
 
-          <section className="dashboard-time-range-picker-custom">
-            <header className="dashboard-time-range-picker-section-header">
-              <Calendar className="size-3.5 shrink-0" aria-hidden />
-              <span>Custom range</span>
-            </header>
-            <div className="dashboard-time-range-picker-fields">
-              <div className="dashboard-time-range-picker-field">
-                <Label htmlFor="dashboard-time-range-from">From</Label>
-                <div className="dashboard-time-range-picker-input-wrap">
-                  <Input
-                    id="dashboard-time-range-from"
-                    type="datetime-local"
-                    value={draftFrom}
-                    onChange={(event) => {
-                      setDraftFrom(event.target.value);
-                      setCustomError(undefined);
-                    }}
-                    aria-invalid={customError ? true : undefined}
-                  />
-                  <Calendar
-                    className="dashboard-time-range-picker-input-icon"
-                    aria-hidden
-                  />
+          <aside className="dashboard-time-range-picker-custom">
+            <div className="dashboard-time-range-picker-custom-body">
+              <header className="dashboard-time-range-picker-section-header">
+                <Calendar className="size-3.5 shrink-0" aria-hidden />
+                <span>Custom range</span>
+              </header>
+              <div className="dashboard-time-range-picker-fields">
+                <div className="dashboard-time-range-picker-field">
+                  <Label htmlFor="dashboard-time-range-from">From</Label>
+                  <div className="dashboard-time-range-picker-input-wrap">
+                    <Input
+                      id="dashboard-time-range-from"
+                      type="datetime-local"
+                      value={draftFrom}
+                      onChange={(event) => {
+                        setDraftFrom(event.target.value);
+                        setCustomError(undefined);
+                      }}
+                      aria-invalid={customError ? true : undefined}
+                    />
+                    <Calendar
+                      className="dashboard-time-range-picker-input-icon"
+                      aria-hidden
+                    />
+                  </div>
+                </div>
+                <div className="dashboard-time-range-picker-field">
+                  <Label htmlFor="dashboard-time-range-to">To</Label>
+                  <div className="dashboard-time-range-picker-input-wrap">
+                    <Input
+                      id="dashboard-time-range-to"
+                      type="datetime-local"
+                      value={draftTo}
+                      onChange={(event) => {
+                        setDraftTo(event.target.value);
+                        setCustomError(undefined);
+                      }}
+                      aria-invalid={customError ? true : undefined}
+                    />
+                    <Calendar
+                      className="dashboard-time-range-picker-input-icon"
+                      aria-hidden
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="dashboard-time-range-picker-field">
-                <Label htmlFor="dashboard-time-range-to">To</Label>
-                <div className="dashboard-time-range-picker-input-wrap">
-                  <Input
-                    id="dashboard-time-range-to"
-                    type="datetime-local"
-                    value={draftTo}
-                    onChange={(event) => {
-                      setDraftTo(event.target.value);
-                      setCustomError(undefined);
-                    }}
-                    aria-invalid={customError ? true : undefined}
-                  />
-                  <Calendar
-                    className="dashboard-time-range-picker-input-icon"
-                    aria-hidden
-                  />
-                </div>
-              </div>
+              {customError ? (
+                <p className="dashboard-time-range-picker-error" role="alert">
+                  {customError}
+                </p>
+              ) : null}
             </div>
-            {customError ? (
-              <p className="dashboard-time-range-picker-error" role="alert">
-                {customError}
-              </p>
-            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -225,7 +223,7 @@ export function DashboardTimeRangePicker({
             >
               Apply range
             </Button>
-          </section>
+          </aside>
         </div>
       </PopoverContent>
     </Popover>

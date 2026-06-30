@@ -70,7 +70,6 @@ type UseMetricChartInstanceParams = {
   tooltipColumnSize: number | undefined;
   tooltipSort:
     ((a: TooltipSortEntry, b: TooltipSortEntry) => number) | undefined;
-  layoutDensity: "normal" | "compact";
   setLayoutDensity: Dispatch<SetStateAction<"normal" | "compact">>;
   xMin: number | null;
   xMax: number | null;
@@ -116,7 +115,6 @@ function useMetricChartInstance({
   showTooltip,
   tooltipColumnSize,
   tooltipSort,
-  layoutDensity,
   setLayoutDensity,
   xMin,
   xMax,
@@ -148,8 +146,8 @@ function useMetricChartInstance({
 
       const { width: initialWidth, height: initialHeight } = getChartSize();
       const layout = chartLayoutForWidth(initialWidth);
-      layoutDensityRef.current = layout.density;
-      if (layout.density !== layoutDensity) {
+      if (layout.density !== layoutDensityRef.current) {
+        layoutDensityRef.current = layout.density;
         setLayoutDensity(layout.density);
       }
 
@@ -271,7 +269,6 @@ function useMetricChartInstance({
     hideYAxis,
     labels,
     labelsKey,
-    layoutDensity,
     layoutDensityRef,
     negated,
     negatedKey,

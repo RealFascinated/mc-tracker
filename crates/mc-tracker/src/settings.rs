@@ -3,12 +3,6 @@ use mc_db::AppSettings;
 
 pub fn merge_settings(current: &AppSettings, patch: &PatchSettingsRequest) -> AppSettings {
     let mut next = current.clone();
-    if let Some(value) = patch.api_port {
-        next.api_port = value;
-    }
-    if let Some(value) = &patch.api_address {
-        next.api_address = value.trim().to_string();
-    }
     if let Some(value) = patch.pinger_timeout_ms {
         next.pinger_timeout_ms = value;
     }
@@ -43,10 +37,6 @@ pub fn validate_settings(
     settings: &AppSettings,
     deployment_environment: &str,
 ) -> Result<(), String> {
-    if settings.api_address.trim().is_empty() {
-        return Err("api_address cannot be empty".into());
-    }
-    settings.api_socket_addr()?;
     if settings.victoriametrics_url.trim().is_empty() {
         return Err("victoriametrics_url cannot be empty".into());
     }
@@ -71,7 +61,7 @@ mod tests {
     use mc_api_types::PatchSettingsRequest;
     use mc_db::AppSettings;
 
-    use super::{merge_settings, validate_settings};
+    use super::merge_settings;
 
     #[test]
     fn merge_settings_applies_only_provided_fields() {
@@ -82,15 +72,6 @@ mod tests {
         };
         let merged = merge_settings(&current, &patch);
         assert_eq!(merged.metrics_push_interval_seconds, 30);
-        assert_eq!(merged.api_port, current.api_port);
-    }
-
-    #[test]
-    fn validate_settings_rejects_invalid_api_address() {
-        let settings = AppSettings {
-            api_address: "not-an-ip".into(),
-            ..Default::default()
-        };
-        assert!(validate_settings(&settings, "development").is_err());
+        assert_eq!(merged.pinger_timeout_ms, current.pinger_timeout_ms);
     }
 }

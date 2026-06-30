@@ -16,9 +16,11 @@ type MetricChartViewProps = {
   height?: number;
   hideHeader?: boolean;
   showCurrentValues?: boolean;
+  flush?: boolean;
   emptyMessage?: string;
   variant?: "card" | "sparkline";
   xRange?: { min: number; max: number };
+  hydrateWhen?: boolean;
 };
 
 function MetricChartView({
@@ -28,9 +30,11 @@ function MetricChartView({
   height,
   hideHeader,
   showCurrentValues,
+  flush,
   emptyMessage = "No data yet.",
   variant = "card",
   xRange,
+  hydrateWhen,
 }: MetricChartViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const config = useMemo(() => buildChartConfig(def, data), [def, data]);
@@ -40,7 +44,7 @@ function MetricChartView({
       <ChartEmpty
         message={emptyMessage}
         className={className}
-        minHeight={variant === "sparkline" ? 64 : (height ?? 220)}
+        height={variant === "sparkline" ? 64 : (height ?? 220)}
       />
     );
   }
@@ -83,6 +87,8 @@ function MetricChartView({
         height={height}
         hideHeader={hideHeader}
         showCurrentValues={showCurrentValues}
+        flush={flush}
+        hydrateWhen={hydrateWhen}
       />
     </div>
   );

@@ -582,20 +582,6 @@
     @apply w-fit max-w-full min-w-0 shrink;
   }
 
-  .site-header-controls .dashboard-time-controls-segment--range {
-    @apply max-w-24 lg:max-w-none;
-  }
-
-  .site-header-controls .dashboard-time-controls-segment {
-    @apply gap-1 px-1.5;
-  }
-
-  @media (min-width: 40rem) {
-    .site-header-controls .dashboard-time-controls-segment {
-      @apply px-2;
-    }
-  }
-
   .site-header-controls .site-header-view-toggle {
     @apply shrink-0;
   }
@@ -636,15 +622,9 @@
   }
 
   .dashboard-time-controls-segment {
-    @apply inline-flex min-w-0 items-center gap-1.5 px-2 text-xs font-medium transition-colors outline-none;
+    @apply inline-flex min-w-0 items-center gap-1.5 px-2.5 text-xs font-medium transition-colors outline-none;
     @apply hover:bg-muted;
     @apply disabled:pointer-events-none disabled:opacity-50;
-  }
-
-  @media (min-width: 40rem) {
-    .dashboard-time-controls-segment {
-      @apply gap-1.5 px-2.5;
-    }
   }
 
   .dashboard-time-controls-segment--range {
@@ -659,24 +639,32 @@
     @apply px-2 text-muted-foreground hover:bg-transparent hover:text-foreground;
   }
 
+  .dashboard-time-range-picker {
+    @apply h-auto overflow-hidden;
+  }
+
   .dashboard-time-range-picker-layout {
-    @apply grid gap-0 sm:grid-cols-[minmax(0,11.5rem)_minmax(0,1fr)];
+    @apply flex flex-col sm:flex-row sm:items-stretch;
   }
 
   .dashboard-time-range-picker-quick {
-    @apply border-b border-border p-3 sm:border-r sm:border-b-0;
+    @apply shrink-0 border-b border-border p-3 sm:w-[11.5rem] sm:border-r sm:border-b-0;
   }
 
   .dashboard-time-range-picker-custom {
-    @apply flex flex-col gap-3 p-3;
+    @apply flex min-h-0 min-w-0 flex-1 flex-col p-3;
+  }
+
+  .dashboard-time-range-picker-custom-body {
+    @apply flex flex-col gap-3;
   }
 
   .dashboard-time-range-picker-section-header {
-    @apply mb-3 flex items-center gap-2 text-[0.6875rem] font-semibold tracking-[0.08em] text-muted-foreground uppercase;
+    @apply flex shrink-0 items-center gap-2 text-[0.6875rem] font-semibold tracking-[0.08em] text-muted-foreground uppercase;
   }
 
   .dashboard-time-range-picker-groups {
-    @apply flex max-h-[min(24rem,60vh)] flex-col gap-3 overflow-y-auto pr-1;
+    @apply mt-3 flex max-h-[min(20rem,50vh)] flex-col gap-3 overflow-y-auto pr-1;
   }
 
   .dashboard-time-range-picker-group-label {
@@ -721,7 +709,17 @@
   }
 
   .dashboard-time-range-picker-apply {
-    @apply mt-auto w-full;
+    @apply mt-auto w-full shrink-0;
+  }
+
+  @media (max-width: 39.999rem) {
+    .dashboard-time-range-picker-custom {
+      @apply h-auto;
+    }
+
+    .dashboard-time-range-picker-apply {
+      @apply mt-3;
+    }
   }
 
   .site-header-inner--with-toolbar .site-header-toolbar {
@@ -986,7 +984,9 @@
   }
 
   .entity-metrics-card-chart {
-    @apply px-1 py-1;
+    /* chart height (220px) + vertical padding — sync with DASHBOARD_CARD_CHART_HEIGHT */
+    @apply box-border px-1 py-1;
+    height: calc(220px + 0.5rem);
   }
 
   .entity-card-stats {

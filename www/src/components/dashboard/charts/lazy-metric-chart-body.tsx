@@ -26,32 +26,38 @@ export function LazyMetricChartBody({
   chartData,
   height = DASHBOARD_CARD_CHART_HEIGHT,
 }: LazyMetricChartBodyProps) {
-  if (isVisible && isPending) {
+  const hasData = chartData.timestamps.length > 0;
+  const showChart = isVisible && (!isPending || hasData);
+  const showLoading = isVisible && isPending;
+
+  if (isError) {
     return (
-      <div
-        className="flex items-center justify-center"
-        style={{ height }}
-      >
-        <LoadingState message="Loading…" />
+      <div className="flex h-full items-center px-4">
+        <p className="text-sm text-destructive">
+          {DASHBOARD_CHART_ERROR_MESSAGE}
+        </p>
       </div>
     );
   }
 
-  if (isError) {
-    return (
-      <p className="px-4 py-8 text-sm text-destructive">
-        {DASHBOARD_CHART_ERROR_MESSAGE}
-      </p>
-    );
-  }
-
   return (
-    <MetricChartView
-      def={chartDef}
-      data={chartData}
-      height={height}
-      emptyMessage={DASHBOARD_CHART_EMPTY_MESSAGE}
-      {...DASHBOARD_CHART_PROPS}
-    />
+    <div className="relative h-full">
+      {showChart ? (
+        <MetricChartView
+          def={chartDef}
+          data={chartData}
+          height={height}
+          emptyMessage={DASHBOARD_CHART_EMPTY_MESSAGE}
+          className="h-full"
+          hydrateWhen={isVisible}
+          {...DASHBOARD_CHART_PROPS}
+        />
+      ) : null}
+      {showLoading ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
+          <LoadingState message="Loading…" />
+        </div>
+      ) : null}
+    </div>
   );
 }

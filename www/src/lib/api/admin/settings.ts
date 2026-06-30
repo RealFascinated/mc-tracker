@@ -1,8 +1,6 @@
 import { apiFetch } from "@/lib/api/client";
 
 export type SettingsResponse = {
-  apiPort: number;
-  apiAddress: string;
   pingerTimeoutMs: number;
   pingerRetryAttempts: number;
   pingerRetryDelayMs: number;

@@ -36,6 +36,8 @@ type MetricChartCardProps = {
   description?: string;
   showCurrentValues?: boolean;
   hideHeader?: boolean;
+  flush?: boolean;
+  hydrateWhen?: boolean;
   mode?: MetricChartMode;
   tooltipColumnSize?: number;
   tooltipSort?: (a: TooltipSortEntry, b: TooltipSortEntry) => number;
@@ -214,13 +216,15 @@ function MetricChartCard({
   description,
   showCurrentValues,
   hideHeader,
+  flush = false,
+  hydrateWhen,
   mode,
   tooltipColumnSize,
   tooltipSort,
 }: MetricChartCardProps) {
   const chartHeight = height ?? 260;
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
-  const { inView, containerRef } = useChartHydration();
+  const { inView, containerRef } = useChartHydration(hydrateWhen);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const chartReady = inView || fullscreenOpen;
   const displaySeries = useMemo(
@@ -359,7 +363,9 @@ function MetricChartCard({
           {seriesLegendNode}
         </div>
       ) : null}
-      <div className="overflow-visible px-3 pt-2 pb-3">
+      <div
+        className={cn("overflow-visible", flush ? "p-0" : "px-3 pt-2 pb-3")}
+      >
         <MetricChartPanel
           containerRef={containerRef}
           height={chartHeight}

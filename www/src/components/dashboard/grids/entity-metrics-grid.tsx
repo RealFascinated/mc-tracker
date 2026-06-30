@@ -11,7 +11,6 @@ import { EMPTY_METRIC_TIME_SERIES } from "@/lib/api/metric-timeseries";
 import type { EntityPeakStats, PlayersTimeseriesPayload } from "@/lib/api/types";
 import { playersTimeseriesToMetric } from "@/lib/metrics/adapters";
 import type { ChartDefinition } from "@/lib/metrics/charts/types";
-import { DASHBOARD_CARD_CHART_HEIGHT } from "@/lib/metrics/dashboard-chart-constants";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 import { formatPlayers } from "@/lib/format-players";
 import { peakTimestampTooltip } from "@/lib/format-peak-at";
@@ -106,25 +105,6 @@ function EntityMetricsCard<
   );
 }
 
-function EntityMetricsCardPlaceholder<T>({
-  item,
-  renderHeader,
-}: {
-  item: T;
-  renderHeader: (item: T) => ReactNode;
-}) {
-  return (
-    <DashboardCard className="entity-metrics-card h-full">
-      {renderHeader(item)}
-      <div
-        className="entity-metrics-card-chart"
-        style={{ height: DASHBOARD_CARD_CHART_HEIGHT }}
-        aria-hidden
-      />
-    </DashboardCard>
-  );
-}
-
 export function EntityMetricsGrid<
   T,
   TTimeseries extends PlayersTimeseriesPayload = PlayersTimeseriesPayload,
@@ -185,15 +165,7 @@ export function EntityMetricsGrid<
         <div className="entity-metrics-grid-container">
           <div className="entity-metrics-grid">
             {items.map((item) => (
-              <LazyVisibleMount
-                key={getKey(item)}
-                placeholder={
-                  <EntityMetricsCardPlaceholder
-                    item={item}
-                    renderHeader={renderHeader}
-                  />
-                }
-              >
+              <LazyVisibleMount key={getKey(item)}>
                 {(isVisible) => (
                   <EntityMetricsCard
                     item={item}

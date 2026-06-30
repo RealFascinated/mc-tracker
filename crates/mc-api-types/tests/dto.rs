@@ -97,8 +97,6 @@ fn login_response_serializes_camel_case() {
 #[test]
 fn settings_response_serializes_camel_case() {
     let json = serde_json::to_string(&SettingsResponse {
-        api_port: 3000,
-        api_address: "0.0.0.0".into(),
         pinger_timeout_ms: 5000,
         pinger_retry_attempts: 3,
         pinger_retry_delay_ms: 1000,
@@ -110,7 +108,7 @@ fn settings_response_serializes_camel_case() {
         www_origin: String::new(),
     })
     .unwrap();
-    assert!(json.contains(r#""apiPort":3000"#));
+    assert!(json.contains(r#""pingerTimeoutMs":5000"#));
     assert!(json.contains(r#""dnsCacheEnabled":true"#));
     assert!(json.contains(r#""victoriametricsUrl":"http://localhost:8428""#));
 }
@@ -122,5 +120,5 @@ fn patch_settings_request_deserializes_partial_fields() {
             .unwrap();
     assert_eq!(req.metrics_push_interval_seconds, Some(30));
     assert_eq!(req.dns_cache_enabled, Some(false));
-    assert!(req.api_port.is_none());
+    assert!(req.pinger_timeout_ms.is_none());
 }
