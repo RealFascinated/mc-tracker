@@ -115,6 +115,7 @@ function DashboardRangeToggle<T extends string>({
       className={cn(
         "min-w-0",
         fullWidth ? "w-full" : "w-fit max-w-full",
+        !fullWidth && "dashboard-range-toggle",
         className,
       )}
     >

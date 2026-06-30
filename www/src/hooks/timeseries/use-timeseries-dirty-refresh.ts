@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { TIMESERIES_REFETCH_MS } from "@/lib/api/timeseries-refresh";
+import { useDashboardRefreshIntervalMs } from "@/lib/dashboard/refresh-context";
 
 export function useTimeseriesDirtyRefresh({
   isVisible,
@@ -11,28 +11,26 @@ export function useTimeseriesDirtyRefresh({
   dataUpdatedAt: number;
   refetch: () => Promise<unknown>;
 }) {
+  const refreshIntervalMs = useDashboardRefreshIntervalMs();
   const dirtyRef = useRef(false);
   const refetchRef = useRef(refetch);
   refetchRef.current = refetch;
 
   useEffect(() => {
-    if (isVisible || dataUpdatedAt === 0) {
+    if (isVisible || dataUpdatedAt === 0 || refreshIntervalMs === false) {
       return;
     }
 
     const markDirtyIfStale = () => {
-      if (Date.now() - dataUpdatedAt >= TIMESERIES_REFETCH_MS) {
+      if (Date.now() - dataUpdatedAt >= refreshIntervalMs) {
         dirtyRef.current = true;
       }
     };
 
     markDirtyIfStale();
-    const intervalId = window.setInterval(
-      markDirtyIfStale,
-      TIMESERIES_REFETCH_MS,
-    );
+    const intervalId = window.setInterval(markDirtyIfStale, refreshIntervalMs);
     return () => window.clearInterval(intervalId);
-  }, [isVisible, dataUpdatedAt]);
+  }, [isVisible, dataUpdatedAt, refreshIntervalMs]);
 
   useEffect(() => {
     if (isVisible) {

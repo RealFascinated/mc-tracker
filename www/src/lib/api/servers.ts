@@ -32,8 +32,32 @@ export type ServerTimeseriesResponse = PlayersTimeseriesPayload & {
   id: string;
 };
 
+export type ServerSearchItem = {
+  id: string;
+  name: string;
+  type: string;
+  host: string;
+  port: number | null;
+  favicon: string | null;
+  playersOnline: number | null;
+};
+
+export type ServersSearchResponse = {
+  servers: ServerSearchItem[];
+};
+
 export function getServers(search?: string) {
   return fetchList<ServersListResponse>("/servers", search);
+}
+
+export function searchServers(search: string, limit = 10) {
+  const params = new URLSearchParams({
+    search,
+    limit: String(limit),
+  });
+  return apiFetch<ServersSearchResponse>(`/servers/search?${params}`, {
+    credentials: "omit",
+  });
 }
 
 export function getServerTimeseries(id: string, from: number, to: number) {

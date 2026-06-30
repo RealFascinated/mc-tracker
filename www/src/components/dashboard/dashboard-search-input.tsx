@@ -1,6 +1,19 @@
+import { useQuery } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 
+import { ServerFavicon } from "@/components/dashboard/server-favicon";
 import { Input } from "@/components/ui/input";
+import type { ServerSearchItem } from "@/lib/api/servers";
+import { serversSearchQueryOptions } from "@/lib/api/servers.queries";
+import { cn } from "@/lib/utils";
 
 export type DashboardView = "server" | "asn";
 
@@ -22,12 +35,101 @@ const PLACEHOLDERS: Record<DashboardView, { placeholder: string; label: string }
     },
   };
 
+const AUTOCOMPLETE_DEBOUNCE_MS = 150;
+const AUTOCOMPLETE_MIN_CHARS = 1;
+
+function formatServerAddress(server: ServerSearchItem): string {
+  if (server.port == null) {
+    return server.host;
+  }
+  return `${server.host}:${server.port}`;
+}
+
 export function DashboardSearchInput({
   value,
   onChange,
   view = "server",
 }: DashboardSearchInputProps) {
   const { placeholder, label } = PLACEHOLDERS[view];
+  const listboxId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    const timer = globalThis.setTimeout(() => {
+      setDebouncedQuery(value.trim());
+    }, AUTOCOMPLETE_DEBOUNCE_MS);
+
+    return () => globalThis.clearTimeout(timer);
+  }, [value]);
+
+  const searchQuery = useQuery({
+    ...serversSearchQueryOptions(debouncedQuery),
+    enabled:
+      view === "server" &&
+      isOpen &&
+      debouncedQuery.length >= AUTOCOMPLETE_MIN_CHARS,
+  });
+
+  const suggestions = view === "server" ? (searchQuery.data?.servers ?? []) : [];
+  const showSuggestions =
+    view === "server" &&
+    isOpen &&
+    value.trim().length >= AUTOCOMPLETE_MIN_CHARS &&
+    (searchQuery.isFetching || suggestions.length > 0);
+
+  const closeSuggestions = useCallback(() => {
+    setIsOpen(false);
+    setActiveIndex(-1);
+  }, []);
+
+  const selectSuggestion = useCallback(
+    (server: ServerSearchItem) => {
+      onChange(server.name);
+      closeSuggestions();
+      inputRef.current?.blur();
+    },
+    [closeSuggestions, onChange],
+  );
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) {
+      if (event.key === "Escape") {
+        closeSuggestions();
+      }
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveIndex((index) => (index + 1) % suggestions.length);
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex((index) =>
+        index <= 0 ? suggestions.length - 1 : index - 1,
+      );
+      return;
+    }
+
+    if (event.key === "Enter" && activeIndex >= 0) {
+      event.preventDefault();
+      const selected = suggestions[activeIndex];
+      if (selected) {
+        selectSuggestion(selected);
+      }
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeSuggestions();
+    }
+  };
 
   return (
     <div className="dashboard-search">
@@ -36,22 +138,96 @@ export function DashboardSearchInput({
         className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
       />
       <Input
+        ref={inputRef}
         type="search"
+        role="combobox"
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => {
+          onChange(event.target.value);
+          setIsOpen(true);
+          setActiveIndex(-1);
+        }}
+        onFocus={() => setIsOpen(true)}
+        onBlur={() => {
+          globalThis.setTimeout(() => closeSuggestions(), 120);
+        }}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         aria-label={label}
+        aria-expanded={showSuggestions}
+        aria-controls={showSuggestions ? listboxId : undefined}
+        aria-activedescendant={
+          showSuggestions && activeIndex >= 0
+            ? `${listboxId}-option-${activeIndex}`
+            : undefined
+        }
+        aria-autocomplete="list"
+        autoComplete="off"
         className="dashboard-search-input"
       />
       {value ? (
         <button
           type="button"
           className="dashboard-search-clear"
-          onClick={() => onChange("")}
+          onClick={() => {
+            onChange("");
+            closeSuggestions();
+            inputRef.current?.focus();
+          }}
           aria-label="Clear search"
         >
           <X className="size-3.5" />
         </button>
+      ) : null}
+      {showSuggestions ? (
+        <ul
+          id={listboxId}
+          role="listbox"
+          className="dashboard-search-suggestions"
+        >
+          {searchQuery.isFetching && suggestions.length === 0 ? (
+            <li className="dashboard-search-suggestion-status" role="status">
+              Searching…
+            </li>
+          ) : null}
+          {suggestions.map((server, index) => (
+            <li
+              key={server.id}
+              id={`${listboxId}-option-${index}`}
+              role="option"
+              aria-selected={index === activeIndex}
+            >
+              <button
+                type="button"
+                className={cn(
+                  "dashboard-search-suggestion",
+                  index === activeIndex && "dashboard-search-suggestion-active",
+                )}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => selectSuggestion(server)}
+              >
+                <ServerFavicon
+                  name={server.name}
+                  favicon={server.favicon}
+                  size="sm"
+                />
+                <span className="dashboard-search-suggestion-copy">
+                  <span className="dashboard-search-suggestion-name">
+                    {server.name}
+                  </span>
+                  <span className="dashboard-search-suggestion-host">
+                    {formatServerAddress(server)}
+                  </span>
+                </span>
+                {server.playersOnline != null ? (
+                  <span className="dashboard-search-suggestion-players">
+                    {server.playersOnline.toLocaleString()}
+                  </span>
+                ) : null}
+              </button>
+            </li>
+          ))}
+        </ul>
       ) : null}
     </div>
   );

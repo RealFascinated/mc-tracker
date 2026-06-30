@@ -18,7 +18,19 @@ type ServerMetricsGridProps = {
   isLoading?: boolean;
 };
 
+function serverAsnName(server: ServerListItem): string | null {
+  if (server.asnOrg) {
+    return server.asnOrg;
+  }
+  if (server.asn) {
+    return server.asn;
+  }
+  return null;
+}
+
 function ServerMetricsCardHeader({ server }: { server: ServerListItem }) {
+  const asnName = serverAsnName(server);
+
   return (
     <div className="entity-metrics-card-header">
       <div className="entity-metrics-identity">
@@ -38,6 +50,7 @@ function ServerMetricsCardHeader({ server }: { server: ServerListItem }) {
           <div className="entity-metrics-subtitle">
             {server.host}
             {server.port != null ? `:${server.port}` : ""}
+            {asnName ? ` · ${asnName}` : ""}
           </div>
         </div>
       </div>

@@ -7,15 +7,21 @@ import {
   useState,
 } from "react";
 
+import { startThemeViewTransition } from "@/lib/theme/transition";
+
 export const THEME_STORAGE_KEY = "mc-tracker-theme";
 
 export type ThemePreference = "dark" | "light" | "system";
 export type ResolvedTheme = "dark" | "light";
 
+type SetThemeOptions = {
+  transition?: boolean;
+};
+
 type ThemeContextValue = {
   theme: ThemePreference;
   resolvedTheme: ResolvedTheme;
-  setTheme: (theme: ThemePreference) => void;
+  setTheme: (theme: ThemePreference, options?: SetThemeOptions) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -71,10 +77,31 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyTheme(resolvedTheme);
   }, [resolvedTheme]);
 
-  const setTheme = useCallback((nextTheme: ThemePreference) => {
-    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-    setThemeState(nextTheme);
-  }, []);
+  const setTheme = useCallback(
+    (nextTheme: ThemePreference, options?: SetThemeOptions) => {
+      if (nextTheme === theme) {
+        return;
+      }
+
+      const nextResolved: ResolvedTheme =
+        nextTheme === "system" ? systemTheme : nextTheme;
+      const resolvedChanges = nextResolved !== resolvedTheme;
+
+      const apply = () => {
+        localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+        applyTheme(nextResolved);
+        setThemeState(nextTheme);
+      };
+
+      if (options?.transition && resolvedChanges) {
+        startThemeViewTransition(apply);
+        return;
+      }
+
+      apply();
+    },
+    [resolvedTheme, systemTheme, theme],
+  );
 
   const value = useMemo(
     () => ({ theme, resolvedTheme, setTheme }),

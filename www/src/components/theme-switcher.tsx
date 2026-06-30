@@ -1,61 +1,39 @@
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import type { ThemePreference } from "@/lib/theme";
+import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
-
-const themeOptions = [
-  { value: "light", label: "Light", icon: Sun },
-  { value: "system", label: "System", icon: Monitor },
-  { value: "dark", label: "Dark", icon: Moon },
-] as const satisfies ReadonlyArray<{
-  value: ThemePreference;
-  label: string;
-  icon: typeof Sun;
-}>;
+import { cn } from "@/lib/utils";
 
 export function ThemeSwitcher({ className }: { className?: string }) {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const nextTheme = isDark ? "light" : "dark";
+  const label = isDark ? "Switch to light theme" : "Switch to dark theme";
+  const Icon = isDark ? Sun : Moon;
 
   return (
-    <div
-      role="group"
-      aria-label="Theme"
-      className={cn(
-        "inline-flex items-center gap-0.5 rounded-sm bg-muted p-0.5",
-        className,
-      )}
-    >
-      {themeOptions.map(({ value, label, icon: Icon }) => {
-        const isActive = theme === value;
-
-        return (
-          <Tooltip key={value}>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={() => setTheme(value)}
-                aria-label={label}
-                aria-pressed={isActive}
-                className={cn(
-                  "flex size-6 shrink-0 cursor-help items-center justify-center rounded-sm transition-colors",
-                  isActive
-                    ? "bg-card text-monitor dark:bg-accent dark:text-warning"
-                    : "text-muted-foreground hover:text-muted-foreground dark:text-muted-foreground dark:hover:text-foreground",
-                )}
-              >
-                <Icon className="size-3.5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top">{`${label} theme`}</TooltipContent>
-          </Tooltip>
-        );
-      })}
-    </div>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "site-header-nav-button text-muted-foreground hover:bg-transparent hover:text-monitor dark:hover:bg-transparent dark:hover:text-warning",
+            className,
+          )}
+          onClick={() => setTheme(nextTheme, { transition: true })}
+          aria-label={label}
+        >
+          <Icon className="size-4" aria-hidden />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
   );
 }

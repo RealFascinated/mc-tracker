@@ -94,6 +94,24 @@
 }
 
 :root {
+  --expo-out: linear(
+    0 0%,
+    0.1684 2.66%,
+    0.3165 5.49%,
+    0.446 8.52%,
+    0.5581 11.78%,
+    0.6535 15.29%,
+    0.7341 19.11%,
+    0.8011 23.3%,
+    0.8557 27.93%,
+    0.8962 32.68%,
+    0.9283 38.01%,
+    0.9529 44.08%,
+    0.9711 51.14%,
+    0.9833 59.06%,
+    0.9915 68.74%,
+    1 100%
+  );
   color-scheme: light;
   --base: #101010;
   --monitor: #6b16ed;
@@ -520,12 +538,255 @@
     @apply mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:px-5 sm:py-5;
   }
 
-  .dashboard-toolbar {
-    @apply flex flex-wrap items-center justify-between gap-3;
+  .site-header {
+    @apply touch-manipulation;
   }
 
-  .dashboard-toolbar .dashboard-search {
-    @apply ml-auto w-full max-w-xs sm:w-56;
+  .site-header-inner--simple {
+    @apply flex h-12 items-center justify-between gap-3;
+  }
+
+  .site-header-inner--with-toolbar {
+    display: grid;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding-block: 0.5rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand actions"
+      "controls controls"
+      "search search";
+  }
+
+  .site-header-brand {
+    grid-area: brand;
+    min-width: 0;
+  }
+
+  .site-header-actions {
+    @apply flex shrink-0 items-center gap-1 sm:gap-2;
+    grid-area: actions;
+    justify-self: end;
+  }
+
+  .site-header-nav {
+    @apply flex min-w-0 items-center;
+    grid-area: controls;
+  }
+
+  .site-header-controls {
+    @apply flex w-full min-w-0 items-center gap-2;
+  }
+
+  .site-header-controls .dashboard-time-controls {
+    @apply w-fit max-w-full min-w-0 shrink;
+  }
+
+  .site-header-controls .dashboard-time-controls-segment--range {
+    @apply max-w-24 lg:max-w-none;
+  }
+
+  .site-header-controls .dashboard-time-controls-segment {
+    @apply gap-1 px-1.5;
+  }
+
+  @media (min-width: 40rem) {
+    .site-header-controls .dashboard-time-controls-segment {
+      @apply px-2;
+    }
+  }
+
+  .site-header-controls .site-header-view-toggle {
+    @apply shrink-0;
+  }
+
+  .site-header-nav--simple {
+    @apply shrink-0 gap-1 sm:gap-2;
+    grid-area: auto;
+    justify-self: end;
+  }
+
+  .site-header-inner--with-toolbar .site-header-nav {
+    @apply w-full overflow-x-auto;
+    scrollbar-width: none;
+  }
+
+  .site-header-inner--with-toolbar .site-header-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .site-header-nav-button {
+    @apply max-sm:size-9 max-sm:px-0;
+  }
+
+  .site-header-inner--with-toolbar .site-header-nav-button {
+    @apply size-9 px-0 lg:size-auto lg:px-3;
+  }
+
+  .site-header-nav .dashboard-range-toggle {
+    @apply shrink-0;
+  }
+
+  .dashboard-time-controls {
+    @apply inline-flex h-8 max-w-full items-stretch overflow-hidden rounded-snug border border-border bg-muted/60;
+  }
+
+  .dashboard-time-controls-divider {
+    @apply w-px shrink-0 self-stretch bg-border;
+  }
+
+  .dashboard-time-controls-segment {
+    @apply inline-flex min-w-0 items-center gap-1.5 px-2 text-xs font-medium transition-colors outline-none;
+    @apply hover:bg-muted;
+    @apply disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  @media (min-width: 40rem) {
+    .dashboard-time-controls-segment {
+      @apply gap-1.5 px-2.5;
+    }
+  }
+
+  .dashboard-time-controls-segment--range {
+    @apply text-monitor dark:text-warning;
+  }
+
+  .dashboard-time-controls-segment--refresh {
+    @apply text-muted-foreground hover:text-foreground;
+  }
+
+  .dashboard-time-controls-segment--manual {
+    @apply px-2 text-muted-foreground hover:bg-transparent hover:text-foreground;
+  }
+
+  .dashboard-time-range-picker-layout {
+    @apply grid gap-0 sm:grid-cols-[minmax(0,11.5rem)_minmax(0,1fr)];
+  }
+
+  .dashboard-time-range-picker-quick {
+    @apply border-b border-border p-3 sm:border-r sm:border-b-0;
+  }
+
+  .dashboard-time-range-picker-custom {
+    @apply flex flex-col gap-3 p-3;
+  }
+
+  .dashboard-time-range-picker-section-header {
+    @apply mb-3 flex items-center gap-2 text-[0.6875rem] font-semibold tracking-[0.08em] text-muted-foreground uppercase;
+  }
+
+  .dashboard-time-range-picker-groups {
+    @apply flex max-h-[min(24rem,60vh)] flex-col gap-3 overflow-y-auto pr-1;
+  }
+
+  .dashboard-time-range-picker-group-label {
+    @apply mb-1 px-2 text-[0.625rem] font-semibold tracking-[0.08em] text-muted-foreground/80 uppercase;
+  }
+
+  .dashboard-time-range-picker-option {
+    @apply flex w-full items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-muted-foreground transition-colors outline-none;
+    @apply hover:bg-muted hover:text-foreground;
+  }
+
+  .dashboard-time-range-picker-option--selected {
+    @apply bg-muted text-foreground;
+  }
+
+  .dashboard-time-range-picker-fields {
+    @apply flex flex-col gap-3;
+  }
+
+  .dashboard-time-range-picker-field {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .dashboard-time-range-picker-field label {
+    @apply text-xs font-medium text-muted-foreground;
+  }
+
+  .dashboard-time-range-picker-input-wrap {
+    @apply relative;
+  }
+
+  .dashboard-time-range-picker-input-wrap .monitor-input {
+    @apply w-full pr-9;
+  }
+
+  .dashboard-time-range-picker-input-icon {
+    @apply pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-muted-foreground;
+  }
+
+  .dashboard-time-range-picker-error {
+    @apply text-xs text-destructive;
+  }
+
+  .dashboard-time-range-picker-apply {
+    @apply mt-auto w-full;
+  }
+
+  .site-header-inner--with-toolbar .site-header-toolbar {
+    @apply flex min-w-0 items-center;
+    grid-area: search;
+  }
+
+  @media (min-width: 48rem) {
+    .site-header-inner--with-toolbar {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "brand controls actions"
+        "search search search";
+      gap: 0.5rem 0.75rem;
+    }
+
+    .site-header-inner--with-toolbar .site-header-nav {
+      @apply w-auto justify-self-end overflow-visible;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .site-header-inner--with-toolbar {
+      display: flex;
+      min-height: 3rem;
+      align-items: center;
+      gap: 0.75rem;
+      padding-block: 0;
+    }
+
+    .site-header-inner--with-toolbar .site-header-nav,
+    .site-header-controls {
+      display: contents;
+    }
+
+    .site-header-inner--with-toolbar .site-header-brand {
+      @apply shrink-0;
+      order: 1;
+    }
+
+    .site-header-inner--with-toolbar .site-header-view-toggle {
+      order: 2;
+    }
+
+    .site-header-inner--with-toolbar .site-header-toolbar {
+      @apply min-w-0 flex-1 flex-nowrap gap-3;
+      order: 3;
+    }
+
+    .site-header-inner--with-toolbar .dashboard-time-controls {
+      order: 4;
+    }
+
+    .site-header-inner--with-toolbar .site-header-actions {
+      @apply shrink-0;
+      order: 5;
+    }
+  }
+
+  .site-header-toolbar .dashboard-search {
+    @apply min-w-0 w-full lg:ml-auto lg:w-52 lg:flex-none xl:w-56;
+  }
+
+  .site-header-toolbar .dashboard-search-input {
+    @apply max-md:h-9;
   }
 
   .dashboard-stats-row {
@@ -653,6 +914,38 @@
 
   .dashboard-search-clear {
     @apply absolute top-1/2 right-2 flex -translate-y-1/2 items-center justify-center rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-foreground;
+  }
+
+  .dashboard-search-suggestions {
+    @apply absolute top-[calc(100%+0.25rem)] right-0 left-0 z-50 max-h-72 overflow-y-auto rounded-soft border border-border bg-popover p-1 shadow-md;
+  }
+
+  .dashboard-search-suggestion-status {
+    @apply px-2.5 py-2 text-xs text-muted-foreground;
+  }
+
+  .dashboard-search-suggestion {
+    @apply flex w-full items-center gap-2 rounded-snug px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent;
+  }
+
+  .dashboard-search-suggestion-active {
+    @apply bg-accent;
+  }
+
+  .dashboard-search-suggestion-copy {
+    @apply min-w-0 flex-1;
+  }
+
+  .dashboard-search-suggestion-name {
+    @apply block truncate font-medium text-foreground;
+  }
+
+  .dashboard-search-suggestion-host {
+    @apply block truncate text-xs text-muted-foreground;
+  }
+
+  .dashboard-search-suggestion-players {
+    @apply shrink-0 text-xs tabular-nums text-muted-foreground;
   }
 
   .entity-metrics-empty {
@@ -788,4 +1081,30 @@
 .dark .uplot .u-select {
   background: color-mix(in srgb, var(--color-warning) 22%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-warning) 50%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-group(root) {
+    animation-timing-function: var(--expo-out);
+  }
+
+  ::view-transition-old(root),
+  .dark::view-transition-old(root) {
+    animation: none;
+    animation-fill-mode: both;
+    z-index: -1;
+  }
+
+  ::view-transition-new(root) {
+    mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><circle cx='20' cy='20' r='20' fill='white'/></svg>")
+      center / 0 no-repeat;
+    animation: theme-transition-scale 1s;
+    animation-fill-mode: both;
+  }
+
+  @keyframes theme-transition-scale {
+    to {
+      mask-size: 200vmax;
+    }
+  }
 }

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AsnMetricsGrid } from "@/components/dashboard/grids/asn-metrics-grid";
+import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
 import {
   DashboardRangeToggle,
   type DashboardRangeOption,
@@ -13,25 +14,31 @@ import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
 import { DashboardSearchInput } from "@/components/dashboard/dashboard-search-input";
 import { LoadingState } from "@/components/loading-state";
+import { SiteHeaderNav, SiteHeaderToolbar } from "@/components/site-header-toolbar";
+import { useDashboardRefresh } from "@/lib/dashboard/refresh-context";
 import { asnsQueryOptions } from "@/lib/api/asns.queries";
 import { serversQueryOptions } from "@/lib/api/servers.queries";
 import { pageTitle } from "@/lib/page-title";
 import {
   DEFAULT_METRIC_TIME_RANGE,
-  parseMetricRangeSearchParam,
+  type MetricTimeRange,
 } from "@/lib/metrics/range";
-import type { MetricTimeRange } from "@/lib/metrics/range";
-import type { MetricTimeWindow } from "@/lib/metrics/time-window";
+import {
+  metricTimeWindowFromSearch,
+  parseMetricTimeWindowSearch,
+} from "@/lib/metrics/time-window";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
 const DASHBOARD_VIEW_OPTIONS: Array<DashboardRangeOption<DashboardView>> = [
-  { value: "server", shortLabel: "Per server", label: "Per server" },
-  { value: "asn", shortLabel: "Per ASN", label: "Per ASN" },
+  { value: "server", shortLabel: "Servers", label: "Per server" },
+  { value: "asn", shortLabel: "ASNs", label: "Per ASN" },
 ];
 
 type DashboardSearch = {
   range?: MetricTimeRange;
+  from?: number;
+  to?: number;
   search?: string;
   view?: DashboardView;
 };
@@ -54,7 +61,7 @@ function parseDashboardViewParam(value: unknown): DashboardView | undefined {
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): DashboardSearch => ({
-    range: parseMetricRangeSearchParam(search.range),
+    ...parseMetricTimeWindowSearch(search),
     search: parseDashboardSearchParam(search.search),
     view: parseDashboardViewParam(search.view),
   }),
@@ -70,8 +77,11 @@ export const Route = createFileRoute("/")({
 });
 
 function DashboardPage() {
+  const { refreshIntervalMs } = useDashboardRefresh();
   const {
     range: searchRange,
+    from: searchFrom,
+    to: searchTo,
     search: urlSearch,
     view: urlView,
   } = Route.useSearch();
@@ -104,19 +114,47 @@ function DashboardPage() {
   const serversQuery = useQuery({
     ...serversQueryOptions(activeSearch),
     enabled: dashboardView === "server",
+    refetchInterval:
+      refreshIntervalMs === false ? false : refreshIntervalMs,
   });
   const asnsQuery = useQuery({
     ...asnsQueryOptions(activeSearch),
     enabled: dashboardView === "asn",
+    refetchInterval:
+      refreshIntervalMs === false ? false : refreshIntervalMs,
   });
 
-  const timeRange = searchRange ?? DEFAULT_METRIC_TIME_RANGE;
-  const setTimeRange = useCallback(
+  const timeWindow = useMemo(
+    () =>
+      metricTimeWindowFromSearch({
+        range: searchRange,
+        from: searchFrom,
+        to: searchTo,
+      }),
+    [searchFrom, searchRange, searchTo],
+  );
+  const setPresetTimeRange = useCallback(
     (range: MetricTimeRange) => {
       void navigate({
         search: (prev) => ({
           ...prev,
           range: range === DEFAULT_METRIC_TIME_RANGE ? undefined : range,
+          from: undefined,
+          to: undefined,
+        }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+  const setCustomTimeRange = useCallback(
+    (from: number, to: number) => {
+      void navigate({
+        search: (prev) => ({
+          ...prev,
+          range: undefined,
+          from,
+          to,
         }),
         replace: true,
       });
@@ -135,71 +173,70 @@ function DashboardPage() {
     },
     [navigate],
   );
-  const window = useMemo<MetricTimeWindow>(
-    () => ({ kind: "preset", range: timeRange }),
-    [timeRange],
-  );
-
   const activeQuery = dashboardView === "asn" ? asnsQuery : serversQuery;
   const showInitialLoading = activeQuery.isPending && !activeQuery.data;
-
-  if (showInitialLoading) {
-    return <LoadingState message="Loading dashboard…" centered />;
-  }
-
-  if (!activeQuery.data) {
-    return (
-      <main className="dashboard-shell">
-        <p className="text-destructive">Failed to load dashboard data.</p>
-      </main>
-    );
-  }
-
-  const hasServers = activeQuery.data.summary.trackedServers > 0;
   const isSearchLoading = activeQuery.isFetching && !showInitialLoading;
 
   return (
-    <main className="dashboard-shell">
-      <div className="dashboard-toolbar">
-        <DashboardRangeToggle
-          value={dashboardView}
-          options={DASHBOARD_VIEW_OPTIONS}
-          onValueChange={setDashboardView}
-          aria-label="Dashboard view"
+    <>
+      <SiteHeaderNav>
+        <div className="site-header-controls">
+        <DashboardTimeControls
+          window={timeWindow}
+          onPresetChange={setPresetTimeRange}
+          onCustomChange={setCustomTimeRange}
         />
+          <DashboardRangeToggle
+            value={dashboardView}
+            options={DASHBOARD_VIEW_OPTIONS}
+            onValueChange={setDashboardView}
+            aria-label="Dashboard view"
+            className="site-header-view-toggle"
+          />
+        </div>
+      </SiteHeaderNav>
+      <SiteHeaderToolbar>
         <DashboardSearchInput
           value={searchInput}
           onChange={setSearchInput}
           view={dashboardView}
         />
-      </div>
+      </SiteHeaderToolbar>
 
-      <DashboardStatsRow summary={activeQuery.data.summary} />
-
-      <HeroChartPanel
-        hasServers={hasServers}
-        window={window}
-        timeRange={timeRange}
-        onTimeRangeChange={setTimeRange}
-      />
-
-      {dashboardView === "asn" ? (
-        <AsnMetricsGrid
-          asns={asnsQuery.data?.asns ?? []}
-          window={window}
-          hasActiveSearch={Boolean(activeSearch)}
-          trackedAsns={asnsQuery.data?.summary.trackedAsns ?? 0}
-          isLoading={isSearchLoading}
-        />
+      {showInitialLoading ? (
+        <LoadingState message="Loading dashboard…" centered />
+      ) : !activeQuery.data ? (
+        <main className="dashboard-shell">
+          <p className="text-destructive">Failed to load dashboard data.</p>
+        </main>
       ) : (
-        <ServerMetricsGrid
-          servers={serversQuery.data?.servers ?? []}
-          window={window}
-          hasActiveSearch={Boolean(activeSearch)}
-          trackedServers={serversQuery.data?.summary.trackedServers ?? 0}
-          isLoading={isSearchLoading}
-        />
+        <main className="dashboard-shell">
+          <DashboardStatsRow summary={activeQuery.data.summary} />
+
+          <HeroChartPanel
+            hasServers={activeQuery.data.summary.trackedServers > 0}
+            window={timeWindow}
+          />
+
+          {dashboardView === "asn" ? (
+            <AsnMetricsGrid
+              asns={asnsQuery.data?.asns ?? []}
+              window={timeWindow}
+              hasActiveSearch={Boolean(activeSearch)}
+              trackedAsns={asnsQuery.data?.summary.trackedAsns ?? 0}
+              isLoading={isSearchLoading}
+            />
+          ) : (
+            <ServerMetricsGrid
+              servers={serversQuery.data?.servers ?? []}
+              window={timeWindow}
+              hasActiveSearch={Boolean(activeSearch)}
+              trackedServers={serversQuery.data?.summary.trackedServers ?? 0}
+              isLoading={isSearchLoading}
+            />
+          )}
+        </main>
       )}
-    </main>
+    </>
   );
 }

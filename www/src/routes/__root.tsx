@@ -6,9 +6,11 @@ import {
 } from "@tanstack/react-router";
 
 import { SiteHeader } from "@/components/site-header";
+import { SiteHeaderToolbarProvider } from "@/components/site-header-toolbar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
+import { DashboardRefreshProvider } from "@/lib/dashboard/refresh-context";
 import { APP_NAME } from "@/lib/page-title";
 import { ThemeProvider } from "@/lib/theme";
 import { themeInitScript } from "@/lib/theme/script";
@@ -42,8 +44,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <ThemeProvider>
           <TooltipProvider>
             <AuthProvider>
-              <SiteHeader />
-              {children}
+              <SiteHeaderToolbarProvider>
+                <DashboardRefreshProvider>
+                  <SiteHeader />
+                  {children}
+                </DashboardRefreshProvider>
+              </SiteHeaderToolbarProvider>
               <Toaster richColors closeButton />
             </AuthProvider>
           </TooltipProvider>

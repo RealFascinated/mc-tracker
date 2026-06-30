@@ -56,6 +56,25 @@ pub struct ServerListItemResponse {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ServersSearchResponse {
+    pub servers: Vec<ServerSearchItemResponse>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServerSearchItemResponse {
+    pub id: String,
+    pub name: String,
+    #[serde(rename = "type")]
+    pub server_type: String,
+    pub host: String,
+    pub port: Option<i32>,
+    pub favicon: Option<String>,
+    pub players_online: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ServerTimeseriesResponse {
     pub id: String,
     pub from: i64,

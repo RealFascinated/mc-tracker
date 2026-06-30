@@ -2,10 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { SettingsPreferenceGroup } from "@/components/settings/settings-preference-group";
-import { SettingsPreferenceRow } from "@/components/settings/settings-preference-row";
-import { SettingsSectionHeader } from "@/components/settings/settings-section-header";
-import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -92,20 +88,6 @@ function AccountPage() {
           </form>
         </CardContent>
       </Card>
-
-      <section className="flex flex-col gap-4">
-        <SettingsSectionHeader
-          title="Appearance"
-          description="How MC Tracker looks on this device."
-        />
-        <SettingsPreferenceGroup>
-          <SettingsPreferenceRow
-            label="Theme"
-            description="Light, dark, or match your system setting."
-            control={<ThemeSwitcher />}
-          />
-        </SettingsPreferenceGroup>
-      </section>
     </div>
   );
 }

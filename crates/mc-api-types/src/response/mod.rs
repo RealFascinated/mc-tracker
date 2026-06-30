@@ -17,6 +17,7 @@ pub use self::asns::{
 };
 pub use self::servers::{
     EntityPeakStats, PeakPlayersRecord, PlayersPeakSummary, ServerListItemResponse,
-    ServerTimeseriesResponse, ServersListResponse, ServersSummaryResponse,
+    ServerSearchItemResponse, ServerTimeseriesResponse, ServersListResponse,
+    ServersSearchResponse, ServersSummaryResponse,
 };
 pub use self::settings::SettingsResponse;

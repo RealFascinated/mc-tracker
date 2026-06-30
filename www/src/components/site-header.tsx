@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
+import { LogIn, Shield, User } from "lucide-react";
 
+import { useSiteHeaderToolbar } from "@/components/site-header-toolbar";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
@@ -10,42 +12,111 @@ type SiteHeaderProps = {
   className?: string;
 };
 
-function SiteHeader({ className }: SiteHeaderProps) {
+function SiteHeaderActions({
+  iconOnly = false,
+}: {
+  iconOnly?: boolean;
+}) {
   const { user, isAuthenticated } = useAuth();
+
+  return (
+    <>
+      <ThemeSwitcher />
+      {isAuthenticated ? (
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            asChild
+            className="site-header-nav-button"
+          >
+            <Link to="/account" aria-label="Account">
+              <User
+                className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
+                aria-hidden
+              />
+              <span className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}>
+                Account
+              </span>
+            </Link>
+          </Button>
+          {user?.role === "admin" ? (
+            <Button
+              variant="highlighted"
+              size="sm"
+              asChild
+              className="site-header-nav-button"
+            >
+              <Link to="/admin" aria-label="Admin">
+                <Shield
+                  className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
+                  aria-hidden
+                />
+                <span className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}>
+                  Admin
+                </span>
+              </Link>
+            </Button>
+          ) : null}
+        </>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          asChild
+          className="site-header-nav-button"
+        >
+          <Link to="/login" aria-label="Sign in">
+            <LogIn
+              className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
+              aria-hidden
+            />
+            <span className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}>
+              Sign in
+            </span>
+          </Link>
+        </Button>
+      )}
+    </>
+  );
+}
+
+function SiteHeader({ className }: SiteHeaderProps) {
+  const { toolbar, nav } = useSiteHeaderToolbar();
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm",
+        "site-header sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm",
         className,
       )}
     >
-      <div className="mx-auto flex h-12 max-w-7xl items-center justify-between gap-4 px-4 sm:px-5">
+      <div
+        className={cn(
+          "site-header-inner mx-auto max-w-7xl px-3 sm:px-5",
+          toolbar ? "site-header-inner--with-toolbar" : "site-header-inner--simple",
+        )}
+      >
         <Link
           to="/"
-          className="text-base font-bold text-foreground hover:text-monitor dark:hover:text-warning"
+          className="site-header-brand shrink-0 text-base font-bold text-foreground hover:text-monitor dark:hover:text-warning"
         >
           {APP_NAME}
         </Link>
-        <nav className="flex items-center gap-2">
-          <ThemeSwitcher />
-          {isAuthenticated ? (
-            <>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/account">Account</Link>
-              </Button>
-              {user?.role === "admin" ? (
-                <Button variant="highlighted" size="sm" asChild>
-                  <Link to="/admin">Admin</Link>
-                </Button>
-              ) : null}
-            </>
-          ) : (
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/login">Sign in</Link>
-            </Button>
-          )}
-        </nav>
+
+        {toolbar ? (
+          <>
+            <div className="site-header-toolbar">{toolbar}</div>
+            {nav ? <div className="site-header-nav">{nav}</div> : null}
+            <div className="site-header-actions">
+              <SiteHeaderActions iconOnly />
+            </div>
+          </>
+        ) : (
+          <nav className="site-header-nav site-header-nav--simple">
+            <SiteHeaderActions />
+          </nav>
+        )}
       </div>
     </header>
   );

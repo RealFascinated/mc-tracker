@@ -8,7 +8,8 @@ use axum::routing::get;
 use axum::{Json, Router};
 use mc_api_types::{
     AsnsListResponse, AsnTimeseriesQuery, AsnsListQuery, ErrorResponse, HealthResponse,
-    ServersListQuery, ServersListResponse, TimeseriesQuery,
+    ServersListQuery, ServersListResponse, ServersSearchQuery, ServersSearchResponse,
+    TimeseriesQuery,
 };
 use mc_db::AppSettings;
 use mc_db::DbPool;
@@ -72,6 +73,7 @@ pub fn router(
     let mut app = Router::new()
         .route("/health", get(health))
         .route("/servers", get(list_servers))
+        .route("/servers/search", get(search_servers))
         .route("/servers/timeseries/total", get(total_timeseries))
         .route("/servers/{id}/timeseries", get(server_timeseries))
         .route("/asns", get(list_asns))
@@ -114,6 +116,23 @@ async fn list_servers(
         .map(str::trim)
         .filter(|value| !value.is_empty());
     Json(state.manager.servers_list_response(search).await)
+}
+
+async fn search_servers(
+    State(state): State<AppState>,
+    Query(query): Query<ServersSearchQuery>,
+) -> Json<ServersSearchResponse> {
+    let search = query
+        .search
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    Json(
+        state
+            .manager
+            .servers_search_response(search, query.limit)
+            .await,
+    )
 }
 
 async fn list_asns(

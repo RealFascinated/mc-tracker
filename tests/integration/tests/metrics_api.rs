@@ -136,6 +136,61 @@ async fn get_servers_matches_empty_fixture_and_vm_peaks() {
 }
 
 #[tokio::test]
+async fn search_servers_returns_basic_matches_without_vm_queries() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+    bootstrap_admin(&pool).await;
+
+    let server_id = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
+    let server = sample_server(server_id);
+    mc_db::db::repos::servers::insert(
+        &pool,
+        mc_db::db::repos::servers::NewServer {
+            id: Some(server_id),
+            name: &server.name,
+            host: &server.host,
+            port: server.port,
+            platform: server.platform,
+        },
+    )
+    .await
+    .unwrap();
+
+    let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
+    manager.append_server(server).await;
+    let app = build_app(pool, manager, "development").await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/servers/search?search=hypixel")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+
+    let servers = body["servers"].as_array().unwrap();
+    assert_eq!(servers.len(), 1);
+    assert_eq!(servers[0]["id"], server_id.to_string());
+    assert_eq!(servers[0]["name"], "Hypixel");
+    assert_eq!(servers[0]["host"], "mc.hypixel.net");
+    assert_eq!(servers[0]["type"], "PC");
+    assert_eq!(servers[0]["port"], 25565);
+    assert!(servers[0].get("favicon").is_some());
+    assert!(servers[0].get("playersOnline").is_some());
+    assert!(body.get("summary").is_none());
+}
+
+#[tokio::test]
 async fn get_servers_timeseries_returns_aligned_series() {
     let (_postgres, database_url) = start_postgres().await;
     let pool = setup_pool(&database_url).await;

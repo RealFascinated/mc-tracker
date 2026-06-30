@@ -7,8 +7,8 @@ use futures::future::join_all;
 use mc_api_types::{
     AdminServerResponse, AdminServersListResponse, AsnListItemResponse, AsnsListResponse,
     AsnsSummaryResponse, AsnTimeseriesResponse, EntityPeakStats, PeakPlayersRecord,
-    PlayersPeakSummary, ServerListItemResponse,
-    ServerTimeseriesResponse, ServersListResponse, ServersSummaryResponse,
+    PlayersPeakSummary, ServerListItemResponse, ServerSearchItemResponse,
+    ServerTimeseriesResponse, ServersListResponse, ServersSearchResponse, ServersSummaryResponse,
 };
 use mc_db::model::{Platform, Server};
 use mc_db::AppSettings;
@@ -136,6 +136,20 @@ fn matches_server_search(server: &TrackedServer, search: Option<&str>) -> bool {
             .config
             .port
             .is_some_and(|port| port.to_string().contains(query))
+}
+
+fn server_search_relevance(server: &TrackedServer, query: &str) -> u8 {
+    let needle = query.to_ascii_lowercase();
+    let name = server.config.name.to_ascii_lowercase();
+    let host = server.config.host.to_ascii_lowercase();
+
+    if name.starts_with(&needle) {
+        return 3;
+    }
+    if host.starts_with(&needle) {
+        return 2;
+    }
+    1
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -360,6 +374,56 @@ impl ServerManager {
             },
             servers,
         }
+    }
+
+    pub async fn servers_search_response(
+        &self,
+        search: Option<&str>,
+        limit: u32,
+    ) -> ServersSearchResponse {
+        let Some(query) = search.map(str::trim).filter(|value| !value.is_empty()) else {
+            return ServersSearchResponse {
+                servers: Vec::new(),
+            };
+        };
+
+        const MAX_LIMIT: u32 = 25;
+        let limit = limit.clamp(1, MAX_LIMIT) as usize;
+        let servers = self.servers.read().await;
+
+        let mut matches: Vec<_> = servers
+            .iter()
+            .filter(|server| matches_server_search(server, Some(query)))
+            .collect();
+
+        matches.sort_by(|left, right| {
+            let left_score = server_search_relevance(left, query);
+            let right_score = server_search_relevance(right, query);
+            right_score
+                .cmp(&left_score)
+                .then_with(|| {
+                    let left_players = left.players_online.map(i64::from).unwrap_or(-1);
+                    let right_players = right.players_online.map(i64::from).unwrap_or(-1);
+                    right_players.cmp(&left_players)
+                })
+                .then_with(|| left.config.name.cmp(&right.config.name))
+        });
+
+        let servers = matches
+            .into_iter()
+            .take(limit)
+            .map(|server| ServerSearchItemResponse {
+                id: server.config.id.to_string(),
+                name: server.config.name.clone(),
+                server_type: server.config.platform.as_str().to_string(),
+                host: server.config.host.clone(),
+                port: server.config.port,
+                favicon: server.favicon.clone(),
+                players_online: server.players_online,
+            })
+            .collect();
+
+        ServersSearchResponse { servers }
     }
 
     pub async fn asns_list_response(&self, search: Option<&str>) -> AsnsListResponse {
