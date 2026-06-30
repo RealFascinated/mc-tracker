@@ -1,12 +1,12 @@
-import type { ServerTimeseriesResponse } from "@/lib/api/servers";
+import type { PlayersTimeseriesPayload } from "@/lib/api/types";
 import {
   backfillMetricTimeSeries,
   buildMetricTimeSeries,
-  type MetricTimeSeries,
 } from "@/lib/api/metric-timeseries";
+import type { MetricTimeSeries } from "@/lib/api/metric-timeseries";
 
-export function serverTimeseriesToMetric(
-  data: ServerTimeseriesResponse,
+export function playersTimeseriesToMetric(
+  data: PlayersTimeseriesPayload,
 ): MetricTimeSeries {
   return backfillMetricTimeSeries(
     buildMetricTimeSeries({

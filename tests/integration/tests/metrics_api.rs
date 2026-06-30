@@ -5,7 +5,10 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use chrono::Utc;
 use mc_db::model::{Platform, Server};
-use mc_metrics::{peak_players_24h, peak_players_30d, player_count_series};
+use mc_metrics::{
+    peak_players_24h, peak_players_30d, peak_players_all_time, peak_players_all_time_at,
+    player_count_series,
+};
 use tower::ServiceExt;
 use uuid::Uuid;
 use wiremock::matchers::{method, query_param};
@@ -31,6 +34,8 @@ fn sample_server(id: Uuid) -> Server {
 async fn mount_vm_mocks(vm: &MockServer, server_id: Uuid) {
     let peak_24h = peak_players_24h("production");
     let peak_30d = peak_players_30d("production");
+    let peak_all_time = peak_players_all_time("production");
+    let peak_all_time_at = peak_players_all_time_at("production");
     let series = player_count_series("production", &server_id.to_string());
 
     Mock::given(method("GET"))
@@ -52,6 +57,30 @@ async fn mount_vm_mocks(vm: &MockServer, server_id: Uuid) {
             "data": {
                 "resultType": "vector",
                 "result": [{ "value": [1710000000.0, "2100"] }]
+            }
+        })))
+        .mount(vm)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(query_param("query", peak_all_time.as_str()))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "status": "success",
+            "data": {
+                "resultType": "vector",
+                "result": [{ "value": [1710000000.0, "3200"] }]
+            }
+        })))
+        .mount(vm)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(query_param("query", peak_all_time_at.as_str()))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "status": "success",
+            "data": {
+                "resultType": "vector",
+                "result": [{ "value": [1710000000.0, "1704067200"] }]
             }
         })))
         .mount(vm)
@@ -118,6 +147,8 @@ async fn get_servers_matches_empty_fixture_and_vm_peaks() {
     assert_eq!(body["servers"], expected["servers"]);
     assert_eq!(body["summary"]["peakPlayers24h"], 1500.0);
     assert_eq!(body["summary"]["peakPlayers30d"], 2100.0);
+    assert_eq!(body["summary"]["peakPlayersAllTime"]["players"], 3200.0);
+    assert_eq!(body["summary"]["peakPlayersAllTime"]["at"], 1_704_067_200);
 }
 
 #[tokio::test]

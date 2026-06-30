@@ -46,6 +46,12 @@ pub struct VmQueryResponse {
     pub results: Vec<VmResult>,
 }
 
+#[derive(Debug, Clone)]
+pub struct MatrixSeries {
+    pub labels: serde_json::Map<String, serde_json::Value>,
+    pub samples: Vec<(i64, Option<f64>)>,
+}
+
 impl VmQueryClient {
     pub fn new(base_url: impl Into<String>, auth_token: Option<String>) -> Self {
         Self {
@@ -145,6 +151,28 @@ impl VmQueryClient {
         merged
             .into_iter()
             .map(|(timestamp, value)| (timestamp, Some(value)))
+            .collect()
+    }
+
+    /// One entry per matrix result, preserving series labels.
+    pub fn matrix_series(response: &VmQueryResponse) -> Vec<MatrixSeries> {
+        response
+            .results
+            .iter()
+            .map(|result| {
+                let samples = result
+                    .values
+                    .iter()
+                    .map(|(timestamp, value)| {
+                        let parsed = value.parse::<f64>().ok();
+                        (normalize_timestamp(*timestamp), parsed)
+                    })
+                    .collect();
+                MatrixSeries {
+                    labels: result.metric.clone(),
+                    samples,
+                }
+            })
             .collect()
     }
 }

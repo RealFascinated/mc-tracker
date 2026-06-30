@@ -5,10 +5,7 @@ export type UnitKind =
   "bps" | "bytes" | "mbps" | "ms" | "percent" | "celsius" | "count";
 
 export type YRangeSpec =
-  | "auto"
-  | "autoMin"
-  | { softMax: number }
-  | { min: number; max: number };
+  "auto" | "autoMin" | { softMax: number } | { min: number; max: number };
 
 export type AxisDefinition = {
   unit: UnitKind;

@@ -8,6 +8,7 @@ pub struct JavaServerStatusToken {
     pub version: Option<JavaVersionToken>,
     pub players: Option<PlayersToken>,
     pub description: Option<Value>,
+    pub favicon: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -72,9 +73,30 @@ pub fn version_from_token(token: &JavaServerStatusToken) -> Option<ServerVersion
     })
 }
 
+pub fn favicon_from_token(token: &JavaServerStatusToken) -> Option<String> {
+    token.favicon.as_ref().and_then(|value| {
+        let trimmed = value.trim();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed.to_string())
+        }
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parse_favicon_from_status() {
+        let json = r#"{"players":{"online":1,"max":10},"favicon":"data:image/png;base64,abc"}"#;
+        let token = parse_status_json(json).unwrap();
+        assert_eq!(
+            favicon_from_token(&token).as_deref(),
+            Some("data:image/png;base64,abc")
+        );
+    }
 
     #[test]
     fn parse_plain_status() {

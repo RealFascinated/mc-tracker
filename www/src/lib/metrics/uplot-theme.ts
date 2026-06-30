@@ -356,15 +356,13 @@ export function buildUPlotOptions({
       : { time: xTime },
   };
 
-  for (const [index, axis] of chartAxes.entries()) {
-    const scaleKey =
-      scales.get(axis.id) ?? SCALE_KEYS[index] ?? `y${index + 1}`;
+  for (const axis of chartAxes) {
+    const scaleKey = scales.get(axis.id)!;
     yScales[scaleKey] = buildYScale(axis.yRange, bidirectional);
   }
 
   const yAxisConfigs = chartAxes.map((axis, index) => {
-    const scaleKey =
-      scales.get(axis.id) ?? SCALE_KEYS[index] ?? `y${index + 1}`;
+    const scaleKey = scales.get(axis.id)!;
     const showGrid = index === 0 && axis.visible;
     if (compact || !axis.visible) {
       return {

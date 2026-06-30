@@ -14,10 +14,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  patchAdminSettings,
-  type PatchSettingsRequest,
-  type SettingsResponse,
+import { patchAdminSettings } from "@/lib/api/admin/settings";
+import type {
+  PatchSettingsRequest,
+  SettingsResponse,
 } from "@/lib/api/admin/settings";
 import { adminSettingsQueryOptions } from "@/lib/api/admin/settings.queries";
 import { errorMessage } from "@/lib/api/error-message";
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_admin/admin/settings")({
 
 function AdminSettingsPage() {
   const queryClient = useQueryClient();
-  const { data, isPending, error } = useQuery(adminSettingsQueryOptions());
+  const { data, isPending } = useQuery(adminSettingsQueryOptions());
   const [draft, setDraft] = useState<SettingsResponse | null>(null);
 
   const saveMutation = useMutation({
@@ -53,7 +53,7 @@ function AdminSettingsPage() {
     return <LoadingState message="Loading settings…" />;
   }
 
-  if (error || !data) {
+  if (!data) {
     return <p className="text-destructive">Failed to load settings.</p>;
   }
 
@@ -64,15 +64,18 @@ function AdminSettingsPage() {
     return draft ?? loaded;
   }
 
-  function updateNumber<K extends keyof SettingsResponse>(key: K, raw: string) {
+  function updateNumber<TKey extends keyof SettingsResponse>(
+    key: TKey,
+    raw: string,
+  ) {
     setDraft({
       ...currentValues(),
       [key]: Number(raw),
     });
   }
 
-  function updateString<K extends keyof SettingsResponse>(
-    key: K,
+  function updateString<TKey extends keyof SettingsResponse>(
+    key: TKey,
     value: string,
   ) {
     setDraft({

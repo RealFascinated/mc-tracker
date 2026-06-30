@@ -155,4 +155,9 @@ function DashboardRangeToggle<T extends string>({
   );
 }
 
-export { DashboardCard, DashboardCardHeader, DashboardRangeToggle };
+export {
+  DashboardCard,
+  DashboardCardHeader,
+  DashboardRangeToggle,
+  type DashboardRangeOption,
+};

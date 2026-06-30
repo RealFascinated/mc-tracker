@@ -4,12 +4,23 @@ import tailwindcss from "@tailwindcss/vite";
 import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
+const embedBuild = process.env.MC_TRACKER_EMBED_BUILD === "1";
+
 export default defineConfig(({ mode }) => ({
+  base: embedBuild ? "/ui/" : "/",
   resolve: { tsconfigPaths: true },
   plugins: [
     ...(mode === "development" ? [devtools()] : []),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart(
+      embedBuild
+        ? {
+            spa: {
+              enabled: true,
+            },
+          }
+        : undefined,
+    ),
     viteReact(),
   ],
   server: {

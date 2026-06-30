@@ -24,7 +24,7 @@ export const Route = createRootRouteWithContext<{
       { title: APP_NAME },
     ],
     links: [
-      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "icon", href: `${import.meta.env.BASE_URL}favicon.svg`, type: "image/svg+xml" },
       { rel: "stylesheet", href: appCss },
     ],
   }),

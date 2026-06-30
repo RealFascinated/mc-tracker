@@ -6,6 +6,14 @@ export type MetricTimeSeries = {
   series: Record<string, Array<number | null>>;
 };
 
+export const EMPTY_METRIC_TIME_SERIES: MetricTimeSeries = {
+  from: 0,
+  to: 0,
+  step: null,
+  timestamps: [],
+  series: {},
+};
+
 export function buildMetricTimeSeries(input: {
   timestamps: number[];
   series: Record<string, Array<number | null>>;

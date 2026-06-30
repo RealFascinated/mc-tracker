@@ -19,13 +19,13 @@ export type AuthResult = { error: string } | { user: User };
 
 export async function login(credentials: Credentials): Promise<AuthResult> {
   try {
-    const result = await apiFetch<LoginResponse>("/auth/login", {
+    await apiFetch<LoginResponse>("/auth/login", {
       method: "POST",
       body: JSON.stringify(credentials),
       credentials: "include",
     });
     const user = await getMe();
-    return { user: user ?? result };
+    return { user };
   } catch (error) {
     if (error instanceof ApiClientError && error.status === 401) {
       return { error: error.message };
@@ -57,13 +57,13 @@ export async function changePassword(input: {
 
 export async function signup(credentials: Credentials): Promise<AuthResult> {
   try {
-    const result = await apiFetch<LoginResponse>("/auth/signup", {
+    await apiFetch<LoginResponse>("/auth/signup", {
       method: "POST",
       body: JSON.stringify(credentials),
       credentials: "include",
     });
     const user = await getMe();
-    return { user: user ?? result };
+    return { user };
   } catch (error) {
     if (error instanceof ApiClientError) {
       if (error.status === 401 || error.status === 409) {

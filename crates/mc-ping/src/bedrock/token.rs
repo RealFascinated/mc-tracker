@@ -50,6 +50,7 @@ pub fn ping_from_token(token: &BedrockToken, ip: &str, timestamp_ms: i64) -> Pin
             name: token.version_name.clone(),
             protocol: Some(token.protocol),
         }),
+        favicon: None,
     }
 }
 

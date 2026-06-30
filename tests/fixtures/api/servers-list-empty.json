@@ -6,7 +6,8 @@
     "trackedServers": 0,
     "lastUpdated": null,
     "peakPlayers24h": null,
-    "peakPlayers30d": null
+    "peakPlayers30d": null,
+    "peakPlayersAllTime": null
   },
   "servers": []
 }

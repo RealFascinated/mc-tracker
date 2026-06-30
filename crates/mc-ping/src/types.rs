@@ -7,6 +7,7 @@ pub struct Ping {
     pub players: Players,
     pub motd: Option<Motd>,
     pub version: Option<ServerVersion>,
+    pub favicon: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

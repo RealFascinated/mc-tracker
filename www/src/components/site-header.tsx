@@ -20,7 +20,7 @@ function SiteHeader({ className }: SiteHeaderProps) {
         className,
       )}
     >
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="mx-auto flex h-12 max-w-7xl items-center justify-between gap-4 px-4 sm:px-5">
         <Link
           to="/"
           className="text-base font-bold text-foreground hover:text-monitor dark:hover:text-warning"

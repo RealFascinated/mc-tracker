@@ -2,6 +2,13 @@ use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct PeakPlayersResponse {
+    pub players: f64,
+    pub at: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ServersListResponse {
     pub summary: ServersSummaryResponse,
     pub servers: Vec<ServerListItemResponse>,
@@ -17,6 +24,7 @@ pub struct ServersSummaryResponse {
     pub last_updated: Option<i64>,
     pub peak_players24h: Option<f64>,
     pub peak_players30d: Option<f64>,
+    pub peak_players_all_time: Option<PeakPlayersResponse>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -31,6 +39,9 @@ pub struct ServerListItemResponse {
     pub asn: String,
     pub asn_org: String,
     pub players_online: Option<u32>,
+    pub favicon: Option<String>,
+    pub peak_players24h: Option<f64>,
+    pub peak_players_all_time: Option<PeakPlayersResponse>,
 }
 
 #[derive(Debug, Clone, Serialize)]

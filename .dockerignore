@@ -1,0 +1,13 @@
+target/
+www/node_modules/
+www/dist/
+www/.tanstack/
+node_modules/
+.git/
+data/
+databases/
+.env
+.env.*
+.DS_Store
+*.pem
+*.key

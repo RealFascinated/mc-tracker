@@ -16,6 +16,7 @@ export function getRouter() {
   const router = createTanStackRouter({
     routeTree,
     context: { queryClient },
+    basepath: import.meta.env.VITE_MC_TRACKER_UI_BASEPATH || undefined,
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,

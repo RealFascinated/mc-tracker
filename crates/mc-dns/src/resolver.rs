@@ -41,7 +41,7 @@ fn build_public_resolver() -> Result<TokioResolver, hickory_resolver::ResolveErr
     let config = ResolverConfig::from_parts(
         None,
         vec![],
-        system_config.name_servers().iter().cloned().collect::<Vec<_>>(),
+        system_config.name_servers().to_vec(),
     );
     Ok(Resolver::builder_with_config(config, TokioConnectionProvider::default())
         .with_options(options)

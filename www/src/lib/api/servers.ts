@@ -1,13 +1,15 @@
 import { apiFetch } from "@/lib/api/client";
+import type {
+  PeakPlayers,
+  PlayersSummaryBase,
+  PlayersTimeseriesPayload,
+} from "@/lib/api/types";
+import { fetchList } from "@/lib/api/types";
 
-export type ServersSummary = {
-  totalPlayers: number;
-  playersPc: number;
-  playersPe: number;
+export type { PeakPlayers };
+
+export type ServersSummary = PlayersSummaryBase & {
   trackedServers: number;
-  lastUpdated: number | null;
-  peakPlayers24h: number | null;
-  peakPlayers30d: number | null;
 };
 
 export type ServerListItem = {
@@ -19,6 +21,9 @@ export type ServerListItem = {
   asn: string;
   asnOrg: string;
   playersOnline: number | null;
+  favicon: string | null;
+  peakPlayers24h: number | null;
+  peakPlayersAllTime: PeakPlayers | null;
 };
 
 export type ServersListResponse = {
@@ -26,17 +31,12 @@ export type ServersListResponse = {
   servers: ServerListItem[];
 };
 
-export type ServerTimeseriesResponse = {
+export type ServerTimeseriesResponse = PlayersTimeseriesPayload & {
   id: string;
-  from: number;
-  to: number;
-  step: number;
-  timestamps: number[];
-  playersOnline: Array<number | null>;
 };
 
-export function getServers() {
-  return apiFetch<ServersListResponse>("/servers", { credentials: "omit" });
+export function getServers(search?: string) {
+  return fetchList<ServersListResponse>("/servers", search);
 }
 
 export function getServerTimeseries(id: string, from: number, to: number) {
@@ -46,6 +46,17 @@ export function getServerTimeseries(id: string, from: number, to: number) {
   });
   return apiFetch<ServerTimeseriesResponse>(
     `/servers/${id}/timeseries?${params}`,
+    { credentials: "omit" },
+  );
+}
+
+export function getTotalTimeseries(from: number, to: number) {
+  const params = new URLSearchParams({
+    from: String(from),
+    to: String(to),
+  });
+  return apiFetch<ServerTimeseriesResponse>(
+    `/servers/timeseries/total?${params}`,
     { credentials: "omit" },
   );
 }

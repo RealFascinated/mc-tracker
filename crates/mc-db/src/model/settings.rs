@@ -133,6 +133,7 @@ impl AppSettings {
     pub fn cors_origin_candidates(
         &self,
         deployment_environment: &str,
+        allow_same_origin_only: bool,
     ) -> Result<Vec<String>, String> {
         let mut origins = Vec::new();
         if deployment_environment == "development" {
@@ -146,6 +147,9 @@ impl AppSettings {
             }
         }
         if origins.is_empty() {
+            if allow_same_origin_only {
+                return Ok(vec![]);
+            }
             return Err(
                 "no CORS origins configured; set www_origin or set ENVIRONMENT=development".into(),
             );
@@ -187,7 +191,9 @@ mod tests {
     #[test]
     fn cors_origin_candidates_includes_vite_in_development() {
         let settings = AppSettings::default();
-        let origins = settings.cors_origin_candidates("development").unwrap();
+        let origins = settings
+            .cors_origin_candidates("development", false)
+            .unwrap();
         assert_eq!(origins, vec!["http://localhost:5173"]);
     }
 
@@ -197,7 +203,9 @@ mod tests {
             www_origin: "https://tracker.example.com".into(),
             ..Default::default()
         };
-        let origins = settings.cors_origin_candidates("development").unwrap();
+        let origins = settings
+            .cors_origin_candidates("development", false)
+            .unwrap();
         assert_eq!(
             origins,
             vec!["http://localhost:5173", "https://tracker.example.com"]
@@ -207,6 +215,12 @@ mod tests {
     #[test]
     fn cors_origin_candidates_requires_www_origin_in_production() {
         let settings = AppSettings::default();
-        assert!(settings.cors_origin_candidates("production").is_err());
+        assert!(settings
+            .cors_origin_candidates("production", false)
+            .is_err());
+        assert!(settings
+            .cors_origin_candidates("production", true)
+            .unwrap()
+            .is_empty());
     }
 }

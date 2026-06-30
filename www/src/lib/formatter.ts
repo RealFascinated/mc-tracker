@@ -29,7 +29,7 @@ export function formatNetworkBps(bps: number): string {
   return `${formatDecimal(value, decimals)} ${units[unitIndex]}`;
 }
 
-function formatDecimal(value: number, fractionDigits: number): string {
+export function formatDecimal(value: number, fractionDigits: number): string {
   return new Intl.NumberFormat(undefined, {
     maximumFractionDigits: fractionDigits,
     minimumFractionDigits: fractionDigits,

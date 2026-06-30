@@ -19,3 +19,10 @@ pub struct UpdateServerRequest {
     #[serde(rename = "type")]
     pub server_type: Option<String>,
 }
+
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServersListQuery {
+    #[serde(default)]
+    pub search: Option<String>,
+}

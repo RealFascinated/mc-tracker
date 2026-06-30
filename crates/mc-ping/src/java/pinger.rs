@@ -7,7 +7,8 @@ use crate::error::PingError;
 use crate::java::handshake::encode_handshake;
 use crate::java::status::exchange_status_on_stream;
 use crate::java::token::{
-    motd_from_token, parse_status_json, players_from_token, version_from_token,
+    favicon_from_token, motd_from_token, parse_status_json, players_from_token,
+    version_from_token,
 };
 use crate::java::version::latest_protocol;
 use crate::net::{map_connect_error, map_io_error};
@@ -60,6 +61,7 @@ async fn ping_java_inner(hostname: &str, ip: &str, port: u16) -> Result<Ping, Pi
         players: players_from_token(&token),
         motd: motd_from_token(&token),
         version: version_from_token(&token),
+        favicon: favicon_from_token(&token),
     })
 }
 

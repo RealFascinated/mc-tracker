@@ -25,9 +25,8 @@ import { Label } from "@/components/ui/label";
 import {
   createAdminServer,
   deleteAdminServer,
-  type AdminServer,
-  type CreateServerRequest,
 } from "@/lib/api/admin/servers";
+import type { AdminServer, CreateServerRequest } from "@/lib/api/admin/servers";
 import {
   adminServersQueryKey,
   adminServersQueryOptions,
@@ -53,7 +52,7 @@ const emptyForm: CreateServerRequest = {
 
 function AdminServersPage() {
   const queryClient = useQueryClient();
-  const { data, isPending, error } = useQuery(adminServersQueryOptions());
+  const { data, isPending } = useQuery(adminServersQueryOptions());
   const [form, setForm] = useState(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<AdminServer | null>(null);
 
@@ -81,7 +80,7 @@ function AdminServersPage() {
     return <LoadingState message="Loading servers…" />;
   }
 
-  if (error || !data) {
+  if (!data) {
     return <p className="text-destructive">Failed to load servers.</p>;
   }
 

@@ -1,21 +1,16 @@
 import {
   formatCelsius,
+  formatDecimal,
   formatNetworkBps,
   formatPercentValue,
 } from "@/lib/formatter";
+import { formatPlayers, formatPlayersAxisTick } from "@/lib/format-players";
 
 export type ChartAxisFormat = {
   formatValue: (value: number) => string;
   formatAxisTick: (value: number, rangeMax: number) => string;
   axisUnitLabel: (rangeMax: number) => string;
 };
-
-function formatDecimal(value: number, fractionDigits: number): string {
-  return new Intl.NumberFormat(undefined, {
-    maximumFractionDigits: fractionDigits,
-    minimumFractionDigits: fractionDigits,
-  }).format(value);
-}
 
 /** Compact, grouping-free labels for axis ticks to avoid gutter overflow. */
 function formatAxisTickNumber(value: number, fractionDigits = 0): string {
@@ -135,7 +130,7 @@ export const celsiusAxisFormat: ChartAxisFormat = {
 };
 
 export const countAxisFormat: ChartAxisFormat = {
-  formatValue: (value) => String(Math.round(value)),
-  formatAxisTick: (value) => formatAxisTickNumber(Math.round(value), 0),
+  formatValue: (value) => formatPlayers(value),
+  formatAxisTick: (value) => formatPlayersAxisTick(value),
   axisUnitLabel: () => "",
 };
