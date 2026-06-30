@@ -1,0 +1,11 @@
+[package]
+name = "mc-common"
+description = "Shared utilities for mc-tracker workspace crates"
+edition.workspace = true
+version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]

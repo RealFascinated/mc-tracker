@@ -1,0 +1,27 @@
+[package]
+name = "mc-db"
+description = "Postgres persistence for mc-tracker"
+edition.workspace = true
+version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+argon2 = "0.5"
+rand = "0.8"
+chrono = { workspace = true }
+diesel = { version = "2.3", features = ["postgres", "chrono", "uuid"] }
+diesel-async = { version = "0.9", features = ["postgres", "deadpool", "async-connection-wrapper", "tokio"] }
+diesel_migrations = "2.3"
+futures = "0.3"
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+testcontainers = "0.27"
+testcontainers-modules = { version = "0.15", features = ["postgres"] }

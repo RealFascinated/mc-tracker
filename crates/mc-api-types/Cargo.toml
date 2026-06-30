@@ -1,0 +1,16 @@
+[package]
+name = "mc-api-types"
+description = "HTTP JSON DTOs shared by mc-tracker API and www"
+edition.workspace = true
+version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

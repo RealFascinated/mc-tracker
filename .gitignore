@@ -1,41 +1,41 @@
-# dependencies (bun install)
-node_modules
+# Rust
+/target/
 
-# output
-out
-dist
-*.tgz
-
-# code coverage
-coverage
-*.lcov
-
-# logs
-logs
-_.log
-report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
-
-# dotenv environment variable files
+# Environment / secrets
 .env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+.env.*
+!.env.example
 
-# caches
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+*.swp
+*.swo
+*~
+
+# Legacy Node / Bun (old code)
+node_modules/
+out/
+dist/
+*.tgz
+coverage/
+*.lcov
 .eslintcache
-.cache
+.cache/
 *.tsbuildinfo
 
-# IntelliJ based IDEs
-.idea
-
-# Finder (MacOS) folder config
-.DS_Store
-
-# data
+# Local data
 data/
 !data/servers.json
+databases/
 
-# build files
+# Build artifacts
 tracker.exe
+*.exe

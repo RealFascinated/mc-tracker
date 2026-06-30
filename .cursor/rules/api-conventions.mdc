@@ -1,0 +1,86 @@
+---
+description: mc-tracker Rust workspace — layout, modules, and integration conventions
+globs: crates/**
+alwaysApply: false
+---
+
+# API Conventions
+
+**Follow existing project conventions exactly.** Before writing new code, read nearby modules that solve a similar problem and mirror how they do it.
+
+Workspace under `crates/`: **`mc-tracker`** binary (axum HTTP + background tasks) plus library crates. See `docs/rust-migration-plan.md` for architecture.
+
+## Layout
+
+| Area | Location |
+|------|----------|
+| Entry | `mc-tracker/src/main.rs` — config, pool, bootstrap admin, spawn manager, bind server |
+| HTTP routes | `mc-tracker/src/api.rs` — public routes; `admin.rs`, `auth/` for nested routers |
+| Auth | `mc-tracker/src/auth/` — session cookies, login rate limit, `require_admin` middleware |
+| Server orchestration | `mc-tracker/src/manager.rs` — ping loop, VM push, timeseries queries |
+| Shared DTOs | `mc-api-types/src/` — `request/` + `response/` modules |
+| Postgres | `mc-db/src/db/` — pool, migrations, `schema`, `repos/*` |
+| Models / settings | `mc-db/src/model/` — `AppSettings`, server rows |
+| Ping | `mc-ping/src/java/`, `mc-ping/src/bedrock/` |
+| Geo | `mc-geo/src/` — MaxMind download, cache, lookup |
+| Metrics | `mc-metrics/src/push/`, `mc-metrics/src/query/` |
+| Migrations | `mc-db/src/db/migrations/` — never edit applied migrations |
+
+## Package boundaries
+
+**One purpose per crate.** Do not mix DB access with domain logic in repos.
+
+| Crate | Owns | Must not |
+|-------|------|----------|
+| `mc-db` | Pool, migrations, schema, models, `repos/*` CRUD/SQL | HTTP types, ping logic, PromQL |
+| `mc-api-types` | Serde DTOs for API JSON | Business logic, DB access |
+| `mc-ping` | Java/Bedrock protocol, DNS resolve, retry | HTTP, metrics push |
+| `mc-geo` | ASN lookup, MMDB cache | HTTP handlers |
+| `mc-metrics` | VM push encoding, PromQL builder, query alignment | Server config CRUD |
+| `mc-tracker` | Routes, auth, ServerManager orchestration | Raw SQL (delegate to `mc-db`) |
+
+**Call chain:** `api.rs` / `admin.rs` / `auth/handlers` → `ServerManager` or `mc-db::repos` → `mc-ping` / `mc-geo` / `mc-metrics`.
+
+**`mc-db/repos` rules:**
+- Functions take primitive params (`DateTime`, `Uuid`, row structs) — not HTTP DTOs.
+- No imports from `mc-tracker` or handler modules.
+- Upsert/find/delete SQL only; orchestration lives in `manager.rs` or handlers.
+
+## HTTP surface
+
+- `GET /health` — public
+- `GET /servers`, `GET /servers/{id}/timeseries` — public (dashboard)
+- `/auth/*` — login, logout, me, signup (as implemented)
+- `/admin/*` — require admin session (`require_admin` middleware)
+- Handlers return JSON via `mc-api-types` DTOs; errors use `ErrorResponse`
+
+## Auth
+
+- HMAC-signed session cookies (`SESSION_SECRET` env). Login rate-limited.
+- Bootstrap admin from `MC_TRACKER_ADMIN_USERNAME` / `MC_TRACKER_ADMIN_PASSWORD` when users table is empty.
+- Never log passwords, session secrets, or VM auth tokens.
+
+## Data storage split
+
+**VictoriaMetrics** — time-series: per-server player counts (push on schedule; query via PromQL).
+
+**PostgreSQL** — relational: `servers`, `users`, `app_settings`. Servers loaded into memory on startup; admin CRUD updates DB then refreshes manager.
+
+## Background tasks (`manager.rs`)
+
+1. Ping all tracked servers on interval (from `AppSettings`).
+2. Push player-count samples to VictoriaMetrics.
+3. Refresh DNS resolver / geo lookups as needed.
+
+Use `tokio::time::interval` with `MissedTickBehavior::Skip`. Respect shutdown via cancellation / `select!`.
+
+## Integration
+
+- **New routes** — add handler + register in `router()`; keep handlers thin; DTOs in `mc-api-types`.
+- **New PG tables** — new diesel migration + model + repo module.
+- **New metrics** — extend `mc-metrics` schema + push path + query builder; wire through `ServerManager`.
+- **New ping behavior** — change `mc-ping` only; manager calls the public ping API.
+
+## Surrounding context
+
+Trace an existing route end-to-end (router → handler → manager/repo → mc-ping/mc-metrics) before adding a sibling. No business logic in repos — delegate to `ServerManager` or service functions.

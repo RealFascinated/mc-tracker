@@ -1,0 +1,34 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/mc-api-types",
+    "crates/mc-common",
+    "crates/mc-db",
+    "crates/mc-dns",
+    "crates/mc-geo",
+    "crates/mc-metrics",
+    "crates/mc-ping",
+    "crates/mc-tracker",
+]
+
+[workspace.lints.rust]
+private_interfaces = "warn"
+unused = "warn"
+
+[workspace.lints.clippy]
+all = "warn"
+[workspace.package]
+edition = "2021"
+license = "MIT"
+version = "0.1.0"
+rust-version = "1.85"
+
+[workspace.dependencies]
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }

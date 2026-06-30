@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mc-tracker-postgres
+    environment:
+      POSTGRES_USER: mctracker
+      POSTGRES_PASSWORD: mctracker
+      POSTGRES_DB: mctracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - mc-tracker-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mctracker -d mctracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:latest
+    container_name: mc-tracker-victoriametrics
+    ports:
+      - "8428:8428"
+    command:
+      - "--storageDataPath=/storage"
+      - "--httpListenAddr=:8428"
+    volumes:
+      - mc-tracker-vm:/storage
+
+volumes:
+  mc-tracker-pg:
+  mc-tracker-vm:

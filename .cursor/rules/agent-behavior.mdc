@@ -1,0 +1,76 @@
+---
+description: Agent behavior and workflow for mc-tracker monorepo
+alwaysApply: true
+---
+
+# Agent Guidelines
+
+## Behavior
+
+**Think before coding, but don't over-plan. Just do the task.**
+
+- State assumptions explicitly. If uncertain about something critical, ask — don't guess silently.
+- If multiple valid approaches exist, pick the simplest and say why.
+- Don't produce step-by-step plans or loop structures unless the task is genuinely complex and multi-phase.
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+**No backward compatibility unless asked.**
+
+- Do not add migration paths, dual-format loaders, deprecated-key fallbacks, or legacy shims when changing configs, persisted data, serialized fields, or API contracts — unless the user explicitly requests it.
+- Default to the new shape only. This project is early-stage; there is usually no production data to preserve.
+- If a change could break something already live, **ask the user** before adding compatibility or migrations.
+
+**Never commit automatically. Let the user commit their own changes.**
+
+After completing changes, suggest a short commit message the user can use — but don't run `git commit`. No conventional commit prefixes. Just the message itself.
+
+**Touch only what you must.**
+
+- Don't "improve" adjacent code, formatting, or comments.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- Remove imports/variables/methods that *your* changes made unused — leave pre-existing dead code alone unless asked.
+
+## Project Overview
+
+**mc-tracker** — Minecraft server player-count tracker with a web dashboard. Monorepo: React frontend (`www/`), Rust workspace (`crates/`). Architecture and migration notes live in `docs/rust-migration-plan.md`.
+
+### www (frontend)
+
+TanStack Start + React SPA. Tailwind v4 + CVA + shadcn/Radix. **Session cookie auth** — `apiFetch` sends `credentials: "include"`; no API tokens in the browser. Public routes: dashboard (`/`), login. Authenticated users: `/account`. Admins: `/admin/*` (settings, server CRUD).
+
+Charts use **uPlot** with PromQL-backed timeseries from the API. See `project-conventions.mdc` and `design-system.mdc`.
+
+### crates (Rust workspace)
+
+Single binary **`mc-tracker`**: axum REST API + in-process **ServerManager** (ping loop, VM push).
+
+| Crate | Role |
+|-------|------|
+| `mc-tracker` | Binary: HTTP routes, auth, admin, ServerManager |
+| `mc-api-types` | Shared HTTP JSON DTOs (request + response) |
+| `mc-db` | Diesel: migrations, schema, repos, settings |
+| `mc-ping` | Java + Bedrock native pingers, DNS |
+| `mc-geo` | MaxMind ASN lookup |
+| `mc-metrics` | VM push registry + PromQL query client |
+| `mc-common` | Shared utilities (time, etc.) |
+| `mc-dns` | DNS resolver with cache |
+
+| Concern | Choice |
+|---------|--------|
+| HTTP | axum — REST only (no scrape endpoint) |
+| Async | tokio |
+| Postgres | diesel + diesel_async; migrations in `mc-db/src/db/migrations/` |
+| Metrics | VictoriaMetrics push + PromQL query (`mc-metrics`) |
+| Auth | HMAC-signed session cookies; `admin` \| `user` RBAC |
+| Config | env + `app_settings` table (CORS origins, ping interval, etc.) |
+
+**Layering:** `mc-db` is DB only (thin repos); domain logic lives in `mc-tracker` (`manager.rs`, handlers). Shared API shapes live in `mc-api-types` — keep handlers thin.
+
+See `api-conventions.mdc` and `rust-standards.mdc` for layout and code style.

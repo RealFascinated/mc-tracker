@@ -1,0 +1,82 @@
+---
+description: TypeScript and React code style for mc-tracker www
+globs: www/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Code Style
+
+Match **Prettier** defaults used in the repo: no semicolons, double quotes, 2-space indent, trailing commas. Run `bun run format` if needed; don't fight Prettier.
+
+Match **ESLint** (`@tanstack/eslint-config`) — don't disable rules to silence issues you introduced.
+
+## TypeScript
+
+- `strict` is on — no `any` unless unavoidable; prefer narrowing and explicit types.
+- Use `import type` for type-only imports when appropriate.
+- Prefer `undefined` / optional properties over `| null` unless the API already uses null.
+- Don't use non-null assertions (`!`) unless the invariant is obvious and local.
+
+## React components
+
+- Use `function` declarations for components (matches existing code).
+- Destructure props in the signature.
+- Hooks at the top of the component body; no conditional hooks.
+- Named exports for components and utilities.
+- Colocate small route-only components in the route file; extract to `src/components/` when reused.
+
+```tsx
+// bad — behaviour encoded in branches
+if (status === "online") {
+  return <GreenDot />
+} else if (status === "offline") {
+  return <RedDot />
+}
+
+// good — variant prop or dedicated component
+<StatusIndicator status={status} />
+```
+
+## API client
+
+- Centralize `fetch` in `src/lib/api/client.ts` via `apiFetch`.
+- Default `credentials: "include"` for session cookies; use `credentials: false` only for explicitly public calls.
+- Type response shapes with `mc-api-types`-aligned interfaces in `src/lib/api/`; don't scatter raw `fetch` URLs across components.
+- React Query: define `queryOptions` in `*.queries.ts`; use `useQuery` / `useMutation` in routes and components.
+
+## Imports
+
+- Use `@/` alias (`@/components/ui/button`, `@/lib/utils`).
+- Don't reorder imports to satisfy a personal style — project has import ordering rules off.
+
+## Styling
+
+- Merge classes with `cn()` — never string-concatenate conflicting Tailwind classes.
+- Use CVA for components with multiple visual variants.
+- Prefer Tailwind utilities over custom CSS. Add to `styles.css` only for theme tokens, base layers, or genuinely global rules.
+- Headings in dark mode **must** remain readable — use `text-foreground` or explicit `dark:text-white` on titles.
+
+## Logic density
+
+- No blank lines between trivial adjacent steps in a function.
+- No useless variables used only once on the next line.
+- Don't extract a function or hook called from exactly one place unless it clarifies intent.
+
+## Control flow
+
+Always use braces for `if`, `else`, `for`, `while` — even for single-statement bodies.
+
+## Comments
+
+Skip comments for obvious boilerplate. Add comments when behaviour is non-obvious: chart data transforms, auth redirect flow, uPlot lifecycle, or workarounds worth knowing.
+
+## Performance
+
+- Don't memoize by default — add only when there's a measured or obvious re-render problem.
+- Avoid fetching the same data in multiple sibling components; lift to route-level `useQuery` or shared query options.
+- Chart hydration: use existing `use-chart-hydration` / `chart-hydration-queue` patterns for deferred uPlot mounts.
+
+## Generated and config files
+
+- Theme and design tokens live in `src/styles.css` — extend CSS variables there, not scattered inline styles.
+- Don't commit `.env` or real credentials. Use `www/.env.example` as the template.

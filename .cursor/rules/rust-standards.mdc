@@ -1,0 +1,88 @@
+---
+description: Rust coding standards for mc-tracker workspace
+globs: crates/**/*.rs
+alwaysApply: false
+---
+
+# Code Style
+
+## Formatting and Imports
+
+- Run `cargo fmt`. Group imports: std, external crates, `crate::` / workspace crates.
+- Prefer `use` at the top; no wildcard imports except for test modules.
+
+## File Layout
+
+Within a module file, typical order:
+
+1. Module-level docs (if any)
+2. Imports
+3. Constants
+4. Types (structs, enums)
+5. `impl` blocks
+6. Free functions — public first, then private
+7. Tests (`#[cfg(test)]` mod at bottom)
+
+## Errors
+
+- Use `thiserror` for library error enums (`mc-db`, `mc-ping`, `mc-metrics`, etc.) or `anyhow` at the binary boundary — match existing code.
+- Wrap errors with context: `.context("vm: push player count")?` or `map_err`.
+- Return `Result` from services; map to HTTP responses in handlers — don't log-and-ignore.
+
+## Logging
+
+Use `tracing` — no `println!` in production paths.
+
+```rust
+tracing::info!(servers = count, "ping cycle complete");
+tracing::warn!(server = %host, error = %err, "ping failed");
+```
+
+Structured fields; no secrets (passwords, session secrets, VM tokens) in log output.
+
+## Async
+
+- `tokio` runtime; `async fn` handlers via axum.
+- Use `tokio::select!` or cancellation for shutdown in manager loops.
+- Don't block the async runtime — use `tokio::task::spawn_blocking` for rare CPU-heavy work only.
+- Reuse `reqwest::Client` — don't create a new client per request.
+
+## Types and serde
+
+- API DTOs live in `mc-api-types` with `serde`.
+- Use explicit `rename` only when matching external JSON (VictoriaMetrics responses).
+- API JSON uses **camelCase** serde renames to match the TypeScript client.
+- Prefer `Option<T>` over sentinel values for missing fields.
+
+## Diesel
+
+- Schema in `mc-db/src/db/schema.rs`; models in `mc-db/src/model/`.
+- One migration per schema change. Never edit applied migrations.
+- Use transactions for multi-row writes when needed.
+- Pool via project setup in `mc-db` — match existing `DbPool` / `DbContext` patterns.
+
+## Security
+
+- Hash passwords with the project's chosen hasher (see `mc-db` users repo).
+- Never expose password hashes, session secrets, or VM auth tokens in API responses.
+- CORS origins come from `app_settings` + deployment env — don't hardcode production origins.
+
+## Tests
+
+- Unit tests for pure logic (PromQL building, ping packet parsing, metric alignment).
+- Integration tests in `crates/*/tests/` with shared helpers in `tests/common/`.
+- Run `cargo test` before finishing non-trivial changes.
+
+## Performance
+
+Ping loop and VM push are hot paths.
+
+- Preallocate `Vec` when length is known.
+- Reuse HTTP clients and connection pools.
+- Batch VictoriaMetrics pushes when practical.
+- If two approaches are otherwise equal, pick the faster one.
+
+## Dependencies
+
+- Prefer axum, tokio, reqwest, diesel, tracing — already in the stack.
+- Don't add new crates for one-liners unless the stdlib is genuinely inadequate.

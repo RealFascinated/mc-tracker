@@ -1,0 +1,20 @@
+[package]
+name = "mc-ping"
+description = "Java and Bedrock Minecraft server pingers"
+edition.workspace = true
+version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+mc-common = { path = "../mc-common" }
+mc-dns = { path = "../mc-dns" }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["io-util", "macros", "net", "rt", "time"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }

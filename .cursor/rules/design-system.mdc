@@ -1,0 +1,118 @@
+---
+description: mc-tracker design system — tokens, components, and interactive states
+globs: www/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# mc-tracker Design System
+
+Use Tailwind utilities with `cn()` / CVA. Define theme tokens in `src/styles.css` (`@theme`, CSS variables) — don't scatter one-off hex values in components.
+
+**Font:** Geist Variable (`@fontsource-variable/geist`).
+
+**Dark mode:** class-based — `.dark` on `<html>`. Variant: `@custom-variant dark (&:where(.dark, .dark *));`
+
+**Default border:** `border-color` uses `--color-monitor-gray-200` in dark / `--border` semantic token.
+
+---
+
+## Design Tokens
+
+### Brand / Accent (`monitor-*`)
+
+| Token | Usage |
+|-------|-------|
+| `monitor` / `primary` | Primary accent (light) — `#6b16ed` |
+| `monitor-50` | Highlighted button bg (light) |
+| `monitor-100` | Highlighted hover (dark), scrollbar thumb |
+| `monitor-200` | Highlighted button text (light) |
+| `warning` / `primary` (dark) | Primary accent in dark mode — `#fcd452` |
+
+### Neutral surfaces (`monitor-gray-*` / shadcn semantic)
+
+| Token | Usage |
+|-------|-------|
+| `base` / `background` (dark) | Page background — `#101010` |
+| `monitor-gray-100` / `card` (dark) | Component background |
+| `monitor-gray-200` / `border` (dark) | Elevated surface / borders |
+| `monitor-gray-300` | Input borders, hover overlays |
+
+### Semantic
+
+| Token | Usage |
+|-------|-------|
+| `success` | Online / healthy — `#22c55e` |
+| `error` / `destructive` | Offline / errors — `#dc2626` |
+| `warning` | Accent (dark), caution states |
+
+### Radius
+
+| Token | Usage |
+|-------|-------|
+| `rounded-snug` (6px) | Buttons, inputs, dense controls |
+| `rounded-soft` (10px) | Cards, dashboard panels |
+| `rounded-sm` / `rounded-lg` | shadcn defaults where already used |
+
+### Accent swap (light vs dark)
+
+| Context | Light | Dark |
+|---------|-------|------|
+| Primary accent | `monitor` / `text-monitor` | `warning` / `text-warning` |
+| Focus ring | `ring-monitor` | `ring-warning` |
+| Link variant | `text-monitor` | `text-warning` |
+| Spinner | `text-monitor` | `text-warning` |
+
+### Chart colors
+
+Use `--chart-1` … `--chart-12` from `styles.css` via `chart-colors.ts` — don't hardcode series colors in components.
+
+---
+
+## Typography
+
+Body: `text-sm antialiased`. Muted text: `text-muted-foreground`.
+
+**Headings and card titles** must stay readable in dark mode — use `text-foreground` or `dark:text-white` on titles; don't leave headings at default muted gray.
+
+---
+
+## Components
+
+Use CVA variants (`default`, `highlighted`, `brand`, `destructive`, etc.) — not string flags with switch chains. Match existing `src/components/ui/` implementations.
+
+### Buttons
+
+- Default: `border-border bg-card` with muted hover.
+- Highlighted: `border-monitor bg-monitor-50 text-monitor-200` (light); `dark:bg-monitor/20 dark:hover:bg-monitor-100` (dark).
+- Focus: `focus-visible:ring-monitor dark:focus-visible:ring-warning` with `ring-offset-background dark:ring-offset-base`.
+
+### Cards / dashboard
+
+- Use shadcn `Card` or `DashboardCard` patterns — `rounded-soft`, `bg-card`, `border-border`.
+- Metric charts: `MetricChartCard` + deferred hydration via chart hooks.
+
+### Forms / auth
+
+- Auth pages use `AuthPageShell` + `AuthForm` layout.
+- Inputs follow shadcn `Input` / `Label` with monitor focus tokens.
+
+### Toasts
+
+- `sonner` via `Toaster` in `__root.tsx` — `richColors closeButton`.
+
+---
+
+## Styling rules
+
+- Merge with `cn()`; prefer token classes (`bg-monitor-gray-100`, `text-warning`) over raw hex.
+- Avoid inline `style` for static colors/spacing — exception: uPlot canvas sizing and computed chart dimensions.
+- Icons: `lucide-react`, `size-4` default in buttons unless `size` variant overrides.
+- Destructive admin actions: `Dialog` confirmation before delete; toast on success.
+
+---
+
+## Implementation notes
+
+- Extend `src/styles.css` `@theme` / `:root` / `.dark` when adding tokens — map shadcn semantic vars (`primary`, `card`, `border`) to monitor values.
+- shadcn components: override variants via CVA; keep Radix behaviour, swap visual classes.
+- Composition over one-off markup — reuse `DashboardCard`, `MetricChartCard`, `LoadingState` when patterns repeat.

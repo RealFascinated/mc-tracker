@@ -1,0 +1,55 @@
+---
+description: mc-tracker www — stack, layout, and integration conventions
+globs: www/**
+alwaysApply: false
+---
+
+# Project Conventions
+
+**Follow existing project conventions exactly.** Before writing new code, read nearby files that solve a similar problem and mirror how they do it.
+
+Stack: **React 19**, **TypeScript** (strict), **TanStack Start/Router**, **TanStack React Query**, **Tailwind CSS v4**, **shadcn/ui** (Radix), **lucide-react**, **uPlot** for charts.
+
+## Layout
+
+| Area | Location |
+|------|----------|
+| Routes | `src/routes/` — TanStack file-based routing (`routeTree.gen.ts` is generated) |
+| UI primitives | `src/components/ui/` — shadcn components |
+| App components | `src/components/` |
+| API client | `src/lib/api/client.ts` + domain modules (`servers.ts`, `admin/`, etc.) |
+| Query options | `src/lib/api/*.queries.ts` — React Query `queryOptions` factories |
+| Auth | `src/lib/auth/` — context, session helpers, validation |
+| Metrics / charts | `src/lib/metrics/` — range, series, chart config, uPlot theme |
+| Utilities | `src/lib/` |
+| Hooks | `src/hooks/` |
+| Global styles / theme | `src/styles.css` |
+| Path alias | `@/*` → `src/*` |
+
+## Integration points
+
+- **New pages** — add a route file under `src/routes/`; wire into `SiteHeader` nav if needed.
+- **API calls** — use `apiFetch` from `@/lib/api/client`; default `credentials: "include"` for cookie auth. Use `queryOptions` + `useQuery`/`useMutation` — don't scatter raw `fetch`.
+- **Metrics charts** — use existing chart helpers (`build-chart-config`, `metric-timeseries`, `uplot-theme`); align time windows with `MetricTimeRange` / `MetricTimeWindow`.
+- **UI primitives** — match existing `src/components/ui/` patterns (CVA variants, `cn()`, Radix primitives, `Slot`).
+- **Styling** — Tailwind utilities merged with `cn()` from `@/lib/utils`. Use theme tokens from `styles.css` (`bg-monitor-gray-100`, `text-warning`, `text-success`, `text-error`, shadcn semantic tokens) — not raw `neutral-*` scales or one-off hex. See `design-system.mdc`.
+- **Inline `style`** — avoid for colors, spacing, and typography that belong in Tailwind or theme tokens. Use `style` only when the value is computed at runtime: chart dimensions, tooltip positioning.
+- **Icons** — `lucide-react`, consistent sizing with sibling components.
+- **Destructive actions** — confirm in a `Dialog` with plain-English summary; toast on successful save (`sonner`).
+- **Secrets** — never store passwords or session secrets in client code. Auth is cookie-based only.
+
+## Component design
+
+**Model variation with types, not branching.** Use discriminated unions, CVA variant props, composition, or separate components — not string flags with `switch` chains.
+
+- **Server status / metrics** — dedicated chart cards and dashboard components under `src/components/dashboard/` and `src/components/metrics/`.
+- **Shared logic belongs up the tree** — extract a hook or shared component when multiple call sites need it.
+- **Only where it earns its keep** — one variant with no second implementation stays concrete.
+
+## Surrounding context
+
+**Read the subsystem before you write code.**
+
+- Trace an existing page end-to-end (route → components → query options → API client) before adding a sibling.
+- Check `__root.tsx` / `SiteHeader` for layout and nav before changing page structure.
+- No loose workarounds — don't bypass `apiFetch`, shadcn patterns, or the `@/` alias with one-off hacks.

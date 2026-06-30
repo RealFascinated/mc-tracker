@@ -1,0 +1,3 @@
+# HELP minecraft_server_player_count Number of players on Minecraft server
+# TYPE minecraft_server_player_count gauge
+minecraft_server_player_count{asn="AS13335",asn_org="Cloudflare",environment="development",id="550e8400-e29b-41d4-a716-446655440000",name="Hypixel",type="PC"} 42

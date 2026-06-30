@@ -1,0 +1,17 @@
+use serde::Deserialize;
+
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PatchSettingsRequest {
+    pub api_port: Option<u16>,
+    pub api_address: Option<String>,
+    pub pinger_timeout_ms: Option<u64>,
+    pub pinger_retry_attempts: Option<u32>,
+    pub pinger_retry_delay_ms: Option<u64>,
+    pub dns_cache_enabled: Option<bool>,
+    pub dns_cache_ttl_minutes: Option<u32>,
+    pub victoriametrics_url: Option<String>,
+    pub metrics_push_interval_seconds: Option<u64>,
+    pub sign_up_enabled: Option<bool>,
+    pub www_origin: Option<String>,
+}
