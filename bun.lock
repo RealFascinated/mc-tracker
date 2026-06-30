@@ -6,7 +6,7 @@
       "name": "tracker",
       "dependencies": {
         "@t3-oss/env-core": "^0.13.11",
-        "@types/node": "^25.9.2",
+        "@types/node": "^25.9.4",
         "commander": "^14.0.3",
         "dns": "^0.2.2",
         "dotenv": "^17.4.2",
