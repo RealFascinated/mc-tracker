@@ -25,31 +25,24 @@ struct VmResponseEnvelope {
 #[derive(Debug, Deserialize)]
 struct VmResponseData {
     #[serde(rename = "resultType")]
-    result_type: String,
+    _result_type: String,
     #[serde(default)]
     result: Vec<VmResult>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct VmResult {
+struct VmResult {
     #[serde(default)]
-    pub metric: serde_json::Map<String, serde_json::Value>,
+    metric: serde_json::Map<String, serde_json::Value>,
     #[serde(default)]
-    pub value: Option<(f64, String)>,
+    value: Option<(f64, String)>,
     #[serde(default)]
-    pub values: Vec<(f64, String)>,
+    values: Vec<(f64, String)>,
 }
 
 #[derive(Debug, Clone)]
 pub struct VmQueryResponse {
-    pub result_type: String,
-    pub results: Vec<VmResult>,
-}
-
-#[derive(Debug, Clone)]
-pub struct MatrixSeries {
-    pub labels: serde_json::Map<String, serde_json::Value>,
-    pub samples: Vec<(i64, Option<f64>)>,
+    results: Vec<VmResult>,
 }
 
 #[derive(Debug, Clone)]
@@ -120,7 +113,6 @@ impl VmQueryClient {
             .ok_or_else(|| MetricsError::Parse("missing data field".into()))?;
 
         Ok(VmQueryResponse {
-            result_type: data.result_type,
             results: data.result,
         })
     }
@@ -148,10 +140,6 @@ impl VmQueryClient {
             .collect()
     }
 
-    pub fn matrix_values(response: &VmQueryResponse) -> Vec<(i64, Option<f64>)> {
-        Self::matrix_samples(response)
-    }
-
     /// Merge all matrix series, taking the max value when timestamps collide.
     pub fn matrix_samples(response: &VmQueryResponse) -> Vec<(i64, Option<f64>)> {
         let mut merged: BTreeMap<i64, f64> = BTreeMap::new();
@@ -172,28 +160,6 @@ impl VmQueryClient {
         merged
             .into_iter()
             .map(|(timestamp, value)| (timestamp, Some(value)))
-            .collect()
-    }
-
-    /// One entry per matrix result, preserving series labels.
-    pub fn matrix_series(response: &VmQueryResponse) -> Vec<MatrixSeries> {
-        response
-            .results
-            .iter()
-            .map(|result| {
-                let samples = result
-                    .values
-                    .iter()
-                    .map(|(timestamp, value)| {
-                        let parsed = value.parse::<f64>().ok();
-                        (normalize_timestamp(*timestamp), parsed)
-                    })
-                    .collect();
-                MatrixSeries {
-                    labels: result.metric.clone(),
-                    samples,
-                }
-            })
             .collect()
     }
 }
@@ -271,7 +237,7 @@ mod tests {
             .build()
             .unwrap();
         let response = client.execute(&query).await.unwrap();
-        let values = VmQueryClient::matrix_values(&response);
+        let values = VmQueryClient::matrix_samples(&response);
         assert_eq!(values.len(), 2);
         assert_eq!(values[0], (1710000000, Some(10.0)));
     }

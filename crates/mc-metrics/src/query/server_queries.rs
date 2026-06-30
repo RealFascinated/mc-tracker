@@ -51,28 +51,11 @@ pub fn total_players_series(environment: &str) -> String {
     format!(r#"sum({})"#, player_count_by_environment(environment))
 }
 
-/// `dashboard.yml` peak stat:
-/// `max_over_time(sum(minecraft_server_player_count{environment="production"})[30d:])`
-pub fn peak_players_30d(environment: &str) -> String {
-    format!(
-        r#"max_over_time(sum({})[30d:])"#,
-        player_count_by_environment(environment)
-    )
-}
-
 /// `max_over_time(max by (id, type) (...)[24h:])` — one series per tracked server.
 pub fn peak_players_24h_by_server(environment: &str) -> String {
     format!(
         r#"max_over_time({}[24h:])"#,
         player_count_by_server(environment)
-    )
-}
-
-/// `max_over_time(max by (id, type) (minecraft_server_player_count{id="$server",...})[24h:])`
-pub fn peak_players_24h_for_server(environment: &str, server_id: &str) -> String {
-    format!(
-        r#"max_over_time({}[24h:])"#,
-        player_count_series(environment, server_id)
     )
 }
 
@@ -97,14 +80,6 @@ mod tests {
     }
 
     #[test]
-    fn peak_players_30d_matches_dashboard_shape() {
-        assert_eq!(
-            peak_players_30d("production"),
-            r#"max_over_time(sum(minecraft_server_player_count{environment="production"})[30d:])"#
-        );
-    }
-
-    #[test]
     fn player_count_series_matches_dashboard_shape() {
         let query = player_count_series("production", "550e8400-e29b-41d4-a716-446655440000");
         assert_eq!(
@@ -118,21 +93,6 @@ mod tests {
         assert_eq!(
             total_players_series("production"),
             r#"sum(minecraft_server_player_count{environment="production"})"#
-        );
-    }
-
-    #[test]
-    fn peak_queries_match_dashboard_yml_expressions() {
-        let peak_24h = peak_players_24h("production");
-        let peak_30d = peak_players_30d("production");
-
-        assert_eq!(
-            peak_24h,
-            "max_over_time(sum(minecraft_server_player_count{environment=\"production\"})[24h:])"
-        );
-        assert_eq!(
-            peak_30d,
-            "max_over_time(sum(minecraft_server_player_count{environment=\"production\"})[30d:])"
         );
     }
 }

@@ -113,7 +113,6 @@ pub struct ServerSummary {
     pub players_pc: u64,
     pub players_pe: u64,
     pub tracked_servers: u32,
-    pub last_updated: Option<i64>,
 }
 
 fn matches_server_search(server: &TrackedServer, search: Option<&str>) -> bool {
@@ -150,9 +149,6 @@ struct AsnAggregate {
     key: AsnAggregateKey,
     players_online: u64,
     server_count: u32,
-    players_pc: u64,
-    players_pe: u64,
-    last_updated: Option<i64>,
 }
 
 fn asn_key(server: &TrackedServer) -> AsnAggregateKey {
@@ -304,11 +300,6 @@ impl ServerManager {
                 Platform::Pc => summary.players_pc += players,
                 Platform::Pe => summary.players_pe += players,
             }
-            summary.last_updated = match (summary.last_updated, server.last_ping_at) {
-                (Some(current), Some(value)) => Some(current.max(value)),
-                (None, Some(value)) => Some(value),
-                (current, None) => current,
-            };
         }
 
         summary
@@ -362,7 +353,6 @@ impl ServerManager {
                 players_pc: summary.players_pc,
                 players_pe: summary.players_pe,
                 tracked_servers: summary.tracked_servers,
-                last_updated: summary.last_updated,
                 peaks: PlayersPeakSummary {
                     players_24h: peak_players24h,
                     players_7d: peak_players_7d,
@@ -388,24 +378,10 @@ impl ServerManager {
                 key: key.clone(),
                 players_online: 0,
                 server_count: 0,
-                players_pc: 0,
-                players_pe: 0,
-                last_updated: None,
             });
             entry.server_count += 1;
             if let Some(players) = server.players_online {
-                let players = players as u64;
-                entry.players_online += players;
-                match server.config.platform {
-                    Platform::Pc => entry.players_pc += players,
-                    Platform::Pe => entry.players_pe += players,
-                }
-            }
-            if let Some(last_ping) = server.last_ping_at {
-                entry.last_updated = match entry.last_updated {
-                    Some(current) => Some(current.max(last_ping)),
-                    None => Some(last_ping),
-                };
+                entry.players_online += players as u64;
             }
         }
 
@@ -423,8 +399,6 @@ impl ServerManager {
                 asn_org: aggregate.key.asn_org.clone(),
                 players_online: aggregate.players_online.min(u32::MAX as u64) as u32,
                 server_count: aggregate.server_count,
-                players_pc: aggregate.players_pc.min(u32::MAX as u64) as u32,
-                players_pe: aggregate.players_pe.min(u32::MAX as u64) as u32,
                 peaks: entity_peak_stats_with_all_time(
                     peaks_24h.get(&aggregate.key).copied(),
                     asn_peak_all_time(&all_tracked, &aggregate.key),
@@ -441,7 +415,6 @@ impl ServerManager {
                 players_pe: summary.players_pe,
                 tracked_asns: asns.len() as u32,
                 tracked_servers: summary.tracked_servers,
-                last_updated: summary.last_updated,
                 peaks: PlayersPeakSummary {
                     players_24h: peak_players24h,
                     players_7d: peak_players_7d,

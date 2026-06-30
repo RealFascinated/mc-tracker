@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api/client";
 
-export type PeakPlayersRecord = {
+type PeakPlayersRecord = {
   players: number;
   timestamp: number;
 };

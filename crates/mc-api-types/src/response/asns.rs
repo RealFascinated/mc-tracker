@@ -17,7 +17,6 @@ pub struct AsnsSummaryResponse {
     pub players_pe: u64,
     pub tracked_asns: u32,
     pub tracked_servers: u32,
-    pub last_updated: Option<i64>,
     pub peaks: PlayersPeakSummary,
 }
 
@@ -28,8 +27,6 @@ pub struct AsnListItemResponse {
     pub asn_org: String,
     pub players_online: u32,
     pub server_count: u32,
-    pub players_pc: u32,
-    pub players_pe: u32,
     pub peaks: EntityPeakStats,
 }
 

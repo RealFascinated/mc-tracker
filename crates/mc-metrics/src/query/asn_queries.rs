@@ -14,7 +14,7 @@ fn deduped_players_by_asn(environment: &str) -> String {
 }
 
 /// `sum by (asn, asn_org) (max by (id, type, asn, asn_org) (...))`
-pub fn players_by_asn_series(environment: &str) -> String {
+fn players_by_asn_series(environment: &str) -> String {
     format!(
         r#"sum by (asn, asn_org) ({})"#,
         deduped_players_by_asn(environment)
@@ -41,14 +41,6 @@ pub fn peak_players_24h_by_asn(environment: &str) -> String {
     format!(
         r#"max_over_time({}[24h:])"#,
         players_by_asn_series(environment)
-    )
-}
-
-/// `max_over_time(sum by (asn, asn_org) (...)[24h:])`
-pub fn peak_players_24h_for_asn(environment: &str, asn: &str, asn_org: &str) -> String {
-    format!(
-        r#"max_over_time({}[24h:])"#,
-        players_for_asn_series(environment, asn, asn_org)
     )
 }
 

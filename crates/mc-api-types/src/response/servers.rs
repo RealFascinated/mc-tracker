@@ -35,7 +35,6 @@ pub struct ServersSummaryResponse {
     pub players_pc: u64,
     pub players_pe: u64,
     pub tracked_servers: u32,
-    pub last_updated: Option<i64>,
     pub peaks: PlayersPeakSummary,
 }
 
