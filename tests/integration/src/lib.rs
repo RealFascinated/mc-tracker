@@ -101,6 +101,7 @@ pub async fn manager_with_vm_url(pool: &DbPool, vm_base_url: &str) -> Arc<Server
     let bootstrap = settings.read().await.clone();
     Arc::new(ServerManager::new(
         vec![],
+        Some(pool.clone()),
         settings,
         fixture_geo(),
         None,

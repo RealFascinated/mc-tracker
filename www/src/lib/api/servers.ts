@@ -1,12 +1,10 @@
 import { apiFetch } from "@/lib/api/client";
 import type {
-  PeakPlayers,
+  EntityPeakStats,
   PlayersSummaryBase,
   PlayersTimeseriesPayload,
 } from "@/lib/api/types";
 import { fetchList } from "@/lib/api/types";
-
-export type { PeakPlayers };
 
 export type ServersSummary = PlayersSummaryBase & {
   trackedServers: number;
@@ -22,8 +20,7 @@ export type ServerListItem = {
   asnOrg: string;
   playersOnline: number | null;
   favicon: string | null;
-  peakPlayers24h: number | null;
-  peakPlayersAllTime: PeakPlayers | null;
+  peaks: EntityPeakStats;
 };
 
 export type ServersListResponse = {

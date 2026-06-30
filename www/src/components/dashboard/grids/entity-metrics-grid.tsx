@@ -8,13 +8,13 @@ import { LazyVisibleMount } from "@/components/dashboard/lazy-visible-mount";
 import { CardStat } from "@/components/dashboard/stats/card-stat";
 import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
 import { EMPTY_METRIC_TIME_SERIES } from "@/lib/api/metric-timeseries";
-import type { PlayersTimeseriesPayload } from "@/lib/api/types";
+import type { EntityPeakStats, PlayersTimeseriesPayload } from "@/lib/api/types";
 import { playersTimeseriesToMetric } from "@/lib/metrics/adapters";
 import type { ChartDefinition } from "@/lib/metrics/charts/types";
 import { DASHBOARD_CARD_CHART_HEIGHT } from "@/lib/metrics/dashboard-chart-constants";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 import { formatPlayers } from "@/lib/format-players";
-import { peakAllTimeTooltip } from "@/lib/format-peak-at";
+import { peakTimestampTooltip } from "@/lib/format-peak-at";
 
 type EntityMetricsSectionCopy = {
   title: string;
@@ -216,21 +216,19 @@ export function EntityMetricsGrid<
 
 export function EntityCardStats({
   playersOnline,
-  peakPlayers24h,
-  peakPlayersAllTime,
+  peaks,
 }: {
   playersOnline: number | null;
-  peakPlayers24h: number | null;
-  peakPlayersAllTime: { players: number; at: number } | null;
+  peaks: EntityPeakStats;
 }) {
   return (
     <div className="entity-card-stats">
       <CardStat label="Now" value={formatPlayers(playersOnline)} />
-      <CardStat label="Peak 24h" value={formatPlayers(peakPlayers24h)} />
+      <CardStat label="Peak 24h" value={formatPlayers(peaks.players24h)} />
       <CardStat
         label="All-time"
-        value={formatPlayers(peakPlayersAllTime?.players ?? null)}
-        valueTooltip={peakAllTimeTooltip(peakPlayersAllTime)}
+        value={formatPlayers(peaks.allTime?.players ?? null)}
+        valueTooltip={peakTimestampTooltip(peaks.allTime?.timestamp)}
       />
     </div>
   );

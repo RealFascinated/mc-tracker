@@ -1,16 +1,27 @@
 import { apiFetch } from "@/lib/api/client";
 
-export type PeakPlayers = {
+export type PeakPlayersRecord = {
   players: number;
-  at: number;
+  timestamp: number;
+};
+
+export type PlayersPeakSummary = {
+  players24h: number | null;
+  players30d: number | null;
+  players7d: number | null;
+  allTime: PeakPlayersRecord | null;
+};
+
+export type EntityPeakStats = {
+  players24h: number | null;
+  allTime: PeakPlayersRecord | null;
 };
 
 export type PlayersSummaryBase = {
   totalPlayers: number;
   playersPc: number;
   playersPe: number;
-  peakPlayers24h: number | null;
-  peakPlayersAllTime: PeakPlayers | null;
+  peaks: PlayersPeakSummary;
 };
 
 export type PlayersTimeseriesPayload = {

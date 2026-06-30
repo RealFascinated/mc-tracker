@@ -20,6 +20,7 @@ async fn get_and_patch_admin_settings() {
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         Arc::clone(&settings),
         common::fixture_geo(),
         None,
@@ -97,6 +98,7 @@ async fn patch_admin_settings_rejects_invalid_values() {
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         Arc::clone(&settings),
         common::fixture_geo(),
         None,

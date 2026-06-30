@@ -44,8 +44,7 @@ function AsnMetricsCardHeader({ asn }: { asn: AsnListItem }) {
 
       <EntityCardStats
         playersOnline={asn.playersOnline}
-        peakPlayers24h={asn.peakPlayers24h}
-        peakPlayersAllTime={asn.peakPlayersAllTime}
+        peaks={asn.peaks}
       />
     </div>
   );

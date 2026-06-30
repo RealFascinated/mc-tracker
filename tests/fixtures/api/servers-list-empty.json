@@ -5,9 +5,12 @@
     "playersPe": 0,
     "trackedServers": 0,
     "lastUpdated": null,
-    "peakPlayers24h": null,
-    "peakPlayers30d": null,
-    "peakPlayersAllTime": null
+    "peaks": {
+      "players24h": null,
+      "players30d": null,
+      "players7d": null,
+      "allTime": null
+    }
   },
   "servers": []
 }

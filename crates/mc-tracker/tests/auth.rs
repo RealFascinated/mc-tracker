@@ -19,6 +19,7 @@ async fn login_me_logout_flow() {
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         settings,
         common::fixture_geo(),
         None,
@@ -88,6 +89,7 @@ async fn admin_routes_require_auth() {
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         settings,
         common::fixture_geo(),
         None,
@@ -120,6 +122,7 @@ async fn public_servers_stay_public() {
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         settings,
         common::fixture_geo(),
         None,
@@ -152,6 +155,7 @@ async fn login_sets_secure_session_cookie_flags() {
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         settings,
         common::fixture_geo(),
         None,
@@ -197,6 +201,7 @@ async fn change_password_rejects_wrong_current_password() {
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         settings,
         common::fixture_geo(),
         None,
@@ -235,6 +240,7 @@ async fn change_password_updates_credentials() {
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         settings,
         common::fixture_geo(),
         None,
@@ -301,6 +307,7 @@ async fn revoked_session_rejected_after_logout() {
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         settings,
         common::fixture_geo(),
         None,

@@ -19,6 +19,7 @@ async fn metrics_endpoint_returns_not_found() {
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         settings,
         common::fixture_geo(),
         None,

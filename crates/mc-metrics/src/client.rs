@@ -52,6 +52,12 @@ pub struct MatrixSeries {
     pub samples: Vec<(i64, Option<f64>)>,
 }
 
+#[derive(Debug, Clone)]
+pub struct LabeledInstantValue {
+    pub labels: serde_json::Map<String, serde_json::Value>,
+    pub value: f64,
+}
+
 impl VmQueryClient {
     pub fn new(base_url: impl Into<String>, auth_token: Option<String>) -> Self {
         Self {
@@ -125,6 +131,21 @@ impl VmQueryClient {
             .first()
             .and_then(|result| result.value.as_ref())
             .and_then(|(_, value)| value.parse().ok())
+    }
+
+    /// One entry per instant-vector result, preserving series labels.
+    pub fn labeled_instant_values(response: &VmQueryResponse) -> Vec<LabeledInstantValue> {
+        response
+            .results
+            .iter()
+            .filter_map(|result| {
+                let value = result.value.as_ref()?.1.parse().ok()?;
+                Some(LabeledInstantValue {
+                    labels: result.metric.clone(),
+                    value,
+                })
+            })
+            .collect()
     }
 
     pub fn matrix_values(response: &VmQueryResponse) -> Vec<(i64, Option<f64>)> {

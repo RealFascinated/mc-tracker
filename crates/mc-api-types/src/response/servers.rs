@@ -2,9 +2,25 @@ use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PeakPlayersResponse {
-    pub players: f64,
-    pub at: i64,
+pub struct PeakPlayersRecord {
+    pub players: u32,
+    pub timestamp: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayersPeakSummary {
+    pub players_24h: Option<f64>,
+    pub players_30d: Option<f64>,
+    pub players_7d: Option<f64>,
+    pub all_time: Option<PeakPlayersRecord>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EntityPeakStats {
+    pub players_24h: Option<f64>,
+    pub all_time: Option<PeakPlayersRecord>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -22,9 +38,7 @@ pub struct ServersSummaryResponse {
     pub players_pe: u64,
     pub tracked_servers: u32,
     pub last_updated: Option<i64>,
-    pub peak_players24h: Option<f64>,
-    pub peak_players30d: Option<f64>,
-    pub peak_players_all_time: Option<PeakPlayersResponse>,
+    pub peaks: PlayersPeakSummary,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -40,8 +54,7 @@ pub struct ServerListItemResponse {
     pub asn_org: String,
     pub players_online: Option<u32>,
     pub favicon: Option<String>,
-    pub peak_players24h: Option<f64>,
-    pub peak_players_all_time: Option<PeakPlayersResponse>,
+    pub peaks: EntityPeakStats,
 }
 
 #[derive(Debug, Clone, Serialize)]

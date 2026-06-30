@@ -37,8 +37,7 @@ function ServerMetricsCardHeader({ server }: { server: ServerListItem }) {
 
       <EntityCardStats
         playersOnline={server.playersOnline}
-        peakPlayers24h={server.peakPlayers24h}
-        peakPlayersAllTime={server.peakPlayersAllTime}
+        peaks={server.peaks}
       />
     </div>
   );

@@ -36,32 +36,20 @@ pub fn players_for_asn_series(environment: &str, asn: &str, asn_org: &str) -> St
     )
 }
 
+/// `max_over_time(sum by (asn, asn_org) (...)[24h:])` — one series per ASN.
+pub fn peak_players_24h_by_asn(environment: &str) -> String {
+    format!(
+        r#"max_over_time({}[24h:])"#,
+        players_by_asn_series(environment)
+    )
+}
+
 /// `max_over_time(sum by (asn, asn_org) (...)[24h:])`
 pub fn peak_players_24h_for_asn(environment: &str, asn: &str, asn_org: &str) -> String {
     format!(
         r#"max_over_time({}[24h:])"#,
         players_for_asn_series(environment, asn, asn_org)
     )
-}
-
-/// `max_over_time(sum by (asn, asn_org) (...)[3650d:1h])`
-pub fn peak_players_all_time_for_asn(environment: &str, asn: &str, asn_org: &str) -> String {
-    peak_all_time_rollup(
-        "max_over_time",
-        players_for_asn_series(environment, asn, asn_org),
-    )
-}
-
-/// `tmax_over_time(sum by (asn, asn_org) (...)[3650d:1h])`
-pub fn peak_players_all_time_at_for_asn(environment: &str, asn: &str, asn_org: &str) -> String {
-    peak_all_time_rollup(
-        "tmax_over_time",
-        players_for_asn_series(environment, asn, asn_org),
-    )
-}
-
-fn peak_all_time_rollup(rollup: &str, inner: String) -> String {
-    format!(r#"{rollup}({inner}[3650d:1h])"#)
 }
 
 #[cfg(test)]

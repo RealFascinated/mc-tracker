@@ -9,6 +9,7 @@ pub use request::timeseries::TimeseriesQuery;
 pub use response::{
     AdminServerResponse, AdminServersListResponse, AsnListItemResponse, AsnTimeseriesResponse,
     AsnsListResponse, AsnsSummaryResponse, ErrorResponse, HealthResponse, LoginResponse,
-    MeResponse, PeakPlayersResponse, ServerListItemResponse, ServerTimeseriesResponse,
+    MeResponse, EntityPeakStats, PeakPlayersRecord, PlayersPeakSummary,
+    ServerListItemResponse, ServerTimeseriesResponse,
     ServersListResponse, ServersSummaryResponse, SettingsResponse, SignupEnabledResponse,
 };

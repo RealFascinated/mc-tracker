@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use super::servers::PeakPlayersResponse;
+use super::servers::{EntityPeakStats, PlayersPeakSummary};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -18,9 +18,7 @@ pub struct AsnsSummaryResponse {
     pub tracked_asns: u32,
     pub tracked_servers: u32,
     pub last_updated: Option<i64>,
-    pub peak_players24h: Option<f64>,
-    pub peak_players30d: Option<f64>,
-    pub peak_players_all_time: Option<PeakPlayersResponse>,
+    pub peaks: PlayersPeakSummary,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -32,8 +30,7 @@ pub struct AsnListItemResponse {
     pub server_count: u32,
     pub players_pc: u32,
     pub players_pe: u32,
-    pub peak_players24h: Option<f64>,
-    pub peak_players_all_time: Option<PeakPlayersResponse>,
+    pub peaks: EntityPeakStats,
 }
 
 #[derive(Debug, Clone, Serialize)]

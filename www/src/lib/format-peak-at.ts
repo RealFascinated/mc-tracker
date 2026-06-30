@@ -5,12 +5,12 @@ export function formatPeakAt(epochSeconds: number): string {
   }).format(new Date(epochSeconds * 1000));
 }
 
-export function peakAllTimeTooltip(
-  peak: { at: number } | null | undefined,
+export function peakTimestampTooltip(
+  timestamp: number | null | undefined,
 ): string | undefined {
-  if (peak?.at == null) {
+  if (timestamp == null) {
     return undefined;
   }
 
-  return `Peak on ${formatPeakAt(peak.at)}`;
+  return `Peak on ${formatPeakAt(timestamp)}`;
 }

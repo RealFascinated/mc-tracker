@@ -1,6 +1,6 @@
 import { apiFetch } from "@/lib/api/client";
 import type {
-  PeakPlayers,
+  EntityPeakStats,
   PlayersSummaryBase,
   PlayersTimeseriesPayload,
 } from "@/lib/api/types";
@@ -16,8 +16,7 @@ export type AsnListItem = {
   asnOrg: string;
   playersOnline: number;
   serverCount: number;
-  peakPlayers24h: number | null;
-  peakPlayersAllTime: PeakPlayers | null;
+  peaks: EntityPeakStats;
 };
 
 export type AsnsListResponse = {

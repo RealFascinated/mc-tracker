@@ -212,11 +212,14 @@ mod tests {
             platform: Platform::Pc,
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            peak_players: None,
+            peak_players_timestamp: None,
         };
         let settings = Arc::new(RwLock::new(AppSettings::default()));
         let bootstrap = settings.read().await.clone();
         let manager = ServerManager::new(
             vec![server],
+            None,
             settings,
             fixture_geo(),
             None,

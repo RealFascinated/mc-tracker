@@ -18,6 +18,8 @@ type ServerRow = (
     String,
     chrono::DateTime<Utc>,
     chrono::DateTime<Utc>,
+    Option<i32>,
+    Option<i64>,
 );
 
 fn row_to_server(row: ServerRow) -> Result<Server, DbError> {
@@ -29,6 +31,8 @@ fn row_to_server(row: ServerRow) -> Result<Server, DbError> {
         platform: Platform::from_db(&row.4).map_err(DbError::InvalidSettings)?,
         created_at: row.5,
         updated_at: row.6,
+        peak_players: row.7.map(|value| value as u32),
+        peak_players_timestamp: row.8,
     })
 }
 
@@ -59,6 +63,8 @@ pub async fn list(pool: &DbPool) -> Result<Vec<Server>, DbError> {
             servers::platform,
             servers::created_at,
             servers::updated_at,
+            servers::peak_players,
+            servers::peak_players_timestamp,
         ))
         .load::<ServerRow>(&mut conn)
         .await
@@ -79,6 +85,8 @@ pub async fn get(pool: &DbPool, id: Uuid) -> Result<Server, DbError> {
             servers::platform,
             servers::created_at,
             servers::updated_at,
+            servers::peak_players,
+            servers::peak_players_timestamp,
         ))
         .first::<ServerRow>(&mut conn)
         .await
@@ -165,6 +173,39 @@ pub async fn delete(pool: &DbPool, id: Uuid) -> Result<bool, DbError> {
         .await
         .map_err(db_err)?;
     Ok(deleted > 0)
+}
+
+pub async fn update_peak_if_higher(
+    pool: &DbPool,
+    id: Uuid,
+    players: u32,
+    at_epoch: i64,
+) -> Result<bool, DbError> {
+    let mut conn = get_conn(pool).await?;
+    let players_i32 = i32::try_from(players).map_err(|_| {
+        DbError::InvalidSettings(format!("peak player count out of range: {players}"))
+    })?;
+    let now = Utc::now();
+
+    let updated = diesel::update(
+        servers::table
+            .filter(servers::id.eq(id))
+            .filter(
+                servers::peak_players
+                    .is_null()
+                    .or(servers::peak_players.lt(players_i32)),
+            ),
+    )
+    .set((
+        servers::peak_players.eq(players_i32),
+        servers::peak_players_timestamp.eq(at_epoch),
+        servers::updated_at.eq(now),
+    ))
+    .execute(&mut conn)
+    .await
+    .map_err(db_err)?;
+
+    Ok(updated > 0)
 }
 
 fn is_unique_violation(err: &diesel::result::Error) -> bool {

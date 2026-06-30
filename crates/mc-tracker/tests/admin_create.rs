@@ -20,6 +20,7 @@ async fn post_admin_server_persists_and_updates_memory() {
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         Arc::clone(&settings),
         common::fixture_geo(),
         None,
@@ -71,6 +72,7 @@ async fn patch_and_delete_admin_server() {
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         Arc::clone(&settings),
         common::fixture_geo(),
         None,

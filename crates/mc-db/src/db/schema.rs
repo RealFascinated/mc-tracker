@@ -7,6 +7,8 @@ diesel::table! {
         platform -> Text,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        peak_players -> Nullable<Integer>,
+        peak_players_timestamp -> Nullable<BigInt>,
     }
 }
 

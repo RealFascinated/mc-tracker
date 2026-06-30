@@ -63,6 +63,8 @@ pub struct Server {
     pub platform: Platform,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub peak_players: Option<u32>,
+    pub peak_players_timestamp: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -6,20 +6,20 @@ use std::time::Duration;
 use futures::future::join_all;
 use mc_api_types::{
     AdminServerResponse, AdminServersListResponse, AsnListItemResponse, AsnsListResponse,
-    AsnsSummaryResponse, AsnTimeseriesResponse, PeakPlayersResponse, ServerListItemResponse,
+    AsnsSummaryResponse, AsnTimeseriesResponse, EntityPeakStats, PeakPlayersRecord,
+    PlayersPeakSummary, ServerListItemResponse,
     ServerTimeseriesResponse, ServersListResponse, ServersSummaryResponse,
 };
 use mc_db::model::{Platform, Server};
 use mc_db::AppSettings;
 use mc_geo::{AsnLookup, GeoError, GeoService};
+use mc_db::db::repos::servers;
+use mc_db::DbPool;
 use mc_metrics::{
-    align_samples_to_window, peak_players_24h, peak_players_24h_for_asn, peak_players_24h_for_server,
-    peak_players_30d, peak_players_all_time, peak_players_all_time_at,
-    peak_players_all_time_at_for_asn, peak_players_all_time_at_for_server,
-    peak_players_all_time_for_asn, peak_players_all_time_for_server, player_count_series,
-    players_for_asn_series, total_players_series,
-    MetricQueryWindow, MetricsError, PlayerCountEntry, PlayerCountRegistry, VmPushClient,
-    VmQueryBuilder, VmQueryClient,
+    align_samples_to_window, labels, peak_players_24h, peak_players_24h_by_asn,
+    peak_players_24h_by_server, peak_players_30d, peak_players_7d, player_count_series,
+    players_for_asn_series, total_players_series, MetricQueryWindow, MetricsError,
+    PlayerCountEntry, PlayerCountRegistry, VmPushClient, VmQueryBuilder, VmQueryClient,
 };
 use mc_ping::{
     ping_bedrock, ping_java, resolve_bedrock, resolve_java, with_retry, DnsError, HickoryDnsResolver,
@@ -58,11 +58,15 @@ pub struct TrackedServer {
     pub favicon: Option<String>,
     pub asn: AsnLookup,
     pub last_asn_ip: Option<String>,
+    pub peak_players: Option<u32>,
+    pub peak_players_timestamp: Option<i64>,
 }
 
 impl TrackedServer {
     fn from_config(config: Server) -> Self {
         Self {
+            peak_players: config.peak_players,
+            peak_players_timestamp: config.peak_players_timestamp,
             config,
             players_online: None,
             last_ping_at: None,
@@ -77,7 +81,7 @@ impl TrackedServer {
         self.last_ping_at = None;
     }
 
-    fn apply_success(&mut self, ping: &Ping, asn: AsnLookup, resolved_ip: &str) {
+    fn apply_success(&mut self, ping: &Ping, asn: AsnLookup, resolved_ip: &str) -> bool {
         self.players_online = Some(ping.players.online);
         self.last_ping_at = Some(ping.timestamp);
         if let Some(favicon) = ping.favicon.as_ref() {
@@ -87,6 +91,19 @@ impl TrackedServer {
             self.asn = asn;
             self.last_asn_ip = Some(resolved_ip.to_string());
         }
+        self.record_peak_if_higher(ping.players.online, ping.timestamp)
+    }
+
+    fn record_peak_if_higher(&mut self, players: u32, at: i64) -> bool {
+        let is_higher = self
+            .peak_players
+            .map(|peak| players > peak)
+            .unwrap_or(true);
+        if is_higher {
+            self.peak_players = Some(players);
+            self.peak_players_timestamp = Some(at);
+        }
+        is_higher
     }
 }
 
@@ -157,6 +174,7 @@ fn matches_asn_search(asn: &AsnAggregateKey, search: Option<&str>) -> bool {
 }
 
 pub struct ServerManager {
+    pool: Option<DbPool>,
     servers: RwLock<Vec<TrackedServer>>,
     settings: Arc<RwLock<AppSettings>>,
     metrics_environment: String,
@@ -172,6 +190,7 @@ pub struct ServerManager {
 impl ServerManager {
     pub fn new(
         servers: Vec<Server>,
+        pool: Option<DbPool>,
         settings: Arc<RwLock<AppSettings>>,
         geo: Arc<GeoService>,
         vm_auth_token: Option<String>,
@@ -180,6 +199,7 @@ impl ServerManager {
     ) -> Self {
         let metrics_environment = metrics_environment.into();
         Self {
+            pool,
             servers: RwLock::new(
                 servers
                     .into_iter()
@@ -234,7 +254,9 @@ impl ServerManager {
             || server.config.port != config.port
             || server.config.platform != config.platform;
 
-        server.config = config;
+        server.config = config.clone();
+        server.peak_players = config.peak_players;
+        server.peak_players_timestamp = config.peak_players_timestamp;
         if identity_changed {
             server.clear_ping_state();
             server.asn = AsnLookup::empty();
@@ -297,22 +319,27 @@ impl ServerManager {
         search: Option<&str>,
     ) -> ServersListResponse {
         let summary = self.summary().await;
-        let peak_players24h = self.peak_players_24h().await;
-        let peak_players30d = self.peak_players_30d().await;
-        let peak_players_all_time = self.peak_players_all_time().await;
-        let tracked = self.servers.read().await.clone();
-        let tracked = tracked
-            .into_iter()
+        let all_tracked = self.servers.read().await.clone();
+        let global_all_time = global_peak_all_time(&all_tracked);
+        let tracked = all_tracked
+            .iter()
             .filter(|server| matches_server_search(server, search))
+            .cloned()
             .collect::<Vec<_>>();
-        let mut servers = Vec::with_capacity(tracked.len());
 
+        let environment = self.environment();
+        let (peak_players24h, peak_players30d, peak_players_7d, peaks_24h) = tokio::join!(
+            self.peak_players_24h(),
+            self.peak_players_30d(),
+            self.peak_players_7d(),
+            self.peaks_24h_by_server_id(environment),
+        );
+
+        let mut servers = Vec::with_capacity(tracked.len());
         for server in tracked {
             let id = server.config.id.to_string();
-            let (peak_players24h, peak_players_all_time) =
-                self.server_player_peaks(&id).await;
             servers.push(ServerListItemResponse {
-                id,
+                id: id.clone(),
                 name: server.config.name.clone(),
                 server_type: server.config.platform.as_str().to_string(),
                 host: server.config.host.clone(),
@@ -321,8 +348,7 @@ impl ServerManager {
                 asn_org: server.asn.asn_org.clone(),
                 players_online: server.players_online,
                 favicon: server.favicon.clone(),
-                peak_players24h,
-                peak_players_all_time,
+                peaks: entity_peak_stats(peaks_24h.get(&id).copied(), &server),
             });
         }
 
@@ -339,9 +365,12 @@ impl ServerManager {
                 players_pe: summary.players_pe,
                 tracked_servers: summary.tracked_servers,
                 last_updated: summary.last_updated,
-                peak_players24h,
-                peak_players30d,
-                peak_players_all_time,
+                peaks: PlayersPeakSummary {
+                    players_24h: peak_players24h,
+                    players_30d: peak_players30d,
+                    players_7d: peak_players_7d,
+                    all_time: global_all_time,
+                },
             },
             servers,
         }
@@ -349,10 +378,9 @@ impl ServerManager {
 
     pub async fn asns_list_response(&self, search: Option<&str>) -> AsnsListResponse {
         let summary = self.summary().await;
-        let peak_players24h = self.peak_players_24h().await;
-        let peak_players30d = self.peak_players_30d().await;
-        let peak_players_all_time = self.peak_players_all_time().await;
-        let tracked = self.servers.read().await.clone();
+        let all_tracked = self.servers.read().await;
+        let global_all_time = global_peak_all_time(&all_tracked);
+        let tracked = all_tracked.clone();
 
         let mut aggregates: BTreeMap<AsnAggregateKey, AsnAggregate> = BTreeMap::new();
         for server in tracked {
@@ -386,11 +414,16 @@ impl ServerManager {
             }
         }
 
+        let environment = self.environment();
+        let (peak_players24h, peak_players30d, peak_players_7d, peaks_24h) = tokio::join!(
+            self.peak_players_24h(),
+            self.peak_players_30d(),
+            self.peak_players_7d(),
+            self.peaks_24h_by_asn_key(environment),
+        );
+
         let mut asns = Vec::with_capacity(aggregates.len());
         for aggregate in aggregates.into_values() {
-            let (peak_players24h_item, peak_players_all_time_item) = self
-                .asn_player_peaks(&aggregate.key.asn, &aggregate.key.asn_org)
-                .await;
             asns.push(AsnListItemResponse {
                 asn: aggregate.key.asn.clone(),
                 asn_org: aggregate.key.asn_org.clone(),
@@ -398,8 +431,10 @@ impl ServerManager {
                 server_count: aggregate.server_count,
                 players_pc: aggregate.players_pc.min(u32::MAX as u64) as u32,
                 players_pe: aggregate.players_pe.min(u32::MAX as u64) as u32,
-                peak_players24h: peak_players24h_item,
-                peak_players_all_time: peak_players_all_time_item,
+                peaks: entity_peak_stats_with_all_time(
+                    peaks_24h.get(&aggregate.key).copied(),
+                    asn_peak_all_time(&all_tracked, &aggregate.key),
+                ),
             });
         }
 
@@ -413,9 +448,12 @@ impl ServerManager {
                 tracked_asns: asns.len() as u32,
                 tracked_servers: summary.tracked_servers,
                 last_updated: summary.last_updated,
-                peak_players24h,
-                peak_players30d,
-                peak_players_all_time,
+                peaks: PlayersPeakSummary {
+                    players_24h: peak_players24h,
+                    players_30d: peak_players30d,
+                    players_7d: peak_players_7d,
+                    all_time: global_all_time,
+                },
             },
             asns,
         }
@@ -559,9 +597,26 @@ impl ServerManager {
         for (id, result) in ping_results {
             match result {
                 Ok((ping, asn, resolved_ip)) => {
+                    let mut peak_update = None;
                     let mut servers = self.servers.write().await;
                     if let Some(server) = servers.iter_mut().find(|s| s.config.id == id) {
-                        server.apply_success(&ping, asn, &resolved_ip);
+                        if server.apply_success(&ping, asn, &resolved_ip) {
+                            peak_update = Some((ping.players.online, ping.timestamp));
+                        }
+                    }
+                    drop(servers);
+                    if let Some((players, at)) = peak_update {
+                        if let Some(pool) = &self.pool {
+                            if let Err(err) =
+                                servers::update_peak_if_higher(pool, id, players, at).await
+                            {
+                                warn!(
+                                    server_id = %id,
+                                    error = %err,
+                                    "failed to persist all-time player peak"
+                                );
+                            }
+                        }
                     }
                 }
                 Err(err) => {
@@ -702,44 +757,42 @@ impl ServerManager {
         self.query_scalar(peak_players_30d).await
     }
 
-    async fn peak_players_all_time(&self) -> Option<PeakPlayersResponse> {
-        let environment = self.environment();
-        self.query_peak_all_time(
-            peak_players_all_time(environment),
-            peak_players_all_time_at(environment),
-        )
-        .await
+    async fn peak_players_7d(&self) -> Option<f64> {
+        self.query_scalar(peak_players_7d).await
     }
 
-    async fn server_player_peaks(
-        &self,
-        server_id: &str,
-    ) -> (Option<f64>, Option<PeakPlayersResponse>) {
-        let environment = self.environment();
-        let (peak_players24h, peak_players_all_time) = tokio::join!(
-            self.query_scalar_promql(peak_players_24h_for_server(environment, server_id)),
-            self.query_peak_all_time(
-                peak_players_all_time_for_server(environment, server_id),
-                peak_players_all_time_at_for_server(environment, server_id),
-            ),
-        );
-        (peak_players24h, peak_players_all_time)
+    async fn peaks_24h_by_server_id(&self, environment: &str) -> BTreeMap<String, f64> {
+        let mut peaks: BTreeMap<String, f64> = BTreeMap::new();
+        for entry in self
+            .query_labeled_instant(peak_players_24h_by_server(environment))
+            .await
+        {
+            let Some(id) = label_value(&entry.labels, labels::ID) else {
+                continue;
+            };
+            peaks
+                .entry(id)
+                .and_modify(|current| *current = current.max(entry.value))
+                .or_insert(entry.value);
+        }
+        peaks
     }
 
-    async fn asn_player_peaks(
-        &self,
-        asn: &str,
-        asn_org: &str,
-    ) -> (Option<f64>, Option<PeakPlayersResponse>) {
-        let environment = self.environment();
-        let (peak_players24h, peak_players_all_time) = tokio::join!(
-            self.query_scalar_promql(peak_players_24h_for_asn(environment, asn, asn_org)),
-            self.query_peak_all_time(
-                peak_players_all_time_for_asn(environment, asn, asn_org),
-                peak_players_all_time_at_for_asn(environment, asn, asn_org),
-            ),
-        );
-        (peak_players24h, peak_players_all_time)
+    async fn peaks_24h_by_asn_key(&self, environment: &str) -> BTreeMap<AsnAggregateKey, f64> {
+        let mut peaks: BTreeMap<AsnAggregateKey, f64> = BTreeMap::new();
+        for entry in self
+            .query_labeled_instant(peak_players_24h_by_asn(environment))
+            .await
+        {
+            let Some(key) = asn_key_from_labels(&entry.labels) else {
+                continue;
+            };
+            peaks
+                .entry(key)
+                .and_modify(|current| *current = current.max(entry.value))
+                .or_insert(entry.value);
+        }
+        peaks
     }
 
     async fn asn_is_tracked(&self, asn: &str, asn_org: &str) -> bool {
@@ -750,19 +803,26 @@ impl ServerManager {
             .any(|server| server.asn.asn == asn && server.asn.asn_org == asn_org)
     }
 
-    async fn query_peak_all_time(
+    async fn query_labeled_instant(
         &self,
-        players_promql: String,
-        at_promql: String,
-    ) -> Option<PeakPlayersResponse> {
-        let (players, at) = tokio::join!(
-            self.query_scalar_promql(players_promql),
-            self.query_scalar_promql(at_promql),
-        );
-        Some(PeakPlayersResponse {
-            players: players?,
-            at: at?.round() as i64,
-        })
+        promql: String,
+    ) -> Vec<mc_metrics::LabeledInstantValue> {
+        let query = match VmQueryBuilder::default().query(promql).build() {
+            Ok(query) => query,
+            Err(err) => {
+                warn!(error = %err, "metrics labeled instant query build failed");
+                return Vec::new();
+            }
+        };
+        let client = self.query_client.read().await;
+        let response = match client.execute(&query).await {
+            Ok(response) => response,
+            Err(err) => {
+                warn!(error = %err, "metrics labeled instant query execute failed");
+                return Vec::new();
+            }
+        };
+        VmQueryClient::labeled_instant_values(&response)
     }
 
     async fn query_scalar(&self, build_query: fn(&str) -> String) -> Option<f64> {
@@ -788,6 +848,74 @@ impl ServerManager {
         };
         VmQueryClient::scalar_value(&response)
     }
+}
+
+fn label_value(
+    labels: &serde_json::Map<String, serde_json::Value>,
+    key: &str,
+) -> Option<String> {
+    labels.get(key).and_then(|value| value.as_str()).map(str::to_owned)
+}
+
+fn asn_key_from_labels(
+    labels: &serde_json::Map<String, serde_json::Value>,
+) -> Option<AsnAggregateKey> {
+    Some(AsnAggregateKey {
+        asn: label_value(labels, labels::ASN)?,
+        asn_org: label_value(labels, labels::ASN_ORG).unwrap_or_default(),
+    })
+}
+
+fn peak_players_record(
+    players: Option<u32>,
+    timestamp: Option<i64>,
+) -> Option<PeakPlayersRecord> {
+    Some(PeakPlayersRecord {
+        players: players?,
+        timestamp: timestamp?,
+    })
+}
+
+fn entity_peak_stats(
+    players_24h: Option<f64>,
+    server: &TrackedServer,
+) -> EntityPeakStats {
+    entity_peak_stats_with_all_time(
+        players_24h,
+        peak_players_record(server.peak_players, server.peak_players_timestamp),
+    )
+}
+
+fn entity_peak_stats_with_all_time(
+    players_24h: Option<f64>,
+    all_time: Option<PeakPlayersRecord>,
+) -> EntityPeakStats {
+    EntityPeakStats {
+        players_24h,
+        all_time,
+    }
+}
+
+fn global_peak_all_time(servers: &[TrackedServer]) -> Option<PeakPlayersRecord> {
+    servers
+        .iter()
+        .filter_map(|server| {
+            peak_players_record(server.peak_players, server.peak_players_timestamp)
+        })
+        .max_by_key(|peak| peak.players)
+}
+
+fn asn_peak_all_time(
+    servers: &[TrackedServer],
+    key: &AsnAggregateKey,
+) -> Option<PeakPlayersRecord> {
+    servers
+        .iter()
+        .filter(|server| asn_key(server) == *key)
+        .filter_map(|server| {
+            peak_players_record(server.peak_players, server.peak_players_timestamp)
+        })
+        .max_by_key(|peak| peak.players)
 }
 
 fn dns_cache_for(settings: &AppSettings) -> Option<mc_ping::DnsCache> {
@@ -910,6 +1038,8 @@ mod tests {
             platform: Platform::Pc,
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            peak_players: None,
+            peak_players_timestamp: None,
         }
     }
 
@@ -919,6 +1049,7 @@ mod tests {
         let bootstrap = settings.read().await.clone();
         let manager = ServerManager::new(
             vec![sample_server(), sample_server()],
+            None,
             settings,
             fixture_geo(),
             None,
@@ -934,6 +1065,7 @@ mod tests {
         let bootstrap = settings.read().await.clone();
         let manager = ServerManager::new(
             vec![sample_server()],
+            None,
             settings,
             fixture_geo(),
             None,
@@ -958,6 +1090,7 @@ mod tests {
         let bootstrap = settings.read().await.clone();
         let manager = ServerManager::new(
             vec![],
+            None,
             settings,
             fixture_geo(),
             None,
@@ -1000,6 +1133,8 @@ mod tests {
             platform: Platform::Pc,
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            peak_players: None,
+            peak_players_timestamp: None,
         }
     }
 
@@ -1013,6 +1148,8 @@ mod tests {
             platform: Platform::Pc,
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            peak_players: None,
+            peak_players_timestamp: None,
         });
         server.asn = AsnLookup {
             asn: "AS13335".into(),
@@ -1045,6 +1182,7 @@ mod tests {
                 sample_server_with_id(id_offline),
                 sample_server_with_id(id_mid),
             ],
+            None,
             settings,
             fixture_geo(),
             None,
@@ -1078,6 +1216,7 @@ mod tests {
         let bootstrap = settings.read().await.clone();
         let manager = Arc::new(ServerManager::new(
             vec![],
+            None,
             settings,
             fixture_geo(),
             None,

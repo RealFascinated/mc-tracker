@@ -95,6 +95,7 @@ async fn main() -> anyhow::Result<()> {
     let server_count = server_list.len();
     let manager = Arc::new(ServerManager::new(
         server_list,
+        Some(pool.clone()),
         Arc::clone(&settings),
         Arc::clone(&geo),
         config.victoriametrics_auth_token.clone(),

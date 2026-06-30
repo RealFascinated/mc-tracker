@@ -24,6 +24,7 @@ async fn test_app() -> (
     let bootstrap = settings.read().await.clone();
     let manager = Arc::new(ServerManager::new(
         vec![],
+        None,
         Arc::clone(&settings),
         common::fixture_geo(),
         None,
