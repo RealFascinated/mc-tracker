@@ -9,8 +9,8 @@ use mc_db::db::repos::users;
 use mc_db::model::UserRole;
 use uuid::Uuid;
 
-use crate::api::AppState;
 use super::session::COOKIE_NAME;
+use crate::api::AppState;
 
 #[derive(Debug, Clone)]
 pub struct AuthUser {
@@ -98,11 +98,7 @@ fn unauthorized() -> Response {
 }
 
 fn forbidden() -> Response {
-    (
-        StatusCode::FORBIDDEN,
-        Json(ErrorResponse::new("forbidden")),
-    )
-        .into_response()
+    (StatusCode::FORBIDDEN, Json(ErrorResponse::new("forbidden"))).into_response()
 }
 
 #[cfg(test)]

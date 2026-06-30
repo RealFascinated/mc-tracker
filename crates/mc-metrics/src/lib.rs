@@ -8,8 +8,8 @@ pub use client::{VmQueryClient, VmQueryResponse, VmResult};
 pub use error::MetricsError;
 pub use push::{PlayerCountEntry, PlayerCountRegistry, VmPushClient};
 pub use query::{
-    align_samples_to_window, MetricQueryWindow, VmQuery, VmQueryBuilder, escape_label_value,
-    format_step, max_span, min_span, peak_players_24h, peak_players_30d, player_count_series,
-    step_for, vector_selector,
+    align_samples_to_window, escape_label_value, format_step, max_span, min_span, peak_players_24h,
+    peak_players_30d, player_count_series, step_for, vector_selector, MetricQueryWindow, VmQuery,
+    VmQueryBuilder,
 };
-pub use schema::{HELP_PLAYER_COUNT, METRIC_PLAYER_COUNT, labels};
+pub use schema::{labels, HELP_PLAYER_COUNT, METRIC_PLAYER_COUNT};

@@ -1,40 +1,45 @@
-import { Link, Outlet, createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useQueryClient } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
+import {
+  Link,
+  Outlet,
+  createFileRoute,
+  useNavigate,
+} from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
-import { LoadingState } from "@/components/loading-state"
-import { Button } from "@/components/ui/button"
-import { logout, useAuth } from "@/lib/auth"
+import { LoadingState } from "@/components/loading-state";
+import { Button } from "@/components/ui/button";
+import { logout, useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
-})
+});
 
 function AuthenticatedLayout() {
-  const { user, isLoading, setUser } = useAuth()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const { user, isLoading, setUser } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
-      void navigate({ to: "/login" })
+      void navigate({ to: "/login" });
     }
-  }, [isLoading, user, navigate])
+  }, [isLoading, user, navigate]);
 
   if (isLoading || !user) {
-    return <LoadingState message="Checking session…" centered />
+    return <LoadingState message="Checking session…" centered />;
   }
 
   async function handleLogout() {
-    setIsLoggingOut(true)
+    setIsLoggingOut(true);
     try {
-      await logout()
-      queryClient.clear()
-      setUser(null)
-      await navigate({ to: "/login" })
+      await logout();
+      queryClient.clear();
+      setUser(null);
+      await navigate({ to: "/login" });
     } finally {
-      setIsLoggingOut(false)
+      setIsLoggingOut(false);
     }
   }
 
@@ -68,5 +73,5 @@ function AuthenticatedLayout() {
       </div>
       <Outlet />
     </main>
-  )
+  );
 }

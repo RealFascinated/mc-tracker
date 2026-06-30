@@ -54,7 +54,10 @@ impl AppSettings {
     }
 
     pub fn victoriametrics_import_url(&self) -> String {
-        format!("{}/api/v1/import/prometheus", self.victoriametrics_base_url())
+        format!(
+            "{}/api/v1/import/prometheus",
+            self.victoriametrics_base_url()
+        )
     }
 
     pub fn parse_bool(value: &str, key: &str) -> Result<bool, String> {
@@ -66,21 +69,15 @@ impl AppSettings {
     }
 
     pub fn parse_u16(value: &str, key: &str) -> Result<u16, String> {
-        value
-            .parse()
-            .map_err(|_| format!("{key}: invalid u16"))
+        value.parse().map_err(|_| format!("{key}: invalid u16"))
     }
 
     pub fn parse_u32(value: &str, key: &str) -> Result<u32, String> {
-        value
-            .parse()
-            .map_err(|_| format!("{key}: invalid u32"))
+        value.parse().map_err(|_| format!("{key}: invalid u32"))
     }
 
     pub fn parse_u64(value: &str, key: &str) -> Result<u64, String> {
-        value
-            .parse()
-            .map_err(|_| format!("{key}: invalid u64"))
+        value.parse().map_err(|_| format!("{key}: invalid u64"))
     }
 
     pub fn from_map(values: &std::collections::HashMap<String, String>) -> Result<Self, String> {

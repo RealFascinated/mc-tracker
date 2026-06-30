@@ -1,23 +1,23 @@
-import { Link } from "@tanstack/react-router"
+import { Link } from "@tanstack/react-router";
 
-import { ThemeSwitcher } from "@/components/theme-switcher"
-import { Button } from "@/components/ui/button"
-import { useAuth } from "@/lib/auth"
-import { APP_NAME } from "@/lib/page-title"
-import { cn } from "@/lib/utils"
+import { ThemeSwitcher } from "@/components/theme-switcher";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
+import { APP_NAME } from "@/lib/page-title";
+import { cn } from "@/lib/utils";
 
 type SiteHeaderProps = {
-  className?: string
-}
+  className?: string;
+};
 
 function SiteHeader({ className }: SiteHeaderProps) {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated } = useAuth();
 
   return (
     <header
       className={cn(
         "sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm",
-        className
+        className,
       )}
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
@@ -48,7 +48,7 @@ function SiteHeader({ className }: SiteHeaderProps) {
         </nav>
       </div>
     </header>
-  )
+  );
 }
 
-export { SiteHeader }
+export { SiteHeader };

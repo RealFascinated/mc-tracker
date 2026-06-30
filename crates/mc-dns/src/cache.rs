@@ -68,11 +68,7 @@ impl DnsCache {
     }
 
     pub(crate) fn put_srv(&self, hostname: &str, record: super::types::SrvRecord) {
-        self.put(
-            hostname,
-            DnsRecordType::Srv,
-            CachedRecord::Srv(record),
-        );
+        self.put(hostname, DnsRecordType::Srv, CachedRecord::Srv(record));
     }
 
     pub(crate) fn put_a(&self, hostname: &str, ip: String) {

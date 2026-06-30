@@ -8,19 +8,40 @@ use mc_api_types::{
 };
 use mc_db::model::{Platform, Server};
 use mc_db::AppSettings;
-use mc_geo::{AsnLookup, GeoService};
+use mc_geo::{AsnLookup, GeoError, GeoService};
 use mc_metrics::{
     align_samples_to_window, peak_players_24h, peak_players_30d, player_count_series,
     MetricQueryWindow, MetricsError, PlayerCountEntry, PlayerCountRegistry, VmPushClient,
     VmQueryBuilder, VmQueryClient,
 };
 use mc_ping::{
-    ping_bedrock, ping_java, resolve_bedrock, resolve_java, with_retry, HickoryDnsResolver, Ping,
+    ping_bedrock, ping_java, resolve_bedrock, resolve_java, with_retry, DnsError, HickoryDnsResolver,
+    Ping, PingError,
 };
 use tokio::sync::{watch, RwLock};
 use tokio::task::JoinHandle;
+use tokio::time::{interval, MissedTickBehavior};
 use tracing::{info, warn};
 use uuid::Uuid;
+
+#[derive(Debug)]
+enum PingServerError {
+    NotTracked,
+    Dns(DnsError),
+    Ping(PingError),
+    Asn { ip: String, error: GeoError },
+}
+
+impl std::fmt::Display for PingServerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotTracked => write!(f, "server not found in tracker"),
+            Self::Dns(err) => write!(f, "dns resolve failed: {err}"),
+            Self::Ping(err) => write!(f, "{err}"),
+            Self::Asn { ip, error } => write!(f, "asn lookup failed for {ip}: {error}"),
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct TrackedServer {
@@ -306,8 +327,6 @@ impl ServerManager {
         }
         let _guard = Guard(&self.pushing);
 
-        self.refresh_clients().await;
-
         let settings = self.settings.read().await.clone();
         let server_ids: Vec<Uuid> = self
             .servers
@@ -318,15 +337,26 @@ impl ServerManager {
             .collect();
 
         for id in server_ids {
-            if let Some((ping, asn, resolved_ip)) = self.ping_server(id, &settings).await {
-                let mut servers = self.servers.write().await;
-                if let Some(server) = servers.iter_mut().find(|s| s.config.id == id) {
-                    server.apply_success(&ping, asn, &resolved_ip);
+            match self.ping_server(id, &settings).await {
+                Ok((ping, asn, resolved_ip)) => {
+                    let mut servers = self.servers.write().await;
+                    if let Some(server) = servers.iter_mut().find(|s| s.config.id == id) {
+                        server.apply_success(&ping, asn, &resolved_ip);
+                    }
                 }
-            } else {
-                let mut servers = self.servers.write().await;
-                if let Some(server) = servers.iter_mut().find(|s| s.config.id == id) {
-                    server.clear_ping_state();
+                Err(err) => {
+                    let mut servers = self.servers.write().await;
+                    if let Some(server) = servers.iter_mut().find(|s| s.config.id == id) {
+                        warn!(
+                            server_id = %id,
+                            server = %server.config.name,
+                            host = %server.config.host,
+                            platform = %server.config.platform.as_str(),
+                            error = %err,
+                            "server could not be pinged"
+                        );
+                        server.clear_ping_state();
+                    }
                 }
             }
         }
@@ -350,23 +380,20 @@ impl ServerManager {
         drop(metrics);
 
         let client = self.push_client.read().await;
-        if let Err(err) = client.push(&body).await {
-            warn!(error = %err, "metrics push failed");
-        }
+        client.push(&body).await?;
 
         Ok(())
     }
 
-    async fn refresh_clients(&self) {
-        let settings = self.settings.read().await;
-        let import_url = settings.victoriametrics_import_url();
-        let query_base = settings.victoriametrics_base_url().to_string();
-        drop(settings);
-
-        *self.push_client.write().await =
-            VmPushClient::new(import_url, self.vm_auth_token.clone());
-        *self.query_client.write().await =
-            VmQueryClient::new(query_base, self.vm_auth_token.clone());
+    async fn refresh_vm_clients(&self, settings: &AppSettings) {
+        *self.push_client.write().await = VmPushClient::new(
+            settings.victoriametrics_import_url(),
+            self.vm_auth_token.clone(),
+        );
+        *self.query_client.write().await = VmQueryClient::new(
+            settings.victoriametrics_base_url(),
+            self.vm_auth_token.clone(),
+        );
     }
 
     pub async fn settings(&self) -> AppSettings {
@@ -374,16 +401,21 @@ impl ServerManager {
     }
 
     pub async fn apply_settings(&self, updated: AppSettings) {
-        let dns_changed = {
+        let (dns_changed, vm_url_changed) = {
             let current = self.settings.read().await;
-            current.dns_cache_enabled != updated.dns_cache_enabled
-                || current.dns_cache_ttl_minutes != updated.dns_cache_ttl_minutes
+            (
+                current.dns_cache_enabled != updated.dns_cache_enabled
+                    || current.dns_cache_ttl_minutes != updated.dns_cache_ttl_minutes,
+                current.victoriametrics_url != updated.victoriametrics_url,
+            )
         };
-        *self.settings.write().await = updated;
+        *self.settings.write().await = updated.clone();
         if dns_changed {
             let settings = self.settings.read().await;
-            *self.dns.write().await =
-                HickoryDnsResolver::new(dns_cache_for(&settings));
+            *self.dns.write().await = HickoryDnsResolver::new(dns_cache_for(&settings));
+        }
+        if vm_url_changed {
+            self.refresh_vm_clients(&updated).await;
         }
     }
 
@@ -391,8 +423,12 @@ impl ServerManager {
         &self,
         id: Uuid,
         settings: &AppSettings,
-    ) -> Option<(Ping, AsnLookup, String)> {
-        let server = self.get_tracked(id).await?;
+    ) -> Result<(Ping, AsnLookup, String), PingServerError> {
+        let server = self
+            .get_tracked(id)
+            .await
+            .ok_or(PingServerError::NotTracked)?;
+
         let port = server.config.port.map(|value| value as u16);
 
         let resolved = {
@@ -400,10 +436,10 @@ impl ServerManager {
             match server.config.platform {
                 Platform::Pc => resolve_java(&*dns, &server.config.host, port)
                     .await
-                    .ok()?,
+                    .map_err(PingServerError::Dns)?,
                 Platform::Pe => resolve_bedrock(&*dns, &server.config.host, port)
                     .await
-                    .ok()?,
+                    .map_err(PingServerError::Dns)?,
             }
         };
 
@@ -415,24 +451,27 @@ impl ServerManager {
         let delay_ms = settings.pinger_retry_delay_ms;
 
         let ping = match server.config.platform {
-            Platform::Pc => {
-                with_retry(attempts, delay_ms, &hostname, || {
-                    ping_java(&hostname, &ip, port, timeout_ms)
-                })
-                .await
-                .ok()?
-            }
-            Platform::Pe => {
-                with_retry(attempts, delay_ms, &hostname, || {
-                    ping_bedrock(&hostname, &ip, port, timeout_ms)
-                })
-                .await
-                .ok()?
-            }
+            Platform::Pc => with_retry(attempts, delay_ms, &hostname, || {
+                ping_java(&hostname, &ip, port, timeout_ms)
+            })
+            .await
+            .map_err(PingServerError::Ping)?,
+            Platform::Pe => with_retry(attempts, delay_ms, &hostname, || {
+                ping_bedrock(&hostname, &ip, port, timeout_ms)
+            })
+            .await
+            .map_err(PingServerError::Ping)?,
         };
 
-        let asn = self.geo.lookup_asn(&ip).await.ok()?;
-        Some((ping, asn, ip))
+        let asn = self
+            .geo
+            .lookup_asn(&ip)
+            .await
+            .map_err(|error| PingServerError::Asn {
+                ip: ip.clone(),
+                error,
+            })?;
+        Ok((ping, asn, ip))
     }
 
     async fn peak_players_24h(&self) -> Option<f64> {
@@ -446,9 +485,21 @@ impl ServerManager {
     async fn query_scalar(&self, build_query: fn(&str) -> String) -> Option<f64> {
         let promql = build_query(self.environment());
 
-        let query = VmQueryBuilder::default().query(promql).build().ok()?;
+        let query = match VmQueryBuilder::default().query(promql).build() {
+            Ok(query) => query,
+            Err(err) => {
+                warn!(error = %err, "metrics scalar query build failed");
+                return None;
+            }
+        };
         let client = self.query_client.read().await;
-        let response = client.execute(&query).await.ok()?;
+        let response = match client.execute(&query).await {
+            Ok(response) => response,
+            Err(err) => {
+                warn!(error = %err, "metrics scalar query execute failed");
+                return None;
+            }
+        };
         VmQueryClient::scalar_value(&response)
     }
 }
@@ -506,32 +557,38 @@ pub fn spawn_push_loop(manager: Arc<ServerManager>) -> PushLoopHandle {
 
     let task = tokio::spawn(async move {
         let mut shutdown_rx = shutdown_rx;
+        let mut interval_secs = 1u64;
+        let mut ticker = interval(Duration::from_secs(interval_secs));
+        ticker.set_missed_tick_behavior(MissedTickBehavior::Skip);
+
         loop {
-            if *shutdown_rx.borrow() {
-                break;
-            }
-
-            let interval_secs = manager
-                .settings
-                .read()
-                .await
-                .metrics_push_interval_seconds
-                .max(1);
-            if let Err(err) = manager.run_push_cycle().await {
-                warn!(error = %err, "push cycle failed");
-            }
-
-            if *shutdown_rx.borrow() {
-                break;
-            }
-
             tokio::select! {
-                _ = tokio::time::sleep(Duration::from_secs(interval_secs)) => {}
+                _ = ticker.tick() => {},
                 changed = shutdown_rx.changed() => {
                     if changed.is_err() || *shutdown_rx.borrow() {
                         break;
                     }
                 }
+            }
+
+            if *shutdown_rx.borrow() {
+                break;
+            }
+
+            let next_secs = manager
+                .settings
+                .read()
+                .await
+                .metrics_push_interval_seconds
+                .max(1);
+            if next_secs != interval_secs {
+                interval_secs = next_secs;
+                ticker = interval(Duration::from_secs(interval_secs));
+                ticker.set_missed_tick_behavior(MissedTickBehavior::Skip);
+            }
+
+            if let Err(err) = manager.run_push_cycle().await {
+                warn!(error = %err, "push cycle failed");
             }
         }
 
@@ -589,7 +646,14 @@ mod tests {
     async fn summary_counts_only_online_servers() {
         let settings = Arc::new(RwLock::new(AppSettings::default()));
         let bootstrap = settings.read().await.clone();
-        let manager = ServerManager::new(vec![sample_server()], settings, fixture_geo(), None, &bootstrap, "development");
+        let manager = ServerManager::new(
+            vec![sample_server()],
+            settings,
+            fixture_geo(),
+            None,
+            &bootstrap,
+            "development",
+        );
         {
             let mut servers = manager.servers.write().await;
             servers[0].players_online = Some(10);
@@ -606,7 +670,14 @@ mod tests {
     async fn append_update_and_remove_server() {
         let settings = Arc::new(RwLock::new(AppSettings::default()));
         let bootstrap = settings.read().await.clone();
-        let manager = ServerManager::new(vec![], settings, fixture_geo(), None, &bootstrap, "development");
+        let manager = ServerManager::new(
+            vec![],
+            settings,
+            fixture_geo(),
+            None,
+            &bootstrap,
+            "development",
+        );
 
         let server = sample_server();
         let id = server.id;
@@ -653,7 +724,14 @@ mod tests {
             ..Default::default()
         }));
         let bootstrap = settings.read().await.clone();
-        let manager = Arc::new(ServerManager::new(vec![], settings, fixture_geo(), None, &bootstrap, "development"));
+        let manager = Arc::new(ServerManager::new(
+            vec![],
+            settings,
+            fixture_geo(),
+            None,
+            &bootstrap,
+            "development",
+        ));
         let push_loop = spawn_push_loop(manager);
 
         tokio::time::timeout(Duration::from_secs(5), push_loop.drain())

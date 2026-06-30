@@ -1,9 +1,9 @@
-import type { ServerTimeseriesResponse } from "@/lib/api/servers"
+import type { ServerTimeseriesResponse } from "@/lib/api/servers";
 import {
   backfillMetricTimeSeries,
   buildMetricTimeSeries,
   type MetricTimeSeries,
-} from "@/lib/api/metric-timeseries"
+} from "@/lib/api/metric-timeseries";
 
 export function serverTimeseriesToMetric(
   data: ServerTimeseriesResponse,
@@ -16,5 +16,5 @@ export function serverTimeseriesToMetric(
       timestamps: data.timestamps,
       series: { players_online: data.playersOnline },
     }),
-  )
+  );
 }

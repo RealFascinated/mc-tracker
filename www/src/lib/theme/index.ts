@@ -4,4 +4,4 @@ export {
   useTheme,
   type ResolvedTheme,
   type ThemePreference,
-} from "@/lib/theme/context"
+} from "@/lib/theme/context";

@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::push::PlayerCountEntry;
-use crate::schema::{HELP_PLAYER_COUNT, METRIC_PLAYER_COUNT, labels};
+use crate::schema::{labels, HELP_PLAYER_COUNT, METRIC_PLAYER_COUNT};
 
 pub fn encode_player_count(environment: &str, entries: &[PlayerCountEntry]) -> String {
     let mut out = String::new();

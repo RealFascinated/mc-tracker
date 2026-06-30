@@ -1,17 +1,17 @@
-import type { ReactElement, ReactNode } from "react"
+import type { ReactElement, ReactNode } from "react";
 
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
 
 type SimpleTooltipProps = {
-  content: ReactNode
-  children: ReactElement
-  side?: "top" | "right" | "bottom" | "left"
-  className?: string
-}
+  content: ReactNode;
+  children: ReactElement;
+  side?: "top" | "right" | "bottom" | "left";
+  className?: string;
+};
 
 function SimpleTooltip({
   content,
@@ -26,7 +26,7 @@ function SimpleTooltip({
         {content}
       </TooltipContent>
     </Tooltip>
-  )
+  );
 }
 
-export { SimpleTooltip }
+export { SimpleTooltip };

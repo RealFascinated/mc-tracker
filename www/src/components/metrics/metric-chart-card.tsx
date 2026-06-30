@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Maximize2 } from "lucide-react";
 import type { RefObject } from "react";
 
@@ -412,5 +412,4 @@ function MetricChartCard({
   );
 }
 
-const MemoizedMetricChartCard = memo(MetricChartCard);
-export { MemoizedMetricChartCard as MetricChartCard };
+export { MetricChartCard };

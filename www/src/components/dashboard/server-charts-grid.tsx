@@ -1,17 +1,17 @@
-import { useMemo } from "react"
+import { useMemo } from "react";
 
 import {
   DashboardCard,
   DashboardCardHeader,
-} from "@/components/dashboard/dashboard-card"
-import { LoadingState } from "@/components/loading-state"
-import { MetricChartView } from "@/components/metrics/metric-chart-view"
-import type { ServerListItem } from "@/lib/api/servers"
-import { serverTimeseriesQueryOptions } from "@/lib/api/servers.queries"
-import { serverTimeseriesToMetric } from "@/lib/metrics/adapters"
-import { serverPlayersChart } from "@/lib/metrics/charts/players"
-import type { MetricTimeWindow } from "@/lib/metrics/time-window"
-import { useQuery } from "@tanstack/react-query"
+} from "@/components/dashboard/dashboard-card";
+import { LoadingState } from "@/components/loading-state";
+import { MetricChartView } from "@/components/metrics/metric-chart-view";
+import type { ServerListItem } from "@/lib/api/servers";
+import { serverTimeseriesQueryOptions } from "@/lib/api/servers.queries";
+import { serverTimeseriesToMetric } from "@/lib/metrics/adapters";
+import { serverPlayersChart } from "@/lib/metrics/charts/players";
+import type { MetricTimeWindow } from "@/lib/metrics/time-window";
+import { useQuery } from "@tanstack/react-query";
 
 const EMPTY_CHART_DATA = {
   from: 0,
@@ -19,23 +19,26 @@ const EMPTY_CHART_DATA = {
   step: null,
   timestamps: [] as number[],
   series: {} as Record<string, Array<number | null>>,
-}
+};
 
 type ServerPlayersChartCardProps = {
-  server: ServerListItem
-  window: MetricTimeWindow
-}
+  server: ServerListItem;
+  window: MetricTimeWindow;
+};
 
-function ServerPlayersChartCard({ server, window }: ServerPlayersChartCardProps) {
-  const chartDef = useMemo(() => serverPlayersChart(server.id), [server.id])
+function ServerPlayersChartCard({
+  server,
+  window,
+}: ServerPlayersChartCardProps) {
+  const chartDef = useMemo(() => serverPlayersChart(server.id), [server.id]);
   const { data, isPending, isError } = useQuery(
     serverTimeseriesQueryOptions(server.id, window),
-  )
+  );
 
   const chartData = useMemo(
     () => (data ? serverTimeseriesToMetric(data) : EMPTY_CHART_DATA),
     [data],
-  )
+  );
 
   return (
     <DashboardCard className="h-full">
@@ -57,17 +60,17 @@ function ServerPlayersChartCard({ server, window }: ServerPlayersChartCardProps)
         />
       )}
     </DashboardCard>
-  )
+  );
 }
 
 type ServerChartsGridProps = {
-  servers: ServerListItem[]
-  window: MetricTimeWindow
-}
+  servers: ServerListItem[];
+  window: MetricTimeWindow;
+};
 
 export function ServerChartsGrid({ servers, window }: ServerChartsGridProps) {
   if (servers.length === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -82,5 +85,5 @@ export function ServerChartsGrid({ servers, window }: ServerChartsGridProps) {
         ))}
       </div>
     </div>
-  )
+  );
 }

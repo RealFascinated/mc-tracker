@@ -12,10 +12,7 @@ pub enum PingError {
     InvalidIp(String),
 
     #[error("dns error for '{hostname}': {message}")]
-    Dns {
-        hostname: String,
-        message: String,
-    },
+    Dns { hostname: String, message: String },
 
     #[error("protocol error: {0}")]
     Protocol(String),
@@ -35,10 +32,7 @@ impl PingError {
     pub fn from_dns(err: mc_dns::DnsError) -> Self {
         match err {
             mc_dns::DnsError::InvalidIp(host) => Self::InvalidIp(host),
-            mc_dns::DnsError::Query { hostname, message } => Self::Dns {
-                hostname,
-                message,
-            },
+            mc_dns::DnsError::Query { hostname, message } => Self::Dns { hostname, message },
         }
     }
 }

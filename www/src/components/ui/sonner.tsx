@@ -4,14 +4,14 @@ import {
   Loader2Icon,
   OctagonXIcon,
   TriangleAlertIcon,
-} from "lucide-react"
-import { Toaster as Sonner } from "sonner"
-import type { ToasterProps } from "sonner"
+} from "lucide-react";
+import { Toaster as Sonner } from "sonner";
+import type { ToasterProps } from "sonner";
 
-import { useTheme } from "@/lib/theme"
+import { useTheme } from "@/lib/theme";
 
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { resolvedTheme } = useTheme()
+function Toaster({ ...props }: ToasterProps) {
+  const { resolvedTheme } = useTheme();
 
   return (
     <Sonner
@@ -39,7 +39,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       {...props}
     />
-  )
+  );
 }
 
-export { Toaster }
+export { Toaster };

@@ -6,8 +6,8 @@ use mc_db::{
     ensure_admin_user, setup_database, BootstrapConfig, DbContext, PoolSettings,
 };
 use mc_geo::{GeoConfig, GeoService};
-use mc_tracker::auth::{AuthContext, LoginRateLimiter, SessionManager};
 use mc_tracker::api::{router, AppState};
+use mc_tracker::auth::{AuthContext, LoginRateLimiter, SessionManager};
 use mc_tracker::manager::{spawn_push_loop, ServerManager};
 use tokio::signal;
 use tokio::sync::RwLock;
@@ -57,8 +57,7 @@ struct Config {
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
         )
         .init();
 
@@ -105,9 +104,7 @@ async fn main() -> anyhow::Result<()> {
 
     let push_loop = spawn_push_loop(Arc::clone(&manager));
 
-    let bind_addr = app_settings
-        .api_socket_addr()
-        .map_err(anyhow::Error::msg)?;
+    let bind_addr = app_settings.api_socket_addr().map_err(anyhow::Error::msg)?;
     let secure_cookies = config.environment != "development";
     let sessions = Arc::new(SessionManager::new(
         config.session_secret.as_bytes(),

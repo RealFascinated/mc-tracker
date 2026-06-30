@@ -1,42 +1,44 @@
-import { useState } from "react"
-import { useNavigate } from "@tanstack/react-router"
-import { toast } from "sonner"
+import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { errorMessage } from "@/lib/api/error-message"
-import { login, useAuth, validateCredentials } from "@/lib/auth"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { errorMessage } from "@/lib/api/error-message";
+import { login, useAuth, validateCredentials } from "@/lib/auth";
 
 function AuthForm() {
-  const navigate = useNavigate()
-  const { setUser } = useAuth()
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const navigate = useNavigate();
+  const { setUser } = useAuth();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const parsed = validateCredentials({ username, password })
+    event.preventDefault();
+    const parsed = validateCredentials({ username, password });
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Invalid credentials")
-      return
+      toast.error(parsed.error.issues[0]?.message ?? "Invalid credentials");
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      const result = await login(parsed.data)
+      const result = await login(parsed.data);
       if ("error" in result) {
-        toast.error(result.error)
-        return
+        toast.error(result.error);
+        return;
       }
-      setUser(result.user)
-      toast.success(`Signed in as ${result.user.username}`)
-      await navigate({ to: result.user.role === "admin" ? "/admin" : "/account" })
+      setUser(result.user);
+      toast.success(`Signed in as ${result.user.username}`);
+      await navigate({
+        to: result.user.role === "admin" ? "/admin" : "/account",
+      });
     } catch (error) {
-      toast.error(errorMessage(error))
+      toast.error(errorMessage(error));
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
@@ -67,7 +69,7 @@ function AuthForm() {
         {isSubmitting ? "Signing in…" : "Sign in"}
       </Button>
     </form>
-  )
+  );
 }
 
-export { AuthForm }
+export { AuthForm };

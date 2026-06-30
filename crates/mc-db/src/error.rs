@@ -19,3 +19,9 @@ impl DbError {
         Self::Database(err.to_string())
     }
 }
+
+impl From<diesel::result::Error> for DbError {
+    fn from(err: diesel::result::Error) -> Self {
+        Self::database(err)
+    }
+}

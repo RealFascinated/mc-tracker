@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct PlayerCountEntry {
     pub id: String,

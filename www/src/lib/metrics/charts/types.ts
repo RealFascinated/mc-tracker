@@ -1,10 +1,12 @@
 import type { ChartAxisFormat } from "@/lib/metrics/chart-axis-format";
 import type { ChartYRange } from "@/lib/metrics/uplot-theme";
 
-export type UnitKind = "bps" | "bytes" | "mbps" | "ms" | "percent" | "celsius" | "count";
+export type UnitKind =
+  "bps" | "bytes" | "mbps" | "ms" | "percent" | "celsius" | "count";
 
 export type YRangeSpec =
   | "auto"
+  | "autoMin"
   | { softMax: number }
   | { min: number; max: number };
 

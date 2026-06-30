@@ -1,6 +1,6 @@
 pub mod ping;
-pub mod pong;
 pub mod pinger;
+pub mod pong;
 pub mod token;
 
 pub use mc_dns::DEFAULT_BEDROCK_PORT;

@@ -56,15 +56,12 @@ fn rate_limited_response() -> Response {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::net::{Ipv4Addr, IpAddr};
+    use std::net::{IpAddr, Ipv4Addr};
 
     #[test]
     fn client_ip_uses_cf_connecting_ip() {
         let mut headers = HeaderMap::new();
-        headers.insert(
-            "cf-connecting-ip",
-            HeaderValue::from_static("203.0.113.7"),
-        );
+        headers.insert("cf-connecting-ip", HeaderValue::from_static("203.0.113.7"));
         headers.insert(
             "x-forwarded-for",
             HeaderValue::from_static("10.0.0.1, 192.0.2.1"),

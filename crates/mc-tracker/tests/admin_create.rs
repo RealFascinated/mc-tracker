@@ -97,9 +97,12 @@ async fn patch_and_delete_admin_server() {
         .await
         .unwrap();
     assert_eq!(create.status(), StatusCode::CREATED);
-    let created: serde_json::Value =
-        serde_json::from_slice(&axum::body::to_bytes(create.into_body(), usize::MAX).await.unwrap())
-            .unwrap();
+    let created: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(create.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
     let id = created["id"].as_str().unwrap();
 
     let patch = app
@@ -116,9 +119,12 @@ async fn patch_and_delete_admin_server() {
         .await
         .unwrap();
     assert_eq!(patch.status(), StatusCode::OK);
-    let patched: serde_json::Value =
-        serde_json::from_slice(&axum::body::to_bytes(patch.into_body(), usize::MAX).await.unwrap())
-            .unwrap();
+    let patched: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(patch.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
     assert_eq!(patched["name"], "Mineplex Renamed");
 
     let delete = app
@@ -135,5 +141,8 @@ async fn patch_and_delete_admin_server() {
         .unwrap();
     assert_eq!(delete.status(), StatusCode::NO_CONTENT);
     assert_eq!(manager.summary().await.tracked_servers, 0);
-    assert!(mc_db::db::repos::servers::list(&pool).await.unwrap().is_empty());
+    assert!(mc_db::db::repos::servers::list(&pool)
+        .await
+        .unwrap()
+        .is_empty());
 }

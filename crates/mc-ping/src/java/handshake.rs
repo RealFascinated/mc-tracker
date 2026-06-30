@@ -5,7 +5,11 @@ const PACKET_ID: u8 = 0x00;
 const STATUS_HANDSHAKE: u32 = 1;
 
 /// Build the handshake packet bytes (length prefix + payload).
-pub fn encode_handshake(hostname: &str, port: u16, protocol_version: u32) -> Result<Vec<u8>, PingError> {
+pub fn encode_handshake(
+    hostname: &str,
+    port: u16,
+    protocol_version: u32,
+) -> Result<Vec<u8>, PingError> {
     let host_bytes = hostname.as_bytes();
     let host_len = host_bytes.len();
     if host_len > u32::MAX as usize {

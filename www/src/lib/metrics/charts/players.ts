@@ -1,4 +1,4 @@
-import type { ChartDefinition } from "@/lib/metrics/charts/types"
+import type { ChartDefinition } from "@/lib/metrics/charts/types";
 
 export const totalPlayersChart: ChartDefinition = {
   id: "total-players",
@@ -13,9 +13,9 @@ export const totalPlayersChart: ChartDefinition = {
     },
   ],
   axes: {
-    left: { unit: "count", yRange: "auto" },
+    left: { unit: "count", yRange: "autoMin" },
   },
-}
+};
 
 export function serverPlayersChart(id: string): ChartDefinition {
   return {
@@ -33,5 +33,5 @@ export function serverPlayersChart(id: string): ChartDefinition {
     axes: {
       left: { unit: "count", yRange: "auto" },
     },
-  }
+  };
 }

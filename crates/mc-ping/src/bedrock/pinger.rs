@@ -1,6 +1,6 @@
 use mc_common::now_ms;
 use tokio::net::UdpSocket;
-use tokio::time::{Duration, timeout};
+use tokio::time::{timeout, Duration};
 
 use crate::bedrock::ping::encode_unconnected_ping_now;
 use crate::bedrock::pong::parse_pong_datagram;
@@ -80,7 +80,10 @@ mod tests {
             .unwrap();
         assert_eq!(ping.players.online, 42);
         assert_eq!(ping.players.max, Some(100));
-        assert_eq!(ping.motd.as_ref().unwrap().raw, "Dedicated Server\nSecond Line");
+        assert_eq!(
+            ping.motd.as_ref().unwrap().raw,
+            "Dedicated Server\nSecond Line"
+        );
     }
 
     #[tokio::test]

@@ -6,11 +6,11 @@ use mc_api_types::response::auth::{LoginResponse, MeResponse};
 use mc_api_types::response::settings::SettingsResponse;
 use mc_api_types::{ErrorResponse, HealthResponse};
 
-    #[test]
-    fn health_response_serializes_camel_case() {
-        let json = serde_json::to_string(&HealthResponse::ok(true, true)).unwrap();
-        assert_eq!(json, r#"{"status":"ok","db":true,"maxmind":true}"#);
-    }
+#[test]
+fn health_response_serializes_camel_case() {
+    let json = serde_json::to_string(&HealthResponse::ok(true, true)).unwrap();
+    assert_eq!(json, r#"{"status":"ok","db":true,"maxmind":true}"#);
+}
 
 #[test]
 fn error_response_serializes_camel_case() {
@@ -20,20 +20,16 @@ fn error_response_serializes_camel_case() {
 
 #[test]
 fn login_request_deserializes_camel_case() {
-    let req: LoginRequest = serde_json::from_str(
-        r#"{"username":"admin","password":"secret"}"#,
-    )
-    .unwrap();
+    let req: LoginRequest =
+        serde_json::from_str(r#"{"username":"admin","password":"secret"}"#).unwrap();
     assert_eq!(req.username, "admin");
     assert_eq!(req.password, "secret");
 }
 
 #[test]
 fn change_password_request_deserializes_camel_case() {
-    let req: ChangePasswordRequest = serde_json::from_str(
-        r#"{"currentPassword":"old","newPassword":"new"}"#,
-    )
-    .unwrap();
+    let req: ChangePasswordRequest =
+        serde_json::from_str(r#"{"currentPassword":"old","newPassword":"new"}"#).unwrap();
     assert_eq!(req.current_password, "old");
     assert_eq!(req.new_password, "new");
 }

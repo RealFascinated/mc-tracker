@@ -12,11 +12,11 @@ use mc_db::db::repos::servers::{self, NewServer, UpdateServer};
 use mc_db::db::repos::settings;
 use mc_db::error::DbError;
 use mc_db::model::Platform;
-use mc_db::AppSettings;
 use uuid::Uuid;
 
 use crate::api::AppState;
 use crate::manager::{admin_server_response, settings_response};
+use crate::settings::{merge_settings, validate_settings};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -79,8 +79,14 @@ async fn update_server(
     Path(id): Path<Uuid>,
     Json(body): Json<UpdateServerRequest>,
 ) -> Response {
-    if body.name.as_ref().is_some_and(|value| value.trim().is_empty())
-        || body.host.as_ref().is_some_and(|value| value.trim().is_empty())
+    if body
+        .name
+        .as_ref()
+        .is_some_and(|value| value.trim().is_empty())
+        || body
+            .host
+            .as_ref()
+            .is_some_and(|value| value.trim().is_empty())
     {
         return bad_request("name and host cannot be empty");
     }
@@ -158,78 +164,12 @@ async fn patch_settings(
     }
 }
 
-fn merge_settings(current: &AppSettings, patch: &PatchSettingsRequest) -> AppSettings {
-    let mut next = current.clone();
-    if let Some(value) = patch.api_port {
-        next.api_port = value;
-    }
-    if let Some(value) = &patch.api_address {
-        next.api_address = value.trim().to_string();
-    }
-    if let Some(value) = patch.pinger_timeout_ms {
-        next.pinger_timeout_ms = value;
-    }
-    if let Some(value) = patch.pinger_retry_attempts {
-        next.pinger_retry_attempts = value;
-    }
-    if let Some(value) = patch.pinger_retry_delay_ms {
-        next.pinger_retry_delay_ms = value;
-    }
-    if let Some(value) = patch.dns_cache_enabled {
-        next.dns_cache_enabled = value;
-    }
-    if let Some(value) = patch.dns_cache_ttl_minutes {
-        next.dns_cache_ttl_minutes = value;
-    }
-    if let Some(value) = &patch.victoriametrics_url {
-        next.victoriametrics_url = value.trim().to_string();
-    }
-    if let Some(value) = patch.metrics_push_interval_seconds {
-        next.metrics_push_interval_seconds = value;
-    }
-    if let Some(value) = patch.sign_up_enabled {
-        next.sign_up_enabled = value;
-    }
-    if let Some(value) = &patch.www_origin {
-        next.www_origin = value.trim().to_string();
-    }
-    next
-}
-
-fn validate_settings(settings: &AppSettings, deployment_environment: &str) -> Result<(), String> {
-    if settings.api_address.trim().is_empty() {
-        return Err("api_address cannot be empty".into());
-    }
-    settings.api_socket_addr()?;
-    if settings.victoriametrics_url.trim().is_empty() {
-        return Err("victoriametrics_url cannot be empty".into());
-    }
-    if settings.pinger_timeout_ms == 0 {
-        return Err("pinger_timeout_ms must be greater than 0".into());
-    }
-    if settings.pinger_retry_attempts == 0 {
-        return Err("pinger_retry_attempts must be greater than 0".into());
-    }
-    if settings.metrics_push_interval_seconds == 0 {
-        return Err("metrics_push_interval_seconds must be greater than 0".into());
-    }
-    AppSettings::validate_www_origin(&settings.www_origin)?;
-    if deployment_environment != "development" && settings.www_origin.trim().is_empty() {
-        return Err("www_origin is required when ENVIRONMENT is not development".into());
-    }
-    Ok(())
-}
-
 fn parse_platform(value: &str) -> Result<Platform, String> {
     Platform::from_db(value)
 }
 
 fn bad_request(message: &str) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(ErrorResponse::new(message)),
-    )
-        .into_response()
+    (StatusCode::BAD_REQUEST, Json(ErrorResponse::new(message))).into_response()
 }
 
 fn map_db_error(err: DbError) -> Response {
@@ -253,9 +193,8 @@ mod tests {
     use tokio::sync::RwLock;
     use uuid::Uuid;
 
-    use super::{merge_settings, parse_platform, validate_settings};
+    use super::parse_platform;
     use crate::manager::ServerManager;
-    use mc_api_types::PatchSettingsRequest;
 
     fn fixture_geo() -> Arc<GeoService> {
         let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -276,7 +215,14 @@ mod tests {
         };
         let settings = Arc::new(RwLock::new(AppSettings::default()));
         let bootstrap = settings.read().await.clone();
-        let manager = ServerManager::new(vec![server], settings, fixture_geo(), None, &bootstrap, "development");
+        let manager = ServerManager::new(
+            vec![server],
+            settings,
+            fixture_geo(),
+            None,
+            &bootstrap,
+            "development",
+        );
 
         let response = manager.admin_servers_list().await;
         assert_eq!(response.servers.len(), 1);
@@ -290,26 +236,5 @@ mod tests {
         assert_eq!(parse_platform("PC").unwrap(), Platform::Pc);
         assert_eq!(parse_platform("PE").unwrap(), Platform::Pe);
         assert!(parse_platform("XBOX").is_err());
-    }
-
-    #[test]
-    fn merge_settings_applies_only_provided_fields() {
-        let current = AppSettings::default();
-        let patch = PatchSettingsRequest {
-            metrics_push_interval_seconds: Some(30),
-            ..Default::default()
-        };
-        let merged = merge_settings(&current, &patch);
-        assert_eq!(merged.metrics_push_interval_seconds, 30);
-        assert_eq!(merged.api_port, current.api_port);
-    }
-
-    #[test]
-    fn validate_settings_rejects_invalid_api_address() {
-        let settings = AppSettings {
-            api_address: "not-an-ip".into(),
-            ..Default::default()
-        };
-        assert!(validate_settings(&settings, "development").is_err());
     }
 }

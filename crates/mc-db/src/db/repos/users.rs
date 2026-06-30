@@ -1,11 +1,8 @@
-use argon2::{
-    Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
-    password_hash::SaltString,
-};
-use rand::rngs::OsRng;
+use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::Utc;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
+use rand::rngs::OsRng;
 use uuid::Uuid;
 
 use crate::db::schema::users;

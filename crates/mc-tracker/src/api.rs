@@ -6,11 +6,10 @@ use axum::middleware;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
-use mc_api_types::{ErrorResponse, HealthResponse, ServersListResponse};
+use mc_api_types::{ErrorResponse, HealthResponse, ServersListResponse, TimeseriesQuery};
 use mc_db::AppSettings;
 use mc_db::DbPool;
 use mc_geo::GeoService;
-use serde::Deserialize;
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use uuid::Uuid;
 
@@ -26,7 +25,10 @@ pub struct AppState {
     pub auth: AuthContext,
 }
 
-pub fn cors_layer(settings: &AppSettings, deployment_environment: &str) -> Result<CorsLayer, String> {
+pub fn cors_layer(
+    settings: &AppSettings,
+    deployment_environment: &str,
+) -> Result<CorsLayer, String> {
     let origins: Result<Vec<_>, _> = settings
         .cors_origin_candidates(deployment_environment)?
         .into_iter()
@@ -66,10 +68,8 @@ pub fn router(
         .nest("/auth", crate::auth::router())
         .nest(
             "/admin",
-            admin::router().route_layer(middleware::from_fn_with_state(
-                state.clone(),
-                require_admin,
-            )),
+            admin::router()
+                .route_layer(middleware::from_fn_with_state(state.clone(), require_admin)),
         )
         .fallback(not_found)
         .layer(cors)
@@ -84,12 +84,6 @@ async fn health(State(state): State<AppState>) -> Json<HealthResponse> {
 
 async fn list_servers(State(state): State<AppState>) -> Json<ServersListResponse> {
     Json(state.manager.servers_list_response().await)
-}
-
-#[derive(Debug, Deserialize)]
-struct TimeseriesQuery {
-    from: i64,
-    to: i64,
 }
 
 async fn server_timeseries(
@@ -108,10 +102,7 @@ async fn server_timeseries(
 }
 
 async fn not_found() -> impl IntoResponse {
-    (
-        StatusCode::NOT_FOUND,
-        Json(ErrorResponse::new("not found")),
-    )
+    (StatusCode::NOT_FOUND, Json(ErrorResponse::new("not found")))
 }
 
 fn map_metrics_error(err: mc_metrics::MetricsError) -> Response {

@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AdminRouteImport } from './routes/_admin'
@@ -18,6 +19,11 @@ import { Route as AdminAdminIndexRouteImport } from './routes/_admin/admin/index
 import { Route as AdminAdminSettingsRouteImport } from './routes/_admin/admin/settings'
 import { Route as AdminAdminServersRouteImport } from './routes/_admin/admin/servers'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -60,6 +66,7 @@ const AdminAdminServersRoute = AdminAdminServersRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin/servers': typeof AdminAdminServersRoute
   '/admin/settings': typeof AdminAdminSettingsRoute
@@ -68,6 +75,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/account': typeof AuthenticatedAccountRoute
   '/admin/servers': typeof AdminAdminServersRoute
   '/admin/settings': typeof AdminAdminSettingsRoute
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/_admin': typeof AdminRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_admin/admin/servers': typeof AdminAdminServersRoute
   '/_admin/admin/settings': typeof AdminAdminSettingsRoute
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/signup'
     | '/account'
     | '/admin/servers'
     | '/admin/settings'
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/signup'
     | '/account'
     | '/admin/servers'
     | '/admin/settings'
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/_admin'
     | '/_authenticated'
     | '/login'
+    | '/signup'
     | '/_authenticated/account'
     | '/_admin/admin/servers'
     | '/_admin/admin/settings'
@@ -118,10 +130,18 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -212,6 +232,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

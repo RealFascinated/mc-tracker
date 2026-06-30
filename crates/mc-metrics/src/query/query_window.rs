@@ -85,7 +85,9 @@ impl MetricQueryWindow {
 
 fn unix_epoch(seconds: i64) -> Result<SystemTime, MetricsError> {
     if seconds < 0 {
-        return Err(MetricsError::InvalidWindow("epoch must be non-negative".into()));
+        return Err(MetricsError::InvalidWindow(
+            "epoch must be non-negative".into(),
+        ));
     }
     Ok(UNIX_EPOCH + Duration::from_secs(seconds as u64))
 }
@@ -138,5 +140,45 @@ mod tests {
         let from = to - 3600;
         let window = MetricQueryWindow::parse(from, to).unwrap();
         assert!(window.point_count() <= 400);
+    }
+
+    #[test]
+    fn parse_rejects_from_greater_than_or_equal_to_to() {
+        let to = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        assert!(MetricQueryWindow::parse(to, to).is_err());
+        assert!(MetricQueryWindow::parse(to + 60, to).is_err());
+    }
+
+    #[test]
+    fn point_count_stays_within_400_for_policy_table_spans() {
+        let to = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        let spans_secs = [
+            5 * 60,
+            3600,
+            6 * 3600,
+            24 * 3600,
+            7 * 24 * 3600,
+            30 * 24 * 3600,
+            365 * 24 * 3600,
+            730 * 24 * 3600 - 60,
+        ];
+
+        for span in spans_secs {
+            let from = to - span;
+            let window = MetricQueryWindow::parse(from, to)
+                .unwrap_or_else(|err| panic!("span {span}s should be valid: {err}"));
+            assert!(
+                window.point_count() <= 400,
+                "span={span}s step={}s points={}",
+                window.step_seconds(),
+                window.point_count()
+            );
+        }
     }
 }

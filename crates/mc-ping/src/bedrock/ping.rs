@@ -4,8 +4,7 @@ pub const PACKET_ID: u8 = 0x01;
 
 /// RakNet unconnected ping magic bytes.
 pub const MAGIC: [u8; 16] = [
-    0x00, 0xFF, 0xFF, 0x00, 0xFE, 0xFE, 0xFE, 0xFE, 0xFD, 0xFD, 0xFD, 0xFD, 0x12, 0x34, 0x56,
-    0x78,
+    0x00, 0xFF, 0xFF, 0x00, 0xFE, 0xFE, 0xFE, 0xFE, 0xFD, 0xFD, 0xFD, 0xFD, 0x12, 0x34, 0x56, 0x78,
 ];
 
 /// Build the 33-byte little-endian unconnected ping packet.
@@ -31,7 +30,10 @@ mod tests {
         let packet = encode_unconnected_ping(1_700_000_000_123);
         assert_eq!(packet.len(), 33);
         assert_eq!(packet[0], PACKET_ID);
-        assert_eq!(u64::from_le_bytes(packet[1..9].try_into().unwrap()), 1_700_000_000_123);
+        assert_eq!(
+            u64::from_le_bytes(packet[1..9].try_into().unwrap()),
+            1_700_000_000_123
+        );
         assert_eq!(&packet[9..25], &MAGIC);
         assert_eq!(u64::from_le_bytes(packet[25..33].try_into().unwrap()), 0);
     }

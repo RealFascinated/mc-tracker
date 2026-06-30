@@ -5,34 +5,34 @@ import {
   useEffect,
   useMemo,
   useState,
-} from "react"
+} from "react";
 
-import { fetchCurrentUser } from "@/lib/auth/session"
-import type { User } from "@/lib/auth/types"
+import { fetchCurrentUser } from "@/lib/auth/session";
+import type { User } from "@/lib/auth/types";
 
 type AuthContextValue = {
-  user: User | null
-  isLoading: boolean
-  isAuthenticated: boolean
-  setUser: (user: User | null) => void
-  refreshUser: () => Promise<User | null>
-}
+  user: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  setUser: (user: User | null) => void;
+  refreshUser: () => Promise<User | null>;
+};
 
-const AuthContext = createContext<AuthContextValue | null>(null)
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    const resolved = await fetchCurrentUser()
-    setUser(resolved)
-    return resolved
-  }, [])
+    const resolved = await fetchCurrentUser();
+    setUser(resolved);
+    return resolved;
+  }, []);
 
   useEffect(() => {
-    void refreshUser().finally(() => setIsLoading(false))
-  }, [refreshUser])
+    void refreshUser().finally(() => setIsLoading(false));
+  }, [refreshUser]);
 
   const value = useMemo(
     () => ({
@@ -42,18 +42,18 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser,
       refreshUser,
     }),
-    [user, isLoading, refreshUser]
-  )
+    [user, isLoading, refreshUser],
+  );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 function useAuth(): AuthContextValue {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within AuthProvider")
+    throw new Error("useAuth must be used within AuthProvider");
   }
-  return context
+  return context;
 }
 
-export { AuthProvider, useAuth }
+export { AuthProvider, useAuth };

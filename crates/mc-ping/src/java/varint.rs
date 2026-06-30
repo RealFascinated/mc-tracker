@@ -22,9 +22,9 @@ pub fn read_varint(input: &mut impl Read) -> Result<u32, PingError> {
     let mut value = 0u32;
     for i in 0..MAX_VARINT_BYTES {
         let mut byte = [0u8; 1];
-        input.read_exact(&mut byte).map_err(|e| {
-            PingError::Protocol(format!("failed reading VarInt byte: {e}"))
-        })?;
+        input
+            .read_exact(&mut byte)
+            .map_err(|e| PingError::Protocol(format!("failed reading VarInt byte: {e}")))?;
         let b = byte[0];
         value |= ((b & 0x7F) as u32) << (i * 7);
         if (b & 0x80) == 0 {

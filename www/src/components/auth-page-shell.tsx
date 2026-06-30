@@ -3,7 +3,7 @@ function AuthPageShell({ children }: { children: React.ReactNode }) {
     <main className="flex min-h-svh items-center justify-center bg-background p-4">
       {children}
     </main>
-  )
+  );
 }
 
-export { AuthPageShell }
+export { AuthPageShell };

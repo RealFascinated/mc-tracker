@@ -1,6 +1,6 @@
-import { defineConfig, mergeConfig } from "vitest/config"
+import { defineConfig, mergeConfig } from "vitest/config";
 
-import viteConfig from "./vite.config"
+import viteConfig from "./vite.config";
 
 export default mergeConfig(
   viteConfig({ mode: "test", command: "serve" }),
@@ -9,5 +9,5 @@ export default mergeConfig(
       environment: "jsdom",
       include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     },
-  })
-)
+  }),
+);

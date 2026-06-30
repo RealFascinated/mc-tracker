@@ -83,6 +83,9 @@ mod tests {
             align_samples_to_window(&window, &[(start + step / 2, Some(42.0))]);
 
         assert!(timestamps.contains(&start));
-        assert_eq!(values[timestamps.iter().position(|ts| *ts == start).unwrap()], Some(42.0));
+        assert_eq!(
+            values[timestamps.iter().position(|ts| *ts == start).unwrap()],
+            Some(42.0)
+        );
     }
 }

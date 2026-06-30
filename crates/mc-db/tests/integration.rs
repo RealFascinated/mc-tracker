@@ -130,14 +130,10 @@ async fn users_create_and_get() {
     let (_postgres, database_url) = common::start_postgres().await;
     let pool = common::setup_pool(&database_url).await;
 
-    let user = mc_db::db::repos::users::create(
-        &pool,
-        "alice",
-        "password123",
-        mc_db::UserRole::User,
-    )
-    .await
-    .unwrap();
+    let user =
+        mc_db::db::repos::users::create(&pool, "alice", "password123", mc_db::UserRole::User)
+            .await
+            .unwrap();
     assert_eq!(user.username, "alice");
 
     let fetched = mc_db::db::repos::users::get_by_username(&pool, "alice")
@@ -145,7 +141,9 @@ async fn users_create_and_get() {
         .unwrap();
     assert_eq!(fetched.id, user.id);
 
-    assert!(mc_db::db::repos::users::verify_password("password123", &fetched.password_hash).unwrap());
+    assert!(
+        mc_db::db::repos::users::verify_password("password123", &fetched.password_hash).unwrap()
+    );
 
     mc_db::db::repos::users::update_password(&pool, user.id, "newpass")
         .await
@@ -154,6 +152,26 @@ async fn users_create_and_get() {
         .await
         .unwrap();
     assert!(mc_db::db::repos::users::verify_password("newpass", &updated.password_hash).unwrap());
+}
+
+#[tokio::test]
+async fn users_wrong_password_fails_verify() {
+    let (_postgres, database_url) = common::start_postgres().await;
+    let pool = common::setup_pool(&database_url).await;
+
+    let user =
+        mc_db::db::repos::users::create(&pool, "carol", "correcthorse", mc_db::UserRole::User)
+            .await
+            .unwrap();
+
+    assert!(!mc_db::db::repos::users::verify_password("wrong", &user.password_hash).unwrap());
+}
+
+#[tokio::test]
+async fn users_hash_password_round_trip() {
+    let hash = mc_db::db::repos::users::hash_password("secret").unwrap();
+    assert!(mc_db::db::repos::users::verify_password("secret", &hash).unwrap());
+    assert!(!mc_db::db::repos::users::verify_password("other", &hash).unwrap());
 }
 
 #[tokio::test]

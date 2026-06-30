@@ -42,10 +42,7 @@ mod tests {
 
     #[test]
     fn vector_selector_renders_sorted_labels() {
-        let labels = BTreeMap::from([
-            ("environment", "production"),
-            ("id", "server-1"),
-        ]);
+        let labels = BTreeMap::from([("environment", "production"), ("id", "server-1")]);
         assert_eq!(
             vector_selector("minecraft_server_player_count", &labels),
             r#"minecraft_server_player_count{environment="production",id="server-1"}"#

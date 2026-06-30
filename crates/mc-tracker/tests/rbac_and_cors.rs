@@ -151,7 +151,10 @@ async fn cors_blocks_unknown_origin() {
         .await
         .unwrap();
     assert!(
-        response.headers().get("access-control-allow-origin").is_none(),
+        response
+            .headers()
+            .get("access-control-allow-origin")
+            .is_none(),
         "unexpected CORS header for disallowed origin"
     );
 }
@@ -168,17 +171,18 @@ async fn patch_settings_persists_www_origin() {
                 .uri("/admin/settings")
                 .header("cookie", &cookie)
                 .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"wwwOrigin":"https://tracker.example.com"}"#,
-                ))
+                .body(Body::from(r#"{"wwwOrigin":"https://tracker.example.com"}"#))
                 .unwrap(),
         )
         .await
         .unwrap();
     assert_eq!(patch.status(), StatusCode::OK);
-    let body: serde_json::Value =
-        serde_json::from_slice(&axum::body::to_bytes(patch.into_body(), usize::MAX).await.unwrap())
-            .unwrap();
+    let body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(patch.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
     assert_eq!(body["wwwOrigin"], "https://tracker.example.com");
 
     assert_eq!(
@@ -187,4 +191,29 @@ async fn patch_settings_persists_www_origin() {
     );
     let from_db = mc_db::db::repos::settings::load_all(&pool).await.unwrap();
     assert_eq!(from_db.www_origin, "https://tracker.example.com");
+}
+
+#[tokio::test]
+async fn demoted_admin_loses_admin_access_on_next_request() {
+    let (_postgres, app, _manager, pool) = test_app().await;
+    let cookie = common::login_admin(&app).await;
+
+    let admin = mc_db::db::repos::users::get_by_username(&pool, "admin")
+        .await
+        .unwrap();
+    mc_db::db::repos::users::update_role(&pool, admin.id, mc_db::UserRole::User)
+        .await
+        .unwrap();
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/admin/settings")
+                .header("cookie", &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
 }

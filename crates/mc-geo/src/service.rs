@@ -135,8 +135,7 @@ mod tests {
     use std::path::PathBuf;
 
     fn fixture_path() -> PathBuf {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures/GeoLite2-ASN-Test.mmdb")
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/GeoLite2-ASN-Test.mmdb")
     }
 
     #[tokio::test]

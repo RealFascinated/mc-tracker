@@ -1,16 +1,16 @@
-import type { LucideIcon } from "lucide-react"
-import type { ReactNode } from "react"
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
 import {
   SlidingSegmentedControl,
   SlidingSegmentedControlItem,
-} from "@/components/ui/sliding-segmented-control"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/sliding-segmented-control";
+import { cn } from "@/lib/utils";
 
 type DashboardCardProps = {
-  children: ReactNode
-  className?: string
-}
+  children: ReactNode;
+  className?: string;
+};
 
 function DashboardCard({ children, className }: DashboardCardProps) {
   return (
@@ -22,17 +22,17 @@ function DashboardCard({ children, className }: DashboardCardProps) {
     >
       {children}
     </div>
-  )
+  );
 }
 
 type DashboardCardHeaderProps = {
-  title: string
-  icon?: LucideIcon
-  actions?: ReactNode
-  trailingAction?: ReactNode
-  subtitle?: ReactNode
-  className?: string
-}
+  title: string;
+  icon?: LucideIcon;
+  actions?: ReactNode;
+  trailingAction?: ReactNode;
+  subtitle?: ReactNode;
+  className?: string;
+};
 
 function DashboardCardHeader({
   title,
@@ -67,40 +67,40 @@ function DashboardCardHeader({
       </div>
       {actions ? <div className="mt-3 min-w-0">{actions}</div> : null}
     </div>
-  )
+  );
 }
 
 type DashboardRangeOption<T extends string> = {
-  value: T
-  shortLabel: string
-  label?: string
-}
+  value: T;
+  shortLabel: string;
+  label?: string;
+};
 
 const dashboardRangeItemClassName =
-  "relative z-10 h-7 min-w-0 rounded-snug px-2.5 text-center text-xs font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning"
+  "relative z-10 h-7 min-w-0 rounded-snug px-2.5 text-center text-xs font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning";
 
-const dashboardRangeItemFullWidthClassName = "flex-1 px-1.5"
+const dashboardRangeItemFullWidthClassName = "flex-1 px-1.5";
 
 const dashboardRangeItemSelectedClassName =
-  "font-semibold text-monitor dark:text-warning"
+  "font-semibold text-monitor dark:text-warning";
 
 const dashboardRangeItemIdleClassName =
-  "text-muted-foreground hover:text-foreground"
+  "text-muted-foreground hover:text-foreground";
 
 const dashboardRangeTrackClassName =
-  "relative inline-flex w-fit max-w-full rounded-snug bg-muted p-0.5"
+  "relative inline-flex w-fit max-w-full rounded-snug bg-muted p-0.5";
 
 const dashboardRangeTrackFullWidthClassName =
-  "relative flex w-full max-w-full rounded-snug bg-muted p-0.5"
+  "relative flex w-full max-w-full rounded-snug bg-muted p-0.5";
 
 type DashboardRangeToggleProps<T extends string> = {
-  value: T
-  options: Array<DashboardRangeOption<T>>
-  onValueChange: (value: T) => void
-  "aria-label": string
-  className?: string
-  fullWidth?: boolean
-}
+  value: T;
+  options: Array<DashboardRangeOption<T>>;
+  onValueChange: (value: T) => void;
+  "aria-label": string;
+  className?: string;
+  fullWidth?: boolean;
+};
 
 function DashboardRangeToggle<T extends string>({
   value,
@@ -129,8 +129,8 @@ function DashboardRangeToggle<T extends string>({
         }
       >
         {options.map((option) => {
-          const selected = value === option.value
-          const displayLabel = option.label ?? option.shortLabel
+          const selected = value === option.value;
+          const displayLabel = option.label ?? option.shortLabel;
 
           return (
             <SlidingSegmentedControlItem
@@ -148,11 +148,11 @@ function DashboardRangeToggle<T extends string>({
             >
               {option.shortLabel}
             </SlidingSegmentedControlItem>
-          )
+          );
         })}
       </SlidingSegmentedControl>
     </div>
-  )
+  );
 }
 
-export { DashboardCard, DashboardCardHeader, DashboardRangeToggle }
+export { DashboardCard, DashboardCardHeader, DashboardRangeToggle };

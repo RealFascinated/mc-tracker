@@ -1,5 +1,5 @@
-mod encode;
 mod client;
+mod encode;
 mod registry;
 
 pub use client::VmPushClient;

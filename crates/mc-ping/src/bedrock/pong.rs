@@ -58,8 +58,7 @@ mod tests {
 
     #[test]
     fn mcee_edition_detected() {
-        let token = strip_edition_prefix("\x00\x01MCEE;School Server;1;1.0;5;20;1;Line2;")
-            .unwrap();
+        let token = strip_edition_prefix("\x00\x01MCEE;School Server;1;1.0;5;20;1;Line2;").unwrap();
         assert!(token.starts_with("MCEE;"));
     }
 

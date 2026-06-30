@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use hmac::{Hmac, Mac};
 use mc_db::model::UserRole;
 use serde::{Deserialize, Serialize};
@@ -54,6 +54,23 @@ impl SessionManager {
         self.sign_claims(&claims)
     }
 
+    #[cfg(test)]
+    pub(crate) fn issue_token_with_iat(
+        &self,
+        user_id: Uuid,
+        username: &str,
+        role: UserRole,
+        iat: i64,
+    ) -> Result<String, SessionError> {
+        let claims = SessionClaims {
+            sub: user_id,
+            username: username.to_string(),
+            role: role.as_str().to_string(),
+            iat,
+        };
+        self.sign_claims(&claims)
+    }
+
     pub(crate) async fn validate_token(&self, token: &str) -> Result<SessionClaims, SessionError> {
         let claims = self.verify_and_parse(token)?;
         if self.revoked.read().await.contains(token) {
@@ -96,9 +113,7 @@ impl SessionManager {
     }
 
     fn verify_and_parse(&self, token: &str) -> Result<SessionClaims, SessionError> {
-        let (encoded, signature) = token
-            .split_once('.')
-            .ok_or(SessionError::Invalid)?;
+        let (encoded, signature) = token.split_once('.').ok_or(SessionError::Invalid)?;
         let expected = sign_bytes(&self.secret, encoded.as_bytes())?;
         if !constant_time_eq(signature.as_bytes(), expected.as_bytes()) {
             return Err(SessionError::Invalid);
@@ -148,9 +163,7 @@ mod tests {
     async fn issue_and_validate_round_trip() {
         let manager = SessionManager::new(b"test-secret", false);
         let id = Uuid::new_v4();
-        let token = manager
-            .issue_token(id, "admin", UserRole::Admin)
-            .unwrap();
+        let token = manager.issue_token(id, "admin", UserRole::Admin).unwrap();
         let claims = manager.validate_token(&token).await.unwrap();
         assert_eq!(claims.sub, id);
         assert_eq!(claims.username, "admin");
@@ -168,5 +181,41 @@ mod tests {
             manager.validate_token(&token).await.unwrap_err(),
             SessionError::Revoked
         );
+    }
+
+    #[tokio::test]
+    async fn expired_token_is_rejected() {
+        let manager = SessionManager::new(b"test-secret", false);
+        let expired_iat = now_epoch_secs() - MAX_AGE_SECS - 1;
+        let token = manager
+            .issue_token_with_iat(Uuid::new_v4(), "admin", UserRole::Admin, expired_iat)
+            .unwrap();
+        assert_eq!(
+            manager.validate_token(&token).await.unwrap_err(),
+            SessionError::Expired
+        );
+    }
+
+    #[tokio::test]
+    async fn tampered_token_is_rejected() {
+        let manager = SessionManager::new(b"test-secret", false);
+        let token = manager
+            .issue_token(Uuid::new_v4(), "admin", UserRole::Admin)
+            .unwrap();
+        let tampered = format!("{token}x");
+        assert_eq!(
+            manager.validate_token(&tampered).await.unwrap_err(),
+            SessionError::Invalid
+        );
+    }
+
+    #[test]
+    fn cookie_value_sets_security_flags() {
+        let manager = SessionManager::new(b"test-secret", true);
+        let cookie = manager.cookie_value("token-value");
+        assert!(cookie.contains("HttpOnly"));
+        assert!(cookie.contains("SameSite=Strict"));
+        assert!(cookie.contains("Secure"));
+        assert!(cookie.starts_with("mc_tracker_session=token-value"));
     }
 }

@@ -1,6 +1,6 @@
 use mc_db::{DbPool, PoolSettings};
-use testcontainers::ImageExt;
 use testcontainers::runners::AsyncRunner;
+use testcontainers::ImageExt;
 use testcontainers_modules::postgres::Postgres;
 
 pub async fn start_postgres() -> (testcontainers::ContainerAsync<Postgres>, String) {

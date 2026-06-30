@@ -1,11 +1,11 @@
 use mc_db::{DbPool, PoolSettings};
 use mc_geo::GeoService;
-use mc_tracker::auth::{AuthContext, LoginRateLimiter, SessionManager};
 use mc_tracker::api::{router, AppState};
+use mc_tracker::auth::{AuthContext, LoginRateLimiter, SessionManager};
 use mc_tracker::manager::ServerManager;
 use std::sync::Arc;
-use testcontainers::ImageExt;
 use testcontainers::runners::AsyncRunner;
+use testcontainers::ImageExt;
 use testcontainers_modules::postgres::Postgres;
 
 pub async fn start_postgres() -> (testcontainers::ContainerAsync<Postgres>, String) {
@@ -31,10 +31,7 @@ pub fn fixture_geo() -> Arc<GeoService> {
     Arc::new(GeoService::from_database_file(path).unwrap())
 }
 
-pub async fn build_app(
-    pool: DbPool,
-    manager: Arc<ServerManager>,
-) -> axum::Router {
+pub async fn build_app(pool: DbPool, manager: Arc<ServerManager>) -> axum::Router {
     let sessions = Arc::new(SessionManager::new(b"test-secret", false));
     let settings = manager.settings().await;
     router(
@@ -85,6 +82,7 @@ pub async fn login_as(app: &axum::Router, username: &str, password: &str) -> Str
         .to_string()
 }
 
+#[allow(dead_code)]
 pub async fn login_admin(app: &axum::Router) -> String {
     login_as(app, "admin", "adminpass").await
 }
@@ -106,4 +104,20 @@ pub async fn bootstrap_admin(pool: &DbPool) {
     )
     .await
     .unwrap();
+}
+
+#[allow(dead_code)]
+pub fn api_fixture_path(name: &str) -> std::path::PathBuf {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tests/fixtures/api")
+        .join(name)
+}
+
+#[allow(dead_code)]
+pub fn load_api_fixture(name: &str) -> serde_json::Value {
+    let path = api_fixture_path(name);
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("read fixture {}: {err}", path.display()));
+    serde_json::from_str(&text)
+        .unwrap_or_else(|err| panic!("parse fixture {}: {err}", path.display()))
 }

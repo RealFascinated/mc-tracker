@@ -1,6 +1,11 @@
 import { useEffect } from "react";
 import uPlot from "uplot";
-import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from "react";
+import type {
+  Dispatch,
+  MutableRefObject,
+  RefObject,
+  SetStateAction,
+} from "react";
 
 import type { ResolvedTheme } from "@/lib/theme";
 import type {
@@ -63,7 +68,8 @@ type UseMetricChartInstanceParams = {
   reserveUnitLabels: boolean;
   showTooltip: boolean;
   tooltipColumnSize: number | undefined;
-  tooltipSort: ((a: TooltipSortEntry, b: TooltipSortEntry) => number) | undefined;
+  tooltipSort:
+    ((a: TooltipSortEntry, b: TooltipSortEntry) => number) | undefined;
   layoutDensity: "normal" | "compact";
   setLayoutDensity: Dispatch<SetStateAction<"normal" | "compact">>;
   xMin: number | null;

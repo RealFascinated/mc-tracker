@@ -43,9 +43,12 @@ async fn get_and_patch_admin_settings() {
         .await
         .unwrap();
     assert_eq!(get.status(), StatusCode::OK);
-    let current: serde_json::Value =
-        serde_json::from_slice(&axum::body::to_bytes(get.into_body(), usize::MAX).await.unwrap())
-            .unwrap();
+    let current: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(get.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
     assert_eq!(current["metricsPushIntervalSeconds"], 10);
 
     let patch = app
@@ -64,9 +67,12 @@ async fn get_and_patch_admin_settings() {
         .await
         .unwrap();
     assert_eq!(patch.status(), StatusCode::OK);
-    let updated: serde_json::Value =
-        serde_json::from_slice(&axum::body::to_bytes(patch.into_body(), usize::MAX).await.unwrap())
-            .unwrap();
+    let updated: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(patch.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
     assert_eq!(updated["metricsPushIntervalSeconds"], 45);
     assert_eq!(updated["victoriametricsUrl"], "http://vm:8428");
 

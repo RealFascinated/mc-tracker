@@ -13,3 +13,10 @@ pub struct ChangePasswordRequest {
     pub current_password: String,
     pub new_password: String,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SignupRequest {
+    pub username: String,
+    pub password: String,
+}

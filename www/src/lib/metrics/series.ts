@@ -17,7 +17,7 @@ export type ChartSeries = {
   fill?: boolean;
 };
 
-export function throughputYMax(...series: Array<MetricValues>): number {
+export function chartYMax(...series: Array<MetricValues>): number {
   const samples = collectPositiveSamples(...series);
   if (samples.length === 0) return 1;
   const peak = Math.max(...samples);
@@ -36,7 +36,7 @@ function collectPositiveSamples(...series: Array<MetricValues>): Array<number> {
 }
 
 export function yMaxWithSoftMax(values: MetricValues, softMax: number): number {
-  return Math.max(throughputYMax(values), softMax);
+  return Math.max(chartYMax(values), softMax);
 }
 
 export function hasValues(values: MetricValues): boolean {

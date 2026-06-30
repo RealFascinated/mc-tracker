@@ -1,7 +1,7 @@
-import * as React from "react"
-import { Label as LabelPrimitive } from "radix-ui"
+import * as React from "react";
+import { Label as LabelPrimitive } from "radix-ui";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 function Label({
   className,
@@ -10,13 +10,10 @@ function Label({
   return (
     <LabelPrimitive.Root
       data-slot="label"
-      className={cn(
-        "text-sm font-medium text-foreground",
-        className
-      )}
+      className={cn("text-sm font-medium text-foreground", className)}
       {...props}
     />
-  )
+  );
 }
 
-export { Label }
+export { Label };

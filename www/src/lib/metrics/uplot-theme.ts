@@ -92,8 +92,9 @@ function measureAxisWidth(
   for (const value of values) {
     max = Math.max(max, textMeasureCtx.measureText(value).width);
   }
-  const tickPadding = layout.density === "compact" ? 6 : 12;
-  return Math.max(minWidth, Math.ceil(max) + tickPadding);
+  const tickPadding = layout.density === "compact" ? 8 : 14;
+  const safetyMargin = 4;
+  return Math.max(minWidth, Math.ceil(max) + tickPadding + safetyMargin);
 }
 
 export type ChartYRange = {
@@ -126,13 +127,14 @@ function buildYScale(yRange?: ChartYRange, bidirectional = false): uPlot.Scale {
   const yMin = yRange?.min ?? (autoMin ? undefined : 0);
 
   if (yRange?.max != null) {
+    const yMax = yRange.max;
     if (yMin != null) {
-      return { auto: false, range: [yMin, yRange.max] };
+      return { auto: false, range: [yMin, yMax] };
     }
     return {
       range: (_self, dataMin, dataMax) => {
         const [min] = uPlot.rangeNum(dataMin, dataMax, 0.1, true);
-        return [min ?? dataMin, yRange.max!];
+        return [min ?? dataMin, yMax];
       },
     };
   }
@@ -146,10 +148,11 @@ function buildYScale(yRange?: ChartYRange, bidirectional = false): uPlot.Scale {
     };
   }
 
+  const floor = yMin ?? 0;
   return {
     range: (_self, dataMin, dataMax) => {
       const [min, max] = uPlot.rangeNum(dataMin, dataMax, 0.1, true);
-      return [Math.min(yMin!, min ?? yMin!), Math.max(yMin!, max ?? yMin! + 1)];
+      return [Math.min(floor, min ?? floor), Math.max(floor, max ?? floor + 1)];
     },
   };
 }
@@ -334,12 +337,8 @@ export function buildUPlotOptions({
   seriesFills,
 }: BuildUPlotOptionsParams): uPlot.Options {
   const colors = getChartColors(theme);
-  const isDark = theme === "dark";
-  const gridColor = readCssVar("--border", isDark ? "#242424" : "#e5e5e5");
-  const axisColor = readCssVar(
-    "--muted-foreground",
-    isDark ? "#a3a3a3" : "#737373",
-  );
+  const gridColor = readCssVar("--border");
+  const axisColor = readCssVar("--muted-foreground");
   const scales = axisScaleMap(chartAxes);
   const axisById = new Map(chartAxes.map((axis) => [axis.id, axis]));
   const hasVisibleRight = chartAxes.some(
@@ -357,13 +356,15 @@ export function buildUPlotOptions({
       : { time: xTime },
   };
 
-  for (const axis of chartAxes) {
-    const scaleKey = scales.get(axis.id)!;
+  for (const [index, axis] of chartAxes.entries()) {
+    const scaleKey =
+      scales.get(axis.id) ?? SCALE_KEYS[index] ?? `y${index + 1}`;
     yScales[scaleKey] = buildYScale(axis.yRange, bidirectional);
   }
 
   const yAxisConfigs = chartAxes.map((axis, index) => {
-    const scaleKey = scales.get(axis.id)!;
+    const scaleKey =
+      scales.get(axis.id) ?? SCALE_KEYS[index] ?? `y${index + 1}`;
     const showGrid = index === 0 && axis.visible;
     if (compact || !axis.visible) {
       return {
@@ -402,13 +403,15 @@ export function buildUPlotOptions({
         const axis = axisId ? axisById.get(axisId) : undefined;
         const strokeOnly = !isBar && seriesFills?.[index] === false;
 
+        const drawBars = uPlot.paths.bars;
+
         return {
           label,
           scale: seriesScale(axisId),
           stroke: color,
           ...(isBar
             ? {
-                paths: uPlot.paths.bars!({ size: [1, Infinity], radius: 0.12 }),
+                paths: drawBars?.({ size: [1, Infinity], radius: 0.12 }),
                 fill: withAlpha(color, 0.12),
                 width: 0,
               }

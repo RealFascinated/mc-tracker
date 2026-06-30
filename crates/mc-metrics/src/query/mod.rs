@@ -10,4 +10,4 @@ pub use query_window::MetricQueryWindow;
 pub use series_align::align_samples_to_window;
 pub use server_queries::{peak_players_24h, peak_players_30d, player_count_series};
 pub use step_policy::{max_span, min_span, step_for};
-pub use vm_query::{VmQuery, VmQueryBuilder, format_step};
+pub use vm_query::{format_step, VmQuery, VmQueryBuilder};

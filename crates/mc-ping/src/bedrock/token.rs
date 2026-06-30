@@ -82,7 +82,10 @@ mod tests {
         let ping = ping_from_token(&token, "198.51.100.2", 1);
         assert_eq!(ping.players.online, 42);
         assert_eq!(ping.players.max, Some(100));
-        assert_eq!(ping.motd.as_ref().unwrap().raw, "Dedicated Server\nSecond Line");
+        assert_eq!(
+            ping.motd.as_ref().unwrap().raw,
+            "Dedicated Server\nSecond Line"
+        );
         assert_eq!(ping.version.as_ref().unwrap().name, "1.20.81");
     }
 

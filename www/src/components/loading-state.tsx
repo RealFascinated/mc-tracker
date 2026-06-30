@@ -1,11 +1,11 @@
-import { Spinner } from "@/components/spinner"
-import { cn } from "@/lib/utils"
+import { Spinner } from "@/components/spinner";
+import { cn } from "@/lib/utils";
 
 type LoadingStateProps = {
-  message?: string
-  className?: string
-  centered?: boolean
-}
+  message?: string;
+  className?: string;
+  centered?: boolean;
+};
 
 function LoadingState({
   message = "Loading…",
@@ -19,13 +19,13 @@ function LoadingState({
       className={cn(
         "flex items-center gap-2 text-muted-foreground",
         centered && "min-h-svh items-center justify-center",
-        className
+        className,
       )}
     >
       <Spinner />
       <span>{message}</span>
     </div>
-  )
+  );
 }
 
-export { LoadingState }
+export { LoadingState };

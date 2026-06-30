@@ -9,6 +9,7 @@ members = [
     "crates/mc-metrics",
     "crates/mc-ping",
     "crates/mc-tracker",
+    "tests/integration",
 ]
 
 [workspace.lints.rust]

@@ -170,9 +170,6 @@ pub async fn delete(pool: &DbPool, id: Uuid) -> Result<bool, DbError> {
 fn is_unique_violation(err: &diesel::result::Error) -> bool {
     matches!(
         err,
-        diesel::result::Error::DatabaseError(
-            diesel::result::DatabaseErrorKind::UniqueViolation,
-            _
-        )
+        diesel::result::Error::DatabaseError(diesel::result::DatabaseErrorKind::UniqueViolation, _)
     )
 }

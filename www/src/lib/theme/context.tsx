@@ -5,90 +5,93 @@ import {
   useEffect,
   useMemo,
   useState,
-} from "react"
+} from "react";
 
-export const THEME_STORAGE_KEY = "mc-tracker-theme"
+export const THEME_STORAGE_KEY = "mc-tracker-theme";
 
-export type ThemePreference = "dark" | "light" | "system"
-export type ResolvedTheme = "dark" | "light"
+export type ThemePreference = "dark" | "light" | "system";
+export type ResolvedTheme = "dark" | "light";
 
 type ThemeContextValue = {
-  theme: ThemePreference
-  resolvedTheme: ResolvedTheme
-  setTheme: (theme: ThemePreference) => void
-}
+  theme: ThemePreference;
+  resolvedTheme: ResolvedTheme;
+  setTheme: (theme: ThemePreference) => void;
+};
 
-const ThemeContext = createContext<ThemeContextValue | null>(null)
+const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") {
-    return "dark"
+    return "dark";
   }
 
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
-    : "light"
+    : "light";
 }
 
 function getStoredTheme(): ThemePreference | null {
   if (typeof window === "undefined") {
-    return null
+    return null;
   }
 
-  const stored = localStorage.getItem(THEME_STORAGE_KEY)
+  const stored = localStorage.getItem(THEME_STORAGE_KEY);
   return stored === "light" || stored === "dark" || stored === "system"
     ? stored
-    : null
+    : null;
 }
 
 function applyTheme(theme: ResolvedTheme) {
-  document.documentElement.classList.toggle("dark", theme === "dark")
+  document.documentElement.classList.toggle("dark", theme === "dark");
 }
 
 function getInitialPreference(): ThemePreference {
-  return getStoredTheme() ?? "system"
+  return getStoredTheme() ?? "system";
 }
 
 function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemePreference>(getInitialPreference)
-  const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme)
+  const [theme, setThemeState] =
+    useState<ThemePreference>(getInitialPreference);
+  const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme);
 
-  const resolvedTheme = theme === "system" ? systemTheme : theme
+  const resolvedTheme = theme === "system" ? systemTheme : theme;
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const updateSystemTheme = () => {
-      setSystemTheme(mediaQuery.matches ? "dark" : "light")
-    }
+      setSystemTheme(mediaQuery.matches ? "dark" : "light");
+    };
 
-    updateSystemTheme()
-    mediaQuery.addEventListener("change", updateSystemTheme)
-    return () => mediaQuery.removeEventListener("change", updateSystemTheme)
-  }, [])
+    updateSystemTheme();
+    mediaQuery.addEventListener("change", updateSystemTheme);
+    return () => mediaQuery.removeEventListener("change", updateSystemTheme);
+  }, []);
 
   useEffect(() => {
-    applyTheme(resolvedTheme)
-  }, [resolvedTheme])
+    applyTheme(resolvedTheme);
+  }, [resolvedTheme]);
 
   const setTheme = useCallback((nextTheme: ThemePreference) => {
-    localStorage.setItem(THEME_STORAGE_KEY, nextTheme)
-    setThemeState(nextTheme)
-  }, [])
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    setThemeState(nextTheme);
+  }, []);
 
   const value = useMemo(
     () => ({ theme, resolvedTheme, setTheme }),
-    [theme, resolvedTheme, setTheme]
-  )
+    [theme, resolvedTheme, setTheme],
+  );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 }
 
 function useTheme(): ThemeContextValue {
-  const context = useContext(ThemeContext)
+  const context = useContext(ThemeContext);
   if (!context) {
-    throw new Error("useTheme must be used within ThemeProvider")
+    throw new Error("useTheme must be used within ThemeProvider");
   }
-  return context
+  return context;
 }
 
-export { ThemeProvider, useTheme }
+export { ThemeProvider, useTheme };

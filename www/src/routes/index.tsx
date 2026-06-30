@@ -1,34 +1,34 @@
-import { createFileRoute } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
-import { useCallback, useMemo } from "react"
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
 
 import {
   DashboardCard,
   DashboardCardHeader,
   DashboardRangeToggle,
-} from "@/components/dashboard/dashboard-card"
-import { ServerChartsGrid } from "@/components/dashboard/server-charts-grid"
-import { TotalPlayersChart } from "@/components/dashboard/total-players-chart"
-import { LoadingState } from "@/components/loading-state"
+} from "@/components/dashboard/dashboard-card";
+import { ServerChartsGrid } from "@/components/dashboard/server-charts-grid";
+import { TotalPlayersChart } from "@/components/dashboard/total-players-chart";
+import { LoadingState } from "@/components/loading-state";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { serversQueryOptions } from "@/lib/api/servers.queries"
-import { pageTitle } from "@/lib/page-title"
+} from "@/components/ui/card";
+import { serversQueryOptions } from "@/lib/api/servers.queries";
+import { pageTitle } from "@/lib/page-title";
 import {
   DEFAULT_METRIC_TIME_RANGE,
   METRIC_RANGE_OPTIONS,
   type MetricTimeRange,
   parseMetricRangeSearchParam,
-} from "@/lib/metrics/range"
-import type { MetricTimeWindow } from "@/lib/metrics/time-window"
+} from "@/lib/metrics/range";
+import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 
 type DashboardSearch = {
-  range?: MetricTimeRange
-}
+  range?: MetricTimeRange;
+};
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): DashboardSearch => ({
@@ -40,13 +40,13 @@ export const Route = createFileRoute("/")({
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(serversQueryOptions()),
   component: DashboardPage,
-})
+});
 
 function DashboardPage() {
-  const { data, isPending, error } = useQuery(serversQueryOptions())
-  const { range: searchRange } = Route.useSearch()
-  const navigate = Route.useNavigate()
-  const timeRange = searchRange ?? DEFAULT_METRIC_TIME_RANGE
+  const { data, isPending, error } = useQuery(serversQueryOptions());
+  const { range: searchRange } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const timeRange = searchRange ?? DEFAULT_METRIC_TIME_RANGE;
   const setTimeRange = useCallback(
     (range: MetricTimeRange) => {
       void navigate({
@@ -55,17 +55,17 @@ function DashboardPage() {
           range: range === DEFAULT_METRIC_TIME_RANGE ? undefined : range,
         }),
         replace: true,
-      })
+      });
     },
     [navigate],
-  )
+  );
   const window = useMemo<MetricTimeWindow>(
     () => ({ kind: "preset", range: timeRange }),
     [timeRange],
-  )
+  );
 
   if (isPending) {
-    return <LoadingState message="Loading servers…" centered />
+    return <LoadingState message="Loading servers…" centered />;
   }
 
   if (error || !data) {
@@ -73,10 +73,10 @@ function DashboardPage() {
       <main className="mx-auto max-w-6xl p-4 sm:p-6">
         <p className="text-destructive">Failed to load server list.</p>
       </main>
-    )
+    );
   }
 
-  const serverIds = data.servers.map((server) => server.id)
+  const serverIds = data.servers.map((server) => server.id);
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:py-8">
@@ -96,7 +96,10 @@ function DashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total players" value={String(data.summary.totalPlayers)} />
+        <StatCard
+          label="Total players"
+          value={String(data.summary.totalPlayers)}
+        />
         <StatCard label="PC players" value={String(data.summary.playersPc)} />
         <StatCard label="PE players" value={String(data.summary.playersPe)} />
         <StatCard
@@ -115,7 +118,7 @@ function DashboardPage() {
 
       <ServerChartsGrid servers={data.servers} window={window} />
     </main>
-  )
+  );
 }
 
 function StatCard({ label, value }: { label: string; value: string }) {
@@ -126,5 +129,5 @@ function StatCard({ label, value }: { label: string; value: string }) {
         <CardTitle className="text-3xl tabular-nums">{value}</CardTitle>
       </CardHeader>
     </Card>
-  )
+  );
 }

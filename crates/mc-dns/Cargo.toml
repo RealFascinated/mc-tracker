@@ -1,6 +1,6 @@
 [package]
 name = "mc-dns"
-description = "Minecraft server DNS resolution (SRV + A records, TTL cache)"
+description = "Minecraft server DNS resolution (SRV + A/AAAA records, TTL cache)"
 edition.workspace = true
 version.workspace = true
 publish = false
@@ -12,6 +12,7 @@ workspace = true
 async-trait = "0.1"
 hickory-resolver = { version = "0.25", features = ["tokio"] }
 thiserror = { workspace = true }
+tokio = { workspace = true, features = ["net"] }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

@@ -10,7 +10,7 @@ import type { ChartYRange } from "@/lib/metrics/uplot-theme";
 import {
   hasSeriesData,
   hasValues,
-  throughputYMax,
+  chartYMax,
   yMaxWithSoftMax,
 } from "@/lib/metrics/series";
 import { unitFormatter } from "@/lib/metrics/units";
@@ -33,7 +33,11 @@ function resolveYRange(
   );
 
   if (!spec || spec === "auto") {
-    return { min: 0, max: throughputYMax(...finite) };
+    return { min: 0, max: chartYMax(...finite) };
+  }
+
+  if (spec === "autoMin") {
+    return { autoMin: true };
   }
 
   if ("softMax" in spec) {

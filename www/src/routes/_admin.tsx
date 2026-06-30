@@ -1,11 +1,11 @@
-import { Link, Outlet, createFileRoute } from "@tanstack/react-router"
+import { Link, Outlet, createFileRoute } from "@tanstack/react-router";
 
-import { requireAdmin } from "@/lib/auth"
+import { requireAdmin } from "@/lib/auth";
 
 export const Route = createFileRoute("/_admin")({
   beforeLoad: () => requireAdmin(),
   component: AdminLayout,
-})
+});
 
 function AdminLayout() {
   return (
@@ -32,15 +32,12 @@ function AdminLayout() {
           >
             Servers
           </Link>
-          <Link
-            to="/"
-            className="text-muted-foreground hover:text-foreground"
-          >
+          <Link to="/" className="text-muted-foreground hover:text-foreground">
             Dashboard
           </Link>
         </nav>
       </div>
       <Outlet />
     </main>
-  )
+  );
 }

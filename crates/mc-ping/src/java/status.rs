@@ -4,7 +4,7 @@ use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
 use crate::error::PingError;
-use crate::java::varint::{MAX_VARINT_BYTES, read_varint, write_varint};
+use crate::java::varint::{read_varint, write_varint, MAX_VARINT_BYTES};
 
 const PACKET_ID: u8 = 0x00;
 
@@ -62,20 +62,28 @@ pub async fn read_status_response_async(
 
 fn validate_status_packet(packet_id: u32) -> Result<(), PingError> {
     if packet_id == u32::MAX {
-        return Err(PingError::Protocol("server stream was prematurely ended".into()));
+        return Err(PingError::Protocol(
+            "server stream was prematurely ended".into(),
+        ));
     }
     if packet_id != PACKET_ID as u32 {
-        return Err(PingError::Protocol("server returned invalid packet ID".into()));
+        return Err(PingError::Protocol(
+            "server returned invalid packet ID".into(),
+        ));
     }
     Ok(())
 }
 
 fn validate_status_length(length: u32) -> Result<(), PingError> {
     if length == u32::MAX {
-        return Err(PingError::Protocol("server stream was prematurely ended".into()));
+        return Err(PingError::Protocol(
+            "server stream was prematurely ended".into(),
+        ));
     }
     if length == 0 {
-        return Err(PingError::Protocol("server returned unexpected value".into()));
+        return Err(PingError::Protocol(
+            "server returned unexpected value".into(),
+        ));
     }
     Ok(())
 }

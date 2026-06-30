@@ -86,10 +86,7 @@ pub(crate) fn build_download_url(license_key: &str) -> String {
         .replace("{key}", license_key)
 }
 
-pub async fn download_database_from_url(
-    database_dir: &Path,
-    url: &str,
-) -> Result<(), GeoError> {
+pub async fn download_database_from_url(database_dir: &Path, url: &str) -> Result<(), GeoError> {
     let database_file = database_file_path(database_dir);
     let archive_path = database_dir.join(format!("{ASN_EDITION}.tar.gz"));
 
@@ -141,7 +138,9 @@ fn extract_database(
         .map_err(|e| GeoError::Download(e.to_string()))?
     {
         let mut entry = entry.map_err(|e| GeoError::Download(e.to_string()))?;
-        let path = entry.path().map_err(|e| GeoError::Download(e.to_string()))?;
+        let path = entry
+            .path()
+            .map_err(|e| GeoError::Download(e.to_string()))?;
         let Some(file_name) = path.file_name().and_then(|n| n.to_str()) else {
             continue;
         };

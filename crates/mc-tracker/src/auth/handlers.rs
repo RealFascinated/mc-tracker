@@ -5,19 +5,23 @@ use axum::routing::{get, patch, post};
 use axum::{Json, Router};
 use mc_api_types::{
     ChangePasswordRequest, ErrorResponse, LoginRequest, LoginResponse, MeResponse,
+    SignupEnabledResponse, SignupRequest,
 };
 use mc_db::db::repos::users;
+use mc_db::model::UserRole;
 
-use crate::api::AppState;
 use super::middleware::{parse_cookie_value, AuthUser};
 use super::rate_limit::client_ip_from_headers;
 use super::session::COOKIE_NAME;
+use crate::api::AppState;
 
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/login", post(login))
         .route("/logout", post(logout))
         .route("/me", get(me))
+        .route("/signup", post(signup))
+        .route("/signup-enabled", get(signup_enabled))
         .route("/password", patch(change_password))
 }
 
@@ -50,36 +54,13 @@ async fn login(
         return invalid_credentials();
     }
 
-    let token = match state
-        .auth
-        .sessions
-        .issue_token(user.id, &user.username, user.role)
-    {
-        Ok(token) => token,
-        Err(_) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse::new("failed to create session")),
-            )
-                .into_response()
-        }
-    };
-
-    let response = Json(LoginResponse {
-        username: user.username.clone(),
-        role: user.role.as_str().to_string(),
-    });
-
-    (
-        StatusCode::OK,
-        [(header::SET_COOKIE, state.auth.sessions.cookie_value(&token))],
-        response,
-    )
-        .into_response()
+    issue_session(&state, &user).await
 }
 
 async fn logout(State(state): State<AppState>, headers: axum::http::HeaderMap) -> Response {
-    if let Some(cookie_header) = headers.get(header::COOKIE).and_then(|value| value.to_str().ok())
+    if let Some(cookie_header) = headers
+        .get(header::COOKIE)
+        .and_then(|value| value.to_str().ok())
     {
         if let Some(token) = parse_cookie_value(cookie_header, COOKIE_NAME) {
             state.auth.sessions.revoke_token(&token).await;
@@ -98,6 +79,51 @@ async fn me(AuthUser { username, role, .. }: AuthUser) -> Json<MeResponse> {
         username,
         role: role.as_str().to_string(),
     })
+}
+
+async fn signup_enabled(State(state): State<AppState>) -> Json<SignupEnabledResponse> {
+    let settings = state.manager.settings().await;
+    Json(SignupEnabledResponse {
+        sign_up_enabled: settings.sign_up_enabled,
+    })
+}
+
+async fn signup(
+    State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
+    Json(body): Json<SignupRequest>,
+) -> Response {
+    if !state.manager.settings().await.sign_up_enabled {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(ErrorResponse::new("sign up is disabled")),
+        )
+            .into_response();
+    }
+
+    let ip = client_ip_from_headers(&headers);
+    if state.auth.rate_limiter.check(ip).await.is_err() {
+        return (
+            StatusCode::TOO_MANY_REQUESTS,
+            Json(ErrorResponse::new("too many sign up attempts")),
+        )
+            .into_response();
+    }
+
+    let username = body.username.trim();
+    if username.is_empty() || body.password.is_empty() {
+        return invalid_credentials();
+    }
+
+    let user = match users::create(&state.pool, username, &body.password, UserRole::User).await {
+        Ok(user) => user,
+        Err(mc_db::DbError::Conflict(message)) => {
+            return (StatusCode::CONFLICT, Json(ErrorResponse::new(message))).into_response();
+        }
+        Err(_) => return invalid_credentials(),
+    };
+
+    issue_session(&state, &user).await
 }
 
 async fn change_password(
@@ -135,6 +161,35 @@ async fn change_password(
     }
 
     StatusCode::NO_CONTENT.into_response()
+}
+
+async fn issue_session(state: &AppState, user: &mc_db::User) -> Response {
+    let token = match state
+        .auth
+        .sessions
+        .issue_token(user.id, &user.username, user.role)
+    {
+        Ok(token) => token,
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse::new("failed to create session")),
+            )
+                .into_response();
+        }
+    };
+
+    let response = Json(LoginResponse {
+        username: user.username.clone(),
+        role: user.role.as_str().to_string(),
+    });
+
+    (
+        StatusCode::OK,
+        [(header::SET_COOKIE, state.auth.sessions.cookie_value(&token))],
+        response,
+    )
+        .into_response()
 }
 
 fn invalid_credentials() -> Response {

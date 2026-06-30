@@ -1,7 +1,7 @@
 use mc_common::now_ms;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
-use tokio::time::{Duration, timeout};
+use tokio::time::{timeout, Duration};
 
 use crate::error::PingError;
 use crate::java::handshake::encode_handshake;

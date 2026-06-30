@@ -1,0 +1,27 @@
+[package]
+name = "mc-integration-tests"
+description = "Full-stack integration tests for mc-tracker"
+edition.workspace = true
+version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+axum = "0.8"
+chrono = { workspace = true }
+mc-db = { path = "../../crates/mc-db" }
+mc-geo = { path = "../../crates/mc-geo" }
+mc-metrics = { path = "../../crates/mc-metrics" }
+mc-tracker = { path = "../../crates/mc-tracker" }
+serde_json = { workspace = true }
+testcontainers = "0.27"
+testcontainers-modules = { version = "0.15", features = ["postgres"] }
+tokio = { workspace = true }
+tower = { version = "0.5", features = ["util"] }
+uuid = { workspace = true }
+wiremock = "0.6"

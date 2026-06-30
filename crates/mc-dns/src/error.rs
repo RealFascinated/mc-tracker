@@ -6,10 +6,7 @@ pub enum DnsError {
     InvalidIp(String),
 
     #[error("dns error for '{hostname}': {message}")]
-    Query {
-        hostname: String,
-        message: String,
-    },
+    Query { hostname: String, message: String },
 }
 
 impl DnsError {

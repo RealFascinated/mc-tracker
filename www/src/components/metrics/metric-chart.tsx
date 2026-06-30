@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type uPlot from "uplot";
 import type { RefObject } from "react";
 import "uplot/dist/uPlot.min.css";

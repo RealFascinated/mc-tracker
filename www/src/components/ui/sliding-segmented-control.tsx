@@ -6,43 +6,43 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-} from "react"
-import type { ComponentProps, ReactNode, Ref } from "react"
+} from "react";
+import type { ComponentProps, ReactNode, Ref } from "react";
 
 import {
   slidingSegmentedControlIndicatorClassName,
   slidingSegmentedControlTrackClassName,
-} from "@/components/ui/sliding-segmented-control-styles"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/sliding-segmented-control-styles";
+import { cn } from "@/lib/utils";
 
 type SlidingSegmentedControlContextValue = {
-  value: string
-  onValueChange: (value: string) => void
-  registerItem: (value: string, node: HTMLElement | null) => void
-}
+  value: string;
+  onValueChange: (value: string) => void;
+  registerItem: (value: string, node: HTMLElement | null) => void;
+};
 
 const SlidingSegmentedControlContext =
-  createContext<SlidingSegmentedControlContextValue | null>(null)
+  createContext<SlidingSegmentedControlContextValue | null>(null);
 
 function useSlidingSegmentedControlContext() {
-  const context = useContext(SlidingSegmentedControlContext)
+  const context = useContext(SlidingSegmentedControlContext);
   if (!context) {
     throw new Error(
       "SlidingSegmentedControlItem must be used within SlidingSegmentedControl",
-    )
+    );
   }
 
-  return context
+  return context;
 }
 
 type SlidingSegmentedControlProps = {
-  value: string
-  onValueChange: (value: string) => void
-  children: ReactNode
-  className?: string
-  indicatorClassName?: string
-  "aria-label": string
-}
+  value: string;
+  onValueChange: (value: string) => void;
+  children: ReactNode;
+  className?: string;
+  indicatorClassName?: string;
+  "aria-label": string;
+};
 
 function SlidingSegmentedControl({
   value,
@@ -52,63 +52,71 @@ function SlidingSegmentedControl({
   indicatorClassName,
   "aria-label": ariaLabel,
 }: SlidingSegmentedControlProps) {
-  const containerRef = useRef<HTMLFieldSetElement>(null)
-  const itemRefs = useRef(new Map<string, HTMLElement>())
-  const hasMeasuredRef = useRef(false)
-  const [indicator, setIndicator] = useState({ left: 0, width: 0 })
-  const [indicatorReady, setIndicatorReady] = useState(false)
+  const containerRef = useRef<HTMLFieldSetElement>(null);
+  const itemRefs = useRef(new Map<string, HTMLElement>());
+  const hasMeasuredRef = useRef(false);
+  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
+  const [indicatorReady, setIndicatorReady] = useState(false);
 
   const updateIndicator = useCallback(() => {
-    const container = containerRef.current
-    const item = itemRefs.current.get(value)
-    if (!container || !item) return
+    const container = containerRef.current;
+    const item = itemRefs.current.get(value);
+    if (!container || !item) {
+      return;
+    }
 
-    const containerRect = container.getBoundingClientRect()
-    const itemRect = item.getBoundingClientRect()
+    const containerRect = container.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
     setIndicator({
       left: itemRect.left - containerRect.left,
       width: itemRect.width,
-    })
-    setIndicatorReady(true)
-  }, [value])
+    });
+    setIndicatorReady(true);
+  }, [value]);
 
   const registerItem = useCallback(
     (itemValue: string, node: HTMLElement | null) => {
       if (node) {
-        itemRefs.current.set(itemValue, node)
+        itemRefs.current.set(itemValue, node);
       } else {
-        itemRefs.current.delete(itemValue)
+        itemRefs.current.delete(itemValue);
       }
     },
     [],
-  )
+  );
 
   useLayoutEffect(() => {
-    if (hasMeasuredRef.current) return
-    updateIndicator()
-    hasMeasuredRef.current = true
-  }, [updateIndicator])
+    if (hasMeasuredRef.current) {
+      return;
+    }
+    updateIndicator();
+    hasMeasuredRef.current = true;
+  }, [updateIndicator]);
 
   useEffect(() => {
-    if (!hasMeasuredRef.current) return
-    updateIndicator()
-  }, [updateIndicator])
+    if (!hasMeasuredRef.current) {
+      return;
+    }
+    updateIndicator();
+  }, [updateIndicator]);
 
   useLayoutEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const observer = new ResizeObserver(() => {
-      updateIndicator()
-    })
-
-    observer.observe(container)
-    for (const item of itemRefs.current.values()) {
-      observer.observe(item)
+    const container = containerRef.current;
+    if (!container) {
+      return;
     }
 
-    return () => observer.disconnect()
-  }, [updateIndicator])
+    const observer = new ResizeObserver(() => {
+      updateIndicator();
+    });
+
+    observer.observe(container);
+    for (const item of itemRefs.current.values()) {
+      observer.observe(item);
+    }
+
+    return () => observer.disconnect();
+  }, [updateIndicator]);
 
   return (
     <SlidingSegmentedControlContext.Provider
@@ -141,14 +149,14 @@ function SlidingSegmentedControl({
         {children}
       </fieldset>
     </SlidingSegmentedControlContext.Provider>
-  )
+  );
 }
 
 type SlidingSegmentedControlItemProps = {
-  value: string
-  children: ReactNode
-  ref?: Ref<HTMLButtonElement>
-} & Omit<ComponentProps<"button">, "value" | "children" | "type" | "ref">
+  value: string;
+  children: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
+} & Omit<ComponentProps<"button">, "value" | "children" | "type" | "ref">;
 
 function SlidingSegmentedControlItem({
   value: itemValue,
@@ -159,24 +167,24 @@ function SlidingSegmentedControlItem({
   ...props
 }: SlidingSegmentedControlItemProps) {
   const { value, onValueChange, registerItem } =
-    useSlidingSegmentedControlContext()
-  const selected = value === itemValue
+    useSlidingSegmentedControlContext();
+  const selected = value === itemValue;
 
   const setRef = useCallback(
     (node: HTMLButtonElement | null) => {
-      registerItem(itemValue, node)
+      registerItem(itemValue, node);
 
       if (typeof ref === "function") {
-        ref(node)
-        return
+        ref(node);
+        return;
       }
 
       if (ref) {
-        ref.current = node
+        ref.current = node;
       }
     },
     [itemValue, registerItem, ref],
-  )
+  );
 
   return (
     <button
@@ -184,15 +192,15 @@ function SlidingSegmentedControlItem({
       type="button"
       aria-pressed={selected}
       onClick={(event) => {
-        onValueChange(itemValue)
-        onClick?.(event)
+        onValueChange(itemValue);
+        onClick?.(event);
       }}
       className={cn("relative z-10", className)}
       {...props}
     >
       {children}
     </button>
-  )
+  );
 }
 
-export { SlidingSegmentedControl, SlidingSegmentedControlItem }
+export { SlidingSegmentedControl, SlidingSegmentedControlItem };

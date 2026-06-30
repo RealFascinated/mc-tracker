@@ -1709,6 +1709,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "mc-integration-tests"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "mc-db",
+ "mc-geo",
+ "mc-metrics",
+ "mc-tracker",
+ "serde_json",
+ "testcontainers",
+ "testcontainers-modules",
+ "tokio",
+ "tower",
+ "uuid",
+ "wiremock",
+]
+
+[[package]]
 name = "mc-metrics"
 version = "0.1.0"
 dependencies = [

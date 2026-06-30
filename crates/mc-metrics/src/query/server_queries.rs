@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::query::promql::vector_selector;
-use crate::schema::{METRIC_PLAYER_COUNT, labels};
+use crate::schema::{labels, METRIC_PLAYER_COUNT};
 
 /// `dashboard.yml` single-server panel:
 /// `max by (id, type) (minecraft_server_player_count{id="$server",environment="production"})`
@@ -10,10 +10,7 @@ pub fn player_count_series(environment: &str, server_id: &str) -> String {
         r#"max by (id, type) ({})"#,
         vector_selector(
             METRIC_PLAYER_COUNT,
-            &BTreeMap::from([
-                (labels::ENVIRONMENT, environment),
-                (labels::ID, server_id),
-            ]),
+            &BTreeMap::from([(labels::ENVIRONMENT, environment), (labels::ID, server_id),]),
         )
     )
 }
@@ -68,6 +65,22 @@ mod tests {
         assert_eq!(
             query,
             r#"max by (id, type) (minecraft_server_player_count{environment="production",id="550e8400-e29b-41d4-a716-446655440000"})"#
+        );
+    }
+
+    #[test]
+    fn peak_queries_match_dashboard_yml_expressions() {
+        let peak_24h = peak_players_24h("production");
+        let peak_30d = peak_players_30d("production");
+
+        // Normalized from dashboard.yml panels (whitespace collapsed).
+        assert_eq!(
+            peak_24h,
+            "max_over_time(sum(minecraft_server_player_count{environment=\"production\"})[24h:])"
+        );
+        assert_eq!(
+            peak_30d,
+            "max_over_time(sum(minecraft_server_player_count{environment=\"production\"})[30d:])"
         );
     }
 }
