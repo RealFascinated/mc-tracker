@@ -1,11 +1,5 @@
 import { useQueryClient, useIsFetching } from "@tanstack/react-query";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import { asnsQueryKey, asnsTimeseriesQueryKey, asnQueryKey } from "@/lib/api/asns.queries";
@@ -14,6 +8,7 @@ import {
   serverQueryKey,
   serversTimeseriesQueryKey,
 } from "@/lib/api/servers.queries";
+import { DashboardRefreshContext } from "@/lib/dashboard/dashboard-refresh-context";
 import {
   DASHBOARD_REFRESH_STORAGE_KEY,
   DEFAULT_DASHBOARD_REFRESH_INTERVAL,
@@ -21,17 +16,6 @@ import {
   getStoredDashboardRefreshInterval,
 } from "@/lib/dashboard/refresh-interval";
 import type { DashboardRefreshInterval } from "@/lib/dashboard/refresh-interval";
-
-type DashboardRefreshContextValue = {
-  refreshInterval: DashboardRefreshInterval;
-  refreshIntervalMs: number | false;
-  setRefreshInterval: (interval: DashboardRefreshInterval) => void;
-  refreshAll: () => Promise<void>;
-  isRefreshing: boolean;
-};
-
-const DashboardRefreshContext =
-  createContext<DashboardRefreshContextValue | null>(null);
 
 function DashboardRefreshProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -110,26 +94,4 @@ function DashboardRefreshProvider({ children }: { children: ReactNode }) {
   );
 }
 
-function useDashboardRefresh(): DashboardRefreshContextValue {
-  const context = useContext(DashboardRefreshContext);
-  if (!context) {
-    throw new Error(
-      "useDashboardRefresh must be used within DashboardRefreshProvider",
-    );
-  }
-  return context;
-}
-
-function useDashboardRefreshIntervalMs(): number | false {
-  const context = useContext(DashboardRefreshContext);
-  return (
-    context?.refreshIntervalMs ??
-    dashboardRefreshIntervalToMs(DEFAULT_DASHBOARD_REFRESH_INTERVAL)
-  );
-}
-
-export {
-  DashboardRefreshProvider,
-  useDashboardRefresh,
-  useDashboardRefreshIntervalMs,
-};
+export { DashboardRefreshProvider };

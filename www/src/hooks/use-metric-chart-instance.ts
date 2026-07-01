@@ -1,8 +1,7 @@
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import uPlot from "uplot";
 import type {
   Dispatch,
-  MutableRefObject,
   RefObject,
   SetStateAction,
 } from "react";
@@ -21,22 +20,24 @@ import {
   destroyChartTooltipElement,
 } from "@/lib/metrics/chart-tooltip";
 import {
+  getChartColors,
+} from "@/lib/metrics/chart-colors";
+import {
   buildUPlotOptions,
   chartLayoutForWidth,
-  getChartColors,
+  chartPxRatio,
 } from "@/lib/metrics/uplot-theme";
-import { enqueueChartDestroy } from "@/lib/metrics/chart-hydration-queue";
 
 type UseMetricChartInstanceParams = {
   containerRef: RefObject<HTMLDivElement | null>;
-  chartRef: MutableRefObject<uPlot | null>;
-  seriesFormattersRef: MutableRefObject<
+  chartRef: RefObject<uPlot | null>;
+  seriesFormattersRef: RefObject<
     Array<(value: number) => string> | undefined
   >;
-  dataRef: MutableRefObject<uPlot.AlignedData>;
-  hiddenSeriesRef: MutableRefObject<ReadonlySet<number> | undefined>;
-  sourceIndicesRef: MutableRefObject<Array<number> | undefined>;
-  layoutDensityRef: MutableRefObject<"normal" | "compact">;
+  dataRef: RefObject<uPlot.AlignedData>;
+  hiddenSeriesRef: RefObject<ReadonlySet<number> | undefined>;
+  sourceIndicesRef: RefObject<Array<number> | undefined>;
+  layoutDensityRef: RefObject<"normal" | "compact">;
   applySeriesVisibility: (chart: uPlot) => void;
   syncUnitInsets: (chart: uPlot) => void;
   resolvedTheme: ResolvedTheme;
@@ -59,8 +60,9 @@ type UseMetricChartInstanceParams = {
   sizeRef: RefObject<HTMLElement | null> | undefined;
   xRange: ChartXRange | undefined;
   stacked: boolean;
-  preparedData: uPlot.AlignedData;
-  preparedBands: Array<uPlot.Band> | undefined;
+  preparedDataRef: RefObject<uPlot.AlignedData>;
+  preparedBandsRef: RefObject<Array<uPlot.Band> | undefined>;
+  bandsKey: string;
   bidirectional: boolean;
   compact: boolean;
   hideYAxis: boolean;
@@ -69,10 +71,9 @@ type UseMetricChartInstanceParams = {
   showTooltip: boolean;
   tooltipColumnSize: number | undefined;
   tooltipSort:
-    ((a: TooltipSortEntry, b: TooltipSortEntry) => number) | undefined;
+    | ((a: TooltipSortEntry, b: TooltipSortEntry) => number)
+    | undefined;
   setLayoutDensity: Dispatch<SetStateAction<"normal" | "compact">>;
-  xMin: number | null;
-  xMax: number | null;
 };
 
 function useMetricChartInstance({
@@ -105,8 +106,9 @@ function useMetricChartInstance({
   sizeRef,
   xRange,
   stacked,
-  preparedData,
-  preparedBands,
+  preparedDataRef,
+  preparedBandsRef,
+  bandsKey,
   bidirectional,
   compact,
   hideYAxis,
@@ -116,148 +118,145 @@ function useMetricChartInstance({
   tooltipColumnSize,
   tooltipSort,
   setLayoutDensity,
-  xMin,
-  xMax,
 }: UseMetricChartInstanceParams) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    let disposed = false;
     let chart: uPlot | null = null;
     let resizeObserver: ResizeObserver | null = null;
     let unbindInteractionDismiss: (() => void) | null = null;
     let tooltip: HTMLDivElement | null = null;
 
-    const frame = requestAnimationFrame(() => {
-      if (disposed) return;
+    if (showTooltip) {
+      tooltip = createChartTooltipElement(resolvedTheme);
+    }
 
-      if (showTooltip) {
-        tooltip = createChartTooltipElement(resolvedTheme);
-      }
+    const getSizeElement = () => sizeRef?.current ?? containerRef.current;
+    const getChartSize = () => {
+      const element = getSizeElement();
+      const width = Math.max(element?.clientWidth ?? 1, 1);
+      const chartHeight = Math.max(element?.clientHeight ?? height, height);
+      return { width, height: chartHeight };
+    };
 
-      const getSizeElement = () => sizeRef?.current ?? containerRef.current;
-      const getChartSize = () => {
-        const element = getSizeElement();
-        const width = Math.max(element?.clientWidth ?? 1, 1);
-        const chartHeight = Math.max(element?.clientHeight ?? height, height);
-        return { width, height: chartHeight };
-      };
+    const { width: initialWidth, height: initialHeight } = getChartSize();
+    const layout = chartLayoutForWidth(initialWidth);
+    if (layout.density !== layoutDensityRef.current) {
+      layoutDensityRef.current = layout.density;
+      setLayoutDensity(layout.density);
+    }
 
-      const { width: initialWidth, height: initialHeight } = getChartSize();
-      const layout = chartLayoutForWidth(initialWidth);
-      if (layout.density !== layoutDensityRef.current) {
-        layoutDensityRef.current = layout.density;
-        setLayoutDensity(layout.density);
-      }
+    const mountData = preparedDataRef.current;
+    const mountBands = preparedBandsRef.current;
 
-      const options = buildUPlotOptions({
-        theme: resolvedTheme,
-        labels,
-        height: initialHeight,
-        chartAxes,
-        seriesAxisIds,
-        seriesFormatters,
-        xRange,
-        seriesRenders,
-        stacked,
-        bands: preparedBands,
-        bidirectional,
-        negated,
-        compact,
-        hideYAxis,
-        xTime,
-        reserveUnitLabels,
-        layout,
-        seriesColors,
-        seriesFills,
-      });
-
-      const colors = seriesColors ?? getChartColors(resolvedTheme);
-      const formatSeriesValue = (value: number, seriesIndex: number) => {
-        const sourceIndex =
-          sourceIndicesRef.current?.[seriesIndex] ?? seriesIndex;
-        const display =
-          seriesIndex >= 0 && negated[seriesIndex] ? Math.abs(value) : value;
-        const formatter = seriesFormattersRef.current?.[sourceIndex];
-        return formatter?.(display) ?? String(display);
-      };
-
-      const hooks: uPlot.Hooks.Arrays = {};
-      if (showTooltip && tooltip) {
-        hooks.setCursor = [
-          createCursorTooltipHandler({
-            tooltip,
-            labels,
-            colors,
-            getData: () => dataRef.current,
-            formatValue: formatSeriesValue,
-            theme: resolvedTheme,
-            stacked,
-            tooltipColumnSize,
-            tooltipSort,
-            isSeriesHidden: (seriesIndex) => {
-              const sourceIndex =
-                sourceIndicesRef.current?.[seriesIndex] ?? seriesIndex;
-              return hiddenSeriesRef.current?.has(sourceIndex) ?? false;
-            },
-          }),
-        ];
-      }
-
-      options.hooks = hooks;
-
-      chart = new uPlot(
-        { ...options, width: initialWidth },
-        preparedData,
-        container,
-      );
-      chartRef.current = chart;
-      applySeriesVisibility(chart);
-      syncUnitInsets(chart);
-
-      let lastWidth = 0;
-      let lastHeight = 0;
-
-      resizeObserver = new ResizeObserver(() => {
-        const { width, height: chartHeight } = getChartSize();
-        if (width > 0 && chartHeight > 0) {
-          const nextDensity = chartLayoutForWidth(width).density;
-          if (nextDensity !== layoutDensityRef.current) {
-            layoutDensityRef.current = nextDensity;
-            setLayoutDensity(nextDensity);
-          }
-          if (width !== lastWidth || chartHeight !== lastHeight) {
-            lastWidth = width;
-            lastHeight = chartHeight;
-            chart?.setSize({ width, height: chartHeight });
-          }
-          if (chart) syncUnitInsets(chart);
-        }
-      });
-      const sizeElement = getSizeElement();
-      if (sizeElement) resizeObserver.observe(sizeElement);
-
-      unbindInteractionDismiss =
-        showTooltip && tooltip
-          ? bindChartInteractionDismiss(chart, tooltip)
-          : null;
+    const options = buildUPlotOptions({
+      theme: resolvedTheme,
+      labels,
+      height: initialHeight,
+      chartAxes,
+      seriesAxisIds,
+      seriesFormatters,
+      xRange,
+      seriesRenders,
+      stacked,
+      bands: mountBands,
+      bidirectional,
+      negated,
+      compact,
+      hideYAxis,
+      xTime,
+      reserveUnitLabels,
+      layout,
+      seriesColors,
+      seriesFills,
     });
 
-    return () => {
-      disposed = true;
-      cancelAnimationFrame(frame);
-      unbindInteractionDismiss?.();
-      resizeObserver?.disconnect();
-      if (tooltip) destroyChartTooltipElement(tooltip);
-      if (chart) {
-        chartRef.current = null;
-        enqueueChartDestroy(chart);
+    const colors = seriesColors ?? getChartColors(resolvedTheme);
+    const formatSeriesValue = (value: number, seriesIndex: number) => {
+      const sourceIndex =
+        sourceIndicesRef.current?.[seriesIndex] ?? seriesIndex;
+      const display =
+        seriesIndex >= 0 && negated[seriesIndex] ? Math.abs(value) : value;
+      const formatter = seriesFormattersRef.current?.[sourceIndex];
+      return formatter?.(display) ?? String(display);
+    };
+
+    const hooks: uPlot.Hooks.Arrays = {};
+    if (showTooltip && tooltip) {
+      hooks.setCursor = [
+        createCursorTooltipHandler({
+          tooltip,
+          labels,
+          colors,
+          getData: () => dataRef.current,
+          formatValue: formatSeriesValue,
+          theme: resolvedTheme,
+          stacked,
+          tooltipColumnSize,
+          tooltipSort,
+          isSeriesHidden: (seriesIndex) => {
+            const sourceIndex =
+              sourceIndicesRef.current?.[seriesIndex] ?? seriesIndex;
+            return hiddenSeriesRef.current?.has(sourceIndex) ?? false;
+          },
+        }),
+      ];
+    }
+
+    options.hooks = hooks;
+
+    chart = new uPlot(
+      {
+        ...options,
+        width: initialWidth,
+        pxRatio: chartPxRatio(),
+      } as uPlot.Options,
+      mountData,
+      container,
+    );
+    chartRef.current = chart;
+    applySeriesVisibility(chart);
+    syncUnitInsets(chart);
+
+    let lastWidth = 0;
+    let lastHeight = 0;
+
+    resizeObserver = new ResizeObserver(() => {
+      const { width, height: chartHeight } = getChartSize();
+      if (width > 0 && chartHeight > 0) {
+        const nextDensity = chartLayoutForWidth(width).density;
+        if (nextDensity !== layoutDensityRef.current) {
+          layoutDensityRef.current = nextDensity;
+          setLayoutDensity(nextDensity);
+        }
+        if (width !== lastWidth || chartHeight !== lastHeight) {
+          lastWidth = width;
+          lastHeight = chartHeight;
+          chart.setSize({ width, height: chartHeight });
+        }
+        syncUnitInsets(chart);
       }
+    });
+    const sizeElement = getSizeElement();
+    if (sizeElement) resizeObserver.observe(sizeElement);
+
+    unbindInteractionDismiss =
+      showTooltip && tooltip
+        ? bindChartInteractionDismiss(chart, tooltip)
+        : null;
+
+    return () => {
+      unbindInteractionDismiss?.();
+      resizeObserver.disconnect();
+      if (tooltip) destroyChartTooltipElement(tooltip);
+      chart.destroy();
+      chartRef.current = null;
     };
   }, [
     applySeriesVisibility,
     bidirectional,
+    bandsKey,
     chartAxes,
     chartAxesKey,
     chartRef,
@@ -272,8 +271,8 @@ function useMetricChartInstance({
     layoutDensityRef,
     negated,
     negatedKey,
-    preparedBands,
-    preparedData,
+    preparedBandsRef,
+    preparedDataRef,
     reserveUnitLabels,
     resolvedTheme,
     seriesAxisIds,
@@ -294,8 +293,6 @@ function useMetricChartInstance({
     syncUnitInsets,
     tooltipColumnSize,
     tooltipSort,
-    xMax,
-    xMin,
     xRange,
     xTime,
   ]);

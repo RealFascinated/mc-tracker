@@ -86,8 +86,6 @@ function MetricChart({
   );
   const layoutDensityRef = useRef(layoutDensity);
   const activeLayout = chartLayoutForDensity(layoutDensity);
-  const xMin = xRange?.min ?? null;
-  const xMax = xRange?.max ?? null;
   const labelsKey = labels.join("\0");
   const negatedKey = negated.map(String).join("\0");
   const seriesAxisIdsKey = seriesAxisIds.join("\0");
@@ -121,9 +119,15 @@ function MetricChart({
     const result = stackAlignedData(data);
     return { data: result.data, bands: result.bands };
   }, [data, stacked]);
+  const preparedDataRef = useRef(prepared.data);
+  const preparedBandsRef = useRef(prepared.bands);
+  preparedDataRef.current = prepared.data;
+  preparedBandsRef.current = prepared.bands;
+  const bandsKey =
+    prepared.bands?.map((band) => band.series.join(":")).join("|") ?? "";
 
   seriesFormattersRef.current = seriesFormatters;
-  dataRef.current = data;
+  dataRef.current = prepared.data;
   hiddenSeriesRef.current = hiddenSeries;
   sourceIndicesRef.current = sourceIndices;
 
@@ -182,8 +186,9 @@ function MetricChart({
     sizeRef,
     xRange,
     stacked,
-    preparedData: prepared.data,
-    preparedBands: prepared.bands,
+    preparedDataRef,
+    preparedBandsRef,
+    bandsKey,
     bidirectional,
     compact,
     hideYAxis,
@@ -193,8 +198,6 @@ function MetricChart({
     tooltipColumnSize,
     tooltipSort,
     setLayoutDensity,
-    xMin,
-    xMax,
   });
 
   useLayoutEffect(() => {

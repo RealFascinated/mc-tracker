@@ -474,10 +474,6 @@
     animation: motion-auth-enter 400ms ease-out both;
   }
 
-  .motion-chart-reveal {
-    animation: motion-fade-in 400ms ease-out both;
-  }
-
   .motion-collapsible {
     display: grid;
     grid-template-rows: 0fr;
@@ -500,9 +496,7 @@
     .motion-enter,
     .motion-callout,
     .motion-auth-card,
-    .motion-chart-reveal,
     .metric-stat-grid > *,
-    .dashboard-stats-row > *,
     .metric-chart-grid > *,
     .status-pulse-dot {
       animation: none !important;
@@ -944,23 +938,6 @@
 
   .dashboard-stats-row > * {
     min-width: 0;
-    animation: motion-fade-in-up 400ms ease-out both;
-  }
-
-  .dashboard-stats-row > *:nth-child(2) {
-    animation-delay: 75ms;
-  }
-
-  .dashboard-stats-row > *:nth-child(3) {
-    animation-delay: 150ms;
-  }
-
-  .dashboard-stats-row > *:nth-child(4) {
-    animation-delay: 225ms;
-  }
-
-  .dashboard-stats-row > *:nth-child(5) {
-    animation-delay: 300ms;
   }
 
   @media (max-width: 40rem) {
@@ -1057,8 +1034,8 @@
     @apply absolute top-[calc(100%+0.25rem)] right-0 left-0 z-50 max-h-72 overflow-y-auto rounded-soft border border-border bg-popover p-1 shadow-md;
   }
 
-  .dashboard-search-suggestions [role="listbox"] {
-    @apply m-0 list-none p-0;
+  .dashboard-search-suggestions-list {
+    @apply m-0 flex flex-col p-0;
   }
 
   .dashboard-search-suggestion-status {

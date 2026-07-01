@@ -13,19 +13,54 @@ export type ChartAxisFormat = {
 };
 
 /** Compact, grouping-free labels for axis ticks to avoid gutter overflow. */
+const axisTickCompactFormatter0 = new Intl.NumberFormat(undefined, {
+  notation: "compact",
+  maximumFractionDigits: 0,
+});
+
+const axisTickCompactFormatter1 = new Intl.NumberFormat(undefined, {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+const axisTickIntegerFormatter = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 0,
+  minimumFractionDigits: 0,
+  useGrouping: false,
+});
+
+const axisTickDecimalFormatters = new Map<number, Intl.NumberFormat>([
+  [
+    1,
+    new Intl.NumberFormat(undefined, {
+      maximumFractionDigits: 1,
+      minimumFractionDigits: 1,
+      useGrouping: false,
+    }),
+  ],
+  [
+    2,
+    new Intl.NumberFormat(undefined, {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+      useGrouping: false,
+    }),
+  ],
+]);
+
 function formatAxisTickNumber(value: number, fractionDigits = 0): string {
   const abs = Math.abs(value);
   if (abs >= 10_000) {
-    return new Intl.NumberFormat(undefined, {
-      notation: "compact",
-      maximumFractionDigits: abs >= 100_000 ? 0 : 1,
-    }).format(value);
+    return (abs >= 100_000 ? axisTickCompactFormatter0 : axisTickCompactFormatter1).format(
+      value,
+    );
   }
-  return new Intl.NumberFormat(undefined, {
-    maximumFractionDigits: fractionDigits,
-    minimumFractionDigits: fractionDigits,
-    useGrouping: false,
-  }).format(value);
+  if (fractionDigits === 0) {
+    return axisTickIntegerFormatter.format(value);
+  }
+  return (
+    axisTickDecimalFormatters.get(fractionDigits) ?? axisTickIntegerFormatter
+  ).format(value);
 }
 
 function formatBytes(value: number): string {

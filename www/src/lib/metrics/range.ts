@@ -31,7 +31,7 @@ export const METRIC_RANGE_LOOKBACK_SECONDS: Record<MetricTimeRange, number> = {
   "2y": 730 * DAY_SECONDS,
 };
 
-export const METRIC_RANGES = [
+const METRIC_RANGES = [
   "1h",
   "3h",
   "6h",
@@ -132,7 +132,7 @@ export function getMetricRangeOption(
   return METRIC_RANGE_BY_VALUE[value];
 }
 
-export function normalizeMetricRange(
+function normalizeMetricRange(
   value: string,
 ): MetricTimeRange | undefined {
   const canonical = METRIC_RANGE_ALIASES[value] ?? value;
@@ -151,8 +151,4 @@ export function parseMetricRangeSearchParam(
   }
 
   return normalizeMetricRange(value);
-}
-
-export function parseMetricRange(value: unknown): MetricTimeRange {
-  return parseMetricRangeSearchParam(value) ?? DEFAULT_METRIC_TIME_RANGE;
 }

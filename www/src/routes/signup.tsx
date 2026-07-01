@@ -35,7 +35,7 @@ function SignupPage() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const signupEnabledQuery = useQuery({
+  const { data: signupConfig, isPending: signupConfigPending } = useQuery({
     queryKey: ["auth", "signup-enabled"],
     queryFn: getSignupEnabled,
   });
@@ -46,11 +46,11 @@ function SignupPage() {
     }
   }, [isLoading, user, navigate]);
 
-  if (isLoading || signupEnabledQuery.isPending) {
+  if (isLoading || signupConfigPending) {
     return <LoadingState message="Loading…" centered />;
   }
 
-  if (!signupEnabledQuery.data?.signUpEnabled) {
+  if (!signupConfig?.signUpEnabled) {
     return (
       <AuthPageShell>
         <Card className="w-full max-w-md">

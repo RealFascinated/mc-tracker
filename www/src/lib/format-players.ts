@@ -2,6 +2,16 @@ const playersFormatter = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 0,
 });
 
+const playersCompactFormatter0 = new Intl.NumberFormat(undefined, {
+  notation: "compact",
+  maximumFractionDigits: 0,
+});
+
+const playersCompactFormatter1 = new Intl.NumberFormat(undefined, {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
 export function formatPlayers(count: number | null | undefined): string {
   if (count == null || Number.isNaN(count)) {
     return "—";
@@ -19,8 +29,7 @@ export function formatPlayersAxisTick(value: number): string {
     return playersFormatter.format(rounded);
   }
 
-  return new Intl.NumberFormat(undefined, {
-    notation: "compact",
-    maximumFractionDigits: abs >= 100_000 ? 0 : 1,
-  }).format(rounded);
+  return (abs >= 100_000 ? playersCompactFormatter0 : playersCompactFormatter1).format(
+    rounded,
+  );
 }

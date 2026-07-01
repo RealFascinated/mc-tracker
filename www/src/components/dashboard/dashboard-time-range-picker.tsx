@@ -1,5 +1,5 @@
 import { Calendar, Check, ChevronDown, Clock3 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useReducer, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,42 @@ function draftFromWindow(window: MetricTimeWindow): {
   };
 }
 
+type CustomDraftState = {
+  from: string;
+  to: string;
+  customError: string | undefined;
+};
+
+type CustomDraftAction =
+  | { type: "reset"; window: MetricTimeWindow }
+  | { type: "set-from"; value: string }
+  | { type: "set-to"; value: string }
+  | { type: "set-error"; error: string };
+
+function customDraftReducer(
+  state: CustomDraftState,
+  action: CustomDraftAction,
+): CustomDraftState {
+  switch (action.type) {
+    case "reset": {
+      const draft = draftFromWindow(action.window);
+      return { from: draft.from, to: draft.to, customError: undefined };
+    }
+    case "set-from":
+      return { ...state, from: action.value, customError: undefined };
+    case "set-to":
+      return { ...state, to: action.value, customError: undefined };
+    case "set-error":
+      return { ...state, customError: action.error };
+  }
+}
+
+const emptyCustomDraft: CustomDraftState = {
+  from: "",
+  to: "",
+  customError: undefined,
+};
+
 export function DashboardTimeRangePicker({
   window,
   onPresetChange,
@@ -49,32 +85,32 @@ export function DashboardTimeRangePicker({
   className,
 }: DashboardTimeRangePickerProps) {
   const [open, setOpen] = useState(false);
-  const [draftFrom, setDraftFrom] = useState("");
-  const [draftTo, setDraftTo] = useState("");
-  const [customError, setCustomError] = useState<string | undefined>();
+  const [customDraft, dispatchCustomDraft] = useReducer(
+    customDraftReducer,
+    emptyCustomDraft,
+  );
 
-  useEffect(() => {
-    if (!open) {
-      return;
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      dispatchCustomDraft({ type: "reset", window });
     }
-
-    const draft = draftFromWindow(window);
-    setDraftFrom(draft.from);
-    setDraftTo(draft.to);
-    setCustomError(undefined);
-  }, [open, window]);
+    setOpen(nextOpen);
+  };
 
   const applyCustomRange = () => {
-    const from = datetimeLocalValueToEpoch(draftFrom);
-    const to = datetimeLocalValueToEpoch(draftTo);
+    const from = datetimeLocalValueToEpoch(customDraft.from);
+    const to = datetimeLocalValueToEpoch(customDraft.to);
     if (from == null || to == null) {
-      setCustomError("Enter valid start and end times.");
+      dispatchCustomDraft({
+        type: "set-error",
+        error: "Enter valid start and end times.",
+      });
       return;
     }
 
     const error = validateMetricEpochWindow(from, to);
     if (error) {
-      setCustomError(error);
+      dispatchCustomDraft({ type: "set-error", error });
       return;
     }
 
@@ -89,7 +125,7 @@ export function DashboardTimeRangePicker({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -174,12 +210,14 @@ export function DashboardTimeRangePicker({
                     <Input
                       id="dashboard-time-range-from"
                       type="datetime-local"
-                      value={draftFrom}
+                      value={customDraft.from}
                       onChange={(event) => {
-                        setDraftFrom(event.target.value);
-                        setCustomError(undefined);
+                        dispatchCustomDraft({
+                          type: "set-from",
+                          value: event.target.value,
+                        });
                       }}
-                      aria-invalid={customError ? true : undefined}
+                      aria-invalid={customDraft.customError ? true : undefined}
                     />
                     <Calendar
                       className="dashboard-time-range-picker-input-icon"
@@ -193,12 +231,14 @@ export function DashboardTimeRangePicker({
                     <Input
                       id="dashboard-time-range-to"
                       type="datetime-local"
-                      value={draftTo}
+                      value={customDraft.to}
                       onChange={(event) => {
-                        setDraftTo(event.target.value);
-                        setCustomError(undefined);
+                        dispatchCustomDraft({
+                          type: "set-to",
+                          value: event.target.value,
+                        });
                       }}
-                      aria-invalid={customError ? true : undefined}
+                      aria-invalid={customDraft.customError ? true : undefined}
                     />
                     <Calendar
                       className="dashboard-time-range-picker-input-icon"
@@ -207,9 +247,9 @@ export function DashboardTimeRangePicker({
                   </div>
                 </div>
               </div>
-              {customError ? (
+              {customDraft.customError ? (
                 <p className="dashboard-time-range-picker-error" role="alert">
-                  {customError}
+                  {customDraft.customError}
                 </p>
               ) : null}
             </div>

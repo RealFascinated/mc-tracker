@@ -1,8 +1,7 @@
-import {
-  DashboardRangeToggle
-  
-} from "@/components/dashboard/dashboard-card";
-import type {DashboardRangeOption} from "@/components/dashboard/dashboard-card";
+import { useMemo } from "react";
+
+import { DashboardRangeToggle } from "@/components/dashboard/dashboard-range-toggle";
+import type { DashboardRangeOption } from "@/components/dashboard/dashboard-range-toggle";
 import {
   EntityMetricsGrid
   
@@ -72,6 +71,17 @@ export function ServerMetricsGrid({
 }: ServerMetricsGridProps) {
   const hasActivePlatformFilter = platformFilter !== "all";
   const emptyCopy = serverGridEmptyCopy(platformFilter);
+  const headerTrailing = useMemo(
+    () => (
+      <DashboardRangeToggle
+        value={platformFilter}
+        options={SERVER_PLATFORM_FILTER_TOGGLE_OPTIONS}
+        onValueChange={onPlatformFilterChange}
+        aria-label="Server platform"
+      />
+    ),
+    [onPlatformFilterChange, platformFilter],
+  );
 
   return (
     <EntityMetricsGrid<ServerListItem, ServerTimeseriesResponse>
@@ -79,14 +89,7 @@ export function ServerMetricsGrid({
       window={window}
       hasActiveFilter={hasActivePlatformFilter}
       trackedCount={trackedServers}
-      headerTrailing={
-        <DashboardRangeToggle
-          value={platformFilter}
-          options={SERVER_PLATFORM_FILTER_TOGGLE_OPTIONS}
-          onValueChange={onPlatformFilterChange}
-          aria-label="Server platform"
-        />
-      }
+      headerTrailing={headerTrailing}
       getKey={(server) => server.id}
       renderHeader={(server) => (
         <ServerIdentityHeader server={server} linkToDetail />

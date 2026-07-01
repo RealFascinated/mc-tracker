@@ -9,7 +9,6 @@ import type { ChartSeries, MetricValues } from "@/lib/metrics/series";
 import type { ChartYRange } from "@/lib/metrics/uplot-theme";
 import {
   hasSeriesData,
-  hasValues,
   chartYMax,
   yMaxWithSoftMax,
 } from "@/lib/metrics/series";
@@ -115,11 +114,4 @@ export function buildChartConfig(
     axes,
     seriesFormatters,
   };
-}
-
-export function chartHasData(
-  data: MetricTimeSeries,
-  def: ChartDefinition,
-): boolean {
-  return def.series.some((entry) => hasValues(data.series[entry.key] ?? null));
 }

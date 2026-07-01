@@ -1,4 +1,4 @@
-export const SERVER_PLATFORMS = ["PC", "PE"] as const;
+const SERVER_PLATFORMS = ["PC", "PE"] as const;
 
 export type ServerPlatform = (typeof SERVER_PLATFORMS)[number];
 
@@ -31,13 +31,4 @@ export function filterServersByPlatform<T extends { type: ServerPlatform }>(
     return servers;
   }
   return servers.filter((server) => server.type === platform);
-}
-
-export function serverPlatformFilterLabel(
-  platform: ServerPlatformFilter,
-): string {
-  return (
-    SERVER_PLATFORM_FILTER_OPTIONS.find((option) => option.value === platform)
-      ?.label ?? "All platforms"
-  );
 }

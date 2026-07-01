@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import {
   hiddenIndicesToLabels,
@@ -12,25 +12,34 @@ export function useChartSeriesVisibility(
   seriesLabels: Array<string>,
 ) {
   const seriesLabelsKey = seriesLabels.join("\0");
+  const derivedKey = `${chartId}\0${seriesLabelsKey}`;
 
-  const [hiddenSeries, setHiddenSeries] = useState<Set<number>>(() =>
-    resolveHiddenSeriesIndices(seriesLabels, readHiddenSeriesLabels(chartId)),
+  const storageHidden = useMemo(
+    () =>
+      resolveHiddenSeriesIndices(seriesLabels, readHiddenSeriesLabels(chartId)),
+    [chartId, seriesLabels],
   );
 
-  useEffect(() => {
-    setHiddenSeries(
-      resolveHiddenSeriesIndices(seriesLabels, readHiddenSeriesLabels(chartId)),
-    );
-  }, [chartId, seriesLabelsKey, seriesLabels]);
+  const [override, setOverride] = useState<{
+    key: string;
+    hidden: Set<number>;
+  } | null>(null);
+
+  const hiddenSeries =
+    override?.key === derivedKey ? override.hidden : storageHidden;
 
   const toggleSeries = useCallback(
     (index: number) => {
-      setHiddenSeries((previous) => {
+      setOverride((previousOverride) => {
+        const previous =
+          previousOverride?.key === derivedKey
+            ? previousOverride.hidden
+            : storageHidden;
         const next = new Set(previous);
         if (next.has(index)) {
           next.delete(index);
         } else if (seriesLabels.length - next.size <= 1) {
-          return previous;
+          return previousOverride;
         } else {
           next.add(index);
         }
@@ -39,10 +48,10 @@ export function useChartSeriesVisibility(
           chartId,
           hiddenIndicesToLabels(seriesLabels, next),
         );
-        return next;
+        return { key: derivedKey, hidden: next };
       });
     },
-    [chartId, seriesLabels],
+    [chartId, derivedKey, seriesLabels, storageHidden],
   );
 
   return { hiddenSeries, toggleSeries };

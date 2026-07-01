@@ -1,11 +1,11 @@
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
-  useState,
 } from "react";
 import type { ComponentProps, ReactNode, Ref } from "react";
 
@@ -25,7 +25,7 @@ const SlidingSegmentedControlContext =
   createContext<SlidingSegmentedControlContextValue | null>(null);
 
 function useSlidingSegmentedControlContext() {
-  const context = useContext(SlidingSegmentedControlContext);
+  const context = use(SlidingSegmentedControlContext);
   if (!context) {
     throw new Error(
       "SlidingSegmentedControlItem must be used within SlidingSegmentedControl",
@@ -53,36 +53,54 @@ function SlidingSegmentedControl({
   "aria-label": ariaLabel,
 }: SlidingSegmentedControlProps) {
   const containerRef = useRef<HTMLFieldSetElement>(null);
-  const itemRefs = useRef(new Map<string, HTMLElement>());
+  const itemRefs = useRef<Map<string, HTMLElement> | null>(null);
+  const indicatorRef = useRef<HTMLDivElement>(null);
   const hasMeasuredRef = useRef(false);
-  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
-  const [indicatorReady, setIndicatorReady] = useState(false);
+  const indicatorReadyRef = useRef(false);
+
+  const getItemRefs = useCallback(() => {
+    if (!itemRefs.current) {
+      itemRefs.current = new Map();
+    }
+    return itemRefs.current;
+  }, []);
 
   const updateIndicator = useCallback(() => {
     const container = containerRef.current;
-    const item = itemRefs.current.get(value);
-    if (!container || !item) {
+    const item = getItemRefs().get(value);
+    const indicator = indicatorRef.current;
+    if (!container || !item || !indicator) {
       return;
     }
 
     const containerRect = container.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
-    setIndicator({
-      left: itemRect.left - containerRect.left,
-      width: itemRect.width,
-    });
-    setIndicatorReady(true);
-  }, [value]);
+    indicator.style.left = `${itemRect.left - containerRect.left}px`;
+    indicator.style.width = `${itemRect.width}px`;
+    indicator.style.opacity = itemRect.width > 0 ? "1" : "0";
+
+    if (!indicatorReadyRef.current && itemRect.width > 0) {
+      indicatorReadyRef.current = true;
+      indicator.style.transition =
+        "left 200ms ease-out, width 200ms ease-out, opacity 150ms ease-out";
+    }
+  }, [getItemRefs, value]);
 
   const registerItem = useCallback(
     (itemValue: string, node: HTMLElement | null) => {
+      const refs = getItemRefs();
       if (node) {
-        itemRefs.current.set(itemValue, node);
+        refs.set(itemValue, node);
       } else {
-        itemRefs.current.delete(itemValue);
+        refs.delete(itemValue);
       }
     },
-    [],
+    [getItemRefs],
+  );
+
+  const contextValue = useMemo(
+    () => ({ value, onValueChange, registerItem }),
+    [onValueChange, registerItem, value],
   );
 
   useLayoutEffect(() => {
@@ -111,17 +129,15 @@ function SlidingSegmentedControl({
     });
 
     observer.observe(container);
-    for (const item of itemRefs.current.values()) {
+    for (const item of getItemRefs().values()) {
       observer.observe(item);
     }
 
     return () => observer.disconnect();
-  }, [updateIndicator]);
+  }, [getItemRefs, updateIndicator]);
 
   return (
-    <SlidingSegmentedControlContext.Provider
-      value={{ value, onValueChange, registerItem }}
-    >
+    <SlidingSegmentedControlContext.Provider value={contextValue}>
       <fieldset
         ref={containerRef}
         aria-label={ariaLabel}
@@ -132,19 +148,12 @@ function SlidingSegmentedControl({
         )}
       >
         <div
+          ref={indicatorRef}
           aria-hidden
           className={cn(
             slidingSegmentedControlIndicatorClassName,
             indicatorClassName,
           )}
-          style={{
-            left: indicator.left,
-            width: indicator.width,
-            opacity: indicator.width > 0 ? 1 : 0,
-            transition: indicatorReady
-              ? "left 200ms ease-out, width 200ms ease-out, opacity 150ms ease-out"
-              : undefined,
-          }}
         />
         {children}
       </fieldset>

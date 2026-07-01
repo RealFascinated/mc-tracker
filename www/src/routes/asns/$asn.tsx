@@ -5,12 +5,11 @@ import { useCallback, useMemo } from "react";
 
 import { AsnIdentityHeader } from "@/components/dashboard/asn-identity-header";
 import { AsnPlayersChart } from "@/components/dashboard/charts/asn-players-chart";
-import {
-  DashboardCard,
-  DashboardCardHeader,
-} from "@/components/dashboard/dashboard-card";
+import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { DashboardCardHeader } from "@/components/dashboard/dashboard-card-header";
 import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
+import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import { SiteHeaderNav } from "@/components/site-header-toolbar";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import { asnDisplayName } from "@/lib/api/asns";
@@ -22,7 +21,7 @@ import {
   
 } from "@/lib/api/servers";
 import type {ServerPlatformFilter} from "@/lib/api/servers";
-import { useDashboardRefresh } from "@/lib/dashboard/refresh-context";
+import { useDashboardRefresh } from "@/lib/dashboard/use-dashboard-refresh";
 import { pageTitle } from "@/lib/page-title";
 import { DEFAULT_METRIC_TIME_RANGE } from "@/lib/metrics/range";
 import type { MetricTimeRange } from "@/lib/metrics/range";
@@ -91,7 +90,7 @@ function AsnDetailPage() {
   const asnOrg = searchAsnOrg ?? "";
   const platformFilter: ServerPlatformFilter = urlPlatform ?? "all";
 
-  const asnQuery = useQuery({
+  const { data: asnDetail = initialAsn } = useQuery({
     ...asnQueryOptions(asn, asnOrg),
     initialData: initialAsn,
     initialDataUpdatedAt: Date.now(),
@@ -154,7 +153,6 @@ function AsnDetailPage() {
     [navigate],
   );
 
-  const asnDetail = asnQuery.data;
   const filteredServers = useMemo(
     () => filterServersByPlatform(asnDetail.servers, platformFilter),
     [asnDetail.servers, platformFilter],
@@ -180,19 +178,23 @@ function AsnDetailPage() {
             Back to networks
           </Link>
 
-          <DashboardCard className="server-detail-card motion-chart-reveal">
-            <AsnIdentityHeader asn={asnDetail} layout="page" />
-          </DashboardCard>
+          <FadeInAnimation>
+            <DashboardCard className="server-detail-card">
+              <AsnIdentityHeader asn={asnDetail} layout="page" />
+            </DashboardCard>
+          </FadeInAnimation>
 
-          <DashboardCard className="hero-chart-panel motion-chart-reveal">
-            <DashboardCardHeader title="Player history" />
-            <AsnPlayersChart
-              asn={asnDetail.asn}
-              asnOrg={asnDetail.asnOrg}
-              window={timeWindow}
-              height={360}
-            />
-          </DashboardCard>
+          <FadeInAnimation>
+            <DashboardCard className="hero-chart-panel">
+              <DashboardCardHeader title="Player history" />
+              <AsnPlayersChart
+                asn={asnDetail.asn}
+                asnOrg={asnDetail.asnOrg}
+                window={timeWindow}
+                height={360}
+              />
+            </DashboardCard>
+          </FadeInAnimation>
 
           <ServerMetricsGrid
             servers={filteredServers}

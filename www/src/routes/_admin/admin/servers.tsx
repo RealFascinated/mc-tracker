@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { AdminServerFormFields } from "@/components/admin/admin-server-form-fields";
 import { AdminServersTable } from "@/components/admin/admin-servers-table";
-import { PageHeader } from "@/components/layout/app-sidebar-nav";
+import { PageHeader } from "@/components/layout/page-header";
 import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,11 +30,11 @@ import { errorMessage } from "@/lib/api/error-message";
 import { pageTitle } from "@/lib/page-title";
 
 export const Route = createFileRoute("/_admin/admin/servers")({
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(adminServersQueryOptions()),
   head: () => ({
     meta: [{ title: pageTitle("Admin servers") }],
   }),
-  loader: ({ context: { queryClient } }) =>
-    queryClient.ensureQueryData(adminServersQueryOptions()),
   component: AdminServersPage,
 });
 
@@ -54,19 +54,17 @@ function serverToForm(server: AdminServer): CreateServerRequest {
   };
 }
 
+type EditServerState = {
+  target: AdminServer;
+  form: CreateServerRequest;
+};
+
 function AdminServersPage() {
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery(adminServersQueryOptions());
   const [form, setForm] = useState(emptyForm);
-  const [editTarget, setEditTarget] = useState<AdminServer | null>(null);
-  const [editForm, setEditForm] = useState<CreateServerRequest>(emptyForm);
+  const [editState, setEditState] = useState<EditServerState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminServer | null>(null);
-
-  useEffect(() => {
-    if (editTarget) {
-      setEditForm(serverToForm(editTarget));
-    }
-  }, [editTarget]);
 
   const createMutation = useMutation({
     mutationFn: createAdminServer,
@@ -88,7 +86,7 @@ function AdminServersPage() {
       }),
     onSuccess: async () => {
       toast.success("Server updated");
-      setEditTarget(null);
+      setEditState(null);
       await queryClient.invalidateQueries({ queryKey: adminServersQueryKey });
     },
     onError: (err) => toast.error(errorMessage(err)),
@@ -124,12 +122,12 @@ function AdminServersPage() {
 
   function handleEdit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!editTarget) {
+    if (!editState) {
       return;
     }
     updateMutation.mutate({
-      id: editTarget.id,
-      body: editForm,
+      id: editState.target.id,
+      body: editState.form,
     });
   }
 
@@ -179,7 +177,9 @@ function AdminServersPage() {
           <div className="app-shell-section-body">
             <AdminServersTable
               servers={data.servers}
-              onEdit={setEditTarget}
+              onEdit={(server) =>
+                setEditState({ target: server, form: serverToForm(server) })
+              }
               onDelete={setDeleteTarget}
             />
           </div>
@@ -187,10 +187,10 @@ function AdminServersPage() {
       </div>
 
       <Dialog
-        open={editTarget != null}
+        open={editState != null}
         onOpenChange={(open) => {
           if (!open) {
-            setEditTarget(null);
+            setEditState(null);
           }
         }}
       >
@@ -198,29 +198,33 @@ function AdminServersPage() {
           <DialogHeader>
             <DialogTitle>Edit server</DialogTitle>
             <DialogDescription>
-              {editTarget
-                ? `Update connection details for "${editTarget.name}".`
+              {editState
+                ? `Update connection details for "${editState.target.name}".`
                 : null}
             </DialogDescription>
           </DialogHeader>
           <form className="grid gap-4" onSubmit={handleEdit}>
             <AdminServerFormFields
               idPrefix="edit"
-              values={editForm}
-              onChange={setEditForm}
+              values={editState?.form ?? emptyForm}
+              onChange={(nextForm) =>
+                setEditState((current) =>
+                  current ? { ...current, form: nextForm } : current,
+                )
+              }
             />
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setEditTarget(null)}
+                onClick={() => setEditState(null)}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 variant="brand"
-                disabled={updateMutation.isPending || !editTarget}
+                disabled={updateMutation.isPending || !editState}
               >
                 {updateMutation.isPending ? "Saving…" : "Save changes"}
               </Button>

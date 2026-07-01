@@ -5,11 +5,20 @@ import type { ChartSeriesRender } from "@/lib/metrics/series";
 import type { ResolvedTheme } from "@/lib/theme/context";
 import { formatChartAxisTicks } from "@/lib/formatter";
 import { readCssVar } from "@/lib/css-vars";
-import { getChartColor, getChartColors } from "@/lib/metrics/chart-colors";
-
-export { getChartColor, getChartColors };
+import { getChartColors } from "@/lib/metrics/chart-colors";
 
 const COMPACT_LAYOUT_MAX_WIDTH = 640;
+
+/** Cap retina backing store — full DPR on wide charts is a common scroll jank source. */
+const CHART_MAX_PX_RATIO = 2;
+
+export function chartPxRatio(): number {
+  if (typeof window === "undefined") {
+    return 1;
+  }
+
+  return Math.min(window.devicePixelRatio || 1, CHART_MAX_PX_RATIO);
+}
 
 export type ChartLayout = {
   density: "normal" | "compact";

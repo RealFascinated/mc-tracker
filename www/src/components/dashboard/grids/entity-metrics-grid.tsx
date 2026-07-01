@@ -4,7 +4,9 @@ import type { ReactNode } from "react";
 
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { LazyMetricChartBody } from "@/components/dashboard/charts/lazy-metric-chart-body";
-import { StatValueTooltip } from "@/components/dashboard/stats/stat-value-tooltip";
+import { resolveLazyMetricChartState } from "@/components/dashboard/charts/lazy-metric-chart-state";
+import { AnimatedStatValue } from "@/components/dashboard/stats/animated-stat-value";
+import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import { useGridItemVisible } from "@/hooks/use-grid-item-visible";
 import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
 import { EMPTY_METRIC_TIME_SERIES } from "@/lib/api/metric-timeseries";
@@ -15,7 +17,6 @@ import type {
 import { playersTimeseriesToMetric } from "@/lib/metrics/adapters";
 import type { ChartDefinition } from "@/lib/metrics/charts/types";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
-import { formatPlayers } from "@/lib/format-players";
 import { peakTimestampTooltip } from "@/lib/format-peak-at";
 
 export type EntityMetricsSectionCopy = {
@@ -88,16 +89,25 @@ function EntityMetricsChart<T, TTimeseries extends PlayersTimeseriesPayload>({
     () => (data ? playersTimeseriesToMetric(data) : EMPTY_METRIC_TIME_SERIES),
     [data],
   );
+  const chartState = useMemo(
+    () =>
+      resolveLazyMetricChartState({
+        isVisible: isIntersecting,
+        hasBeenVisible,
+        isPending,
+        isError,
+        hasData: chartData.timestamps.length > 0,
+      }),
+    [isIntersecting, hasBeenVisible, isPending, isError, chartData],
+  );
 
   return (
     <div ref={ref} className="entity-metrics-card-chart">
       <LazyMetricChartBody
-        isVisible={isIntersecting}
-        hasBeenVisible={hasBeenVisible}
-        isPending={isPending}
-        isError={isError}
+        state={chartState}
         chartDef={def}
         chartData={chartData}
+        hydrateWhen={isIntersecting}
       />
     </div>
   );
@@ -116,6 +126,18 @@ type EntityMetricsCardProps<T, TTimeseries extends PlayersTimeseriesPayload> = {
   timeseriesEnabled?: (item: T) => boolean;
 };
 
+type EntityMetricsCardHeaderProps<T> = {
+  item: T;
+  renderHeader: (item: T) => ReactNode;
+};
+
+function EntityMetricsCardHeader<T>({
+  item,
+  renderHeader,
+}: EntityMetricsCardHeaderProps<T>) {
+  return renderHeader(item);
+}
+
 function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
   visibilityKey,
   item,
@@ -127,7 +149,7 @@ function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
 }: EntityMetricsCardProps<T, TTimeseries>) {
   return (
     <DashboardCard className="entity-metrics-card h-full">
-      {renderHeader(item)}
+      <EntityMetricsCardHeader item={item} renderHeader={renderHeader} />
       <EntityMetricsChart
         visibilityKey={visibilityKey}
         item={item}
@@ -166,7 +188,7 @@ export function EntityMetricsGrid<
 
   if (items.length === 0) {
     return (
-      <section className="entity-metrics-section motion-chart-reveal">
+      <FadeInAnimation as="section" className="entity-metrics-section">
         <div className="entity-metrics-section-header">
           <h2 className="entity-metrics-section-title">{section.title}</h2>
           <p className="entity-metrics-section-subtitle">
@@ -178,13 +200,13 @@ export function EntityMetricsGrid<
             {section.emptyFilteredHint}
           </p>
         </div>
-      </section>
+      </FadeInAnimation>
     );
   }
 
   return (
-    <section className="entity-metrics-section motion-chart-reveal">
-      <div className="entity-metrics-section-header">
+    <section className="entity-metrics-section">
+      <FadeInAnimation className="entity-metrics-section-header">
         <div className="min-w-0">
           <h2 className="entity-metrics-section-title">{section.title}</h2>
           <p className="entity-metrics-section-subtitle">
@@ -196,23 +218,24 @@ export function EntityMetricsGrid<
         {headerTrailing ? (
           <div className="shrink-0">{headerTrailing}</div>
         ) : null}
-      </div>
+      </FadeInAnimation>
 
       <div className="entity-metrics-grid-container">
         <div className="entity-metrics-grid">
           {items.map((item) => {
             const visibilityKey = getKey(item);
             return (
-              <EntityMetricsCard
-                key={visibilityKey}
-                visibilityKey={visibilityKey}
-                item={item}
-                window={window}
-                renderHeader={renderHeader}
-                chartDef={chartDef}
-                timeseriesOptions={timeseriesOptions}
-                timeseriesEnabled={timeseriesEnabled}
-              />
+              <FadeInAnimation key={visibilityKey} className="min-w-0">
+                <EntityMetricsCard
+                  visibilityKey={visibilityKey}
+                  item={item}
+                  window={window}
+                  renderHeader={renderHeader}
+                  chartDef={chartDef}
+                  timeseriesOptions={timeseriesOptions}
+                  timeseriesEnabled={timeseriesEnabled}
+                />
+              </FadeInAnimation>
             );
           })}
         </div>
@@ -232,23 +255,23 @@ export function EntityCardStats({
     <div className="entity-card-stats">
       <div className="entity-card-stat">
         <span className="entity-card-stat-label">Now</span>
-        <StatValueTooltip
-          value={formatPlayers(playersOnline)}
+        <AnimatedStatValue
+          value={playersOnline}
           className="entity-card-stat-value"
         />
       </div>
       <div className="entity-card-stat">
         <span className="entity-card-stat-label">Peak 24h</span>
-        <StatValueTooltip
-          value={formatPlayers(peaks.players24h)}
+        <AnimatedStatValue
+          value={peaks.players24h}
           className="entity-card-stat-value"
         />
       </div>
       <div className="entity-card-stat">
         <span className="entity-card-stat-label">All-time</span>
-        <StatValueTooltip
+        <AnimatedStatValue
           tooltip={peakTimestampTooltip(peaks.allTime?.timestamp)}
-          value={formatPlayers(peaks.allTime?.players ?? null)}
+          value={peaks.allTime?.players ?? null}
           className="entity-card-stat-value"
         />
       </div>

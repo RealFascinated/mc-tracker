@@ -3,22 +3,21 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-import {
-  DashboardCard,
-  DashboardCardHeader,
-} from "@/components/dashboard/dashboard-card";
+import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { DashboardCardHeader } from "@/components/dashboard/dashboard-card-header";
 import { ServerPlayersChart } from "@/components/dashboard/charts/server-players-chart";
 import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
 import {
   ServerDetailMeta,
   ServerIdentityHeader,
 } from "@/components/dashboard/server-identity-header";
+import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import { SiteHeaderNav } from "@/components/site-header-toolbar";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import { asnDetailSearch } from "@/lib/api/asns";
 import { ApiClientError } from "@/lib/api/client";
 import { serverQueryOptions } from "@/lib/api/servers.queries";
-import { useDashboardRefresh } from "@/lib/dashboard/refresh-context";
+import { useDashboardRefresh } from "@/lib/dashboard/use-dashboard-refresh";
 import { pageTitle } from "@/lib/page-title";
 import { DEFAULT_METRIC_TIME_RANGE } from "@/lib/metrics/range";
 import type { MetricTimeRange } from "@/lib/metrics/range";
@@ -66,7 +65,7 @@ function ServerDetailPage() {
   const { refreshIntervalMs } = useDashboardRefresh();
   const initialServer = Route.useLoaderData();
 
-  const serverQuery = useQuery({
+  const { data: server = initialServer } = useQuery({
     ...serverQueryOptions(serverId),
     initialData: initialServer,
     initialDataUpdatedAt: Date.now(),
@@ -115,8 +114,6 @@ function ServerDetailPage() {
     [navigate],
   );
 
-  const server = serverQuery.data;
-
   return (
     <>
       <SiteHeaderNav>
@@ -137,35 +134,39 @@ function ServerDetailPage() {
             Back to dashboard
           </Link>
 
-          <DashboardCard className="server-detail-card motion-chart-reveal">
-            <ServerIdentityHeader server={server} layout="page" />
-            <div className="server-detail-body">
-              <ServerDetailMeta server={server} />
-              {server.asn ? (
-                <p className="server-detail-asn-link text-sm text-muted-foreground">
-                  View all servers on this network on the{" "}
-                  <Link
-                    to="/asns/$asn"
-                    params={{ asn: server.asn }}
-                    search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
-                    className="font-medium text-foreground underline-offset-4 hover:underline"
-                  >
-                    network page
-                  </Link>
-                  .
-                </p>
-              ) : null}
-            </div>
-          </DashboardCard>
+          <FadeInAnimation>
+            <DashboardCard className="server-detail-card">
+              <ServerIdentityHeader server={server} layout="page" />
+              <div className="server-detail-body">
+                <ServerDetailMeta server={server} />
+                {server.asn ? (
+                  <p className="server-detail-asn-link text-sm text-muted-foreground">
+                    View all servers on this network on the{" "}
+                    <Link
+                      to="/asns/$asn"
+                      params={{ asn: server.asn }}
+                      search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
+                      className="font-medium text-foreground underline-offset-4 hover:underline"
+                    >
+                      network page
+                    </Link>
+                    .
+                  </p>
+                ) : null}
+              </div>
+            </DashboardCard>
+          </FadeInAnimation>
 
-          <DashboardCard className="hero-chart-panel motion-chart-reveal">
-            <DashboardCardHeader title="Player history" />
-            <ServerPlayersChart
-              serverId={server.id}
-              window={timeWindow}
-              height={360}
-            />
-          </DashboardCard>
+          <FadeInAnimation>
+            <DashboardCard className="hero-chart-panel">
+              <DashboardCardHeader title="Player history" />
+              <ServerPlayersChart
+                serverId={server.id}
+                window={timeWindow}
+                height={360}
+              />
+            </DashboardCard>
+          </FadeInAnimation>
       </main>
     </>
   );

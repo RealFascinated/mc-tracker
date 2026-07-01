@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useSyncExternalStore } from "react";
 
 import { enqueueChartHydration } from "@/lib/metrics/chart-hydration-queue";
 
@@ -18,33 +18,104 @@ function scheduleHydration(onHydrated: () => void): { cancel: () => void } {
   };
 }
 
+const intersectingByKey = new Map<string, boolean>();
+const hydratedByKey = new Map<string, boolean>();
+const storeSubscribers = new Map<string, Set<() => void>>();
+const storeChangedKeys = new Set<string>();
+let storeFlushScheduled = false;
+
+function getIntersectingSnapshot(key: string): boolean {
+  return intersectingByKey.get(key) ?? false;
+}
+
+function getHydratedSnapshot(key: string): boolean {
+  return hydratedByKey.get(key) ?? false;
+}
+
+function subscribeStore(key: string, callback: () => void) {
+  let set = storeSubscribers.get(key);
+  if (!set) {
+    set = new Set();
+    storeSubscribers.set(key, set);
+  }
+  set.add(callback);
+  const subscriberSet = set;
+  return () => {
+    subscriberSet.delete(callback);
+    if (subscriberSet.size === 0) {
+      storeSubscribers.delete(key);
+    }
+  };
+}
+
+function scheduleStoreNotify(key: string) {
+  storeChangedKeys.add(key);
+  if (storeFlushScheduled) {
+    return;
+  }
+  storeFlushScheduled = true;
+  requestAnimationFrame(() => {
+    storeFlushScheduled = false;
+    for (const changedKey of storeChangedKeys) {
+      storeSubscribers.get(changedKey)?.forEach((callback) => callback());
+    }
+    storeChangedKeys.clear();
+  });
+}
+
+function setIntersecting(key: string, intersecting: boolean) {
+  if (getIntersectingSnapshot(key) === intersecting) {
+    return;
+  }
+  intersectingByKey.set(key, intersecting);
+  scheduleStoreNotify(key);
+}
+
+function setHydrated(key: string, hydrated: boolean) {
+  if (getHydratedSnapshot(key) === hydrated) {
+    return;
+  }
+  hydratedByKey.set(key, hydrated);
+  scheduleStoreNotify(key);
+}
+
 /**
  * When `visible` is passed, defers to that signal (e.g. parent IntersectionObserver)
  * instead of attaching a second observer on the chart container.
  */
 function useChartHydration(visible?: boolean) {
+  const intersectionKey = useId();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
-  const hydratedRef = useRef(false);
   const usesExternalVisible = visible !== undefined;
 
-  useEffect(() => {
-    if (!usesExternalVisible) return;
+  const subscribeIntersectingStore = useCallback(
+    (onStoreChange: () => void) =>
+      subscribeStore(intersectionKey, onStoreChange),
+    [intersectionKey],
+  );
+  const getIntersectingStoreSnapshot = useCallback(
+    () => getIntersectingSnapshot(intersectionKey),
+    [intersectionKey],
+  );
+  const getHydratedStoreSnapshot = useCallback(
+    () => getHydratedSnapshot(intersectionKey),
+    [intersectionKey],
+  );
 
-    if (!visible) {
-      if (hydratedRef.current) {
-        hydratedRef.current = false;
-      }
-      setInView(false);
-      return;
-    }
+  const intersecting = useSyncExternalStore(
+    subscribeIntersectingStore,
+    getIntersectingStoreSnapshot,
+    getIntersectingStoreSnapshot,
+  );
+  const hydrated = useSyncExternalStore(
+    subscribeIntersectingStore,
+    getHydratedStoreSnapshot,
+    getHydratedStoreSnapshot,
+  );
 
-    const { cancel } = scheduleHydration(() => {
-      hydratedRef.current = true;
-      setInView(true);
-    });
-    return cancel;
-  }, [usesExternalVisible, visible]);
+  const inView = usesExternalVisible
+    ? Boolean(visible)
+    : intersecting && hydrated;
 
   useEffect(() => {
     if (usesExternalVisible) return;
@@ -55,26 +126,30 @@ function useChartHydration(visible?: boolean) {
     let cancelled = false;
     let hydration: { cancel: () => void } | undefined;
 
+    if (!intersectingByKey.has(intersectionKey)) {
+      intersectingByKey.set(intersectionKey, false);
+    }
+    if (!hydratedByKey.has(intersectionKey)) {
+      hydratedByKey.set(intersectionKey, false);
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
-        const intersecting = entries.some((entry) => entry.isIntersecting);
+        const isIntersecting = entries.some((entry) => entry.isIntersecting);
+        setIntersecting(intersectionKey, isIntersecting);
 
-        if (!intersecting) {
+        if (!isIntersecting) {
           hydration?.cancel();
           hydration = undefined;
-          if (!hydratedRef.current) {
-            setInView(false);
-          }
           return;
         }
 
-        if (hydration || hydratedRef.current) return;
+        if (hydration || getHydratedSnapshot(intersectionKey)) return;
 
         hydration = scheduleHydration(() => {
           hydration = undefined;
           if (!cancelled) {
-            hydratedRef.current = true;
-            setInView(true);
+            setHydrated(intersectionKey, true);
           }
         });
       },
@@ -87,8 +162,11 @@ function useChartHydration(visible?: boolean) {
       cancelled = true;
       observer.disconnect();
       hydration?.cancel();
+      intersectingByKey.delete(intersectionKey);
+      hydratedByKey.delete(intersectionKey);
+      storeSubscribers.delete(intersectionKey);
     };
-  }, [usesExternalVisible]);
+  }, [usesExternalVisible, intersectionKey]);
 
   return { inView, containerRef };
 }

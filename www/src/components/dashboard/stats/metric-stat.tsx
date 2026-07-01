@@ -1,9 +1,9 @@
+import { AnimatedStatValue } from "@/components/dashboard/stats/animated-stat-value";
 import { cn } from "@/lib/utils";
-import { StatValueTooltip } from "@/components/dashboard/stats/stat-value-tooltip";
 
 type MetricStatProps = {
   label: string;
-  value: string;
+  value: number | null | undefined;
   className?: string;
   highlight?: boolean;
   compact?: boolean;
@@ -28,7 +28,7 @@ export function MetricStat({
       )}
     >
       <span className="metric-stat-label">{label}</span>
-      <StatValueTooltip
+      <AnimatedStatValue
         tooltip={valueTooltip}
         value={value}
         className="metric-stat-value"

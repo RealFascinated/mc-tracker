@@ -226,7 +226,11 @@ function MetricChartCard({
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const { inView, containerRef } = useChartHydration(hydrateWhen);
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
-  const chartReady = inView || fullscreenOpen;
+  const chartWasReadyRef = useRef(false);
+  if (inView || fullscreenOpen) {
+    chartWasReadyRef.current = true;
+  }
+  const chartReady = inView || fullscreenOpen || chartWasReadyRef.current;
   const displaySeries = useMemo(
     () =>
       mode === "stack" ? sortSeriesForStack(config.series) : config.series,

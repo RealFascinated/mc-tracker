@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/layout/app-sidebar-nav";
+import { PageHeader } from "@/components/layout/page-header";
 import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,11 +18,11 @@ import { errorMessage } from "@/lib/api/error-message";
 import { pageTitle } from "@/lib/page-title";
 
 export const Route = createFileRoute("/_admin/admin/settings")({
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(adminSettingsQueryOptions()),
   head: () => ({
     meta: [{ title: pageTitle("Admin settings") }],
   }),
-  loader: ({ context: { queryClient } }) =>
-    queryClient.ensureQueryData(adminSettingsQueryOptions()),
   component: AdminSettingsPage,
 });
 

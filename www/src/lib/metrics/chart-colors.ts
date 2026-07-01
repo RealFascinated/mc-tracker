@@ -2,7 +2,7 @@ import type { ChartSeriesColor } from "@/lib/metrics/charts/types";
 import type { ResolvedTheme } from "@/lib/theme/context";
 import { readCssVar } from "@/lib/css-vars";
 
-export const CHART_COLOR_VARS = [
+const CHART_COLOR_VARS = [
   "--chart-1",
   "--chart-2",
   "--chart-3",
@@ -40,7 +40,7 @@ export function getChartColors(theme: ResolvedTheme = "light"): Array<string> {
   );
 }
 
-export function getChartColor(
+function getChartColor(
   index: number,
   theme: ResolvedTheme = "light",
 ): string {

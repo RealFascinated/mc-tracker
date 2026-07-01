@@ -1,4 +1,4 @@
-import { createContext, useContext, useLayoutEffect, useMemo, useState } from "react";
+import { createContext, use, useLayoutEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 type SiteHeaderToolbarContextValue = {
@@ -28,7 +28,7 @@ function SiteHeaderToolbarProvider({ children }: { children: ReactNode }) {
 }
 
 function useSiteHeaderToolbar() {
-  const context = useContext(SiteHeaderToolbarContext);
+  const context = use(SiteHeaderToolbarContext);
   if (!context) {
     throw new Error(
       "useSiteHeaderToolbar must be used within SiteHeaderToolbarProvider",

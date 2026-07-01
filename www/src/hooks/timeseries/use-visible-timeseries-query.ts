@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import type { UseQueryResult } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 import { useTimeseriesDirtyRefresh } from "@/hooks/timeseries/use-timeseries-dirty-refresh";
-import { useDashboardRefreshIntervalMs } from "@/lib/dashboard/refresh-context";
+import { useDashboardRefreshIntervalMs } from "@/lib/dashboard/use-dashboard-refresh";
 
 type VisibleTimeseriesSource<TData> = {
   queryKey: readonly unknown[];
@@ -11,14 +10,20 @@ type VisibleTimeseriesSource<TData> = {
   enabled?: boolean;
 };
 
+export type VisibleTimeseriesQueryResult<TData> = {
+  data: TData | undefined;
+  isPending: boolean;
+  isError: boolean;
+};
+
 export function useVisibleTimeseriesQuery<TData>(
   options: VisibleTimeseriesSource<TData>,
   isVisible: boolean,
   enabled = true,
-): UseQueryResult<TData> {
+): VisibleTimeseriesQueryResult<TData> {
   const refreshIntervalMs = useDashboardRefreshIntervalMs();
 
-  const query = useQuery({
+  const { data, dataUpdatedAt, isPending, isError, refetch } = useQuery({
     queryKey: options.queryKey,
     queryFn: options.queryFn,
     enabled:
@@ -31,13 +36,13 @@ export function useVisibleTimeseriesQuery<TData>(
     refetchOnWindowFocus: isVisible,
   });
 
-  const refetch = useCallback(() => query.refetch(), [query]);
+  const refetchTimeseries = useCallback(() => refetch(), [refetch]);
 
   useTimeseriesDirtyRefresh({
     isVisible,
-    dataUpdatedAt: query.dataUpdatedAt,
-    refetch,
+    dataUpdatedAt,
+    refetch: refetchTimeseries,
   });
 
-  return query;
+  return { data, isPending, isError };
 }

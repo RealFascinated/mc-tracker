@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { useDashboardRefreshIntervalMs } from "@/lib/dashboard/refresh-context";
+import { useDashboardRefreshIntervalMs } from "@/lib/dashboard/use-dashboard-refresh";
 
 export function useTimeseriesDirtyRefresh({
   isVisible,

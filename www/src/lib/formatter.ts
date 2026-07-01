@@ -1,20 +1,3 @@
-export function formatUptime(secs: number): string {
-  const d = Math.floor(secs / 86400);
-  const h = Math.floor((secs % 86400) / 3600);
-  const m = Math.floor((secs % 3600) / 60);
-  const s = secs % 60;
-  if (d > 0) {
-    return `${d}d ${h}h`;
-  }
-  if (h > 0) {
-    return `${h}h ${m}m`;
-  }
-  if (m > 0) {
-    return `${m}m ${s}s`;
-  }
-  return `${s}s`;
-}
-
 export function formatNetworkBps(bps: number): string {
   const units = ["bps", "Kbps", "Mbps", "Gbps"];
   let value = bps;
@@ -29,11 +12,30 @@ export function formatNetworkBps(bps: number): string {
   return `${formatDecimal(value, decimals)} ${units[unitIndex]}`;
 }
 
+const DECIMAL_FORMATTER_0 = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 0,
+  minimumFractionDigits: 0,
+});
+const DECIMAL_FORMATTER_1 = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 1,
+  minimumFractionDigits: 1,
+});
+const DECIMAL_FORMATTER_2 = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+});
+const decimalFormatters = new Map<number, Intl.NumberFormat>([
+  [0, DECIMAL_FORMATTER_0],
+  [1, DECIMAL_FORMATTER_1],
+  [2, DECIMAL_FORMATTER_2],
+]);
+
+function getDecimalFormatter(fractionDigits: number): Intl.NumberFormat {
+  return decimalFormatters.get(fractionDigits) ?? DECIMAL_FORMATTER_0;
+}
+
 export function formatDecimal(value: number, fractionDigits: number): string {
-  return new Intl.NumberFormat(undefined, {
-    maximumFractionDigits: fractionDigits,
-    minimumFractionDigits: fractionDigits,
-  }).format(value);
+  return getDecimalFormatter(fractionDigits).format(value);
 }
 
 export function formatPercentValue(value: number, fractionDigits = 1): string {
@@ -44,6 +46,41 @@ export function formatCelsius(value: number, fractionDigits = 0): string {
   return `${formatDecimal(value, fractionDigits)}°C`;
 }
 
+const tooltipTimestampFormatterWithYear = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+const tooltipTimestampFormatterWithYearAndSecond = new Intl.DateTimeFormat(
+  undefined,
+  {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+  },
+);
+
+const tooltipTimestampFormatter = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+const tooltipTimestampFormatterWithSecond = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+});
+
 export function formatTooltipTimestamp(
   timestamp: number,
   rangeSeconds: number,
@@ -52,15 +89,17 @@ export function formatTooltipTimestamp(
   const now = new Date();
   const includeYear =
     date.getFullYear() !== now.getFullYear() || rangeSeconds > 86_400 * 180;
+  const includeSecond = rangeSeconds <= 86_400;
 
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    ...(includeYear ? { year: "numeric" } : {}),
-    hour: "numeric",
-    minute: "2-digit",
-    ...(rangeSeconds <= 86_400 ? { second: "2-digit" } : {}),
-  }).format(date);
+  if (includeYear) {
+    return includeSecond
+      ? tooltipTimestampFormatterWithYearAndSecond.format(date)
+      : tooltipTimestampFormatterWithYear.format(date);
+  }
+
+  return includeSecond
+    ? tooltipTimestampFormatterWithSecond.format(date)
+    : tooltipTimestampFormatter.format(date);
 }
 
 export type EpochRangeParts = {
@@ -75,21 +114,33 @@ function epochDateParts(epoch: number) {
   return { date, includeYear };
 }
 
+const epochTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+const epochDateFormatter = new Intl.DateTimeFormat(undefined, {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+});
+
+const epochDateWithYearFormatter = new Intl.DateTimeFormat(undefined, {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
 function formatEpochTime(date: Date): string {
-  return new Intl.DateTimeFormat(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
+  return epochTimeFormatter.format(date);
 }
 
 function formatEpochDate(date: Date, includeYear: boolean): string {
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    ...(includeYear ? { year: "numeric" } : {}),
-  }).format(date);
+  return includeYear
+    ? epochDateWithYearFormatter.format(date)
+    : epochDateFormatter.format(date);
 }
 
 export function formatEpochRangeParts(
@@ -141,6 +192,31 @@ const DAY_SECONDS = 86_400;
 const MONTH_SECONDS = 86_400 * 28;
 const YEAR_SECONDS = 86_400 * 365;
 
+const chartYearFormatter = new Intl.DateTimeFormat(undefined, { year: "numeric" });
+const chartMonthFormatter = new Intl.DateTimeFormat(undefined, { month: "short" });
+const chartMonthYearFormatter = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  year: "numeric",
+});
+const chartMonthDayFormatter = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+});
+const chartMonthDayYearFormatter = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+const chartTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: "numeric",
+  minute: "2-digit",
+});
+const chartTimeWithSecondFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: "numeric",
+  minute: "2-digit",
+  second: "2-digit",
+});
+
 export function formatChartAxisTicks(
   splits: Array<number>,
   foundIncr: number,
@@ -148,37 +224,16 @@ export function formatChartAxisTicks(
   let prevYear: number | undefined;
   let prevDay: number | undefined;
 
-  const formatYear = (date: Date) =>
-    new Intl.DateTimeFormat(undefined, { year: "numeric" }).format(date);
-
-  const formatMonth = (date: Date) =>
-    new Intl.DateTimeFormat(undefined, { month: "short" }).format(date);
-
-  const formatMonthYear = (date: Date) =>
-    new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      year: "numeric",
-    }).format(date);
-
-  const formatMonthDay = (date: Date) =>
-    new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-    }).format(date);
-
+  const formatYear = (date: Date) => chartYearFormatter.format(date);
+  const formatMonth = (date: Date) => chartMonthFormatter.format(date);
+  const formatMonthYear = (date: Date) => chartMonthYearFormatter.format(date);
+  const formatMonthDay = (date: Date) => chartMonthDayFormatter.format(date);
   const formatMonthDayYear = (date: Date) =>
-    new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(date);
-
+    chartMonthDayYearFormatter.format(date);
   const formatTime = (date: Date) =>
-    new Intl.DateTimeFormat(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-      ...(foundIncr < 60 ? { second: "2-digit" } : {}),
-    }).format(date);
+    (foundIncr < 60 ? chartTimeWithSecondFormatter : chartTimeFormatter).format(
+      date,
+    );
 
   return splits.map((split) => {
     const date = new Date(split * 1000);

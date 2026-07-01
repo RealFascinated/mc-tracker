@@ -4,8 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 
 import { AsnMetricsGrid } from "@/components/dashboard/grids/asn-metrics-grid";
 import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
-import { DashboardRangeToggle } from "@/components/dashboard/dashboard-card";
-import type { DashboardRangeOption } from "@/components/dashboard/dashboard-card";
+import { DashboardRangeToggle } from "@/components/dashboard/dashboard-range-toggle";
+import type { DashboardRangeOption } from "@/components/dashboard/dashboard-range-toggle";
 import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-row";
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
@@ -15,7 +15,7 @@ import {
   SiteHeaderNav,
   SiteHeaderToolbar,
 } from "@/components/site-header-toolbar";
-import { useDashboardRefresh } from "@/lib/dashboard/refresh-context";
+import { useDashboardRefresh } from "@/lib/dashboard/use-dashboard-refresh";
 import { asnsQueryOptions } from "@/lib/api/asns.queries";
 import {
   filterServersByPlatform,
@@ -60,9 +60,6 @@ export const Route = createFileRoute("/")({
     view: parseDashboardViewParam(search.view),
     platform: parseServerPlatformFilterParam(search.platform),
   }),
-  head: () => ({
-    meta: [{ title: pageTitle("Dashboard") }],
-  }),
   loaderDeps: ({ search }) => ({
     view: search.view ?? "server",
   }),
@@ -70,6 +67,9 @@ export const Route = createFileRoute("/")({
     view === "asn"
       ? queryClient.ensureQueryData(asnsQueryOptions())
       : queryClient.ensureQueryData(serversQueryOptions()),
+  head: () => ({
+    meta: [{ title: pageTitle("Dashboard") }],
+  }),
   component: DashboardPage,
 });
 
@@ -87,12 +87,12 @@ function DashboardPage() {
   const [searchInput, setSearchInput] = useState("");
   const platformFilter: ServerPlatformFilter = urlPlatform ?? "all";
 
-  const serversQuery = useQuery({
+  const { data: serversData, isPending: serversPending } = useQuery({
     ...serversQueryOptions(),
     enabled: dashboardView === "server",
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
-  const asnsQuery = useQuery({
+  const { data: asnsData, isPending: asnsPending } = useQuery({
     ...asnsQueryOptions(),
     enabled: dashboardView === "asn",
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
@@ -164,12 +164,12 @@ function DashboardPage() {
     [navigate],
   );
   const filteredServers = useMemo(
-    () =>
-      filterServersByPlatform(serversQuery.data?.servers ?? [], platformFilter),
-    [platformFilter, serversQuery.data?.servers],
+    () => filterServersByPlatform(serversData?.servers ?? [], platformFilter),
+    [platformFilter, serversData?.servers],
   );
-  const activeQuery = dashboardView === "asn" ? asnsQuery : serversQuery;
-  const showInitialLoading = activeQuery.isPending && !activeQuery.data;
+  const activeData = dashboardView === "asn" ? asnsData : serversData;
+  const activePending = dashboardView === "asn" ? asnsPending : serversPending;
+  const showInitialLoading = activePending && !activeData;
 
   return (
     <>
@@ -202,24 +202,24 @@ function DashboardPage() {
 
       {showInitialLoading ? (
         <LoadingState message="Loading dashboard…" centered />
-      ) : !activeQuery.data ? (
+      ) : !activeData ? (
         <main className="dashboard-shell">
           <p className="text-destructive">Failed to load dashboard data.</p>
         </main>
       ) : (
         <main className="dashboard-shell">
-          <DashboardStatsRow summary={activeQuery.data.summary} />
+          <DashboardStatsRow summary={activeData.summary} />
 
           <HeroChartPanel
-            hasServers={activeQuery.data.summary.trackedServers > 0}
+            hasServers={activeData.summary.trackedServers > 0}
             window={timeWindow}
           />
 
           {dashboardView === "asn" ? (
             <AsnMetricsGrid
-              asns={asnsQuery.data?.asns ?? []}
+              asns={asnsData?.asns ?? []}
               window={timeWindow}
-              trackedAsns={asnsQuery.data?.summary.trackedAsns ?? 0}
+              trackedAsns={asnsData?.summary.trackedAsns ?? 0}
             />
           ) : (
             <ServerMetricsGrid
@@ -227,7 +227,7 @@ function DashboardPage() {
               window={timeWindow}
               platformFilter={platformFilter}
               onPlatformFilterChange={setPlatformFilter}
-              trackedServers={serversQuery.data?.summary.trackedServers ?? 0}
+              trackedServers={serversData?.summary.trackedServers ?? 0}
             />
           )}
         </main>

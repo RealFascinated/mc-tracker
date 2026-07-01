@@ -39,7 +39,7 @@ export function yMaxWithSoftMax(values: MetricValues, softMax: number): number {
   return Math.max(chartYMax(values), softMax);
 }
 
-export function hasValues(values: MetricValues): boolean {
+function hasValues(values: MetricValues): boolean {
   if (!values || values.length === 0) return false;
   for (let i = values.length - 1; i >= 0; i--) {
     const v = values[i];

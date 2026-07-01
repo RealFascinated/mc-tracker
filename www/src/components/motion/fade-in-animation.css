@@ -1,0 +1,28 @@
+@keyframes fade-in-enter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in-animation-pending {
+  opacity: 0;
+}
+
+.fade-in-animation-active {
+  animation: fade-in-enter 400ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-animation-pending {
+    opacity: 1;
+  }
+
+  .fade-in-animation-active {
+    animation: none !important;
+    opacity: 1;
+  }
+}

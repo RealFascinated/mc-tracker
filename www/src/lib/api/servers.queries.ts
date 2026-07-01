@@ -33,7 +33,7 @@ export function serverQueryOptions(id: string) {
   });
 }
 
-export const serversSearchQueryKey = ["servers", "search"] as const;
+const serversSearchQueryKey = ["servers", "search"] as const;
 
 export function serversSearchQueryOptions(search: string, limit = 10) {
   const trimmed = search.trim();

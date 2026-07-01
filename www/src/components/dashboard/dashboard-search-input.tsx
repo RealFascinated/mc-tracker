@@ -46,17 +46,17 @@ export function DashboardSearchInput({
     return () => globalThis.clearTimeout(timer);
   }, [value]);
 
-  const searchQuery = useQuery({
+  const { data: searchData, isFetching } = useQuery({
     ...serversSearchQueryOptions(debouncedQuery),
     enabled: isOpen && debouncedQuery.length >= AUTOCOMPLETE_MIN_CHARS,
   });
 
-  const suggestions = searchQuery.data?.servers ?? [];
-  const isSearching = searchQuery.isFetching && suggestions.length === 0;
+  const suggestions = searchData?.servers ?? [];
+  const isSearching = isFetching && suggestions.length === 0;
   const showSuggestions =
     isOpen &&
     value.trim().length >= AUTOCOMPLETE_MIN_CHARS &&
-    (searchQuery.isFetching || suggestions.length > 0);
+    (isFetching || suggestions.length > 0);
   const showListbox = showSuggestions && !isSearching;
 
   const closeSuggestions = useCallback(() => {
@@ -137,7 +137,7 @@ export function DashboardSearchInput({
         placeholder="Search servers…"
         aria-label="Search servers"
         aria-expanded={showSuggestions}
-        aria-busy={searchQuery.isFetching || undefined}
+        aria-busy={isFetching || undefined}
         aria-controls={showListbox ? listboxId : undefined}
         aria-activedescendant={
           showListbox && activeIndex >= 0
@@ -165,21 +165,17 @@ export function DashboardSearchInput({
       {showSuggestions ? (
         <div className="dashboard-search-suggestions">
           {isSearching ? (
-            <div
-              className="dashboard-search-suggestion-status"
-              role="status"
-              aria-live="polite"
-            >
-              Searching…
+            <div className="dashboard-search-suggestion-status" aria-live="polite">
+              <output>Searching…</output>
             </div>
           ) : (
-            <ul id={listboxId} role="listbox">
+            <div id={listboxId} className="dashboard-search-suggestions-list">
               {suggestions.map((server, index) => (
-                <li
+                <button
                   key={server.id}
+                  type="button"
                   id={`${listboxId}-option-${index}`}
-                  role="option"
-                  aria-selected={index === activeIndex}
+                  tabIndex={-1}
                   className={cn(
                     "dashboard-search-suggestion",
                     index === activeIndex &&
@@ -206,9 +202,9 @@ export function DashboardSearchInput({
                       {server.playersOnline.toLocaleString()}
                     </span>
                   ) : null}
-                </li>
+                </button>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       ) : null}

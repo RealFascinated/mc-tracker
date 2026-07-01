@@ -26,9 +26,10 @@ function subscribeKey(key: string, callback: () => void) {
     subscribers.set(key, set);
   }
   set.add(callback);
+  const subscriberSet = set;
   return () => {
-    set!.delete(callback);
-    if (set!.size === 0) {
+    subscriberSet.delete(callback);
+    if (subscriberSet.size === 0) {
       subscribers.delete(key);
     }
   };

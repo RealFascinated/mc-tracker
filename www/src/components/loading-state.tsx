@@ -14,8 +14,7 @@ function LoadingState({
   centered = false,
 }: LoadingStateProps) {
   return (
-    <div
-      role="status"
+    <output
       aria-live="polite"
       className={cn(
         "flex items-center gap-2 text-muted-foreground",
@@ -28,7 +27,7 @@ function LoadingState({
         aria-hidden
       />
       <span>{message}</span>
-    </div>
+    </output>
   );
 }
 

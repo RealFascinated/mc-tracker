@@ -7,8 +7,8 @@ import {
 } from "@/lib/metrics/range";
 import { formatEpochRangeParts } from "@/lib/formatter";
 
-export const METRIC_WINDOW_MIN_SPAN_SECONDS = 5 * 60;
-export const METRIC_WINDOW_MAX_SPAN_SECONDS = 730 * 24 * 60 * 60;
+const METRIC_WINDOW_MIN_SPAN_SECONDS = 5 * 60;
+const METRIC_WINDOW_MAX_SPAN_SECONDS = 730 * 24 * 60 * 60;
 
 export type MetricTimeWindow =
   | { kind: "preset"; range: MetricTimeRange }
@@ -135,24 +135,6 @@ export function formatMetricTimeWindowLabel(window: MetricTimeWindow): string {
 
   const { headline } = formatEpochRangeParts(window.from, window.to);
   return headline;
-}
-
-export function formatMetricTimeWindowShortLabel(
-  window: MetricTimeWindow,
-): string {
-  if (window.kind === "preset") {
-    return getMetricRangeOption(window.range).shortLabel;
-  }
-
-  const { from, to } = metricTimeWindowToEpochWindow(window);
-  const start = new Date(from * 1000);
-  const end = new Date(to * 1000);
-  const formatter = new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-  });
-
-  return `${formatter.format(start)} – ${formatter.format(end)}`;
 }
 
 export function isPresetMetricTimeWindow(

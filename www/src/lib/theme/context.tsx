@@ -1,39 +1,39 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
 } from "react";
 
 import { startThemeViewTransition } from "@/lib/theme/transition";
+import { THEME_STORAGE_KEY, ThemeContext } from "@/lib/theme/theme-context";
+import type {
+  ResolvedTheme,
+  SetThemeOptions,
+  ThemePreference,
+} from "@/lib/theme/theme-context";
 
-export const THEME_STORAGE_KEY = "mc-tracker-theme";
+export {
+  THEME_STORAGE_KEY,
+  type ResolvedTheme,
+  type ThemePreference,
+} from "@/lib/theme/theme-context";
 
-export type ThemePreference = "dark" | "light" | "system";
-export type ResolvedTheme = "dark" | "light";
+function subscribeToSystemTheme(onStoreChange: () => void) {
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  mediaQuery.addEventListener("change", onStoreChange);
+  return () => mediaQuery.removeEventListener("change", onStoreChange);
+}
 
-type SetThemeOptions = {
-  transition?: boolean;
-};
-
-type ThemeContextValue = {
-  theme: ThemePreference;
-  resolvedTheme: ResolvedTheme;
-  setTheme: (theme: ThemePreference, options?: SetThemeOptions) => void;
-};
-
-const ThemeContext = createContext<ThemeContextValue | null>(null);
-
-function getSystemTheme(): ResolvedTheme {
-  if (typeof window === "undefined") {
-    return "dark";
-  }
-
+function getSystemThemeSnapshot(): ResolvedTheme {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
+}
+
+function getServerSystemThemeSnapshot(): ResolvedTheme {
+  return "dark";
 }
 
 function getStoredTheme(): ThemePreference | null {
@@ -58,20 +58,13 @@ function getInitialPreference(): ThemePreference {
 function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] =
     useState<ThemePreference>(getInitialPreference);
-  const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme);
+  const systemTheme = useSyncExternalStore(
+    subscribeToSystemTheme,
+    getSystemThemeSnapshot,
+    getServerSystemThemeSnapshot,
+  );
 
   const resolvedTheme = theme === "system" ? systemTheme : theme;
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const updateSystemTheme = () => {
-      setSystemTheme(mediaQuery.matches ? "dark" : "light");
-    };
-
-    updateSystemTheme();
-    mediaQuery.addEventListener("change", updateSystemTheme);
-    return () => mediaQuery.removeEventListener("change", updateSystemTheme);
-  }, []);
 
   useEffect(() => {
     applyTheme(resolvedTheme);
@@ -113,12 +106,4 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-function useTheme(): ThemeContextValue {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useTheme must be used within ThemeProvider");
-  }
-  return context;
-}
-
-export { ThemeProvider, useTheme };
+export { ThemeProvider };
