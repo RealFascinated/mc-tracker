@@ -27,7 +27,16 @@ export function ThemeSwitcher({ className }: { className?: string }) {
             "site-header-nav-button text-muted-foreground hover:bg-transparent hover:text-monitor dark:hover:bg-transparent dark:hover:text-warning",
             className,
           )}
-          onClick={() => setTheme(nextTheme, { transition: true })}
+          onClick={(event) => {
+            const rect = event.currentTarget.getBoundingClientRect();
+            setTheme(nextTheme, {
+              transition: true,
+              transitionOrigin: {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2,
+              },
+            });
+          }}
           aria-label={label}
         >
           <Icon className="size-4" aria-hidden />

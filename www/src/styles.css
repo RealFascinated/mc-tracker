@@ -1246,26 +1246,27 @@
 
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-group(root) {
-    animation-timing-function: var(--expo-out);
+    animation: none;
   }
 
   ::view-transition-old(root),
   .dark::view-transition-old(root) {
     animation: none;
-    animation-fill-mode: both;
     z-index: -1;
   }
 
-  ::view-transition-new(root) {
-    mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><circle cx='20' cy='20' r='20' fill='white'/></svg>")
-      center / 0 no-repeat;
-    animation: theme-transition-scale 1s;
-    animation-fill-mode: both;
-  }
-
-  @keyframes theme-transition-scale {
-    to {
-      mask-size: 200vmax;
-    }
+  ::view-transition-new(root),
+  .dark::view-transition-new(root) {
+    mask-image: radial-gradient(
+      circle,
+      #000 0%,
+      #000 62%,
+      rgb(0 0 0 / 65%) 78%,
+      rgb(0 0 0 / 20%) 90%,
+      transparent 100%
+    );
+    mask-repeat: no-repeat;
+    mask-position: var(--theme-transition-x, 50%) var(--theme-transition-y, 50%);
+    mask-size: 0;
   }
 }

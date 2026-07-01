@@ -87,7 +87,7 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
       };
 
       if (options?.transition && resolvedChanges) {
-        startThemeViewTransition(apply);
+        startThemeViewTransition(apply, options.transitionOrigin);
         return;
       }
 
