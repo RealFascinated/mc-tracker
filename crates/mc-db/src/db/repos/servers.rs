@@ -20,6 +20,7 @@ type ServerRow = (
     chrono::DateTime<Utc>,
     Option<i32>,
     Option<i64>,
+    bool,
 );
 
 fn row_to_server(row: ServerRow) -> Result<Server, DbError> {
@@ -33,6 +34,7 @@ fn row_to_server(row: ServerRow) -> Result<Server, DbError> {
         updated_at: row.6,
         peak_players: row.7.map(|value| value as u32),
         peak_players_timestamp: row.8,
+        paused: row.9,
     })
 }
 
@@ -49,6 +51,7 @@ pub struct UpdateServer<'a> {
     pub host: Option<&'a str>,
     pub port: Option<Option<i32>>,
     pub platform: Option<Platform>,
+    pub paused: Option<bool>,
 }
 
 pub async fn list(pool: &DbPool) -> Result<Vec<Server>, DbError> {
@@ -65,6 +68,7 @@ pub async fn list(pool: &DbPool) -> Result<Vec<Server>, DbError> {
             servers::updated_at,
             servers::peak_players,
             servers::peak_players_timestamp,
+            servers::paused,
         ))
         .load::<ServerRow>(&mut conn)
         .await
@@ -87,6 +91,7 @@ pub async fn get(pool: &DbPool, id: Uuid) -> Result<Server, DbError> {
             servers::updated_at,
             servers::peak_players,
             servers::peak_players_timestamp,
+            servers::paused,
         ))
         .first::<ServerRow>(&mut conn)
         .await
@@ -141,6 +146,7 @@ pub async fn update(pool: &DbPool, id: Uuid, update: UpdateServer<'_>) -> Result
     let host = update.host.unwrap_or(&existing.host);
     let port = update.port.unwrap_or(existing.port);
     let platform = update.platform.unwrap_or(existing.platform);
+    let paused = update.paused.unwrap_or(existing.paused);
 
     diesel::update(servers::table.filter(servers::id.eq(id)))
         .set((
@@ -148,6 +154,7 @@ pub async fn update(pool: &DbPool, id: Uuid, update: UpdateServer<'_>) -> Result
             servers::host.eq(host),
             servers::port.eq(port),
             servers::platform.eq(platform.as_str()),
+            servers::paused.eq(paused),
             servers::updated_at.eq(now),
         ))
         .execute(&mut conn)

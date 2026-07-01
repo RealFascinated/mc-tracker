@@ -27,6 +27,7 @@ fn sample_server(id: Uuid) -> Server {
         updated_at: Utc::now(),
         peak_players: None,
         peak_players_timestamp: None,
+        paused: false,
     }
 }
 

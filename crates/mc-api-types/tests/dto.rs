@@ -64,6 +64,13 @@ fn update_server_request_deserializes_partial_fields() {
     assert!(req.host.is_none());
     assert_eq!(req.port, Some(25565));
     assert!(req.server_type.is_none());
+    assert!(req.paused.is_none());
+}
+
+#[test]
+fn update_server_request_deserializes_paused() {
+    let req: UpdateServerRequest = serde_json::from_str(r#"{"paused":true}"#).unwrap();
+    assert_eq!(req.paused, Some(true));
 }
 
 #[test]
@@ -76,11 +83,12 @@ fn admin_server_response_serializes_camel_case() {
         port: None,
         created_at: "2026-06-30T12:00:00Z".into(),
         updated_at: "2026-06-30T12:00:00Z".into(),
+        paused: false,
     })
     .unwrap();
     assert_eq!(
         json,
-        r#"{"id":"b8dd1998-c3c8-4248-905c-52c26092baf5","name":"Hypixel","type":"PC","host":"mc.hypixel.net","port":null,"createdAt":"2026-06-30T12:00:00Z","updatedAt":"2026-06-30T12:00:00Z"}"#
+        r#"{"id":"b8dd1998-c3c8-4248-905c-52c26092baf5","name":"Hypixel","type":"PC","host":"mc.hypixel.net","port":null,"createdAt":"2026-06-30T12:00:00Z","updatedAt":"2026-06-30T12:00:00Z","paused":false}"#
     );
 }
 

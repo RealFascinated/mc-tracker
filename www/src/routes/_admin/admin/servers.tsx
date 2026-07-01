@@ -3,6 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import {
+  AddServerLookupDialog,
+  type AddServerLookupState,
+} from "@/components/admin/add-server-lookup-dialog";
 import { AdminServerFormFields } from "@/components/admin/admin-server-form-fields";
 import { AdminServersTable } from "@/components/admin/admin-servers-table";
 import { PageHeader } from "@/components/layout/page-header";
@@ -27,6 +31,7 @@ import {
   adminServersQueryOptions,
 } from "@/lib/api/admin/servers.queries";
 import { errorMessage } from "@/lib/api/error-message";
+import { lookupMcutilsServer } from "@/lib/mcutils/lookup-server";
 import { pageTitle } from "@/lib/page-title";
 
 export const Route = createFileRoute("/_admin/admin/servers")({
@@ -65,12 +70,17 @@ function AdminServersPage() {
   const [form, setForm] = useState(emptyForm);
   const [editState, setEditState] = useState<EditServerState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminServer | null>(null);
+  const [lookupState, setLookupState] = useState<AddServerLookupState | null>(
+    null,
+  );
+  const [isCheckingServer, setIsCheckingServer] = useState(false);
 
   const createMutation = useMutation({
     mutationFn: createAdminServer,
     onSuccess: async () => {
       toast.success("Server added");
       setForm(emptyForm);
+      setLookupState(null);
       await queryClient.invalidateQueries({ queryKey: adminServersQueryKey });
     },
     onError: (err) => toast.error(errorMessage(err)),
@@ -87,6 +97,16 @@ function AdminServersPage() {
     onSuccess: async () => {
       toast.success("Server updated");
       setEditState(null);
+      await queryClient.invalidateQueries({ queryKey: adminServersQueryKey });
+    },
+    onError: (err) => toast.error(errorMessage(err)),
+  });
+
+  const pauseMutation = useMutation({
+    mutationFn: ({ id, paused }: { id: string; paused: boolean }) =>
+      updateAdminServer(id, { paused }),
+    onSuccess: async (_data, { paused }) => {
+      toast.success(paused ? "Tracking paused" : "Tracking resumed");
       await queryClient.invalidateQueries({ queryKey: adminServersQueryKey });
     },
     onError: (err) => toast.error(errorMessage(err)),
@@ -110,14 +130,41 @@ function AdminServersPage() {
     return <p className="text-destructive">Failed to load servers.</p>;
   }
 
-  function handleCreate(event: React.FormEvent<HTMLFormElement>) {
+  async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    createMutation.mutate({
+    const body: CreateServerRequest = {
       name: form.name.trim(),
       host: form.host.trim(),
       port: form.port,
       type: form.type,
-    });
+    };
+
+    setIsCheckingServer(true);
+    try {
+      const { server, error } = await lookupMcutilsServer(body);
+      if (error || !server) {
+        setLookupState({
+          kind: "error",
+          message: error?.message ?? "Server is offline or unreachable.",
+        });
+        return;
+      }
+      setLookupState({ kind: "confirm", body, server });
+    } catch (err) {
+      setLookupState({
+        kind: "error",
+        message: errorMessage(err),
+      });
+    } finally {
+      setIsCheckingServer(false);
+    }
+  }
+
+  function handleConfirmCreate() {
+    if (lookupState?.kind !== "confirm") {
+      return;
+    }
+    createMutation.mutate(lookupState.body);
   }
 
   function handleEdit(event: React.FormEvent<HTMLFormElement>) {
@@ -130,6 +177,9 @@ function AdminServersPage() {
       body: editState.form,
     });
   }
+
+  const activeCount = data.servers.filter((server) => !server.paused).length;
+  const pausedCount = data.servers.length - activeCount;
 
   return (
     <>
@@ -157,9 +207,13 @@ function AdminServersPage() {
                 <Button
                   type="submit"
                   variant="brand"
-                  disabled={createMutation.isPending}
+                  disabled={isCheckingServer || createMutation.isPending}
                 >
-                  {createMutation.isPending ? "Adding…" : "Add server"}
+                  {isCheckingServer
+                    ? "Checking…"
+                    : createMutation.isPending
+                      ? "Adding…"
+                      : "Add server"}
                 </Button>
               </div>
             </form>
@@ -170,7 +224,9 @@ function AdminServersPage() {
           <div className="app-shell-section-header">
             <h2 className="app-shell-section-title">Tracked servers</h2>
             <p className="app-shell-section-description">
-              {data.servers.length} tracked server
+              {activeCount} active
+              {pausedCount > 0 ? `, ${pausedCount} paused` : ""} of{" "}
+              {data.servers.length} configured server
               {data.servers.length === 1 ? "" : "s"}.
             </p>
           </div>
@@ -180,11 +236,21 @@ function AdminServersPage() {
               onEdit={(server) =>
                 setEditState({ target: server, form: serverToForm(server) })
               }
+              onPauseChange={(server, paused) =>
+                pauseMutation.mutate({ id: server.id, paused })
+              }
               onDelete={setDeleteTarget}
             />
           </div>
         </section>
       </div>
+
+      <AddServerLookupDialog
+        state={lookupState}
+        isAdding={createMutation.isPending}
+        onClose={() => setLookupState(null)}
+        onConfirm={handleConfirmCreate}
+      />
 
       <Dialog
         open={editState != null}
@@ -246,7 +312,7 @@ function AdminServersPage() {
             <DialogTitle>Delete server?</DialogTitle>
             <DialogDescription>
               {deleteTarget
-                ? `This removes "${deleteTarget.name}" from tracking. Player history in VictoriaMetrics is kept.`
+                ? `This removes "${deleteTarget.name}" permanently. Pause tracking instead to keep the server configured without pings.`
                 : null}
             </DialogDescription>
           </DialogHeader>

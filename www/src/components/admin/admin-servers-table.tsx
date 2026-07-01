@@ -10,7 +10,9 @@ import {
   ArrowUp,
   ArrowUpDown,
   MoreHorizontal,
+  Pause,
   Pencil,
+  Play,
   Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -42,6 +44,7 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 type AdminServersTableProps = {
   servers: AdminServer[];
   onEdit: (server: AdminServer) => void;
+  onPauseChange: (server: AdminServer, paused: boolean) => void;
   onDelete: (server: AdminServer) => void;
 };
 
@@ -93,6 +96,7 @@ function SortableHeader({
 export function AdminServersTable({
   servers,
   onEdit,
+  onPauseChange,
   onDelete,
 }: AdminServersTableProps) {
   const [sorting, setSorting] = useState<SortingState>([
@@ -146,6 +150,18 @@ export function AdminServersTable({
         ),
       },
       {
+        accessorKey: "paused",
+        header: "Status",
+        sortingFn: (rowA, rowB) =>
+          Number(rowA.original.paused) - Number(rowB.original.paused),
+        cell: ({ row }) =>
+          row.original.paused ? (
+            <span className="text-muted-foreground">Paused</span>
+          ) : (
+            <span className="text-success">Active</span>
+          ),
+      },
+      {
         accessorKey: "createdAt",
         header: "Added",
         sortingFn: (rowA, rowB) =>
@@ -180,6 +196,21 @@ export function AdminServersTable({
                   <Pencil className="size-4" aria-hidden />
                   Edit server
                 </DropdownMenuItem>
+                {row.original.paused ? (
+                  <DropdownMenuItem
+                    onClick={() => onPauseChange(row.original, false)}
+                  >
+                    <Play className="size-4" aria-hidden />
+                    Resume tracking
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    onClick={() => onPauseChange(row.original, true)}
+                  >
+                    <Pause className="size-4" aria-hidden />
+                    Pause tracking
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   variant="destructive"
                   onClick={() => onDelete(row.original)}
@@ -193,7 +224,7 @@ export function AdminServersTable({
         ),
       },
     ],
-    [onDelete, onEdit],
+    [onDelete, onEdit, onPauseChange],
   );
 
   const table = useReactTable({

@@ -17,4 +17,5 @@ pub struct AdminServerResponse {
     pub port: Option<i32>,
     pub created_at: String,
     pub updated_at: String,
+    pub paused: bool,
 }

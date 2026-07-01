@@ -17,6 +17,7 @@
         "clsx": "^2.1.1",
         "cnfast": "^0.0.8",
         "lucide-react": "^1.20.0",
+        "mcutils-js-api": "^2.0.59",
         "radix-ui": "^1.6.0",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
@@ -1033,6 +1034,8 @@
     "magic-string": ["magic-string@0.30.21", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.5" } }, "sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ=="],
 
     "math-intrinsics": ["math-intrinsics@1.1.0", "", {}, "sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g=="],
+
+    "mcutils-js-api": ["mcutils-js-api@2.0.59", "", {}, "sha512-kwJViLoif5qNayofx8St9UXxpyTDBqLk55tJdZZA2ABqLdgFFIfZ5ChTMBwlrjECTGN29kC2PWad5TZ7fl/K8w=="],
 
     "mdn-data": ["mdn-data@2.27.1", "", {}, "sha512-9Yubnt3e8A0OKwxYSXyhLymGW4sCufcLG6VdiDdUGVkPhpqLxlvP5vl1983gQjJl3tqbrM731mjaZaP68AgosQ=="],
 

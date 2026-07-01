@@ -76,6 +76,7 @@ async fn servers_crud() {
             host: None,
             port: None,
             platform: None,
+            paused: None,
         },
     )
     .await

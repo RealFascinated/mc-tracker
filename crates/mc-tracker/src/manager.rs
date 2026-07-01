@@ -83,6 +83,10 @@ impl TrackedServer {
         self.last_ping_at = None;
     }
 
+    fn is_tracking(&self) -> bool {
+        !self.config.paused
+    }
+
     fn apply_success(&mut self, ping: &Ping, asn: AsnLookup, resolved_ip: &str) -> bool {
         self.players_online = Some(ping.players.online);
         self.last_ping_at = Some(ping.timestamp);
@@ -269,11 +273,12 @@ impl ServerManager {
         let identity_changed = server.config.host != config.host
             || server.config.port != config.port
             || server.config.platform != config.platform;
+        let pause_changed = server.config.paused != config.paused;
 
         server.config = config.clone();
         server.peak_players = config.peak_players;
         server.peak_players_timestamp = config.peak_players_timestamp;
-        if identity_changed {
+        if identity_changed || pause_changed {
             server.clear_ping_state();
             server.asn = AsnLookup::empty();
             server.last_asn_ip = None;
@@ -306,11 +311,11 @@ impl ServerManager {
     pub async fn summary(&self) -> ServerSummary {
         let servers = self.servers.read().await;
         let mut summary = ServerSummary {
-            tracked_servers: servers.len() as u32,
+            tracked_servers: servers.iter().filter(|server| server.is_tracking()).count() as u32,
             ..Default::default()
         };
 
-        for server in servers.iter() {
+        for server in servers.iter().filter(|server| server.is_tracking()) {
             let Some(players) = server.players_online else {
                 continue;
             };
@@ -333,6 +338,7 @@ impl ServerManager {
         let all_tracked = self.servers.read().await.clone();
         let tracked = all_tracked
             .iter()
+            .filter(|server| server.is_tracking())
             .filter(|server| matches_server_search(server, search))
             .cloned()
             .collect::<Vec<_>>();
@@ -384,6 +390,9 @@ impl ServerManager {
 
     pub async fn server_detail_response(&self, id: Uuid) -> Option<ServerListItemResponse> {
         let server = self.get_tracked(id).await?;
+        if !server.is_tracking() {
+            return None;
+        }
         let environment = self.environment();
         let id_str = id.to_string();
         let peaks_24h = self.peaks_24h_by_server_id(environment).await;
@@ -419,6 +428,7 @@ impl ServerManager {
 
         let mut matches: Vec<_> = servers
             .iter()
+            .filter(|server| server.is_tracking())
             .filter(|server| matches_server_search(server, Some(query)))
             .collect();
 
@@ -458,7 +468,7 @@ impl ServerManager {
         let tracked = all_tracked.clone();
 
         let mut aggregates: BTreeMap<AsnAggregateKey, AsnAggregate> = BTreeMap::new();
-        for server in tracked {
+        for server in tracked.iter().filter(|server| server.is_tracking()) {
             let key = asn_key(&server);
             if !matches_asn_search(&key, search) {
                 continue;
@@ -522,6 +532,7 @@ impl ServerManager {
         let all_tracked = self.servers.read().await.clone();
         let tracked: Vec<_> = all_tracked
             .iter()
+            .filter(|server| server.is_tracking())
             .filter(|server| matches_asn_key(server, asn, asn_org))
             .cloned()
             .collect();
@@ -635,7 +646,7 @@ impl ServerManager {
         from_epoch: i64,
         to_epoch: i64,
     ) -> Result<ServerTimeseriesResponse, MetricsError> {
-        if self.get_tracked(id).await.is_none() {
+        if self.get_tracked(id).await.is_none_or(|server| !server.is_tracking()) {
             return Err(MetricsError::InvalidWindow("server not found".into()));
         }
 
@@ -728,6 +739,7 @@ impl ServerManager {
             .read()
             .await
             .iter()
+            .filter(|server| server.is_tracking())
             .map(|server| server.config.id)
             .collect();
 
@@ -792,7 +804,7 @@ impl ServerManager {
 
         let mut metrics = self.metrics.write().await;
         metrics.reset();
-        for server in self.servers.read().await.iter() {
+        for server in self.servers.read().await.iter().filter(|server| server.is_tracking()) {
             let Some(players_online) = server.players_online else {
                 continue;
             };
@@ -856,6 +868,7 @@ impl ServerManager {
         let server = self
             .get_tracked(id)
             .await
+            .filter(|server| server.is_tracking())
             .ok_or(PingServerError::NotTracked)?;
 
         let port = server.config.port.map(|value| value as u16);
@@ -950,6 +963,7 @@ impl ServerManager {
             .read()
             .await
             .iter()
+            .filter(|server| server.is_tracking())
             .any(|server| server.asn.asn == asn && server.asn.asn_org == asn_org)
     }
 
@@ -1090,6 +1104,7 @@ pub(crate) fn admin_server_response(server: &Server) -> AdminServerResponse {
         port: server.port,
         created_at: server.created_at.to_rfc3339(),
         updated_at: server.updated_at.to_rfc3339(),
+        paused: server.paused,
     }
 }
 
@@ -1205,6 +1220,7 @@ mod tests {
             updated_at: Utc::now(),
             peak_players: None,
             peak_players_timestamp: None,
+            paused: false,
         }
     }
 
@@ -1289,6 +1305,33 @@ mod tests {
         assert!(!manager.remove_server(id).await);
     }
 
+    #[tokio::test]
+    async fn paused_servers_are_excluded_from_public_summary() {
+        let settings = Arc::new(RwLock::new(AppSettings::default()));
+        let bootstrap = settings.read().await.clone();
+        let active = sample_server();
+        let paused = Server {
+            paused: true,
+            ..sample_server()
+        };
+        let manager = ServerManager::new(
+            vec![active, paused],
+            None,
+            settings,
+            fixture_geo(),
+            None,
+            &bootstrap,
+            "development",
+        );
+
+        assert_eq!(manager.summary().await.tracked_servers, 1);
+        let response = manager.servers_list_response(None).await;
+        assert_eq!(response.servers.len(), 1);
+        let admin = manager.admin_servers_list().await;
+        assert_eq!(admin.servers.len(), 2);
+        assert_eq!(admin.servers.iter().filter(|s| s.paused).count(), 1);
+    }
+
     fn sample_server_with_id(id: Uuid) -> Server {
         Server {
             id,
@@ -1300,6 +1343,7 @@ mod tests {
             updated_at: Utc::now(),
             peak_players: None,
             peak_players_timestamp: None,
+            paused: false,
         }
     }
 
@@ -1315,6 +1359,7 @@ mod tests {
             updated_at: Utc::now(),
             peak_players: None,
             peak_players_timestamp: None,
+            paused: false,
         });
         server.asn = AsnLookup {
             asn: "AS13335".into(),

@@ -8,6 +8,7 @@ export type AdminServer = {
   port: number | null;
   createdAt: string;
   updatedAt: string;
+  paused: boolean;
 };
 
 export type AdminServersListResponse = {
@@ -21,7 +22,9 @@ export type CreateServerRequest = {
   type: string;
 };
 
-export type UpdateServerRequest = Partial<CreateServerRequest>;
+export type UpdateServerRequest = Partial<CreateServerRequest> & {
+  paused?: boolean;
+};
 
 export function getAdminServers() {
   return apiFetch<AdminServersListResponse>("/admin/servers");

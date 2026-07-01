@@ -18,6 +18,7 @@ pub struct UpdateServerRequest {
     pub port: Option<i32>,
     #[serde(rename = "type")]
     pub server_type: Option<String>,
+    pub paused: Option<bool>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]

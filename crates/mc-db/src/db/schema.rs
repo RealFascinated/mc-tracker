@@ -9,6 +9,7 @@ diesel::table! {
         updated_at -> Timestamptz,
         peak_players -> Nullable<Integer>,
         peak_players_timestamp -> Nullable<BigInt>,
+        paused -> Bool,
     }
 }
 

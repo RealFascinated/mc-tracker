@@ -107,6 +107,7 @@ async fn update_server(
             host: body.host.as_deref().map(str::trim),
             port: body.port.map(Some),
             platform,
+            paused: body.paused,
         },
     )
     .await
@@ -214,6 +215,7 @@ mod tests {
             updated_at: Utc::now(),
             peak_players: None,
             peak_players_timestamp: None,
+            paused: false,
         };
         let settings = Arc::new(RwLock::new(AppSettings::default()));
         let bootstrap = settings.read().await.clone();

@@ -148,3 +148,97 @@ async fn patch_and_delete_admin_server() {
         .unwrap()
         .is_empty());
 }
+
+#[tokio::test]
+async fn patch_admin_server_pause_and_resume() {
+    let (_postgres, database_url) = common::start_postgres().await;
+    let pool = common::setup_pool(&database_url).await;
+    common::bootstrap_admin(&pool).await;
+
+    let settings = Arc::new(RwLock::new(
+        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
+    ));
+    let bootstrap = settings.read().await.clone();
+    let manager = Arc::new(ServerManager::new(
+        vec![],
+        None,
+        Arc::clone(&settings),
+        common::fixture_geo(),
+        None,
+        &bootstrap,
+        "development",
+    ));
+
+    let app = common::build_app(pool.clone(), Arc::clone(&manager)).await;
+    let cookie = common::login_admin(&app).await;
+
+    let create = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/admin/servers")
+                .header("cookie", &cookie)
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"name":"Mineplex","host":"mineplex.com","port":null,"type":"PC"}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create.status(), StatusCode::CREATED);
+    let created: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(create.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    let id = created["id"].as_str().unwrap();
+
+    let pause = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PATCH")
+                .uri(format!("/admin/servers/{id}"))
+                .header("cookie", &cookie)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"paused":true}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(pause.status(), StatusCode::OK);
+    let paused: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(pause.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(paused["paused"], true);
+    assert_eq!(manager.summary().await.tracked_servers, 0);
+    assert_eq!(
+        mc_db::db::repos::servers::get(&pool, uuid::Uuid::parse_str(id).unwrap())
+            .await
+            .unwrap()
+            .paused,
+        true
+    );
+
+    let resume = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PATCH")
+                .uri(format!("/admin/servers/{id}"))
+                .header("cookie", &cookie)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"paused":false}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(resume.status(), StatusCode::OK);
+    assert_eq!(manager.summary().await.tracked_servers, 1);
+}
