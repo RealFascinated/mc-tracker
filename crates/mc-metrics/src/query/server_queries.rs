@@ -29,26 +29,29 @@ pub fn player_count_series(environment: &str, server_id: &str) -> String {
     )
 }
 
-/// `dashboard.yml` peak stat:
-/// `max_over_time(sum(minecraft_server_player_count{environment="production"})[24h:])`
+fn total_players_aggregate(environment: &str) -> String {
+    format!(r#"sum({})"#, player_count_by_server(environment))
+}
+
+/// `max_over_time(sum(max by (id, type) (...))[24h:])`
 pub fn peak_players_24h(environment: &str) -> String {
     format!(
-        r#"max_over_time(sum({})[24h:])"#,
-        player_count_by_environment(environment)
+        r#"max_over_time({}[24h:])"#,
+        total_players_aggregate(environment)
     )
 }
 
-/// `max_over_time(sum(minecraft_server_player_count{environment="production"})[7d:])`
+/// `max_over_time(sum(max by (id, type) (...))[7d:])`
 pub fn peak_players_7d(environment: &str) -> String {
     format!(
-        r#"max_over_time(sum({})[7d:])"#,
-        player_count_by_environment(environment)
+        r#"max_over_time({}[7d:])"#,
+        total_players_aggregate(environment)
     )
 }
 
-/// `sum(minecraft_server_player_count{environment="production"})`
+/// `sum(max by (id, type) (minecraft_server_player_count{environment="production"}))`
 pub fn total_players_series(environment: &str) -> String {
-    format!(r#"sum({})"#, player_count_by_environment(environment))
+    total_players_aggregate(environment)
 }
 
 /// `max_over_time(max by (id, type) (...)[24h:])` — one series per tracked server.
@@ -67,7 +70,7 @@ mod tests {
     fn peak_players_24h_matches_dashboard_shape() {
         assert_eq!(
             peak_players_24h("production"),
-            r#"max_over_time(sum(minecraft_server_player_count{environment="production"})[24h:])"#
+            r#"max_over_time(sum(max by (id, type) (minecraft_server_player_count{environment="production"}))[24h:])"#
         );
     }
 
@@ -75,7 +78,7 @@ mod tests {
     fn peak_players_7d_matches_expected_shape() {
         assert_eq!(
             peak_players_7d("production"),
-            r#"max_over_time(sum(minecraft_server_player_count{environment="production"})[7d:])"#
+            r#"max_over_time(sum(max by (id, type) (minecraft_server_player_count{environment="production"}))[7d:])"#
         );
     }
 
@@ -92,7 +95,7 @@ mod tests {
     fn total_players_series_matches_aggregate_shape() {
         assert_eq!(
             total_players_series("production"),
-            r#"sum(minecraft_server_player_count{environment="production"})"#
+            r#"sum(max by (id, type) (minecraft_server_player_count{environment="production"}))"#
         );
     }
 }
