@@ -11,7 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
 import { DashboardRefreshProvider } from "@/lib/dashboard/refresh-context";
-import { APP_NAME } from "@/lib/page-title";
+import { defaultSiteHead } from "@/lib/embed-meta";
 import { ThemeProvider } from "@/lib/theme";
 import { themeInitScript } from "@/lib/theme/script";
 import appCss from "../styles.css?url";
@@ -19,21 +19,26 @@ import appCss from "../styles.css?url";
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
 }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: APP_NAME },
-    ],
-    links: [
-      {
-        rel: "icon",
-        href: `${import.meta.env.BASE_URL}favicon.svg`,
-        type: "image/svg+xml",
-      },
-      { rel: "stylesheet", href: appCss },
-    ],
-  }),
+  head: () => {
+    const siteHead = defaultSiteHead();
+
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        ...siteHead.meta,
+      ],
+      links: [
+        {
+          rel: "icon",
+          href: `${import.meta.env.BASE_URL}favicon.svg`,
+          type: "image/svg+xml",
+        },
+        { rel: "stylesheet", href: appCss },
+        ...siteHead.links,
+      ],
+    };
+  },
   shellComponent: RootDocument,
 });
 

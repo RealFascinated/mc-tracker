@@ -1,5 +1,4 @@
-import { createContext, useContext, useMemo, useRef } from "react";
-import type { ReactNode } from "react";
+import { createContext, use } from "react";
 import type uPlot from "uplot";
 
 import { METRIC_WINDOW_MIN_SPAN_SECONDS } from "@/lib/metrics/window-policy";
@@ -11,7 +10,7 @@ export type MetricsDataWindow = {
 
 const ZOOM_IN_THRESHOLD = 0.95;
 
-export function shouldNavigateChartZoom(
+function shouldNavigateChartZoom(
   from: number,
   to: number,
   dataWindow: MetricsDataWindow,
@@ -34,58 +33,18 @@ export function shouldNavigateChartZoom(
   return true;
 }
 
-type MetricsChartZoomContextValue = {
+export type MetricsChartZoomContextValue = {
   getZoomContext: () => {
     dataWindow: MetricsDataWindow;
     onZoomToRange: (from: number, to: number) => void;
   } | null;
 };
 
-const MetricsChartZoomContext =
+export const MetricsChartZoomContext =
   createContext<MetricsChartZoomContextValue | null>(null);
 
-type MetricsChartZoomProviderProps = {
-  dataWindow: MetricsDataWindow;
-  onZoomToRange: (from: number, to: number) => void;
-  disabled?: boolean;
-  children: ReactNode;
-};
-
-function MetricsChartZoomProvider({
-  dataWindow,
-  onZoomToRange,
-  disabled = false,
-  children,
-}: MetricsChartZoomProviderProps) {
-  const stateRef = useRef({ dataWindow, onZoomToRange, disabled });
-  stateRef.current = { dataWindow, onZoomToRange, disabled };
-
-  const value = useMemo<MetricsChartZoomContextValue>(
-    () => ({
-      getZoomContext: () => {
-        const state = stateRef.current;
-        if (state.disabled) {
-          return null;
-        }
-
-        return {
-          dataWindow: state.dataWindow,
-          onZoomToRange: state.onZoomToRange,
-        };
-      },
-    }),
-    [],
-  );
-
-  return (
-    <MetricsChartZoomContext.Provider value={value}>
-      {children}
-    </MetricsChartZoomContext.Provider>
-  );
-}
-
-function useMetricsChartZoom() {
-  return useContext(MetricsChartZoomContext);
+export function useMetricsChartZoom() {
+  return use(MetricsChartZoomContext);
 }
 
 export function bindChartZoomNavigate(
@@ -135,5 +94,3 @@ export function bindChartZoomNavigate(
     chart.over.removeEventListener("mouseup", onMouseUp);
   };
 }
-
-export { MetricsChartZoomProvider, useMetricsChartZoom };

@@ -19,12 +19,11 @@ import { getSignupEnabled } from "@/lib/api/auth-config";
 import { errorMessage } from "@/lib/api/error-message";
 import { signup, useAuth, validateCredentials } from "@/lib/auth";
 import { pageTitle } from "@/lib/page-title";
+import { privatePageHead } from "@/lib/embed-meta";
 
 export const Route = createFileRoute("/signup")({
   ssr: false,
-  head: () => ({
-    meta: [{ title: pageTitle("Sign up") }],
-  }),
+  head: () => privatePageHead(pageTitle("Sign up")),
   component: SignupPage,
 });
 

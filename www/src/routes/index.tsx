@@ -26,6 +26,10 @@ import {
 import type {ServerPlatformFilter} from "@/lib/api/servers";
 import { serversQueryOptions } from "@/lib/api/servers.queries";
 import { pageTitle } from "@/lib/page-title";
+import {
+  DASHBOARD_DESCRIPTION,
+  embedHead,
+} from "@/lib/embed-meta";
 import { DEFAULT_METRIC_TIME_RANGE } from "@/lib/metrics/range";
 import type { MetricTimeRange } from "@/lib/metrics/range";
 import {
@@ -68,9 +72,12 @@ export const Route = createFileRoute("/")({
     view === "asn"
       ? queryClient.ensureQueryData(asnsQueryOptions())
       : queryClient.ensureQueryData(serversQueryOptions()),
-  head: () => ({
-    meta: [{ title: pageTitle("Dashboard") }],
-  }),
+  head: ({ match }) =>
+    embedHead({
+      title: pageTitle("Dashboard"),
+      description: DASHBOARD_DESCRIPTION,
+      pathname: match.pathname,
+    }),
   component: DashboardPage,
 });
 

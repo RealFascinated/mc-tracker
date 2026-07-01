@@ -12,6 +12,10 @@ export const env = createEnv({
       .string()
       .default("")
       .transform((value) => value.replace(/\/$/, "")),
+    VITE_MC_TRACKER_SITE_URL: z
+      .string()
+      .default("")
+      .transform((url) => url.replace(/\/$/, "")),
   },
   runtimeEnv: import.meta.env,
   emptyStringAsUndefined: true,

@@ -1,11 +1,9 @@
 import { useMemo } from "react";
 import type { ReactNode } from "react";
 
-import { MetricsChartSyncProvider } from "@/lib/metrics/chart-sync";
-import {
-  MetricsChartZoomProvider,
-  type MetricsDataWindow,
-} from "@/lib/metrics/chart-zoom";
+import { MetricsChartSyncProvider } from "@/lib/metrics/metrics-chart-sync-provider";
+import { MetricsChartZoomProvider } from "@/lib/metrics/metrics-chart-zoom-provider";
+import type { MetricsDataWindow } from "@/lib/metrics/chart-zoom";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 import { metricTimeWindowToEpochWindow } from "@/lib/metrics/time-window";
 

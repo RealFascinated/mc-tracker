@@ -24,6 +24,7 @@ import { ApiClientError } from "@/lib/api/client";
 import { serverQueryOptions } from "@/lib/api/servers.queries";
 import { useDashboardRefresh } from "@/lib/dashboard/use-dashboard-refresh";
 import { pageTitle } from "@/lib/page-title";
+import { embedHead, serverPageDescription } from "@/lib/embed-meta";
 import { DEFAULT_METRIC_TIME_RANGE } from "@/lib/metrics/range";
 import type { MetricTimeRange } from "@/lib/metrics/range";
 import {
@@ -52,9 +53,15 @@ export const Route = createFileRoute("/servers/$serverId")({
       throw error;
     }
   },
-  head: ({ loaderData }) => ({
-    meta: [{ title: pageTitle(loaderData?.name ?? "Server") }],
-  }),
+  head: ({ loaderData, match }) =>
+    embedHead({
+      title: pageTitle(loaderData?.name ?? "Server"),
+      description: loaderData
+        ? serverPageDescription(loaderData)
+        : undefined,
+      image: loaderData?.favicon,
+      pathname: match.pathname,
+    }),
   component: ServerDetailPage,
 });
 

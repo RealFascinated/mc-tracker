@@ -28,6 +28,7 @@ import {
 import type {ServerPlatformFilter} from "@/lib/api/servers";
 import { useDashboardRefresh } from "@/lib/dashboard/use-dashboard-refresh";
 import { pageTitle } from "@/lib/page-title";
+import { asnPageDescription, embedHead } from "@/lib/embed-meta";
 import { DEFAULT_METRIC_TIME_RANGE } from "@/lib/metrics/range";
 import type { MetricTimeRange } from "@/lib/metrics/range";
 import {
@@ -73,9 +74,14 @@ export const Route = createFileRoute("/asns/$asn")({
       throw error;
     }
   },
-  head: ({ loaderData }) => ({
-    meta: [{ title: pageTitle(loaderData ? asnDisplayName(loaderData) : "Network") }],
-  }),
+  head: ({ loaderData, match }) =>
+    embedHead({
+      title: pageTitle(
+        loaderData ? asnDisplayName(loaderData) : "Network",
+      ),
+      description: loaderData ? asnPageDescription(loaderData) : undefined,
+      pathname: match.pathname,
+    }),
   component: AsnDetailPage,
 });
 

@@ -9,11 +9,10 @@ import { Label } from "@/components/ui/label";
 import { errorMessage } from "@/lib/api/error-message";
 import { changePassword, useAuth } from "@/lib/auth";
 import { pageTitle } from "@/lib/page-title";
+import { privatePageHead } from "@/lib/embed-meta";
 
 export const Route = createFileRoute("/_authenticated/account")({
-  head: () => ({
-    meta: [{ title: pageTitle("Account") }],
-  }),
+  head: () => privatePageHead(pageTitle("Account")),
   component: AccountPage,
 });
 

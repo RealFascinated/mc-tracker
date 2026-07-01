@@ -15,12 +15,11 @@ import {
 import { getSignupEnabled } from "@/lib/api/auth-config";
 import { useAuth } from "@/lib/auth";
 import { pageTitle } from "@/lib/page-title";
+import { privatePageHead } from "@/lib/embed-meta";
 
 export const Route = createFileRoute("/login")({
   ssr: false,
-  head: () => ({
-    meta: [{ title: pageTitle("Sign in") }],
-  }),
+  head: () => privatePageHead(pageTitle("Sign in")),
   component: LoginPage,
 });
 

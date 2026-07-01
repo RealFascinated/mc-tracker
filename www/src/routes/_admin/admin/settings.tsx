@@ -1,19 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircleHelp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import {
+  SettingsField,
+  SettingsGroup,
+} from "@/components/admin/settings-fields";
 import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { patchAdminSettings } from "@/lib/api/admin/settings";
 import type {
   PatchSettingsRequest,
@@ -22,14 +19,12 @@ import type {
 import { adminSettingsQueryOptions } from "@/lib/api/admin/settings.queries";
 import { errorMessage } from "@/lib/api/error-message";
 import { pageTitle } from "@/lib/page-title";
-import { cn } from "@/lib/utils";
+import { privatePageHead } from "@/lib/embed-meta";
 
 export const Route = createFileRoute("/_admin/admin/settings")({
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(adminSettingsQueryOptions()),
-  head: () => ({
-    meta: [{ title: pageTitle("Admin settings") }],
-  }),
+  head: () => privatePageHead(pageTitle("Admin settings")),
   component: AdminSettingsPage,
 });
 
@@ -285,65 +280,5 @@ function AdminSettingsPage() {
         </SettingsGroup>
       </div>
     </form>
-  );
-}
-
-function SettingsGroup({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="settings-group">
-      <h2 className="settings-group-title">{title}</h2>
-      <div className="settings-fields">{children}</div>
-    </section>
-  );
-}
-
-function SettingsField({
-  label,
-  htmlFor,
-  hint,
-  switchControl = false,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  hint: string;
-  switchControl?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="settings-field">
-      <div className="settings-field-label">
-        <Label htmlFor={htmlFor} className="font-normal text-muted-foreground">
-          {label}
-        </Label>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              className="settings-field-info"
-              aria-label={`About ${label}`}
-            >
-              <CircleHelp className="size-3.5" aria-hidden />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top">{hint}</TooltipContent>
-        </Tooltip>
-      </div>
-      <div
-        className={cn(
-          switchControl
-            ? "settings-field-control--switch"
-            : "settings-field-control",
-        )}
-      >
-        {children}
-      </div>
-    </div>
   );
 }

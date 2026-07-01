@@ -2,7 +2,7 @@ import type { CreateServerRequest } from "@/lib/api/admin/servers";
 
 import { mcutilsApi } from "./client";
 
-export function formatMcutilsServerHost(
+function formatMcutilsServerHost(
   host: string,
   port: number | null | undefined,
 ): string {

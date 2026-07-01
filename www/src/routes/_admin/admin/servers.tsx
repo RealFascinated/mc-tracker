@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useReducer } from "react";
 import { toast } from "sonner";
 
 import {
-  AddServerLookupDialog,
-  type AddServerLookupState,
+  AddServerLookupDialog
+  
 } from "@/components/admin/add-server-lookup-dialog";
+import type {AddServerLookupState} from "@/components/admin/add-server-lookup-dialog";
 import { AdminServerFormFields } from "@/components/admin/admin-server-form-fields";
 import { AdminServersTable } from "@/components/admin/admin-servers-table";
 import { PageHeader } from "@/components/layout/page-header";
@@ -33,13 +34,12 @@ import {
 import { errorMessage } from "@/lib/api/error-message";
 import { lookupMcutilsServer } from "@/lib/mcutils/lookup-server";
 import { pageTitle } from "@/lib/page-title";
+import { privatePageHead } from "@/lib/embed-meta";
 
 export const Route = createFileRoute("/_admin/admin/servers")({
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(adminServersQueryOptions()),
-  head: () => ({
-    meta: [{ title: pageTitle("Admin servers") }],
-  }),
+  head: () => privatePageHead(pageTitle("Admin servers")),
   component: AdminServersPage,
 });
 
@@ -64,23 +64,72 @@ type EditServerState = {
   form: CreateServerRequest;
 };
 
+type AdminServersUiState = {
+  form: CreateServerRequest;
+  editState: EditServerState | null;
+  deleteTarget: AdminServer | null;
+  lookupState: AddServerLookupState | null;
+  isCheckingServer: boolean;
+};
+
+type AdminServersUiAction =
+  | { type: "set_form"; form: CreateServerRequest }
+  | { type: "reset_form" }
+  | { type: "open_edit"; target: AdminServer; form: CreateServerRequest }
+  | { type: "close_edit" }
+  | { type: "update_edit_form"; form: CreateServerRequest }
+  | { type: "set_delete_target"; target: AdminServer | null }
+  | { type: "set_lookup_state"; state: AddServerLookupState | null }
+  | { type: "set_checking_server"; checking: boolean };
+
+function adminServersUiReducer(
+  state: AdminServersUiState,
+  action: AdminServersUiAction,
+): AdminServersUiState {
+  switch (action.type) {
+    case "set_form":
+      return { ...state, form: action.form };
+    case "reset_form":
+      return { ...state, form: emptyForm };
+    case "open_edit":
+      return {
+        ...state,
+        editState: { target: action.target, form: action.form },
+      };
+    case "close_edit":
+      return { ...state, editState: null };
+    case "update_edit_form":
+      return state.editState
+        ? { ...state, editState: { ...state.editState, form: action.form } }
+        : state;
+    case "set_delete_target":
+      return { ...state, deleteTarget: action.target };
+    case "set_lookup_state":
+      return { ...state, lookupState: action.state };
+    case "set_checking_server":
+      return { ...state, isCheckingServer: action.checking };
+    default:
+      return state;
+  }
+}
+
 function AdminServersPage() {
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery(adminServersQueryOptions());
-  const [form, setForm] = useState(emptyForm);
-  const [editState, setEditState] = useState<EditServerState | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<AdminServer | null>(null);
-  const [lookupState, setLookupState] = useState<AddServerLookupState | null>(
-    null,
-  );
-  const [isCheckingServer, setIsCheckingServer] = useState(false);
+  const [ui, dispatch] = useReducer(adminServersUiReducer, {
+    form: emptyForm,
+    editState: null,
+    deleteTarget: null,
+    lookupState: null,
+    isCheckingServer: false,
+  });
 
   const createMutation = useMutation({
     mutationFn: createAdminServer,
     onSuccess: async () => {
       toast.success("Server added");
-      setForm(emptyForm);
-      setLookupState(null);
+      dispatch({ type: "reset_form" });
+      dispatch({ type: "set_lookup_state", state: null });
       await queryClient.invalidateQueries({ queryKey: adminServersQueryKey });
     },
     onError: (err) => toast.error(errorMessage(err)),
@@ -96,7 +145,7 @@ function AdminServersPage() {
       }),
     onSuccess: async () => {
       toast.success("Server updated");
-      setEditState(null);
+      dispatch({ type: "close_edit" });
       await queryClient.invalidateQueries({ queryKey: adminServersQueryKey });
     },
     onError: (err) => toast.error(errorMessage(err)),
@@ -116,7 +165,7 @@ function AdminServersPage() {
     mutationFn: deleteAdminServer,
     onSuccess: async () => {
       toast.success("Server removed");
-      setDeleteTarget(null);
+      dispatch({ type: "set_delete_target", target: null });
       await queryClient.invalidateQueries({ queryKey: adminServersQueryKey });
     },
     onError: (err) => toast.error(errorMessage(err)),
@@ -133,48 +182,57 @@ function AdminServersPage() {
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const body: CreateServerRequest = {
-      name: form.name.trim(),
-      host: form.host.trim(),
-      port: form.port,
-      type: form.type,
+      name: ui.form.name.trim(),
+      host: ui.form.host.trim(),
+      port: ui.form.port,
+      type: ui.form.type,
     };
 
-    setIsCheckingServer(true);
+    dispatch({ type: "set_checking_server", checking: true });
     try {
       const { server, error } = await lookupMcutilsServer(body);
       if (error || !server) {
-        setLookupState({
-          kind: "error",
-          message: error?.message ?? "Server is offline or unreachable.",
+        dispatch({
+          type: "set_lookup_state",
+          state: {
+            kind: "error",
+            message: error?.message ?? "Server is offline or unreachable.",
+          },
         });
         return;
       }
-      setLookupState({ kind: "confirm", body, server });
+      dispatch({
+        type: "set_lookup_state",
+        state: { kind: "confirm", body, server },
+      });
     } catch (err) {
-      setLookupState({
-        kind: "error",
-        message: errorMessage(err),
+      dispatch({
+        type: "set_lookup_state",
+        state: {
+          kind: "error",
+          message: errorMessage(err),
+        },
       });
     } finally {
-      setIsCheckingServer(false);
+      dispatch({ type: "set_checking_server", checking: false });
     }
   }
 
   function handleConfirmCreate() {
-    if (lookupState?.kind !== "confirm") {
+    if (ui.lookupState?.kind !== "confirm") {
       return;
     }
-    createMutation.mutate(lookupState.body);
+    createMutation.mutate(ui.lookupState.body);
   }
 
   function handleEdit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!editState) {
+    if (!ui.editState) {
       return;
     }
     updateMutation.mutate({
-      id: editState.target.id,
-      body: editState.form,
+      id: ui.editState.target.id,
+      body: ui.editState.form,
     });
   }
 
@@ -200,16 +258,16 @@ function AdminServersPage() {
             <form className="app-shell-form-grid" onSubmit={handleCreate}>
               <AdminServerFormFields
                 idPrefix="create"
-                values={form}
-                onChange={setForm}
+                values={ui.form}
+                onChange={(form) => dispatch({ type: "set_form", form })}
               />
               <div className="sm:col-span-2">
                 <Button
                   type="submit"
                   variant="brand"
-                  disabled={isCheckingServer || createMutation.isPending}
+                  disabled={ui.isCheckingServer || createMutation.isPending}
                 >
-                  {isCheckingServer
+                  {ui.isCheckingServer
                     ? "Checking…"
                     : createMutation.isPending
                       ? "Adding…"
@@ -234,29 +292,35 @@ function AdminServersPage() {
             <AdminServersTable
               servers={data.servers}
               onEdit={(server) =>
-                setEditState({ target: server, form: serverToForm(server) })
+                dispatch({
+                  type: "open_edit",
+                  target: server,
+                  form: serverToForm(server),
+                })
               }
               onPauseChange={(server, paused) =>
                 pauseMutation.mutate({ id: server.id, paused })
               }
-              onDelete={setDeleteTarget}
+              onDelete={(target) =>
+                dispatch({ type: "set_delete_target", target })
+              }
             />
           </div>
         </section>
       </div>
 
       <AddServerLookupDialog
-        state={lookupState}
+        state={ui.lookupState}
         isAdding={createMutation.isPending}
-        onClose={() => setLookupState(null)}
+        onClose={() => dispatch({ type: "set_lookup_state", state: null })}
         onConfirm={handleConfirmCreate}
       />
 
       <Dialog
-        open={editState != null}
+        open={ui.editState != null}
         onOpenChange={(open) => {
           if (!open) {
-            setEditState(null);
+            dispatch({ type: "close_edit" });
           }
         }}
       >
@@ -264,33 +328,29 @@ function AdminServersPage() {
           <DialogHeader>
             <DialogTitle>Edit server</DialogTitle>
             <DialogDescription>
-              {editState
-                ? `Update connection details for "${editState.target.name}".`
+              {ui.editState
+                ? `Update connection details for "${ui.editState.target.name}".`
                 : null}
             </DialogDescription>
           </DialogHeader>
           <form className="grid gap-4" onSubmit={handleEdit}>
             <AdminServerFormFields
               idPrefix="edit"
-              values={editState?.form ?? emptyForm}
-              onChange={(nextForm) =>
-                setEditState((current) =>
-                  current ? { ...current, form: nextForm } : current,
-                )
-              }
+              values={ui.editState?.form ?? emptyForm}
+              onChange={(form) => dispatch({ type: "update_edit_form", form })}
             />
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setEditState(null)}
+                onClick={() => dispatch({ type: "close_edit" })}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 variant="brand"
-                disabled={updateMutation.isPending || !editState}
+                disabled={updateMutation.isPending || !ui.editState}
               >
                 {updateMutation.isPending ? "Saving…" : "Save changes"}
               </Button>
@@ -300,10 +360,10 @@ function AdminServersPage() {
       </Dialog>
 
       <Dialog
-        open={deleteTarget != null}
+        open={ui.deleteTarget != null}
         onOpenChange={(open) => {
           if (!open) {
-            setDeleteTarget(null);
+            dispatch({ type: "set_delete_target", target: null });
           }
         }}
       >
@@ -311,8 +371,8 @@ function AdminServersPage() {
           <DialogHeader>
             <DialogTitle>Delete server?</DialogTitle>
             <DialogDescription>
-              {deleteTarget
-                ? `This removes "${deleteTarget.name}" permanently. Pause tracking instead to keep the server configured without pings.`
+              {ui.deleteTarget
+                ? `This removes "${ui.deleteTarget.name}" permanently. Pause tracking instead to keep the server configured without pings.`
                 : null}
             </DialogDescription>
           </DialogHeader>
@@ -320,17 +380,19 @@ function AdminServersPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setDeleteTarget(null)}
+              onClick={() =>
+                dispatch({ type: "set_delete_target", target: null })
+              }
             >
               Cancel
             </Button>
             <Button
               type="button"
               variant="destructive"
-              disabled={deleteMutation.isPending || !deleteTarget}
+              disabled={deleteMutation.isPending || !ui.deleteTarget}
               onClick={() => {
-                if (deleteTarget) {
-                  deleteMutation.mutate(deleteTarget.id);
+                if (ui.deleteTarget) {
+                  deleteMutation.mutate(ui.deleteTarget.id);
                 }
               }}
             >
