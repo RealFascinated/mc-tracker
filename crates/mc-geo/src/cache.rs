@@ -30,6 +30,12 @@ impl LookupCache {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    pub fn clear(&self) {
+        if let Ok(mut entries) = self.entries.lock() {
+            entries.clear();
+        }
+    }
 }
 
 #[cfg(test)]

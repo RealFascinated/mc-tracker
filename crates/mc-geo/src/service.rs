@@ -1,3 +1,4 @@
+use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -11,6 +12,7 @@ use tracing::{info, warn};
 use crate::cache::LookupCache;
 use crate::download::{database_file_path, ensure_database};
 use crate::error::GeoError;
+use crate::ip::is_non_public;
 use crate::lookup::AsnDatabase;
 use crate::types::{AsnLookup, GeoConfig, ASN_EDITION};
 
@@ -30,7 +32,7 @@ impl GeoService {
         }
 
         let database_dir = PathBuf::from(&config.database_dir);
-        ensure_database(&database_dir, &config.license_key, false).await?;
+        ensure_database(&database_dir, &config.license_key, true).await?;
         let service = Arc::new(Self {
             config,
             database: Arc::new(RwLock::new(None)),
@@ -79,6 +81,12 @@ impl GeoService {
         };
 
         let lookup = database.lookup(ip)?;
+        if lookup.is_empty()
+            && ip.parse::<IpAddr>()
+                .is_ok_and(|addr| !is_non_public(addr))
+        {
+            warn!(ip, "asn lookup returned empty for public ip");
+        }
         self.cache.insert(ip, lookup.clone());
         Ok(lookup)
     }
@@ -98,6 +106,7 @@ impl GeoService {
         let database = AsnDatabase::open(&path)?;
         let mut guard = self.database.write().await;
         *guard = Some(database);
+        self.cache.clear();
         Ok(())
     }
 
@@ -152,5 +161,19 @@ mod tests {
     async fn from_database_file_is_ready() {
         let service = GeoService::from_database_file(fixture_path()).unwrap();
         assert!(service.is_ready());
+    }
+
+    #[tokio::test]
+    async fn reload_database_clears_lookup_cache() {
+        let temp = tempfile::tempdir().unwrap();
+        let db_path = temp.path().join("GeoLite2-ASN.mmdb");
+        std::fs::copy(fixture_path(), &db_path).unwrap();
+
+        let service = GeoService::from_database_file(&db_path).unwrap();
+        let _ = service.lookup_asn("1.128.0.0").await.unwrap();
+        assert_eq!(service.cache.len(), 1);
+
+        service.reload_database().await.unwrap();
+        assert!(service.cache.is_empty());
     }
 }

@@ -89,7 +89,7 @@ impl TrackedServer {
         if let Some(favicon) = ping.favicon.as_ref() {
             self.favicon = Some(favicon.clone());
         }
-        if asn.asn_org != self.asn.asn_org || self.last_asn_ip.as_deref() != Some(resolved_ip) {
+        if asn != self.asn || self.last_asn_ip.as_deref() != Some(resolved_ip) {
             self.asn = asn;
             self.last_asn_ip = Some(resolved_ip.to_string());
         }
