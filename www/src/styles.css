@@ -1117,6 +1117,9 @@
 
   .entity-metrics-card {
     @apply shadow-none;
+    /* Skip paint/layout for off-screen cards; intrinsic size avoids scrollbar jump. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 350px;
   }
 
   .entity-metrics-card-header {

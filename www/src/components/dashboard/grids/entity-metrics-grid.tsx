@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { LazyMetricChartBody } from "@/components/dashboard/charts/lazy-metric-chart-body";
 import { StatValueTooltip } from "@/components/dashboard/stats/stat-value-tooltip";
-import { useIntersectionVisible } from "@/hooks/use-intersection-visible";
+import { useGridItemVisible } from "@/hooks/use-grid-item-visible";
 import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
 import { EMPTY_METRIC_TIME_SERIES } from "@/lib/api/metric-timeseries";
 import type {
@@ -51,6 +51,7 @@ type EntityMetricsChartProps<
   T,
   TTimeseries extends PlayersTimeseriesPayload,
 > = {
+  visibilityKey: string;
   item: T;
   window: MetricTimeWindow;
   chartDef: (item: T) => ChartDefinition;
@@ -62,13 +63,15 @@ type EntityMetricsChartProps<
 };
 
 function EntityMetricsChart<T, TTimeseries extends PlayersTimeseriesPayload>({
+  visibilityKey,
   item,
   window,
   chartDef,
   timeseriesOptions,
   timeseriesEnabled,
 }: EntityMetricsChartProps<T, TTimeseries>) {
-  const { ref, isIntersecting, hasBeenVisible } = useIntersectionVisible();
+  const { ref, isIntersecting, hasBeenVisible } =
+    useGridItemVisible(visibilityKey);
   const def = useMemo(() => chartDef(item), [chartDef, item]);
   const options = useMemo(
     () => timeseriesOptions(item, window),
@@ -101,6 +104,7 @@ function EntityMetricsChart<T, TTimeseries extends PlayersTimeseriesPayload>({
 }
 
 type EntityMetricsCardProps<T, TTimeseries extends PlayersTimeseriesPayload> = {
+  visibilityKey: string;
   item: T;
   window: MetricTimeWindow;
   renderHeader: (item: T) => ReactNode;
@@ -113,6 +117,7 @@ type EntityMetricsCardProps<T, TTimeseries extends PlayersTimeseriesPayload> = {
 };
 
 function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
+  visibilityKey,
   item,
   window,
   renderHeader,
@@ -124,6 +129,7 @@ function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
     <DashboardCard className="entity-metrics-card h-full">
       {renderHeader(item)}
       <EntityMetricsChart
+        visibilityKey={visibilityKey}
         item={item}
         window={window}
         chartDef={chartDef}
@@ -194,17 +200,21 @@ export function EntityMetricsGrid<
 
       <div className="entity-metrics-grid-container">
         <div className="entity-metrics-grid">
-          {items.map((item) => (
-            <EntityMetricsCard
-              key={getKey(item)}
-              item={item}
-              window={window}
-              renderHeader={renderHeader}
-              chartDef={chartDef}
-              timeseriesOptions={timeseriesOptions}
-              timeseriesEnabled={timeseriesEnabled}
-            />
-          ))}
+          {items.map((item) => {
+            const visibilityKey = getKey(item);
+            return (
+              <EntityMetricsCard
+                key={visibilityKey}
+                visibilityKey={visibilityKey}
+                item={item}
+                window={window}
+                renderHeader={renderHeader}
+                chartDef={chartDef}
+                timeseriesOptions={timeseriesOptions}
+                timeseriesEnabled={timeseriesEnabled}
+              />
+            );
+          })}
         </div>
       </div>
     </section>

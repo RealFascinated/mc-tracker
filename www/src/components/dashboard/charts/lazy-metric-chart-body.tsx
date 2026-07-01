@@ -30,7 +30,7 @@ export function LazyMetricChartBody({
   height = DASHBOARD_CARD_CHART_HEIGHT,
 }: LazyMetricChartBodyProps) {
   const hasData = chartData.timestamps.length > 0;
-  const showChart = hasBeenVisible || hasData;
+  const mountChart = isVisible && (hasBeenVisible || hasData);
   const showLoading = isVisible && isPending && !hasData;
 
   if (isError) {
@@ -45,14 +45,14 @@ export function LazyMetricChartBody({
 
   return (
     <div className="relative h-full min-h-0">
-      {showChart ? (
+      {mountChart ? (
         <MetricChartView
           def={chartDef}
           data={hasData ? chartData : EMPTY_METRIC_TIME_SERIES}
           height={height}
           emptyMessage={DASHBOARD_CHART_EMPTY_MESSAGE}
           className="h-full"
-          hydrateWhen={hasBeenVisible}
+          hydrateWhen
           {...DASHBOARD_CHART_PROPS}
         />
       ) : (

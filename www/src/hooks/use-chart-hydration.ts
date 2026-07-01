@@ -32,9 +32,10 @@ function useChartHydration(visible?: boolean) {
     if (!usesExternalVisible) return;
 
     if (!visible) {
-      if (!hydratedRef.current) {
-        setInView(false);
+      if (hydratedRef.current) {
+        hydratedRef.current = false;
       }
+      setInView(false);
       return;
     }
 

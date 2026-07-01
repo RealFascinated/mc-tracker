@@ -396,44 +396,69 @@ export function dismissChartInteraction(chart: uPlot, tooltip: HTMLDivElement) {
   chart.setSelect({ left: 0, top: 0, width: 0, height: 0 }, false);
 }
 
-function collectScrollTargets(element: HTMLElement): Array<EventTarget> {
-  const targets = new Set<EventTarget>([window, document]);
-  let node: HTMLElement | null = element.parentElement;
-  while (node) {
-    const style = getComputedStyle(node);
-    if (
-      /(auto|scroll|overlay)/.test(
-        `${style.overflow} ${style.overflowX} ${style.overflowY}`,
-      )
-    ) {
-      targets.add(node);
+type ChartDismissBinding = { chart: uPlot; tooltip: HTMLDivElement };
+
+const chartDismissBindings = new Set<ChartDismissBinding>();
+const scrollListenerOptions: AddEventListenerOptions = {
+  passive: true,
+  capture: true,
+};
+const wheelListenerOptions: AddEventListenerOptions = { passive: true };
+let globalScrollListenerAttached = false;
+
+function onGlobalScrollDismiss() {
+  for (const binding of chartDismissBindings) {
+    if (binding.tooltip.style.display === "none") {
+      continue;
     }
-    node = node.parentElement;
+    dismissChartInteraction(binding.chart, binding.tooltip);
   }
-  return [...targets];
+}
+
+function attachGlobalScrollDismissListener() {
+  if (globalScrollListenerAttached) {
+    return;
+  }
+  globalScrollListenerAttached = true;
+  window.addEventListener("scroll", onGlobalScrollDismiss, scrollListenerOptions);
+  document.addEventListener(
+    "scroll",
+    onGlobalScrollDismiss,
+    scrollListenerOptions,
+  );
+}
+
+function detachGlobalScrollDismissListener() {
+  if (!globalScrollListenerAttached || chartDismissBindings.size > 0) {
+    return;
+  }
+  window.removeEventListener(
+    "scroll",
+    onGlobalScrollDismiss,
+    scrollListenerOptions,
+  );
+  document.removeEventListener(
+    "scroll",
+    onGlobalScrollDismiss,
+    scrollListenerOptions,
+  );
+  globalScrollListenerAttached = false;
 }
 
 export function bindChartInteractionDismiss(
   chart: uPlot,
   tooltip: HTMLDivElement,
 ): () => void {
-  const dismiss = () => dismissChartInteraction(chart, tooltip);
-  const scrollOptions: AddEventListenerOptions = {
-    passive: true,
-    capture: true,
-  };
-  const wheelOptions: AddEventListenerOptions = { passive: true };
-  const scrollTargets = collectScrollTargets(chart.root);
+  const binding: ChartDismissBinding = { chart, tooltip };
+  chartDismissBindings.add(binding);
+  attachGlobalScrollDismissListener();
 
-  chart.over.addEventListener("wheel", dismiss, wheelOptions);
-  for (const target of scrollTargets) {
-    target.addEventListener("scroll", dismiss, scrollOptions);
-  }
+  const dismiss = () => dismissChartInteraction(chart, tooltip);
+  chart.over.addEventListener("wheel", dismiss, wheelListenerOptions);
 
   return () => {
-    chart.over.removeEventListener("wheel", dismiss, wheelOptions);
-    for (const target of scrollTargets) {
-      target.removeEventListener("scroll", dismiss, scrollOptions);
-    }
+    chartDismissBindings.delete(binding);
+    detachGlobalScrollDismissListener();
+    chart.over.removeEventListener("wheel", dismiss, wheelListenerOptions);
   };
 }
