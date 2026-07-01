@@ -250,7 +250,7 @@
   }
 
   html {
-    @apply font-sans;
+    @apply bg-background font-sans;
     scrollbar-gutter: stable;
   }
 
@@ -263,7 +263,11 @@
   }
 
   body {
-    @apply min-h-svh overflow-x-clip bg-background text-sm text-foreground antialiased;
+    @apply overflow-x-clip bg-background text-sm text-foreground antialiased;
+  }
+
+  .site-layout {
+    @apply flex flex-col;
   }
 
   h1 {
@@ -280,10 +284,6 @@
 
   h4 {
     @apply font-bold text-base text-black dark:text-white;
-  }
-
-  section {
-    @apply mb-12;
   }
 
   button:not(:disabled),
@@ -533,7 +533,7 @@
   }
 
   .app-shell {
-    @apply mx-auto flex w-full max-w-7xl min-h-[calc(100dvh-3rem)];
+    @apply mx-auto flex w-full max-w-7xl items-start;
   }
 
   .app-shell--full-width {
@@ -541,7 +541,7 @@
   }
 
   .app-shell-sidebar {
-    @apply sticky top-12 hidden h-[calc(100dvh-3rem)] w-56 shrink-0 self-start border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col;
+    @apply sticky top-12 hidden max-h-[calc(100dvh-3rem)] w-56 shrink-0 self-start overflow-y-auto border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col;
   }
 
   .app-shell-sidebar-inner {
@@ -602,7 +602,7 @@
   }
 
   .app-shell-content {
-    @apply flex min-h-0 flex-1 flex-col gap-6 p-4 sm:p-6;
+    @apply flex flex-col gap-6 p-4 sm:p-6;
   }
 
   .app-shell-page-header {
@@ -641,12 +641,52 @@
     @apply grid gap-4 sm:grid-cols-2;
   }
 
-  .app-shell-checkbox-field {
-    @apply flex cursor-pointer items-center gap-2.5 rounded-snug border border-border bg-muted/30 px-3 py-2.5 text-sm transition-colors hover:bg-muted/50;
+  .settings-page {
+    @apply w-full;
   }
 
-  .app-shell-checkbox-field input[type="checkbox"] {
-    @apply size-4 shrink-0 rounded-sm border-border accent-brand;
+  .settings-panel-header {
+    @apply mb-8 flex flex-wrap items-start justify-between gap-4;
+  }
+
+  .settings-panel-title {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  .settings-panel-description {
+    @apply mt-1 max-w-2xl text-sm text-muted-foreground;
+  }
+
+  .settings-group {
+    @apply mb-10 last:mb-0;
+  }
+
+  .settings-group-title {
+    @apply mb-2 text-base font-semibold text-foreground;
+  }
+
+  .settings-fields {
+    @apply flex flex-col;
+  }
+
+  .settings-field {
+    @apply flex items-center justify-between gap-6 border-b border-border py-4;
+  }
+
+  .settings-field-label {
+    @apply flex min-w-0 items-center gap-2 text-sm text-muted-foreground;
+  }
+
+  .settings-field-info {
+    @apply text-warning/70 transition-colors hover:text-warning;
+  }
+
+  .settings-field-control {
+    @apply w-56 shrink-0;
+  }
+
+  .settings-field-control--switch {
+    @apply flex w-auto shrink-0 justify-end;
   }
 
   .site-header {
@@ -1004,7 +1044,7 @@
   }
 
   .entity-metrics-section {
-    @apply flex flex-col gap-2;
+    @apply mt-6 flex flex-col gap-2;
   }
 
   .entity-metrics-section-header {

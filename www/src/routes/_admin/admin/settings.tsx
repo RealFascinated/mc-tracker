@@ -1,13 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CircleHelp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/components/layout/page-header";
 import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { patchAdminSettings } from "@/lib/api/admin/settings";
 import type {
   PatchSettingsRequest,
@@ -16,6 +22,7 @@ import type {
 import { adminSettingsQueryOptions } from "@/lib/api/admin/settings.queries";
 import { errorMessage } from "@/lib/api/error-message";
 import { pageTitle } from "@/lib/page-title";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_admin/admin/settings")({
   loader: ({ context: { queryClient } }) =>
@@ -35,7 +42,8 @@ function AdminSettingsPage() {
     mutationFn: (body: PatchSettingsRequest) => patchAdminSettings(body),
     onSuccess: async (saved) => {
       toast.success("Settings saved");
-      setDraft(saved);
+      setDraft(null);
+      queryClient.setQueryData(adminSettingsQueryOptions().queryKey, saved);
       await queryClient.invalidateQueries({
         queryKey: adminSettingsQueryOptions().queryKey,
       });
@@ -53,6 +61,7 @@ function AdminSettingsPage() {
 
   const loaded = data;
   const values: SettingsResponse = draft ?? loaded;
+  const isDirty = draft !== null;
 
   function currentValues(): SettingsResponse {
     return draft ?? loaded;
@@ -105,173 +114,236 @@ function AdminSettingsPage() {
   }
 
   return (
-    <>
-      <PageHeader
-        title="Settings"
-        description="Runtime configuration stored in PostgreSQL and applied in memory."
-      />
-
-      <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-        <section className="app-shell-section">
-          <div className="app-shell-section-header">
-            <h2 className="app-shell-section-title">Metrics</h2>
-            <p className="app-shell-section-description">
-              VictoriaMetrics connection and push schedule.
+    <form id="admin-settings-form" onSubmit={handleSubmit}>
+      <div className="settings-page">
+        <div className="settings-panel-header">
+          <div className="min-w-0">
+            <h1 className="settings-panel-title">Settings</h1>
+            <p className="settings-panel-description">
+              Configure how the tracker runs.
             </p>
           </div>
-          <div className="app-shell-section-body app-shell-form-grid">
-            <Field label="Push cron">
-              <Input
-                value={values.metricsPushCron}
-                onChange={(event) =>
-                  updateString("metricsPushCron", event.target.value)
-                }
-                placeholder="*/15 * * * * *"
-                spellCheck={false}
-              />
-              <p className="text-muted-foreground text-sm">
-                Six-field cron with seconds. Example: every 15 seconds is{" "}
-                <code className="font-mono">*/15 * * * * *</code>.
-              </p>
-            </Field>
-            <Field label="VM URL">
-              <Input
-                value={values.victoriametricsUrl}
-                onChange={(event) =>
-                  updateString("victoriametricsUrl", event.target.value)
-                }
-              />
-            </Field>
-          </div>
-        </section>
-
-        <section className="app-shell-section">
-          <div className="app-shell-section-header">
-            <h2 className="app-shell-section-title">Pinger</h2>
-            <p className="app-shell-section-description">
-              Timeouts and retry behaviour when querying servers.
-            </p>
-          </div>
-          <div className="app-shell-section-body app-shell-form-grid">
-            <Field label="Timeout (ms)">
-              <Input
-                type="number"
-                min={1}
-                value={values.pingerTimeoutMs}
-                onChange={(event) =>
-                  updateNumber("pingerTimeoutMs", event.target.value)
-                }
-              />
-            </Field>
-            <Field label="Retry attempts">
-              <Input
-                type="number"
-                min={1}
-                value={values.pingerRetryAttempts}
-                onChange={(event) =>
-                  updateNumber("pingerRetryAttempts", event.target.value)
-                }
-              />
-            </Field>
-            <Field label="Retry delay (ms)">
-              <Input
-                type="number"
-                min={0}
-                value={values.pingerRetryDelayMs}
-                onChange={(event) =>
-                  updateNumber("pingerRetryDelayMs", event.target.value)
-                }
-              />
-            </Field>
-          </div>
-        </section>
-
-        <section className="app-shell-section">
-          <div className="app-shell-section-header">
-            <h2 className="app-shell-section-title">DNS cache</h2>
-            <p className="app-shell-section-description">
-              Cache resolved hostnames to reduce lookup overhead.
-            </p>
-          </div>
-          <div className="app-shell-section-body app-shell-form-grid">
-            <Field label="TTL (minutes)">
-              <Input
-                type="number"
-                min={1}
-                value={values.dnsCacheTtlMinutes}
-                onChange={(event) =>
-                  updateNumber("dnsCacheTtlMinutes", event.target.value)
-                }
-              />
-            </Field>
-            <label className="app-shell-checkbox-field sm:col-span-2">
-              <input
-                type="checkbox"
-                checked={values.dnsCacheEnabled}
-                onChange={(event) =>
-                  updateBoolean("dnsCacheEnabled", event.target.checked)
-                }
-              />
-              DNS cache enabled
-            </label>
-          </div>
-        </section>
-
-        <section className="app-shell-section">
-          <div className="app-shell-section-header">
-            <h2 className="app-shell-section-title">Access</h2>
-            <p className="app-shell-section-description">
-              Public origin and sign-up policy.
-            </p>
-          </div>
-          <div className="app-shell-section-body app-shell-form-grid">
-            <Field label="WWW origin">
-              <Input
-                value={values.wwwOrigin}
-                onChange={(event) =>
-                  updateString("wwwOrigin", event.target.value)
-                }
-                placeholder="https://tracker.example.com"
-              />
-            </Field>
-            <label className="app-shell-checkbox-field">
-              <input
-                type="checkbox"
-                checked={values.signUpEnabled}
-                onChange={(event) =>
-                  updateBoolean("signUpEnabled", event.target.checked)
-                }
-              />
-              Sign-up enabled
-            </label>
-          </div>
-        </section>
-
-        <div className="flex items-center gap-3">
           <Button
             type="submit"
             variant="brand"
-            disabled={saveMutation.isPending}
+            disabled={!isDirty || saveMutation.isPending}
           >
-            {saveMutation.isPending ? "Saving…" : "Save settings"}
+            {saveMutation.isPending ? "Saving…" : "Save changes"}
           </Button>
         </div>
-      </form>
-    </>
+
+        <SettingsGroup title="Metrics">
+          <SettingsField
+            label="Push cron"
+            htmlFor="metrics-push-cron"
+            hint="Six-field cron with seconds. Every 15 seconds is */15 * * * * *."
+          >
+            <Input
+              id="metrics-push-cron"
+              value={values.metricsPushCron}
+              onChange={(event) =>
+                updateString("metricsPushCron", event.target.value)
+              }
+              placeholder="*/15 * * * * *"
+              spellCheck={false}
+              className="font-mono"
+            />
+          </SettingsField>
+          <SettingsField
+            label="VM URL"
+            htmlFor="victoriametrics-url"
+            hint="VictoriaMetrics ingest endpoint used for metric pushes."
+          >
+            <Input
+              id="victoriametrics-url"
+              value={values.victoriametricsUrl}
+              onChange={(event) =>
+                updateString("victoriametricsUrl", event.target.value)
+              }
+              placeholder="http://localhost:8428"
+              spellCheck={false}
+              className="font-mono"
+            />
+          </SettingsField>
+        </SettingsGroup>
+
+        <SettingsGroup title="Pinger">
+          <SettingsField
+            label="Timeout (ms)"
+            htmlFor="pinger-timeout-ms"
+            hint="Maximum wait time per ping attempt."
+          >
+            <Input
+              id="pinger-timeout-ms"
+              type="number"
+              min={1}
+              value={values.pingerTimeoutMs}
+              onChange={(event) =>
+                updateNumber("pingerTimeoutMs", event.target.value)
+              }
+              inputMode="numeric"
+            />
+          </SettingsField>
+          <SettingsField
+            label="Retry attempts"
+            htmlFor="pinger-retry-attempts"
+            hint="How many times to retry after a failed ping."
+          >
+            <Input
+              id="pinger-retry-attempts"
+              type="number"
+              min={1}
+              value={values.pingerRetryAttempts}
+              onChange={(event) =>
+                updateNumber("pingerRetryAttempts", event.target.value)
+              }
+              inputMode="numeric"
+            />
+          </SettingsField>
+          <SettingsField
+            label="Retry delay (ms)"
+            htmlFor="pinger-retry-delay-ms"
+            hint="Pause between retry attempts."
+          >
+            <Input
+              id="pinger-retry-delay-ms"
+              type="number"
+              min={0}
+              value={values.pingerRetryDelayMs}
+              onChange={(event) =>
+                updateNumber("pingerRetryDelayMs", event.target.value)
+              }
+              inputMode="numeric"
+            />
+          </SettingsField>
+        </SettingsGroup>
+
+        <SettingsGroup title="DNS cache">
+          <SettingsField
+            label="DNS cache enabled"
+            htmlFor="dns-cache-enabled"
+            hint="Resolve each hostname once per TTL window instead of every ping."
+            switchControl
+          >
+            <Switch
+              id="dns-cache-enabled"
+              checked={values.dnsCacheEnabled}
+              onCheckedChange={(checked) =>
+                updateBoolean("dnsCacheEnabled", checked)
+              }
+            />
+          </SettingsField>
+          <SettingsField
+            label="TTL (minutes)"
+            htmlFor="dns-cache-ttl-minutes"
+            hint="How long cached DNS entries remain valid."
+          >
+            <Input
+              id="dns-cache-ttl-minutes"
+              type="number"
+              min={1}
+              value={values.dnsCacheTtlMinutes}
+              onChange={(event) =>
+                updateNumber("dnsCacheTtlMinutes", event.target.value)
+              }
+              inputMode="numeric"
+              disabled={!values.dnsCacheEnabled}
+            />
+          </SettingsField>
+        </SettingsGroup>
+
+        <SettingsGroup title="Access">
+          <SettingsField
+            label="WWW origin"
+            htmlFor="www-origin"
+            hint="Public URL of this tracker. Used for CORS and redirects."
+          >
+            <Input
+              id="www-origin"
+              value={values.wwwOrigin}
+              onChange={(event) =>
+                updateString("wwwOrigin", event.target.value)
+              }
+              placeholder="https://tracker.example.com"
+              spellCheck={false}
+            />
+          </SettingsField>
+          <SettingsField
+            label="Sign-up enabled"
+            htmlFor="sign-up-enabled"
+            hint="Allow new users to create accounts from the login page."
+            switchControl
+          >
+            <Switch
+              id="sign-up-enabled"
+              checked={values.signUpEnabled}
+              onCheckedChange={(checked) =>
+                updateBoolean("signUpEnabled", checked)
+              }
+            />
+          </SettingsField>
+        </SettingsGroup>
+      </div>
+    </form>
   );
 }
 
-function Field({
-  label,
+function SettingsGroup({
+  title,
   children,
 }: {
-  label: string;
+  title: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid gap-2">
-      <Label>{label}</Label>
-      {children}
+    <section className="settings-group">
+      <h2 className="settings-group-title">{title}</h2>
+      <div className="settings-fields">{children}</div>
+    </section>
+  );
+}
+
+function SettingsField({
+  label,
+  htmlFor,
+  hint,
+  switchControl = false,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  hint: string;
+  switchControl?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="settings-field">
+      <div className="settings-field-label">
+        <Label htmlFor={htmlFor} className="font-normal text-muted-foreground">
+          {label}
+        </Label>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="settings-field-info"
+              aria-label={`About ${label}`}
+            >
+              <CircleHelp className="size-3.5" aria-hidden />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top">{hint}</TooltipContent>
+        </Tooltip>
+      </div>
+      <div
+        className={cn(
+          switchControl
+            ? "settings-field-control--switch"
+            : "settings-field-control",
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }

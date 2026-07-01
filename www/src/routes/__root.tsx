@@ -50,8 +50,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             <AuthProvider>
               <SiteHeaderToolbarProvider>
                 <DashboardRefreshProvider>
-                  <SiteHeader />
-                  {children}
+                  <div className="site-layout">
+                    <SiteHeader />
+                    {children}
+                  </div>
                 </DashboardRefreshProvider>
               </SiteHeaderToolbarProvider>
               <Toaster richColors closeButton />
