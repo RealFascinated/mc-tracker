@@ -64,7 +64,7 @@ async fn non_admin_forbidden_on_admin_routes() {
                 .uri("/admin/settings")
                 .header("cookie", &cookie)
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{"metricsPushIntervalSeconds":30}"#))
+                .body(Body::from(r#"{"metricsPushCron":"*/30 * * * * *"}"#))
                 .unwrap(),
         )
         .await
@@ -94,7 +94,7 @@ async fn admin_settings_require_auth() {
                 .method("PATCH")
                 .uri("/admin/settings")
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{"metricsPushIntervalSeconds":30}"#))
+                .body(Body::from(r#"{"metricsPushCron":"*/30 * * * * *"}"#))
                 .unwrap(),
         )
         .await

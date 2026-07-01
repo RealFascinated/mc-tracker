@@ -103,7 +103,7 @@ fn settings_response_serializes_camel_case() {
         dns_cache_enabled: true,
         dns_cache_ttl_minutes: 5,
         victoriametrics_url: "http://localhost:8428".into(),
-        metrics_push_interval_seconds: 10,
+        metrics_push_cron: "*/10 * * * * *".into(),
         sign_up_enabled: false,
         www_origin: String::new(),
     })
@@ -116,9 +116,9 @@ fn settings_response_serializes_camel_case() {
 #[test]
 fn patch_settings_request_deserializes_partial_fields() {
     let req: PatchSettingsRequest =
-        serde_json::from_str(r#"{"metricsPushIntervalSeconds":30,"dnsCacheEnabled":false}"#)
+        serde_json::from_str(r#"{"metricsPushCron":"*/30 * * * * *","dnsCacheEnabled":false}"#)
             .unwrap();
-    assert_eq!(req.metrics_push_interval_seconds, Some(30));
+    assert_eq!(req.metrics_push_cron, Some("*/30 * * * * *".into()));
     assert_eq!(req.dns_cache_enabled, Some(false));
     assert!(req.pinger_timeout_ms.is_none());
 }

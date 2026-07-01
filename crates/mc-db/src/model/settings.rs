@@ -9,7 +9,8 @@ pub struct AppSettings {
     pub dns_cache_ttl_minutes: u32,
     /// VictoriaMetrics base URL (push + query paths are derived in code).
     pub victoriametrics_url: String,
-    pub metrics_push_interval_seconds: u64,
+    /// Six-field cron (seconds included), e.g. `*/15 * * * * *` for every 15 seconds.
+    pub metrics_push_cron: String,
     pub sign_up_enabled: bool,
     /// Public www UI origin for CORS (e.g. https://tracker.example.com).
     pub www_origin: String,
@@ -24,7 +25,7 @@ impl Default for AppSettings {
             dns_cache_enabled: true,
             dns_cache_ttl_minutes: 5,
             victoriametrics_url: "http://localhost:8428".to_string(),
-            metrics_push_interval_seconds: 10,
+            metrics_push_cron: "*/10 * * * * *".to_string(),
             sign_up_enabled: false,
             www_origin: String::new(),
         }
@@ -87,10 +88,7 @@ impl AppSettings {
                 "dns_cache_ttl_minutes",
             )?,
             victoriametrics_url: get("victoriametrics_url")?.to_string(),
-            metrics_push_interval_seconds: Self::parse_u64(
-                get("metrics_push_interval_seconds")?,
-                "metrics_push_interval_seconds",
-            )?,
+            metrics_push_cron: get("metrics_push_cron")?.to_string(),
             sign_up_enabled: Self::parse_bool(get("sign_up_enabled")?, "sign_up_enabled")?,
             www_origin: get("www_origin")?.to_string(),
         })

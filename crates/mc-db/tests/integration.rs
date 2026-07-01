@@ -260,7 +260,7 @@ fn app_settings_rejects_invalid_bool() {
     map.insert("dns_cache_enabled".into(), "maybe".into());
     map.insert("dns_cache_ttl_minutes".into(), "5".into());
     map.insert("victoriametrics_url".into(), "http://localhost:8428".into());
-    map.insert("metrics_push_interval_seconds".into(), "10".into());
+    map.insert("metrics_push_cron".into(), "*/10 * * * * *".into());
     map.insert("sign_up_enabled".into(), "false".into());
     map.insert("www_origin".into(), "".into());
 

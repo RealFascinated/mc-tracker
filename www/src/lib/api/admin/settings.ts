@@ -7,7 +7,7 @@ export type SettingsResponse = {
   dnsCacheEnabled: boolean;
   dnsCacheTtlMinutes: number;
   victoriametricsUrl: string;
-  metricsPushIntervalSeconds: number;
+  metricsPushCron: string;
   signUpEnabled: boolean;
   wwwOrigin: string;
 };

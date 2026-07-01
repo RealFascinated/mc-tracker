@@ -98,7 +98,7 @@ function AdminSettingsPage() {
       dnsCacheEnabled: next.dnsCacheEnabled,
       dnsCacheTtlMinutes: next.dnsCacheTtlMinutes,
       victoriametricsUrl: next.victoriametricsUrl,
-      metricsPushIntervalSeconds: next.metricsPushIntervalSeconds,
+      metricsPushCron: next.metricsPushCron,
       signUpEnabled: next.signUpEnabled,
       wwwOrigin: next.wwwOrigin,
     });
@@ -116,19 +116,23 @@ function AdminSettingsPage() {
           <div className="app-shell-section-header">
             <h2 className="app-shell-section-title">Metrics</h2>
             <p className="app-shell-section-description">
-              VictoriaMetrics connection and push interval.
+              VictoriaMetrics connection and push schedule.
             </p>
           </div>
           <div className="app-shell-section-body app-shell-form-grid">
-            <Field label="Push interval (seconds)">
+            <Field label="Push cron">
               <Input
-                type="number"
-                min={1}
-                value={values.metricsPushIntervalSeconds}
+                value={values.metricsPushCron}
                 onChange={(event) =>
-                  updateNumber("metricsPushIntervalSeconds", event.target.value)
+                  updateString("metricsPushCron", event.target.value)
                 }
+                placeholder="*/15 * * * * *"
+                spellCheck={false}
               />
+              <p className="text-muted-foreground text-sm">
+                Six-field cron with seconds. Example: every 15 seconds is{" "}
+                <code className="font-mono">*/15 * * * * *</code>.
+              </p>
             </Field>
             <Field label="VM URL">
               <Input

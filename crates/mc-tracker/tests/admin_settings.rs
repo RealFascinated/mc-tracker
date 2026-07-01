@@ -50,7 +50,7 @@ async fn get_and_patch_admin_settings() {
             .unwrap(),
     )
     .unwrap();
-    assert_eq!(current["metricsPushIntervalSeconds"], 10);
+    assert_eq!(current["metricsPushCron"], "*/10 * * * * *");
 
     let patch = app
         .clone()
@@ -61,7 +61,7 @@ async fn get_and_patch_admin_settings() {
                 .header("cookie", &cookie)
                 .header("content-type", "application/json")
                 .body(Body::from(
-                    r#"{"metricsPushIntervalSeconds":45,"victoriametricsUrl":"http://vm:8428"}"#,
+                    r#"{"metricsPushCron":"*/15 * * * * *","victoriametricsUrl":"http://vm:8428"}"#,
                 ))
                 .unwrap(),
         )
@@ -74,15 +74,15 @@ async fn get_and_patch_admin_settings() {
             .unwrap(),
     )
     .unwrap();
-    assert_eq!(updated["metricsPushIntervalSeconds"], 45);
+    assert_eq!(updated["metricsPushCron"], "*/15 * * * * *");
     assert_eq!(updated["victoriametricsUrl"], "http://vm:8428");
 
     let in_memory = manager.settings().await;
-    assert_eq!(in_memory.metrics_push_interval_seconds, 45);
+    assert_eq!(in_memory.metrics_push_cron, "*/15 * * * * *");
     assert_eq!(in_memory.victoriametrics_url, "http://vm:8428");
 
     let from_db = mc_db::db::repos::settings::load_all(&pool).await.unwrap();
-    assert_eq!(from_db.metrics_push_interval_seconds, 45);
+    assert_eq!(from_db.metrics_push_cron, "*/15 * * * * *");
     assert_eq!(from_db.victoriametrics_url, "http://vm:8428");
 }
 
@@ -116,7 +116,7 @@ async fn patch_admin_settings_rejects_invalid_values() {
                 .uri("/admin/settings")
                 .header("cookie", &cookie)
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{"metricsPushIntervalSeconds":0}"#))
+                .body(Body::from(r#"{"metricsPushCron":"not a cron"}"#))
                 .unwrap(),
         )
         .await

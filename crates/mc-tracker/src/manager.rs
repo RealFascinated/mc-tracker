@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -25,9 +26,10 @@ use mc_ping::{
     ping_bedrock, ping_java, resolve_bedrock, resolve_java, with_retry, DnsError, HickoryDnsResolver,
     Ping, PingError,
 };
+use chrono::Utc;
+use cron::Schedule;
 use tokio::sync::{watch, RwLock};
 use tokio::task::JoinHandle;
-use tokio::time::{interval, MissedTickBehavior};
 use tracing::{info, warn};
 use uuid::Uuid;
 
@@ -729,11 +731,22 @@ impl ServerManager {
             .map(|server| server.config.id)
             .collect();
 
+        let fetch_started = std::time::Instant::now();
         let ping_results = join_all(server_ids.into_iter().map(|id| {
             let settings = settings.clone();
             async move { (id, self.ping_server(id, &settings).await) }
         }))
         .await;
+        let fetch_elapsed = fetch_started.elapsed();
+        let online = ping_results.iter().filter(|(_, result)| result.is_ok()).count();
+        let offline = ping_results.len() - online;
+        info!(
+            total = ping_results.len(),
+            online,
+            offline,
+            elapsed_ms = fetch_elapsed.as_millis(),
+            "fetched all servers"
+        );
 
         for (id, result) in ping_results {
             match result {
@@ -1062,7 +1075,7 @@ pub(crate) fn settings_response(settings: &AppSettings) -> mc_api_types::Setting
         dns_cache_enabled: settings.dns_cache_enabled,
         dns_cache_ttl_minutes: settings.dns_cache_ttl_minutes,
         victoriametrics_url: settings.victoriametrics_url.clone(),
-        metrics_push_interval_seconds: settings.metrics_push_interval_seconds,
+        metrics_push_cron: settings.metrics_push_cron.clone(),
         sign_up_enabled: settings.sign_up_enabled,
         www_origin: settings.www_origin.clone(),
     }
@@ -1097,16 +1110,22 @@ pub fn spawn_push_loop(manager: Arc<ServerManager>) -> PushLoopHandle {
 
     let task = tokio::spawn(async move {
         let mut shutdown_rx = shutdown_rx;
-        let mut interval_secs = 1u64;
-        let mut ticker = interval(Duration::from_secs(interval_secs));
-        ticker.set_missed_tick_behavior(MissedTickBehavior::Skip);
+        let mut cron_expr = String::new();
+        let mut schedule: Option<Schedule> = None;
 
         loop {
-            tokio::select! {
-                _ = ticker.tick() => {},
-                changed = shutdown_rx.changed() => {
-                    if changed.is_err() || *shutdown_rx.borrow() {
-                        break;
+            let next_cron = manager.settings.read().await.metrics_push_cron.clone();
+            if next_cron != cron_expr {
+                cron_expr = next_cron;
+                match Schedule::from_str(&cron_expr) {
+                    Ok(parsed) => schedule = Some(parsed),
+                    Err(err) => {
+                        warn!(
+                            error = %err,
+                            cron = %cron_expr,
+                            "invalid metrics push cron; retrying in 5s"
+                        );
+                        schedule = None;
                     }
                 }
             }
@@ -1115,20 +1134,28 @@ pub fn spawn_push_loop(manager: Arc<ServerManager>) -> PushLoopHandle {
                 break;
             }
 
-            let next_secs = manager
-                .settings
-                .read()
-                .await
-                .metrics_push_interval_seconds
-                .max(1);
-            if next_secs != interval_secs {
-                interval_secs = next_secs;
-                ticker = interval(Duration::from_secs(interval_secs));
-                ticker.set_missed_tick_behavior(MissedTickBehavior::Skip);
+            if schedule.is_some() {
+                if let Err(err) = manager.run_push_cycle().await {
+                    warn!(error = %err, "push cycle failed");
+                }
             }
 
-            if let Err(err) = manager.run_push_cycle().await {
-                warn!(error = %err, "push cycle failed");
+            if *shutdown_rx.borrow() {
+                break;
+            }
+
+            let sleep = match &schedule {
+                Some(schedule) => duration_until_next_cron_tick(schedule),
+                None => Duration::from_secs(5),
+            };
+
+            tokio::select! {
+                _ = tokio::time::sleep(sleep) => {},
+                changed = shutdown_rx.changed() => {
+                    if changed.is_err() || *shutdown_rx.borrow() {
+                        break;
+                    }
+                }
             }
         }
 
@@ -1139,6 +1166,18 @@ pub fn spawn_push_loop(manager: Arc<ServerManager>) -> PushLoopHandle {
         shutdown: shutdown_tx,
         task,
     }
+}
+
+fn duration_until_next_cron_tick(schedule: &Schedule) -> Duration {
+    let now = Utc::now();
+    let next = schedule
+        .upcoming(Utc)
+        .next()
+        .expect("valid cron schedule has upcoming ticks");
+    next.signed_duration_since(now)
+        .to_std()
+        .unwrap_or(Duration::ZERO)
+        .max(Duration::from_millis(1))
 }
 
 #[cfg(test)]
@@ -1393,7 +1432,7 @@ mod tests {
     #[tokio::test]
     async fn push_loop_exits_on_drain() {
         let settings = Arc::new(RwLock::new(AppSettings {
-            metrics_push_interval_seconds: 3600,
+            metrics_push_cron: "0 0 * * * *".into(),
             ..Default::default()
         }));
         let bootstrap = settings.read().await.clone();

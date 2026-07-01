@@ -9,7 +9,7 @@ pub struct PatchSettingsRequest {
     pub dns_cache_enabled: Option<bool>,
     pub dns_cache_ttl_minutes: Option<u32>,
     pub victoriametrics_url: Option<String>,
-    pub metrics_push_interval_seconds: Option<u64>,
+    pub metrics_push_cron: Option<String>,
     pub sign_up_enabled: Option<bool>,
     pub www_origin: Option<String>,
 }

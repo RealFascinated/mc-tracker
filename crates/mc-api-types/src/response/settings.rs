@@ -9,7 +9,7 @@ pub struct SettingsResponse {
     pub dns_cache_enabled: bool,
     pub dns_cache_ttl_minutes: u32,
     pub victoriametrics_url: String,
-    pub metrics_push_interval_seconds: u64,
+    pub metrics_push_cron: String,
     pub sign_up_enabled: bool,
     pub www_origin: String,
 }

@@ -100,12 +100,7 @@ pub async fn save(pool: &DbPool, settings: &AppSettings) -> Result<(), DbError> 
         )
         .await?;
         upsert(conn, "victoriametrics_url", &settings.victoriametrics_url).await?;
-        upsert(
-            conn,
-            "metrics_push_interval_seconds",
-            &settings.metrics_push_interval_seconds.to_string(),
-        )
-        .await?;
+        upsert(conn, "metrics_push_cron", &settings.metrics_push_cron).await?;
         upsert(
             conn,
             "sign_up_enabled",
