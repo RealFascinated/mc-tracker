@@ -1,7 +1,10 @@
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 
+use chrono::Local;
+use cron::Schedule;
 use tokio::sync::RwLock;
 use tracing::{info, warn};
 
@@ -10,6 +13,9 @@ use crate::download::{database_file_path, ensure_database};
 use crate::error::GeoError;
 use crate::lookup::AsnDatabase;
 use crate::types::{AsnLookup, GeoConfig, ASN_EDITION};
+
+/// Daily ASN database refresh at 2:00 local time.
+const ASN_REFRESH_CRON: &str = "0 0 2 * * *";
 
 pub struct GeoService {
     config: GeoConfig,
@@ -97,10 +103,11 @@ impl GeoService {
 
     pub fn spawn_refresh_scheduler(self: &Arc<Self>) {
         let service = Arc::clone(self);
+        let schedule =
+            Schedule::from_str(ASN_REFRESH_CRON).expect("hardcoded asn refresh cron is valid");
         tokio::spawn(async move {
             loop {
-                let wait = duration_until_next_2am(SystemTime::now());
-                tokio::time::sleep(wait).await;
+                tokio::time::sleep(duration_until_next_cron_tick(&schedule)).await;
                 if let Err(err) = service.refresh_if_stale().await {
                     warn!(error = %err, "scheduled asn database refresh failed");
                 }
@@ -109,24 +116,16 @@ impl GeoService {
     }
 }
 
-pub fn duration_until_next_2am(from: SystemTime) -> Duration {
-    use chrono::{DateTime, Local, TimeZone};
-
-    let now: DateTime<Local> = from.into();
-    let today_2am = now
-        .date_naive()
-        .and_hms_opt(2, 0, 0)
-        .and_then(|dt| Local.from_local_datetime(&dt).single())
-        .expect("valid local 2am");
-
-    let next = if now < today_2am {
-        today_2am
-    } else {
-        today_2am + chrono::Duration::days(1)
-    };
-
-    let wait = next.signed_duration_since(now);
-    Duration::from_secs(wait.num_seconds().max(0) as u64)
+fn duration_until_next_cron_tick(schedule: &Schedule) -> Duration {
+    let now = Local::now();
+    let next = schedule
+        .upcoming(Local)
+        .next()
+        .expect("valid cron schedule has upcoming ticks");
+    next.signed_duration_since(now)
+        .to_std()
+        .unwrap_or(Duration::ZERO)
+        .max(Duration::from_millis(1))
 }
 
 #[cfg(test)]
