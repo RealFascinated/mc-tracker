@@ -25,17 +25,23 @@ function scheduleHydration(onHydrated: () => void): { cancel: () => void } {
 function useChartHydration(visible?: boolean) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
+  const hydratedRef = useRef(false);
   const usesExternalVisible = visible !== undefined;
 
   useEffect(() => {
     if (!usesExternalVisible) return;
 
     if (!visible) {
-      setInView(false);
+      if (!hydratedRef.current) {
+        setInView(false);
+      }
       return;
     }
 
-    const { cancel } = scheduleHydration(() => setInView(true));
+    const { cancel } = scheduleHydration(() => {
+      hydratedRef.current = true;
+      setInView(true);
+    });
     return cancel;
   }, [usesExternalVisible, visible]);
 
@@ -55,15 +61,20 @@ function useChartHydration(visible?: boolean) {
         if (!intersecting) {
           hydration?.cancel();
           hydration = undefined;
-          setInView(false);
+          if (!hydratedRef.current) {
+            setInView(false);
+          }
           return;
         }
 
-        if (hydration) return;
+        if (hydration || hydratedRef.current) return;
 
         hydration = scheduleHydration(() => {
           hydration = undefined;
-          if (!cancelled) setInView(true);
+          if (!cancelled) {
+            hydratedRef.current = true;
+            setInView(true);
+          }
         });
       },
       { rootMargin: VIEWPORT_ROOT_MARGIN },

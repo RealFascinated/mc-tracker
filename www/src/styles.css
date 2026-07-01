@@ -963,6 +963,7 @@
     display: grid;
     gap: 0.75rem;
     grid-template-columns: minmax(0, 1fr);
+    overflow-anchor: none;
   }
 
   .entity-metrics-grid > * {

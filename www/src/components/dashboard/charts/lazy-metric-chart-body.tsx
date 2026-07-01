@@ -27,8 +27,8 @@ export function LazyMetricChartBody({
   height = DASHBOARD_CARD_CHART_HEIGHT,
 }: LazyMetricChartBodyProps) {
   const hasData = chartData.timestamps.length > 0;
-  const showChart = isVisible && (!isPending || hasData);
-  const showLoading = isVisible && isPending;
+  const showChart = hasData || (isVisible && !isPending);
+  const showLoading = isVisible && isPending && !hasData;
 
   if (isError) {
     return (

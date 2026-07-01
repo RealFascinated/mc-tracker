@@ -26,14 +26,14 @@ export function TotalPlayersChart({
   window,
   height = 300,
 }: TotalPlayersChartProps) {
-  const { ref, isVisible } = useIntersectionVisible();
+  const { ref, isIntersecting, hasBeenVisible } = useIntersectionVisible();
   const timeseriesOptions = useMemo(() => {
     const { queryKey, queryFn } = totalTimeseriesQueryOptions(window);
     return toVisibleTimeseriesOptions({ queryKey, queryFn });
   }, [window]);
   const { data, isPending, isError } = useVisibleTimeseriesQuery(
     timeseriesOptions,
-    isVisible,
+    isIntersecting,
   );
 
   const chartData = useMemo(
@@ -53,7 +53,7 @@ export function TotalPlayersChart({
     );
   }
 
-  if (!isVisible && !data) {
+  if (!hasBeenVisible && !data) {
     return <div ref={ref} style={{ height }} aria-hidden />;
   }
 
@@ -67,7 +67,7 @@ export function TotalPlayersChart({
     );
   }
 
-  const showLoading = isVisible && isPending && !data;
+  const showLoading = isIntersecting && isPending && !data;
 
   return (
     <div ref={ref} className="relative" style={{ height }}>
@@ -77,7 +77,7 @@ export function TotalPlayersChart({
         height={height}
         emptyMessage={DASHBOARD_CHART_EMPTY_MESSAGE}
         className="h-full"
-        hydrateWhen={isVisible}
+        hydrateWhen={hasBeenVisible}
         {...DASHBOARD_CHART_PROPS}
       />
       {showLoading ? (

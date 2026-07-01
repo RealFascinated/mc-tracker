@@ -14,6 +14,7 @@ import type {
 } from "@/lib/api/types";
 import { playersTimeseriesToMetric } from "@/lib/metrics/adapters";
 import type { ChartDefinition } from "@/lib/metrics/charts/types";
+import { DASHBOARD_CARD_CHART_HEIGHT } from "@/lib/metrics/dashboard-chart-constants";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 import { formatPlayers } from "@/lib/format-players";
 import { peakTimestampTooltip } from "@/lib/format-peak-at";
@@ -50,7 +51,7 @@ export type EntityMetricsGridConfig<
 type EntityMetricsCardProps<T, TTimeseries extends PlayersTimeseriesPayload> = {
   item: T;
   window: MetricTimeWindow;
-  isVisible: boolean;
+  isIntersecting: boolean;
   renderHeader: (item: T) => ReactNode;
   chartDef: (item: T) => ChartDefinition;
   timeseriesOptions: (
@@ -63,7 +64,7 @@ type EntityMetricsCardProps<T, TTimeseries extends PlayersTimeseriesPayload> = {
 function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
   item,
   window,
-  isVisible,
+  isIntersecting,
   renderHeader,
   chartDef,
   timeseriesOptions,
@@ -77,7 +78,7 @@ function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
   const enabled = timeseriesEnabled?.(item) ?? true;
   const { data, isPending, isError } = useVisibleTimeseriesQuery(
     options,
-    isVisible,
+    isIntersecting,
     enabled,
   );
 
@@ -91,13 +92,32 @@ function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
       {renderHeader(item)}
       <div className="entity-metrics-card-chart">
         <LazyMetricChartBody
-          isVisible={isVisible}
+          isVisible={isIntersecting}
           isPending={isPending}
           isError={isError}
           chartDef={def}
           chartData={chartData}
         />
       </div>
+    </DashboardCard>
+  );
+}
+
+function EntityMetricsCardPlaceholder<T>({
+  item,
+  renderHeader,
+}: {
+  item: T;
+  renderHeader: (item: T) => ReactNode;
+}) {
+  return (
+    <DashboardCard className="entity-metrics-card h-full">
+      {renderHeader(item)}
+      <div
+        className="entity-metrics-card-chart"
+        style={{ height: DASHBOARD_CARD_CHART_HEIGHT }}
+        aria-hidden
+      />
     </DashboardCard>
   );
 }
@@ -162,12 +182,20 @@ export function EntityMetricsGrid<
         <div className="entity-metrics-grid-container">
           <div className="entity-metrics-grid">
             {items.map((item) => (
-              <LazyVisibleMount key={getKey(item)}>
-                {(isVisible) => (
+              <LazyVisibleMount
+                key={getKey(item)}
+                placeholder={
+                  <EntityMetricsCardPlaceholder
+                    item={item}
+                    renderHeader={renderHeader}
+                  />
+                }
+              >
+                {(isIntersecting) => (
                   <EntityMetricsCard
                     item={item}
                     window={window}
-                    isVisible={isVisible}
+                    isIntersecting={isIntersecting}
                     renderHeader={renderHeader}
                     chartDef={chartDef}
                     timeseriesOptions={timeseriesOptions}

@@ -104,6 +104,7 @@ function DashboardPage() {
       void navigate({
         search: (prev) => ({ ...prev, search: next }),
         replace: true,
+        resetScroll: false,
       });
     }, SEARCH_DEBOUNCE_MS);
 
@@ -140,6 +141,7 @@ function DashboardPage() {
           to: undefined,
         }),
         replace: true,
+        resetScroll: false,
       });
     },
     [navigate],
@@ -154,6 +156,7 @@ function DashboardPage() {
           to,
         }),
         replace: true,
+        resetScroll: false,
       });
     },
     [navigate],
@@ -166,6 +169,7 @@ function DashboardPage() {
           view: view === "server" ? undefined : view,
         }),
         replace: true,
+        resetScroll: false,
       });
     },
     [navigate],

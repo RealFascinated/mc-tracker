@@ -4,19 +4,21 @@ import { useIntersectionVisible } from "@/hooks/use-intersection-visible";
 import { cn } from "@/lib/utils";
 
 type LazyVisibleMountProps = {
-  children: (isVisible: boolean) => ReactNode;
+  children: (isIntersecting: boolean) => ReactNode;
+  placeholder?: ReactNode;
   className?: string;
 };
 
 export function LazyVisibleMount({
   children,
+  placeholder = null,
   className,
 }: LazyVisibleMountProps) {
-  const { ref, isVisible } = useIntersectionVisible();
+  const { ref, isIntersecting, hasBeenVisible } = useIntersectionVisible();
 
   return (
     <div ref={ref} className={cn(className)}>
-      {children(isVisible)}
+      {hasBeenVisible ? children(isIntersecting) : placeholder}
     </div>
   );
 }

@@ -10,7 +10,8 @@ export function useIntersectionVisible({
   threshold = 0,
 }: UseIntersectionVisibleOptions = {}) {
   const [element, setElement] = useState<HTMLElement | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isIntersecting, setIsIntersecting] = useState(false);
+  const [hasBeenVisible, setHasBeenVisible] = useState(false);
 
   useEffect(() => {
     if (!element) {
@@ -19,7 +20,11 @@ export function useIntersectionVisible({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsVisible(entry.isIntersecting);
+        const intersecting = entry.isIntersecting;
+        setIsIntersecting(intersecting);
+        if (intersecting) {
+          setHasBeenVisible(true);
+        }
       },
       { rootMargin, threshold },
     );
@@ -28,5 +33,5 @@ export function useIntersectionVisible({
     return () => observer.disconnect();
   }, [element, rootMargin, threshold]);
 
-  return { ref: setElement, isVisible };
+  return { ref: setElement, isIntersecting, hasBeenVisible };
 }
