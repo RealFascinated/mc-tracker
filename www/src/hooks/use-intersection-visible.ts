@@ -21,9 +21,9 @@ export function useIntersectionVisible({
     const observer = new IntersectionObserver(
       ([entry]) => {
         const intersecting = entry.isIntersecting;
-        setIsIntersecting(intersecting);
+        setIsIntersecting((prev) => (prev === intersecting ? prev : intersecting));
         if (intersecting) {
-          setHasBeenVisible(true);
+          setHasBeenVisible((prev) => prev || true);
         }
       },
       { rootMargin, threshold },

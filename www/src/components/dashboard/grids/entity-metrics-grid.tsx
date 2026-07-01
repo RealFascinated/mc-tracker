@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { LazyMetricChartBody } from "@/components/dashboard/charts/lazy-metric-chart-body";
-import { LazyVisibleMount } from "@/components/dashboard/lazy-visible-mount";
 import { StatValueTooltip } from "@/components/dashboard/stats/stat-value-tooltip";
+import { useIntersectionVisible } from "@/hooks/use-intersection-visible";
 import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
 import { EMPTY_METRIC_TIME_SERIES } from "@/lib/api/metric-timeseries";
 import type {
@@ -47,11 +47,12 @@ export type EntityMetricsGridConfig<
   section: EntityMetricsSectionCopy;
 };
 
-type EntityMetricsCardProps<T, TTimeseries extends PlayersTimeseriesPayload> = {
+type EntityMetricsChartProps<
+  T,
+  TTimeseries extends PlayersTimeseriesPayload,
+> = {
   item: T;
   window: MetricTimeWindow;
-  isIntersecting: boolean;
-  renderHeader: (item: T) => ReactNode;
   chartDef: (item: T) => ChartDefinition;
   timeseriesOptions: (
     item: T,
@@ -60,15 +61,14 @@ type EntityMetricsCardProps<T, TTimeseries extends PlayersTimeseriesPayload> = {
   timeseriesEnabled?: (item: T) => boolean;
 };
 
-function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
+function EntityMetricsChart<T, TTimeseries extends PlayersTimeseriesPayload>({
   item,
   window,
-  isIntersecting,
-  renderHeader,
   chartDef,
   timeseriesOptions,
   timeseriesEnabled,
-}: EntityMetricsCardProps<T, TTimeseries>) {
+}: EntityMetricsChartProps<T, TTimeseries>) {
+  const { ref, isIntersecting, hasBeenVisible } = useIntersectionVisible();
   const def = useMemo(() => chartDef(item), [chartDef, item]);
   const options = useMemo(
     () => timeseriesOptions(item, window),
@@ -87,32 +87,49 @@ function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
   );
 
   return (
-    <DashboardCard className="entity-metrics-card h-full">
-      {renderHeader(item)}
-      <div className="entity-metrics-card-chart">
-        <LazyMetricChartBody
-          isVisible={isIntersecting}
-          isPending={isPending}
-          isError={isError}
-          chartDef={def}
-          chartData={chartData}
-        />
-      </div>
-    </DashboardCard>
+    <div ref={ref} className="entity-metrics-card-chart">
+      <LazyMetricChartBody
+        isVisible={isIntersecting}
+        hasBeenVisible={hasBeenVisible}
+        isPending={isPending}
+        isError={isError}
+        chartDef={def}
+        chartData={chartData}
+      />
+    </div>
   );
 }
 
-function EntityMetricsCardPlaceholder<T>({
-  item,
-  renderHeader,
-}: {
+type EntityMetricsCardProps<T, TTimeseries extends PlayersTimeseriesPayload> = {
   item: T;
+  window: MetricTimeWindow;
   renderHeader: (item: T) => ReactNode;
-}) {
+  chartDef: (item: T) => ChartDefinition;
+  timeseriesOptions: (
+    item: T,
+    window: MetricTimeWindow,
+  ) => VisibleTimeseriesQueryOptions<TTimeseries>;
+  timeseriesEnabled?: (item: T) => boolean;
+};
+
+function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
+  item,
+  window,
+  renderHeader,
+  chartDef,
+  timeseriesOptions,
+  timeseriesEnabled,
+}: EntityMetricsCardProps<T, TTimeseries>) {
   return (
     <DashboardCard className="entity-metrics-card h-full">
       {renderHeader(item)}
-      <div className="entity-metrics-card-chart" aria-hidden />
+      <EntityMetricsChart
+        item={item}
+        window={window}
+        chartDef={chartDef}
+        timeseriesOptions={timeseriesOptions}
+        timeseriesEnabled={timeseriesEnabled}
+      />
     </DashboardCard>
   );
 }
@@ -178,28 +195,16 @@ export function EntityMetricsGrid<
       <div className="entity-metrics-grid-container">
         <div className="entity-metrics-grid">
           {items.map((item) => (
-              <LazyVisibleMount
-                key={getKey(item)}
-                placeholder={
-                  <EntityMetricsCardPlaceholder
-                    item={item}
-                    renderHeader={renderHeader}
-                  />
-                }
-              >
-                {(isIntersecting) => (
-                  <EntityMetricsCard
-                    item={item}
-                    window={window}
-                    isIntersecting={isIntersecting}
-                    renderHeader={renderHeader}
-                    chartDef={chartDef}
-                    timeseriesOptions={timeseriesOptions}
-                    timeseriesEnabled={timeseriesEnabled}
-                  />
-                )}
-              </LazyVisibleMount>
-            ))}
+            <EntityMetricsCard
+              key={getKey(item)}
+              item={item}
+              window={window}
+              renderHeader={renderHeader}
+              chartDef={chartDef}
+              timeseriesOptions={timeseriesOptions}
+              timeseriesEnabled={timeseriesEnabled}
+            />
+          ))}
         </div>
       </div>
     </section>
