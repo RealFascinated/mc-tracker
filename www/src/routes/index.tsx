@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { AsnMetricsGrid } from "@/components/dashboard/grids/asn-metrics-grid";
 import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
 import { DashboardRangeToggle } from "@/components/dashboard/dashboard-card";
 import type { DashboardRangeOption } from "@/components/dashboard/dashboard-card";
 import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-row";
-import type { DashboardView } from "@/components/dashboard/dashboard-search-input";
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
 import { DashboardSearchInput } from "@/components/dashboard/dashboard-search-input";
@@ -32,7 +31,7 @@ import {
   parseMetricTimeWindowSearch,
 } from "@/lib/metrics/time-window";
 
-const SEARCH_DEBOUNCE_MS = 300;
+type DashboardView = "server" | "asn";
 
 const DASHBOARD_VIEW_OPTIONS: Array<DashboardRangeOption<DashboardView>> = [
   { value: "server", shortLabel: "Servers", label: "Per server" },
@@ -43,19 +42,9 @@ type DashboardSearch = {
   range?: MetricTimeRange;
   from?: number;
   to?: number;
-  search?: string;
   view?: DashboardView;
   platform?: ServerPlatformFilter;
 };
-
-function parseDashboardSearchParam(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
 
 function parseDashboardViewParam(value: unknown): DashboardView | undefined {
   if (value === "server" || value === "asn") {
@@ -67,7 +56,6 @@ function parseDashboardViewParam(value: unknown): DashboardView | undefined {
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): DashboardSearch => ({
     ...parseMetricTimeWindowSearch(search),
-    search: parseDashboardSearchParam(search.search),
     view: parseDashboardViewParam(search.view),
     platform: parseServerPlatformFilterParam(search.platform),
   }),
@@ -76,12 +64,11 @@ export const Route = createFileRoute("/")({
   }),
   loaderDeps: ({ search }) => ({
     view: search.view ?? "server",
-    searchTerm: search.search,
   }),
-  loader: ({ context: { queryClient }, deps: { view, searchTerm } }) =>
+  loader: ({ context: { queryClient }, deps: { view } }) =>
     view === "asn"
-      ? queryClient.ensureQueryData(asnsQueryOptions(searchTerm))
-      : queryClient.ensureQueryData(serversQueryOptions(searchTerm)),
+      ? queryClient.ensureQueryData(asnsQueryOptions())
+      : queryClient.ensureQueryData(serversQueryOptions()),
   component: DashboardPage,
 });
 
@@ -91,45 +78,21 @@ function DashboardPage() {
     range: searchRange,
     from: searchFrom,
     to: searchTo,
-    search: urlSearch,
     view: urlView,
     platform: urlPlatform,
   } = Route.useSearch();
   const navigate = Route.useNavigate();
-  const [searchInput, setSearchInput] = useState(urlSearch ?? "");
-  const activeSearch = urlSearch?.trim() || undefined;
   const dashboardView = urlView ?? "server";
+  const [searchInput, setSearchInput] = useState("");
   const platformFilter: ServerPlatformFilter = urlPlatform ?? "all";
 
-  useEffect(() => {
-    setSearchInput(urlSearch ?? "");
-  }, [urlSearch]);
-
-  useEffect(() => {
-    const timer = globalThis.setTimeout(() => {
-      const trimmed = searchInput.trim();
-      const next = trimmed || undefined;
-      if (next === activeSearch) {
-        return;
-      }
-
-      void navigate({
-        search: (prev) => ({ ...prev, search: next }),
-        replace: true,
-        resetScroll: false,
-      });
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => globalThis.clearTimeout(timer);
-  }, [searchInput, activeSearch, navigate]);
-
   const serversQuery = useQuery({
-    ...serversQueryOptions(activeSearch),
+    ...serversQueryOptions(),
     enabled: dashboardView === "server",
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
   const asnsQuery = useQuery({
-    ...asnsQueryOptions(activeSearch),
+    ...asnsQueryOptions(),
     enabled: dashboardView === "asn",
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
@@ -206,10 +169,6 @@ function DashboardPage() {
   );
   const activeQuery = dashboardView === "asn" ? asnsQuery : serversQuery;
   const showInitialLoading = activeQuery.isPending && !activeQuery.data;
-  const isSearchLoading =
-    activeQuery.isFetching &&
-    activeQuery.isPlaceholderData &&
-    !showInitialLoading;
 
   return (
     <>
@@ -230,11 +189,14 @@ function DashboardPage() {
         </div>
       </SiteHeaderNav>
       <SiteHeaderToolbar>
-        <DashboardSearchInput
-          value={searchInput}
-          onChange={setSearchInput}
-          view={dashboardView}
-        />
+        <div className="dashboard-header-search-slot">
+          {dashboardView === "server" ? (
+            <DashboardSearchInput
+              value={searchInput}
+              onChange={setSearchInput}
+            />
+          ) : null}
+        </div>
       </SiteHeaderToolbar>
 
       {showInitialLoading ? (
@@ -256,19 +218,15 @@ function DashboardPage() {
             <AsnMetricsGrid
               asns={asnsQuery.data?.asns ?? []}
               window={timeWindow}
-              hasActiveSearch={Boolean(activeSearch)}
               trackedAsns={asnsQuery.data?.summary.trackedAsns ?? 0}
-              isLoading={isSearchLoading}
             />
           ) : (
             <ServerMetricsGrid
               servers={filteredServers}
               window={timeWindow}
-              hasActiveSearch={Boolean(activeSearch)}
               platformFilter={platformFilter}
               onPlatformFilterChange={setPlatformFilter}
               trackedServers={serversQuery.data?.summary.trackedServers ?? 0}
-              isLoading={isSearchLoading}
             />
           )}
         </main>

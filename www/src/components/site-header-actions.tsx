@@ -2,7 +2,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
-  LayoutDashboard,
   LogIn,
   LogOut,
   Shield,
@@ -102,12 +101,6 @@ function SiteHeaderUserMenu({ iconOnly = false }: SiteHeaderUserMenuProps) {
             </Link>
           </DropdownMenuItem>
         ) : null}
-        <DropdownMenuItem asChild>
-          <Link to="/">
-            <LayoutDashboard className="size-4" aria-hidden />
-            Dashboard
-          </Link>
-        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"

@@ -908,6 +908,14 @@
     }
   }
 
+  .site-header-toolbar .dashboard-header-search-slot {
+    @apply min-w-0 w-full lg:ml-auto lg:flex lg:justify-end;
+  }
+
+  .site-header-toolbar .dashboard-header-search-slot:empty {
+    @apply max-lg:hidden;
+  }
+
   .site-header-toolbar .dashboard-search {
     @apply min-w-0 w-full lg:ml-auto lg:w-52 lg:flex-none xl:w-56;
   }

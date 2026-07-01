@@ -10,26 +10,9 @@ import type { ServerSearchItem } from "@/lib/api/servers";
 import { serversSearchQueryOptions } from "@/lib/api/servers.queries";
 import { cn } from "@/lib/utils";
 
-export type DashboardView = "server" | "asn";
-
 type DashboardSearchInputProps = {
   value: string;
   onChange: (value: string) => void;
-  view?: DashboardView;
-};
-
-const PLACEHOLDERS: Record<
-  DashboardView,
-  { placeholder: string; label: string }
-> = {
-  server: {
-    placeholder: "Search servers…",
-    label: "Search servers",
-  },
-  asn: {
-    placeholder: "Search networks…",
-    label: "Search networks",
-  },
 };
 
 const AUTOCOMPLETE_DEBOUNCE_MS = 150;
@@ -45,9 +28,7 @@ function formatServerAddress(server: ServerSearchItem): string {
 export function DashboardSearchInput({
   value,
   onChange,
-  view = "server",
 }: DashboardSearchInputProps) {
-  const { placeholder, label } = PLACEHOLDERS[view];
   const listboxId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -65,16 +46,11 @@ export function DashboardSearchInput({
 
   const searchQuery = useQuery({
     ...serversSearchQueryOptions(debouncedQuery),
-    enabled:
-      view === "server" &&
-      isOpen &&
-      debouncedQuery.length >= AUTOCOMPLETE_MIN_CHARS,
+    enabled: isOpen && debouncedQuery.length >= AUTOCOMPLETE_MIN_CHARS,
   });
 
-  const suggestions =
-    view === "server" ? (searchQuery.data?.servers ?? []) : [];
+  const suggestions = searchQuery.data?.servers ?? [];
   const showSuggestions =
-    view === "server" &&
     isOpen &&
     value.trim().length >= AUTOCOMPLETE_MIN_CHARS &&
     (searchQuery.isFetching || suggestions.length > 0);
@@ -138,7 +114,9 @@ export function DashboardSearchInput({
       />
       <Input
         ref={inputRef}
-        type="search"
+        type="text"
+        inputMode="search"
+        enterKeyHint="search"
         role="combobox"
         value={value}
         onChange={(event) => {
@@ -151,8 +129,8 @@ export function DashboardSearchInput({
           globalThis.setTimeout(() => closeSuggestions(), 120);
         }}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        aria-label={label}
+        placeholder="Search servers…"
+        aria-label="Search servers"
         aria-expanded={showSuggestions}
         aria-controls={showSuggestions ? listboxId : undefined}
         aria-activedescendant={

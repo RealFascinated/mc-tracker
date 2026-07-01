@@ -29,25 +29,16 @@ const SERVER_PLATFORM_FILTER_TOGGLE_OPTIONS: Array<
 type ServerMetricsGridProps = {
   servers: ServerListItem[];
   window: MetricTimeWindow;
-  hasActiveSearch: boolean;
   platformFilter: ServerPlatformFilter;
   onPlatformFilterChange: (platform: ServerPlatformFilter) => void;
   trackedServers: number;
-  isLoading?: boolean;
   section?: EntityMetricsSectionCopy;
 };
 
-function serverGridEmptyCopy(
-  hasActiveSearch: boolean,
-  platformFilter: ServerPlatformFilter,
-): { emptySearch: string; emptySearchHint: string } {
-  if (hasActiveSearch && platformFilter !== "all") {
-    return {
-      emptySearch: "No servers match your filters.",
-      emptySearchHint: "Try a different search or platform.",
-    };
-  }
-
+function serverGridEmptyCopy(platformFilter: ServerPlatformFilter): {
+  emptySearch: string;
+  emptySearchHint: string;
+} {
   if (platformFilter === "PC") {
     return {
       emptySearch: "No Java servers to show.",
@@ -63,32 +54,29 @@ function serverGridEmptyCopy(
   }
 
   return {
-    emptySearch: "No servers match your search.",
-    emptySearchHint: "Try a different name, host, or network.",
+    emptySearch: "No servers to show.",
+    emptySearchHint: "Try a different platform filter.",
   };
 }
 
 export function ServerMetricsGrid({
   servers,
   window,
-  hasActiveSearch,
   platformFilter,
   onPlatformFilterChange,
   trackedServers,
-  isLoading = false,
   section,
 }: ServerMetricsGridProps) {
   const hasActivePlatformFilter = platformFilter !== "all";
-  const emptyCopy = serverGridEmptyCopy(hasActiveSearch, platformFilter);
+  const emptyCopy = serverGridEmptyCopy(platformFilter);
 
   return (
     <EntityMetricsGrid<ServerListItem, ServerTimeseriesResponse>
       items={servers}
       window={window}
-      hasActiveSearch={hasActiveSearch}
-      hasActiveFilter={hasActiveSearch || hasActivePlatformFilter}
+      hasActiveSearch={false}
+      hasActiveFilter={hasActivePlatformFilter}
       trackedCount={trackedServers}
-      isLoading={isLoading}
       headerTrailing={
         <DashboardRangeToggle
           value={platformFilter}

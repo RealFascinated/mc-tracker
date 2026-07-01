@@ -14,9 +14,7 @@ import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 type AsnMetricsGridProps = {
   asns: AsnListItem[];
   window: MetricTimeWindow;
-  hasActiveSearch: boolean;
   trackedAsns: number;
-  isLoading?: boolean;
 };
 
 function AsnMetricsCardHeader({ asn }: { asn: AsnListItem }) {
@@ -51,17 +49,14 @@ function AsnMetricsCardHeader({ asn }: { asn: AsnListItem }) {
 export function AsnMetricsGrid({
   asns,
   window,
-  hasActiveSearch,
   trackedAsns,
-  isLoading = false,
 }: AsnMetricsGridProps) {
   return (
     <EntityMetricsGrid<AsnListItem, AsnTimeseriesResponse>
       items={asns}
       window={window}
-      hasActiveSearch={hasActiveSearch}
+      hasActiveSearch={false}
       trackedCount={trackedAsns}
-      isLoading={isLoading}
       getKey={(asn) => `${asn.asn}\u0000${asn.asnOrg}`}
       renderHeader={(asn) => <AsnMetricsCardHeader asn={asn} />}
       chartDef={(asn) => {
@@ -83,8 +78,8 @@ export function AsnMetricsGrid({
         subtitleSearch: (shown, total) =>
           `Showing ${shown} of ${total} networks`,
         emptyTracked: "No networks are being tracked yet.",
-        emptySearch: "No networks match your search.",
-        emptySearchHint: "Try a different ASN or network name.",
+        emptySearch: "No networks to show.",
+        emptySearchHint: "Networks appear here once servers are tracked.",
       }}
     />
   );

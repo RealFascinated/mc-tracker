@@ -201,7 +201,6 @@ function AsnDetailPage() {
           <ServerMetricsGrid
             servers={filteredServers}
             window={timeWindow}
-            hasActiveSearch={false}
             platformFilter={platformFilter}
             onPlatformFilterChange={setPlatformFilter}
             trackedServers={asnDetail.summary.trackedServers}

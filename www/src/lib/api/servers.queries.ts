@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 
 import { createListQueryOptions } from "@/lib/api/list-query";
 import {
@@ -42,6 +42,7 @@ export function serversSearchQueryOptions(search: string, limit = 10) {
     queryFn: () => searchServers(trimmed, limit),
     enabled: trimmed.length > 0,
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 }
 
