@@ -875,6 +875,8 @@
   }
 
   .hero-chart-panel .uplot {
+    box-sizing: border-box;
+    height: 100%;
     padding: 0.25rem 0.5rem 0.5rem;
   }
 

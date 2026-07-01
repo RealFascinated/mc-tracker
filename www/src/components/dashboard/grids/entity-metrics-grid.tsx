@@ -14,7 +14,6 @@ import type {
 } from "@/lib/api/types";
 import { playersTimeseriesToMetric } from "@/lib/metrics/adapters";
 import type { ChartDefinition } from "@/lib/metrics/charts/types";
-import { DASHBOARD_CARD_CHART_HEIGHT } from "@/lib/metrics/dashboard-chart-constants";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 import { formatPlayers } from "@/lib/format-players";
 import { peakTimestampTooltip } from "@/lib/format-peak-at";
@@ -113,11 +112,7 @@ function EntityMetricsCardPlaceholder<T>({
   return (
     <DashboardCard className="entity-metrics-card h-full">
       {renderHeader(item)}
-      <div
-        className="entity-metrics-card-chart"
-        style={{ height: DASHBOARD_CARD_CHART_HEIGHT }}
-        aria-hidden
-      />
+      <div className="entity-metrics-card-chart" aria-hidden />
     </DashboardCard>
   );
 }

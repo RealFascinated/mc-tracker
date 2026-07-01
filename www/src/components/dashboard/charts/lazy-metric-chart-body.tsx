@@ -2,6 +2,7 @@ import { LoadingState } from "@/components/loading-state";
 import { MetricChartView } from "@/components/metrics/metric-chart-view";
 import type { MetricTimeSeries } from "@/lib/api/metric-timeseries";
 import type { ChartDefinition } from "@/lib/metrics/charts/types";
+import { EMPTY_METRIC_TIME_SERIES } from "@/lib/api/metric-timeseries";
 import {
   DASHBOARD_CARD_CHART_HEIGHT,
   DASHBOARD_CHART_EMPTY_MESSAGE,
@@ -27,7 +28,7 @@ export function LazyMetricChartBody({
   height = DASHBOARD_CARD_CHART_HEIGHT,
 }: LazyMetricChartBodyProps) {
   const hasData = chartData.timestamps.length > 0;
-  const showChart = hasData || (isVisible && !isPending);
+  const reserveChart = isVisible || hasData;
   const showLoading = isVisible && isPending && !hasData;
 
   if (isError) {
@@ -41,18 +42,20 @@ export function LazyMetricChartBody({
   }
 
   return (
-    <div className="relative h-full">
-      {showChart ? (
+    <div className="relative h-full min-h-0">
+      {reserveChart ? (
         <MetricChartView
           def={chartDef}
-          data={chartData}
+          data={hasData ? chartData : EMPTY_METRIC_TIME_SERIES}
           height={height}
           emptyMessage={DASHBOARD_CHART_EMPTY_MESSAGE}
           className="h-full"
-          hydrateWhen={isVisible}
+          hydrateWhen={reserveChart}
           {...DASHBOARD_CHART_PROPS}
         />
-      ) : null}
+      ) : (
+        <div className="h-full" aria-hidden />
+      )}
       {showLoading ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
           <LoadingState message="Loading…" />
