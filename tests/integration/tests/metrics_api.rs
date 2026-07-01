@@ -11,8 +11,8 @@ use uuid::Uuid;
 use wiremock::matchers::{method, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-use mc_integration_tests::{
-    api_fixture_path, bootstrap_admin, build_app, load_api_fixture, manager_with_vm_url,
+use mc_test_support::{
+    api_fixture_path, bootstrap_admin, build_app_with_env, load_api_fixture, manager_with_vm_url,
     setup_pool, start_postgres,
 };
 
@@ -101,7 +101,7 @@ async fn get_servers_matches_empty_fixture_and_vm_peaks() {
     mount_vm_mocks(&vm, Uuid::new_v4()).await;
 
     let manager = manager_with_vm_url(&pool, &vm.uri()).await;
-    let app = build_app(pool, Arc::clone(&manager), "development").await;
+    let app = build_app_with_env(pool, Arc::clone(&manager), "development").await;
 
     let response = app
         .oneshot(
@@ -158,7 +158,7 @@ async fn search_servers_returns_basic_matches_without_vm_queries() {
 
     let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
     manager.append_server(server).await;
-    let app = build_app(pool, manager, "development").await;
+    let app = build_app_with_env(pool, manager, "development").await;
 
     let response = app
         .oneshot(
@@ -191,6 +191,103 @@ async fn search_servers_returns_basic_matches_without_vm_queries() {
 }
 
 #[tokio::test]
+async fn get_server_returns_tracked_server_details() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+    bootstrap_admin(&pool).await;
+
+    let server_id = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
+    let server = sample_server(server_id);
+    mc_db::db::repos::servers::insert(
+        &pool,
+        mc_db::db::repos::servers::NewServer {
+            id: Some(server_id),
+            name: &server.name,
+            host: &server.host,
+            port: server.port,
+            platform: server.platform,
+        },
+    )
+    .await
+    .unwrap();
+
+    let vm = MockServer::start().await;
+    mount_vm_mocks(&vm, server_id).await;
+
+    let manager = manager_with_vm_url(&pool, &vm.uri()).await;
+    manager.append_server(server).await;
+    let app = build_app_with_env(pool, manager, "development").await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri(format!("/servers/{server_id}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+
+    assert_eq!(body["id"], server_id.to_string());
+    assert_eq!(body["name"], "Hypixel");
+    assert_eq!(body["host"], "mc.hypixel.net");
+    assert_eq!(body["type"], "PC");
+    assert_eq!(body["port"], 25565);
+    assert!(body.get("peaks").is_some());
+}
+
+#[tokio::test]
+async fn get_server_unknown_returns_404() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+    bootstrap_admin(&pool).await;
+
+    let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
+    let app = build_app_with_env(pool, manager, "development").await;
+
+    let id = Uuid::new_v4();
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri(format!("/servers/{id}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn get_asn_unknown_returns_404() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+    bootstrap_admin(&pool).await;
+
+    let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
+    let app = build_app_with_env(pool, manager, "development").await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/asns/AS13335?asnOrg=Cloudflare%2C%20Inc.")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
 async fn get_servers_timeseries_returns_aligned_series() {
     let (_postgres, database_url) = start_postgres().await;
     let pool = setup_pool(&database_url).await;
@@ -216,7 +313,7 @@ async fn get_servers_timeseries_returns_aligned_series() {
 
     let manager = manager_with_vm_url(&pool, &vm.uri()).await;
     manager.append_server(server).await;
-    let app = build_app(pool, manager, "development").await;
+    let app = build_app_with_env(pool, manager, "development").await;
 
     let from = 1710000000i64;
     let to = 1710003600i64;
@@ -257,7 +354,7 @@ async fn get_servers_timeseries_rejects_short_window() {
     let server_id = Uuid::new_v4();
     let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
     manager.append_server(sample_server(server_id)).await;
-    let app = build_app(pool, manager, "development").await;
+    let app = build_app_with_env(pool, manager, "development").await;
 
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -283,7 +380,7 @@ async fn get_servers_timeseries_unknown_server_returns_400() {
     bootstrap_admin(&pool).await;
 
     let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
-    let app = build_app(pool, manager, "development").await;
+    let app = build_app_with_env(pool, manager, "development").await;
 
     let id = Uuid::new_v4();
     let now = SystemTime::now()

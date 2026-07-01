@@ -1673,10 +1673,9 @@ dependencies = [
  "diesel-async",
  "diesel_migrations",
  "futures",
+ "mc-test-support",
  "rand 0.8.6",
  "serde",
- "testcontainers",
- "testcontainers-modules",
  "thiserror",
  "tokio",
  "uuid",
@@ -1715,12 +1714,9 @@ dependencies = [
  "axum",
  "chrono",
  "mc-db",
- "mc-geo",
  "mc-metrics",
- "mc-tracker",
+ "mc-test-support",
  "serde_json",
- "testcontainers",
- "testcontainers-modules",
  "tokio",
  "tower",
  "uuid",
@@ -1755,6 +1751,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "mc-test-support"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "mc-db",
+ "mc-geo",
+ "mc-tracker",
+ "serde_json",
+ "testcontainers",
+ "testcontainers-modules",
+ "tokio",
+ "tower",
+]
+
+[[package]]
 name = "mc-tracker"
 version = "0.1.0"
 dependencies = [
@@ -1772,13 +1783,12 @@ dependencies = [
  "mc-geo",
  "mc-metrics",
  "mc-ping",
+ "mc-test-support",
  "mime_guess",
  "rust-embed",
  "serde",
  "serde_json",
  "sha2 0.10.9",
- "testcontainers",
- "testcontainers-modules",
  "tokio",
  "tower",
  "tower-http",

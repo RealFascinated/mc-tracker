@@ -70,7 +70,7 @@ Structured fields; no secrets (passwords, session secrets, VM tokens) in log out
 ## Tests
 
 - Unit tests for pure logic (PromQL building, ping packet parsing, metric alignment).
-- Integration tests in `crates/*/tests/` with shared helpers in `tests/common/`.
+- Integration tests in `crates/*/tests/` with shared helpers in `crates/mc-test-support/`.
 - Run `cargo test` before finishing non-trivial changes.
 
 ## Performance

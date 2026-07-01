@@ -1,0 +1,20 @@
+[package]
+name = "mc-test-support"
+description = "Shared test harness for mc-tracker workspace"
+edition.workspace = true
+version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+axum = "0.8"
+mc-db = { path = "../mc-db" }
+mc-geo = { path = "../mc-geo" }
+mc-tracker = { path = "../mc-tracker" }
+serde_json = { workspace = true }
+testcontainers = "0.27"
+testcontainers-modules = { version = "0.15", features = ["postgres"] }
+tokio = { workspace = true }
+tower = { version = "0.5", features = ["util"] }

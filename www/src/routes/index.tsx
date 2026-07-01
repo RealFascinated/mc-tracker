@@ -18,6 +18,11 @@ import {
 } from "@/components/site-header-toolbar";
 import { useDashboardRefresh } from "@/lib/dashboard/refresh-context";
 import { asnsQueryOptions } from "@/lib/api/asns.queries";
+import {
+  filterServersByPlatform,
+  parseServerPlatformFilterParam,
+  type ServerPlatformFilter,
+} from "@/lib/api/servers";
 import { serversQueryOptions } from "@/lib/api/servers.queries";
 import { pageTitle } from "@/lib/page-title";
 import { DEFAULT_METRIC_TIME_RANGE } from "@/lib/metrics/range";
@@ -40,6 +45,7 @@ type DashboardSearch = {
   to?: number;
   search?: string;
   view?: DashboardView;
+  platform?: ServerPlatformFilter;
 };
 
 function parseDashboardSearchParam(value: unknown): string | undefined {
@@ -63,15 +69,19 @@ export const Route = createFileRoute("/")({
     ...parseMetricTimeWindowSearch(search),
     search: parseDashboardSearchParam(search.search),
     view: parseDashboardViewParam(search.view),
+    platform: parseServerPlatformFilterParam(search.platform),
   }),
   head: () => ({
     meta: [{ title: pageTitle("Dashboard") }],
   }),
-  loader: ({ context: { queryClient } }) =>
-    Promise.all([
-      queryClient.ensureQueryData(serversQueryOptions()),
-      queryClient.ensureQueryData(asnsQueryOptions()),
-    ]),
+  loaderDeps: ({ search }) => ({
+    view: search.view ?? "server",
+    searchTerm: search.search,
+  }),
+  loader: ({ context: { queryClient }, deps: { view, searchTerm } }) =>
+    view === "asn"
+      ? queryClient.ensureQueryData(asnsQueryOptions(searchTerm))
+      : queryClient.ensureQueryData(serversQueryOptions(searchTerm)),
   component: DashboardPage,
 });
 
@@ -83,11 +93,13 @@ function DashboardPage() {
     to: searchTo,
     search: urlSearch,
     view: urlView,
+    platform: urlPlatform,
   } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [searchInput, setSearchInput] = useState(urlSearch ?? "");
   const activeSearch = urlSearch?.trim() || undefined;
   const dashboardView = urlView ?? "server";
+  const platformFilter: ServerPlatformFilter = urlPlatform ?? "all";
 
   useEffect(() => {
     setSearchInput(urlSearch ?? "");
@@ -174,6 +186,24 @@ function DashboardPage() {
     },
     [navigate],
   );
+  const setPlatformFilter = useCallback(
+    (platform: ServerPlatformFilter) => {
+      void navigate({
+        search: (prev) => ({
+          ...prev,
+          platform: platform === "all" ? undefined : platform,
+        }),
+        replace: true,
+        resetScroll: false,
+      });
+    },
+    [navigate],
+  );
+  const filteredServers = useMemo(
+    () =>
+      filterServersByPlatform(serversQuery.data?.servers ?? [], platformFilter),
+    [platformFilter, serversQuery.data?.servers],
+  );
   const activeQuery = dashboardView === "asn" ? asnsQuery : serversQuery;
   const showInitialLoading = activeQuery.isPending && !activeQuery.data;
   const isSearchLoading =
@@ -232,9 +262,11 @@ function DashboardPage() {
             />
           ) : (
             <ServerMetricsGrid
-              servers={serversQuery.data?.servers ?? []}
+              servers={filteredServers}
               window={timeWindow}
               hasActiveSearch={Boolean(activeSearch)}
+              platformFilter={platformFilter}
+              onPlatformFilterChange={setPlatformFilter}
               trackedServers={serversQuery.data?.summary.trackedServers ?? 0}
               isLoading={isSearchLoading}
             />

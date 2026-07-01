@@ -1,109 +1,124 @@
 import {
-  EntityCardStats,
+  DashboardRangeToggle,
+  type DashboardRangeOption,
+} from "@/components/dashboard/dashboard-card";
+import {
   EntityMetricsGrid,
+  type EntityMetricsSectionCopy,
 } from "@/components/dashboard/grids/entity-metrics-grid";
-import { ServerFavicon } from "@/components/dashboard/server-favicon";
-import type {
-  ServerListItem,
-  ServerTimeseriesResponse,
+import { ServerIdentityHeader } from "@/components/dashboard/server-identity-header";
+import {
+  SERVER_PLATFORM_FILTER_OPTIONS,
+  type ServerListItem,
+  type ServerPlatformFilter,
+  type ServerTimeseriesResponse,
 } from "@/lib/api/servers";
 import { serverTimeseriesQueryOptions } from "@/lib/api/servers.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
 import { createPlayersChart } from "@/lib/metrics/charts/players";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
-import { cn } from "@/lib/utils";
+
+const SERVER_PLATFORM_FILTER_TOGGLE_OPTIONS: Array<
+  DashboardRangeOption<ServerPlatformFilter>
+> = SERVER_PLATFORM_FILTER_OPTIONS.map((option) => ({
+  value: option.value,
+  shortLabel: option.shortLabel,
+  label: option.label,
+}));
 
 type ServerMetricsGridProps = {
   servers: ServerListItem[];
   window: MetricTimeWindow;
   hasActiveSearch: boolean;
+  platformFilter: ServerPlatformFilter;
+  onPlatformFilterChange: (platform: ServerPlatformFilter) => void;
   trackedServers: number;
   isLoading?: boolean;
+  section?: EntityMetricsSectionCopy;
 };
 
-function serverAsnName(server: ServerListItem): string | null {
-  if (server.asnOrg) {
-    return server.asnOrg;
+function serverGridEmptyCopy(
+  hasActiveSearch: boolean,
+  platformFilter: ServerPlatformFilter,
+): { emptySearch: string; emptySearchHint: string } {
+  if (hasActiveSearch && platformFilter !== "all") {
+    return {
+      emptySearch: "No servers match your filters.",
+      emptySearchHint: "Try a different search or platform.",
+    };
   }
-  if (server.asn) {
-    return server.asn;
+
+  if (platformFilter === "PC") {
+    return {
+      emptySearch: "No Java servers to show.",
+      emptySearchHint: "Switch to All or Bedrock, or track a Java server.",
+    };
   }
-  return null;
-}
 
-function ServerMetricsCardHeader({ server }: { server: ServerListItem }) {
-  const asnName = serverAsnName(server);
+  if (platformFilter === "PE") {
+    return {
+      emptySearch: "No Bedrock servers to show.",
+      emptySearchHint: "Switch to All or Java, or track a Bedrock server.",
+    };
+  }
 
-  return (
-    <div className="entity-metrics-card-header">
-      <div className="entity-metrics-identity">
-        <ServerFavicon name={server.name} favicon={server.favicon} size="md" />
-        <div className="min-w-0">
-          <div className="entity-metrics-title-row">
-            <div className="entity-metrics-name">{server.name}</div>
-            <span
-              className={cn(
-                "server-platform-badge",
-                server.type === "PE" && "server-platform-badge-pe",
-              )}
-            >
-              {server.type}
-            </span>
-          </div>
-          <div className="entity-metrics-subtitle">
-            {server.host}
-            {server.port != null ? `:${server.port}` : ""}
-            {asnName ? ` · ${asnName}` : ""}
-          </div>
-        </div>
-      </div>
-
-      <EntityCardStats
-        playersOnline={server.playersOnline}
-        peaks={server.peaks}
-      />
-    </div>
-  );
+  return {
+    emptySearch: "No servers match your search.",
+    emptySearchHint: "Try a different name, host, or network.",
+  };
 }
 
 export function ServerMetricsGrid({
   servers,
   window,
   hasActiveSearch,
+  platformFilter,
+  onPlatformFilterChange,
   trackedServers,
   isLoading = false,
+  section,
 }: ServerMetricsGridProps) {
+  const hasActivePlatformFilter = platformFilter !== "all";
+  const emptyCopy = serverGridEmptyCopy(hasActiveSearch, platformFilter);
+
   return (
     <EntityMetricsGrid<ServerListItem, ServerTimeseriesResponse>
       items={servers}
       window={window}
       hasActiveSearch={hasActiveSearch}
+      hasActiveFilter={hasActiveSearch || hasActivePlatformFilter}
       trackedCount={trackedServers}
       isLoading={isLoading}
+      headerTrailing={
+        <DashboardRangeToggle
+          value={platformFilter}
+          options={SERVER_PLATFORM_FILTER_TOGGLE_OPTIONS}
+          onValueChange={onPlatformFilterChange}
+          aria-label="Server platform"
+        />
+      }
       getKey={(server) => server.id}
-      renderHeader={(server) => <ServerMetricsCardHeader server={server} />}
+      renderHeader={(server) => (
+        <ServerIdentityHeader server={server} linkToDetail />
+      )}
       chartDef={(server) => createPlayersChart(`server-players-${server.id}`)}
       timeseriesOptions={(server, timeWindow) =>
         toVisibleTimeseriesOptions(
-          serverTimeseriesQueryOptions(server.id, timeWindow) as {
-            queryKey: readonly unknown[];
-            queryFn?: (
-              context: never,
-            ) => ServerTimeseriesResponse | Promise<ServerTimeseriesResponse>;
-            enabled?: boolean;
-          },
+          serverTimeseriesQueryOptions(server.id, timeWindow),
         )
       }
       timeseriesEnabled={(server) => server.id.length > 0}
-      section={{
-        title: "Per server",
-        subtitleDefault: "Player history for each tracked server",
-        subtitleSearch: (shown, total) =>
-          `Showing ${shown} of ${total} servers`,
-        emptyTracked: "No servers are being tracked yet.",
-        emptySearch: "No servers match your search.",
-        emptySearchHint: "Try a different name, host, or network.",
-      }}
+      section={
+        section ?? {
+          title: "Per server",
+          subtitleDefault: "Player history for each tracked server",
+          subtitleSearch: (shown, total) =>
+            `Showing ${shown} of ${total} servers`,
+          emptyTracked: "No servers are being tracked yet.",
+          emptySearch: emptyCopy.emptySearch,
+          emptySearchHint: emptyCopy.emptySearchHint,
+        }
+      }
     />
   );
 }

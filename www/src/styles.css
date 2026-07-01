@@ -538,12 +538,141 @@
     @apply mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:px-5 sm:py-5;
   }
 
+  .app-shell {
+    @apply mx-auto flex w-full max-w-7xl min-h-[calc(100dvh-3rem)];
+  }
+
+  .app-shell--full-width {
+    @apply max-w-none;
+  }
+
+  .app-shell-sidebar {
+    @apply sticky top-12 hidden h-[calc(100dvh-3rem)] w-56 shrink-0 self-start border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col;
+  }
+
+  .app-shell-sidebar-inner {
+    @apply flex min-h-0 flex-1 flex-col;
+  }
+
+  .app-shell-sidebar-header {
+    @apply border-b border-sidebar-border px-4 py-4;
+  }
+
+  .app-shell-sidebar-section {
+    @apply text-sm font-semibold tracking-tight text-sidebar-foreground;
+  }
+
+  .app-shell-sidebar-nav {
+    @apply flex flex-1 flex-col gap-0.5 p-2;
+  }
+
+  .app-shell-sidebar-link {
+    @apply flex items-center gap-2.5 rounded-snug px-3 py-2 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
+  }
+
+  .app-shell-sidebar-link--active {
+    @apply bg-sidebar-accent font-medium text-sidebar-accent-foreground;
+  }
+
+  .app-shell-sidebar-footer {
+    @apply mt-auto border-t border-sidebar-border p-2;
+  }
+
+  .app-shell-sidebar-back {
+    @apply border-t border-sidebar-border p-2;
+  }
+
+  .app-shell-sidebar-back-link {
+    @apply flex items-center gap-2 rounded-snug px-3 py-2 text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
+  }
+
+  .app-shell-main {
+    @apply flex min-w-0 flex-1 flex-col bg-background;
+  }
+
+  .app-shell-mobile-nav {
+    @apply flex gap-1 overflow-x-auto border-b border-border bg-muted/30 p-2;
+    scrollbar-width: none;
+  }
+
+  .app-shell-mobile-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-shell-mobile-nav-link {
+    @apply inline-flex shrink-0 items-center gap-2 rounded-snug border border-transparent px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground;
+  }
+
+  .app-shell-mobile-nav-link--active {
+    @apply border-border bg-card font-medium text-foreground shadow-sm;
+  }
+
+  .app-shell-content {
+    @apply flex min-h-0 flex-1 flex-col gap-6 p-4 sm:p-6;
+  }
+
+  .app-shell-page-header {
+    @apply flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5;
+  }
+
+  .app-shell-page-title {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  .app-shell-page-description {
+    @apply mt-1 max-w-2xl text-sm text-muted-foreground;
+  }
+
+  .app-shell-section {
+    @apply rounded-soft border border-border bg-card shadow-sm;
+  }
+
+  .app-shell-section-header {
+    @apply border-b border-border px-5 py-4;
+  }
+
+  .app-shell-section-title {
+    @apply text-base font-semibold text-foreground;
+  }
+
+  .app-shell-section-description {
+    @apply mt-0.5 text-sm text-muted-foreground;
+  }
+
+  .app-shell-section-body {
+    @apply p-5;
+  }
+
+  .app-shell-form-grid {
+    @apply grid gap-4 sm:grid-cols-2;
+  }
+
+  .app-shell-checkbox-field {
+    @apply flex cursor-pointer items-center gap-2.5 rounded-snug border border-border bg-muted/30 px-3 py-2.5 text-sm transition-colors hover:bg-muted/50;
+  }
+
+  .app-shell-checkbox-field input[type="checkbox"] {
+    @apply size-4 shrink-0 rounded-sm border-border accent-brand;
+  }
+
   .site-header {
     @apply touch-manipulation;
   }
 
   .site-header-inner--simple {
     @apply flex h-12 items-center justify-between gap-3;
+  }
+
+  .site-header-inner--with-nav {
+    @apply flex h-12 items-center gap-3;
+  }
+
+  .site-header-inner--with-nav .site-header-nav {
+    @apply ml-auto min-w-0;
+  }
+
+  .site-header-inner--with-nav .site-header-actions {
+    @apply shrink-0;
   }
 
   .site-header-inner--with-toolbar {
@@ -1054,6 +1183,46 @@
 
   .entity-metrics-subtitle {
     @apply mt-0.5 truncate font-mono text-[11px] text-muted-foreground;
+  }
+
+  .server-detail-card {
+    @apply shadow-none;
+  }
+
+  .server-detail-header {
+    @apply flex flex-col gap-4 border-b border-border px-4 py-4 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .server-detail-header .entity-card-stats {
+    @apply w-full sm:max-w-sm;
+  }
+
+  .server-detail-body {
+    @apply flex flex-col gap-4 px-4 py-4;
+  }
+
+  .server-detail-meta {
+    @apply grid gap-3 sm:grid-cols-3;
+  }
+
+  .server-detail-meta-item {
+    @apply flex min-w-0 flex-col gap-1 rounded-snug border border-border bg-muted/30 px-3 py-2.5;
+  }
+
+  .server-detail-meta-item dt {
+    @apply text-[10px] font-semibold tracking-wider text-muted-foreground uppercase;
+  }
+
+  .server-detail-meta-item dd {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  .server-detail-asn-link {
+    @apply border-t border-border pt-4;
+  }
+
+  .server-detail-page {
+    @apply pt-3 sm:pt-3;
   }
 }
 

@@ -1,4 +1,4 @@
-mod common;
+use mc_test_support as common;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
@@ -9,7 +9,7 @@ use tokio::sync::RwLock;
 use tower::ServiceExt;
 
 async fn test_app() -> (
-    testcontainers::ContainerAsync<testcontainers_modules::postgres::Postgres>,
+    mc_test_support::PostgresContainer,
     axum::Router,
     Arc<ServerManager>,
     mc_db::DbPool,

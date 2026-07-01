@@ -7,6 +7,13 @@ pub struct AsnsListQuery {
     pub search: Option<String>,
 }
 
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AsnDetailQuery {
+    #[serde(default)]
+    pub asn_org: Option<String>,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AsnTimeseriesQuery {

@@ -5,8 +5,10 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { LogOut, User } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { AppShell } from "@/components/layout/app-shell";
 import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import { logout, useAuth } from "@/lib/auth";
@@ -44,34 +46,40 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold">Account</h1>
-          <p className="text-sm text-muted-foreground">
-            Signed in as {user.username} ({user.role})
+    <AppShell
+      section="Account"
+      nav={[{ to: "/account", label: "Profile", icon: User, exact: true }]}
+      backLink={{ to: "/", label: "Back to dashboard" }}
+      sidebarFooter={
+        <div className="flex flex-col gap-1">
+          <p className="px-3 py-1 text-xs text-sidebar-foreground/60">
+            Signed in as{" "}
+            <span className="font-medium text-sidebar-foreground">
+              {user.username}
+            </span>
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/">Dashboard</Link>
-          </Button>
           {user.role === "admin" ? (
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/admin">Admin</Link>
-            </Button>
+            <Link
+              to="/admin"
+              className="app-shell-sidebar-link text-sidebar-foreground/80"
+            >
+              Administration
+            </Link>
           ) : null}
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
+            className="w-full justify-start gap-2.5 px-3 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             onClick={handleLogout}
             disabled={isLoggingOut}
           >
+            <LogOut className="size-4 shrink-0" aria-hidden />
             {isLoggingOut ? "Signing out…" : "Sign out"}
           </Button>
         </div>
-      </div>
+      }
+    >
       <Outlet />
-    </main>
+    </AppShell>
   );
 }

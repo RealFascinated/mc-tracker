@@ -8,6 +8,12 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 
+import { asnsQueryKey, asnsTimeseriesQueryKey, asnQueryKey } from "@/lib/api/asns.queries";
+import {
+  serversQueryKey,
+  serverQueryKey,
+  serversTimeseriesQueryKey,
+} from "@/lib/api/servers.queries";
 import {
   DASHBOARD_REFRESH_STORAGE_KEY,
   DEFAULT_DASHBOARD_REFRESH_INTERVAL,
@@ -51,8 +57,20 @@ function DashboardRefreshProvider({ children }: { children: ReactNode }) {
     setIsManualRefreshing(true);
     try {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["servers"] }),
-        queryClient.invalidateQueries({ queryKey: ["asns"] }),
+        queryClient.invalidateQueries({ queryKey: serversQueryKey }),
+        queryClient.invalidateQueries({ queryKey: serverQueryKey }),
+        queryClient.invalidateQueries({ queryKey: asnsQueryKey }),
+        queryClient.invalidateQueries({ queryKey: asnQueryKey }),
+        queryClient.invalidateQueries({ queryKey: serversTimeseriesQueryKey }),
+        queryClient.invalidateQueries({ queryKey: asnsTimeseriesQueryKey }),
+        queryClient.refetchQueries({
+          queryKey: serversTimeseriesQueryKey,
+          type: "active",
+        }),
+        queryClient.refetchQueries({
+          queryKey: asnsTimeseriesQueryKey,
+          type: "active",
+        }),
       ]);
     } finally {
       setIsManualRefreshing(false);

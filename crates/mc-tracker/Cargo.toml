@@ -47,7 +47,6 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 chrono = { workspace = true }
+mc-test-support = { path = "../mc-test-support" }
 serde_json = { workspace = true }
-testcontainers = "0.27"
-testcontainers-modules = { version = "0.15", features = ["postgres"] }
 tower = { version = "0.5", features = ["util"] }

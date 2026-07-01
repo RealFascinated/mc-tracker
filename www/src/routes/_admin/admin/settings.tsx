@@ -3,15 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { PageHeader } from "@/components/layout/app-sidebar-nav";
 import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { patchAdminSettings } from "@/lib/api/admin/settings";
@@ -111,114 +105,155 @@ function AdminSettingsPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Settings</CardTitle>
-        <CardDescription>
-          Runtime configuration stored in PostgreSQL and applied in memory.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
-          <Field label="Push interval (seconds)">
-            <Input
-              type="number"
-              min={1}
-              value={values.metricsPushIntervalSeconds}
-              onChange={(event) =>
-                updateNumber("metricsPushIntervalSeconds", event.target.value)
-              }
-            />
-          </Field>
-          <Field label="VM URL">
-            <Input
-              value={values.victoriametricsUrl}
-              onChange={(event) =>
-                updateString("victoriametricsUrl", event.target.value)
-              }
-            />
-          </Field>
-          <Field label="WWW origin">
-            <Input
-              value={values.wwwOrigin}
-              onChange={(event) =>
-                updateString("wwwOrigin", event.target.value)
-              }
-              placeholder="https://tracker.example.com"
-            />
-          </Field>
-          <Field label="Pinger timeout (ms)">
-            <Input
-              type="number"
-              min={1}
-              value={values.pingerTimeoutMs}
-              onChange={(event) =>
-                updateNumber("pingerTimeoutMs", event.target.value)
-              }
-            />
-          </Field>
-          <Field label="Pinger retry attempts">
-            <Input
-              type="number"
-              min={1}
-              value={values.pingerRetryAttempts}
-              onChange={(event) =>
-                updateNumber("pingerRetryAttempts", event.target.value)
-              }
-            />
-          </Field>
-          <Field label="Pinger retry delay (ms)">
-            <Input
-              type="number"
-              min={0}
-              value={values.pingerRetryDelayMs}
-              onChange={(event) =>
-                updateNumber("pingerRetryDelayMs", event.target.value)
-              }
-            />
-          </Field>
-          <Field label="DNS cache TTL (minutes)">
-            <Input
-              type="number"
-              min={1}
-              value={values.dnsCacheTtlMinutes}
-              onChange={(event) =>
-                updateNumber("dnsCacheTtlMinutes", event.target.value)
-              }
-            />
-          </Field>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={values.dnsCacheEnabled}
-              onChange={(event) =>
-                updateBoolean("dnsCacheEnabled", event.target.checked)
-              }
-            />
-            DNS cache enabled
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={values.signUpEnabled}
-              onChange={(event) =>
-                updateBoolean("signUpEnabled", event.target.checked)
-              }
-            />
-            Sign-up enabled
-          </label>
-          <div className="sm:col-span-2">
-            <Button
-              type="submit"
-              variant="brand"
-              disabled={saveMutation.isPending}
-            >
-              {saveMutation.isPending ? "Saving…" : "Save settings"}
-            </Button>
+    <>
+      <PageHeader
+        title="Settings"
+        description="Runtime configuration stored in PostgreSQL and applied in memory."
+      />
+
+      <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+        <section className="app-shell-section">
+          <div className="app-shell-section-header">
+            <h2 className="app-shell-section-title">Metrics</h2>
+            <p className="app-shell-section-description">
+              VictoriaMetrics connection and push interval.
+            </p>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+          <div className="app-shell-section-body app-shell-form-grid">
+            <Field label="Push interval (seconds)">
+              <Input
+                type="number"
+                min={1}
+                value={values.metricsPushIntervalSeconds}
+                onChange={(event) =>
+                  updateNumber("metricsPushIntervalSeconds", event.target.value)
+                }
+              />
+            </Field>
+            <Field label="VM URL">
+              <Input
+                value={values.victoriametricsUrl}
+                onChange={(event) =>
+                  updateString("victoriametricsUrl", event.target.value)
+                }
+              />
+            </Field>
+          </div>
+        </section>
+
+        <section className="app-shell-section">
+          <div className="app-shell-section-header">
+            <h2 className="app-shell-section-title">Pinger</h2>
+            <p className="app-shell-section-description">
+              Timeouts and retry behaviour when querying servers.
+            </p>
+          </div>
+          <div className="app-shell-section-body app-shell-form-grid">
+            <Field label="Timeout (ms)">
+              <Input
+                type="number"
+                min={1}
+                value={values.pingerTimeoutMs}
+                onChange={(event) =>
+                  updateNumber("pingerTimeoutMs", event.target.value)
+                }
+              />
+            </Field>
+            <Field label="Retry attempts">
+              <Input
+                type="number"
+                min={1}
+                value={values.pingerRetryAttempts}
+                onChange={(event) =>
+                  updateNumber("pingerRetryAttempts", event.target.value)
+                }
+              />
+            </Field>
+            <Field label="Retry delay (ms)">
+              <Input
+                type="number"
+                min={0}
+                value={values.pingerRetryDelayMs}
+                onChange={(event) =>
+                  updateNumber("pingerRetryDelayMs", event.target.value)
+                }
+              />
+            </Field>
+          </div>
+        </section>
+
+        <section className="app-shell-section">
+          <div className="app-shell-section-header">
+            <h2 className="app-shell-section-title">DNS cache</h2>
+            <p className="app-shell-section-description">
+              Cache resolved hostnames to reduce lookup overhead.
+            </p>
+          </div>
+          <div className="app-shell-section-body app-shell-form-grid">
+            <Field label="TTL (minutes)">
+              <Input
+                type="number"
+                min={1}
+                value={values.dnsCacheTtlMinutes}
+                onChange={(event) =>
+                  updateNumber("dnsCacheTtlMinutes", event.target.value)
+                }
+              />
+            </Field>
+            <label className="app-shell-checkbox-field sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={values.dnsCacheEnabled}
+                onChange={(event) =>
+                  updateBoolean("dnsCacheEnabled", event.target.checked)
+                }
+              />
+              DNS cache enabled
+            </label>
+          </div>
+        </section>
+
+        <section className="app-shell-section">
+          <div className="app-shell-section-header">
+            <h2 className="app-shell-section-title">Access</h2>
+            <p className="app-shell-section-description">
+              Public origin and sign-up policy.
+            </p>
+          </div>
+          <div className="app-shell-section-body app-shell-form-grid">
+            <Field label="WWW origin">
+              <Input
+                value={values.wwwOrigin}
+                onChange={(event) =>
+                  updateString("wwwOrigin", event.target.value)
+                }
+                placeholder="https://tracker.example.com"
+              />
+            </Field>
+            <label className="app-shell-checkbox-field">
+              <input
+                type="checkbox"
+                checked={values.signUpEnabled}
+                onChange={(event) =>
+                  updateBoolean("signUpEnabled", event.target.checked)
+                }
+              />
+              Sign-up enabled
+            </label>
+          </div>
+        </section>
+
+        <div className="flex items-center gap-3">
+          <Button
+            type="submit"
+            variant="brand"
+            disabled={saveMutation.isPending}
+          >
+            {saveMutation.isPending ? "Saving…" : "Save settings"}
+          </Button>
+        </div>
+      </form>
+    </>
   );
 }
 

@@ -13,7 +13,8 @@ pub use self::auth_config::SignupEnabledResponse;
 pub use self::error::ErrorResponse;
 pub use self::health::HealthResponse;
 pub use self::asns::{
-    AsnListItemResponse, AsnTimeseriesResponse, AsnsListResponse, AsnsSummaryResponse,
+    AsnDetailResponse, AsnListItemResponse, AsnTimeseriesResponse, AsnsListResponse,
+    AsnsSummaryResponse,
 };
 pub use self::servers::{
     EntityPeakStats, PeakPlayersRecord, PlayersPeakSummary, ServerListItemResponse,

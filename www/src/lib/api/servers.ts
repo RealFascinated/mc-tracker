@@ -1,10 +1,18 @@
 import { apiFetch } from "@/lib/api/client";
+import type { ServerPlatform } from "@/lib/api/platform";
 import type {
   EntityPeakStats,
   PlayersSummaryBase,
   PlayersTimeseriesPayload,
 } from "@/lib/api/types";
 import { fetchList } from "@/lib/api/types";
+
+export type { ServerPlatform, ServerPlatformFilter } from "@/lib/api/platform";
+export {
+  filterServersByPlatform,
+  parseServerPlatformFilterParam,
+  SERVER_PLATFORM_FILTER_OPTIONS,
+} from "@/lib/api/platform";
 
 export type ServersSummary = PlayersSummaryBase & {
   trackedServers: number;
@@ -13,7 +21,7 @@ export type ServersSummary = PlayersSummaryBase & {
 export type ServerListItem = {
   id: string;
   name: string;
-  type: string;
+  type: ServerPlatform;
   host: string;
   port: number | null;
   asn: string;
@@ -35,7 +43,7 @@ export type ServerTimeseriesResponse = PlayersTimeseriesPayload & {
 export type ServerSearchItem = {
   id: string;
   name: string;
-  type: string;
+  type: ServerPlatform;
   host: string;
   port: number | null;
   favicon: string | null;
@@ -48,6 +56,10 @@ export type ServersSearchResponse = {
 
 export function getServers(search?: string) {
   return fetchList<ServersListResponse>("/servers", search);
+}
+
+export function getServer(id: string) {
+  return apiFetch<ServerListItem>(`/servers/${id}`, { credentials: "omit" });
 }
 
 export function searchServers(search: string, limit = 10) {

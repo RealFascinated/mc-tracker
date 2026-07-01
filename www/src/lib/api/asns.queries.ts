@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { createListQueryOptions } from "@/lib/api/list-query";
-import { getAsnTimeseries, getAsns } from "@/lib/api/asns";
+import { getAsn, getAsnTimeseries, getAsns } from "@/lib/api/asns";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 import {
   metricTimeWindowQueryKey,
@@ -10,10 +10,22 @@ import {
 
 export const asnsQueryKey = ["asns", "list"] as const;
 
+export const asnQueryKey = ["asns", "detail"] as const;
+
+export const asnsTimeseriesQueryKey = ["asns", "timeseries"] as const;
+
 export const asnsQueryOptions = createListQueryOptions({
   queryKey: asnsQueryKey,
   fetch: getAsns,
 });
+
+export function asnQueryOptions(asn: string, asnOrg: string) {
+  return queryOptions({
+    queryKey: [...asnQueryKey, asn, asnOrg] as const,
+    queryFn: () => getAsn(asn, asnOrg),
+    enabled: asn.length > 0,
+  });
+}
 
 export function asnTimeseriesQueryOptions(
   asn: string,
@@ -22,8 +34,7 @@ export function asnTimeseriesQueryOptions(
 ) {
   return queryOptions({
     queryKey: [
-      "asns",
-      "timeseries",
+      ...asnsTimeseriesQueryKey,
       asn,
       asnOrg,
       metricTimeWindowQueryKey(window),

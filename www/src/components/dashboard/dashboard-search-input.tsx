@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { Search, X } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
@@ -49,6 +50,7 @@ export function DashboardSearchInput({
   const { placeholder, label } = PLACEHOLDERS[view];
   const listboxId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -84,11 +86,14 @@ export function DashboardSearchInput({
 
   const selectSuggestion = useCallback(
     (server: ServerSearchItem) => {
-      onChange(server.name);
       closeSuggestions();
       inputRef.current?.blur();
+      void navigate({
+        to: "/servers/$serverId",
+        params: { serverId: server.id },
+      });
     },
-    [closeSuggestions, onChange],
+    [closeSuggestions, navigate],
   );
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {

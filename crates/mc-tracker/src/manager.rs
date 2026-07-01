@@ -5,9 +5,9 @@ use std::time::Duration;
 
 use futures::future::join_all;
 use mc_api_types::{
-    AdminServerResponse, AdminServersListResponse, AsnListItemResponse, AsnsListResponse,
-    AsnsSummaryResponse, AsnTimeseriesResponse, EntityPeakStats, PeakPlayersRecord,
-    PlayersPeakSummary, ServerListItemResponse, ServerSearchItemResponse,
+    AdminServerResponse, AdminServersListResponse, AsnDetailResponse, AsnListItemResponse,
+    AsnsListResponse, AsnsSummaryResponse, AsnTimeseriesResponse, EntityPeakStats,
+    PeakPlayersRecord, PlayersPeakSummary, ServerListItemResponse, ServerSearchItemResponse,
     ServerTimeseriesResponse, ServersListResponse, ServersSearchResponse, ServersSummaryResponse,
 };
 use mc_db::model::{Platform, Server};
@@ -170,6 +170,10 @@ fn asn_key(server: &TrackedServer) -> AsnAggregateKey {
         asn: server.asn.asn.clone(),
         asn_org: server.asn.asn_org.clone(),
     }
+}
+
+fn matches_asn_key(server: &TrackedServer, asn: &str, asn_org: &str) -> bool {
+    server.asn.asn == asn && server.asn.asn_org == asn_org
 }
 
 fn matches_asn_search(asn: &AsnAggregateKey, search: Option<&str>) -> bool {
@@ -376,6 +380,26 @@ impl ServerManager {
         }
     }
 
+    pub async fn server_detail_response(&self, id: Uuid) -> Option<ServerListItemResponse> {
+        let server = self.get_tracked(id).await?;
+        let environment = self.environment();
+        let id_str = id.to_string();
+        let peaks_24h = self.peaks_24h_by_server_id(environment).await;
+
+        Some(ServerListItemResponse {
+            id: id_str.clone(),
+            name: server.config.name.clone(),
+            server_type: server.config.platform.as_str().to_string(),
+            host: server.config.host.clone(),
+            port: server.config.port,
+            asn: server.asn.asn.clone(),
+            asn_org: server.asn.asn_org.clone(),
+            players_online: server.players_online,
+            favicon: server.favicon.clone(),
+            peaks: entity_peak_stats(peaks_24h.get(&id_str).copied(), &server),
+        })
+    }
+
     pub async fn servers_search_response(
         &self,
         search: Option<&str>,
@@ -486,6 +510,94 @@ impl ServerManager {
             },
             asns,
         }
+    }
+
+    pub async fn asn_detail_response(
+        &self,
+        asn: &str,
+        asn_org: &str,
+    ) -> Option<AsnDetailResponse> {
+        let all_tracked = self.servers.read().await.clone();
+        let tracked: Vec<_> = all_tracked
+            .iter()
+            .filter(|server| matches_asn_key(server, asn, asn_org))
+            .cloned()
+            .collect();
+
+        if tracked.is_empty() {
+            return None;
+        }
+
+        let mut summary = ServerSummary::default();
+        for server in &tracked {
+            summary.tracked_servers += 1;
+            let Some(players) = server.players_online else {
+                continue;
+            };
+            let players = players as u64;
+            summary.total_players += players;
+            match server.config.platform {
+                Platform::Pc => summary.players_pc += players,
+                Platform::Pe => summary.players_pe += players,
+            }
+        }
+
+        let key = AsnAggregateKey {
+            asn: asn.to_string(),
+            asn_org: asn_org.to_string(),
+        };
+        let environment = self.environment();
+        let (peaks_24h_by_server, peaks_24h_by_asn) = tokio::join!(
+            self.peaks_24h_by_server_id(environment),
+            self.peaks_24h_by_asn_key(environment),
+        );
+        let asn_peak_24h = peaks_24h_by_asn.get(&key).copied();
+        let entity_peaks = entity_peak_stats_with_all_time(
+            asn_peak_24h,
+            asn_peak_all_time(&all_tracked, &key),
+        );
+
+        let mut servers = Vec::with_capacity(tracked.len());
+        for server in tracked {
+            let id = server.config.id.to_string();
+            servers.push(ServerListItemResponse {
+                id: id.clone(),
+                name: server.config.name.clone(),
+                server_type: server.config.platform.as_str().to_string(),
+                host: server.config.host.clone(),
+                port: server.config.port,
+                asn: server.asn.asn.clone(),
+                asn_org: server.asn.asn_org.clone(),
+                players_online: server.players_online,
+                favicon: server.favicon.clone(),
+                peaks: entity_peak_stats(peaks_24h_by_server.get(&id).copied(), &server),
+            });
+        }
+
+        servers.sort_by(|left, right| {
+            let left_players = left.players_online.map(i64::from).unwrap_or(-1);
+            let right_players = right.players_online.map(i64::from).unwrap_or(-1);
+            right_players.cmp(&left_players)
+        });
+
+        Some(AsnDetailResponse {
+            asn: asn.to_string(),
+            asn_org: asn_org.to_string(),
+            players_online: summary.total_players.min(u32::MAX as u64) as u32,
+            server_count: summary.tracked_servers,
+            peaks: entity_peaks.clone(),
+            summary: ServersSummaryResponse {
+                total_players: summary.total_players,
+                players_pc: summary.players_pc,
+                players_pe: summary.players_pe,
+                tracked_servers: summary.tracked_servers,
+                peaks: PlayersPeakSummary {
+                    players_24h: asn_peak_24h,
+                    players_7d: None,
+                },
+            },
+            servers,
+        })
     }
 
     pub async fn asn_timeseries(
@@ -1219,6 +1331,63 @@ mod tests {
             .map(|server| server.id.parse::<Uuid>().unwrap())
             .collect();
         assert_eq!(ids, vec![id_high, id_mid, id_low, id_offline]);
+    }
+
+    #[tokio::test]
+    async fn asn_detail_response_returns_matching_servers() {
+        let id_match_a = Uuid::new_v4();
+        let id_match_b = Uuid::new_v4();
+        let id_other = Uuid::new_v4();
+
+        let settings = Arc::new(RwLock::new(AppSettings::default()));
+        let bootstrap = settings.read().await.clone();
+        let manager = ServerManager::new(
+            vec![
+                sample_server_with_id(id_match_a),
+                sample_server_with_id(id_match_b),
+                sample_server_with_id(id_other),
+            ],
+            None,
+            settings,
+            fixture_geo(),
+            None,
+            &bootstrap,
+            "development",
+        );
+
+        {
+            let mut servers = manager.servers.write().await;
+            for index in [0, 1] {
+                servers[index].asn = AsnLookup {
+                    asn: "AS13335".into(),
+                    asn_org: "Cloudflare, Inc.".into(),
+                    cidr: None,
+                };
+                servers[index].players_online = Some(if index == 0 { 100 } else { 42 });
+            }
+            servers[2].asn = AsnLookup {
+                asn: "AS15169".into(),
+                asn_org: "Google LLC".into(),
+                cidr: None,
+            };
+            servers[2].players_online = Some(5);
+        }
+
+        let response = manager
+            .asn_detail_response("AS13335", "Cloudflare, Inc.")
+            .await
+            .expect("asn detail");
+
+        assert_eq!(response.asn, "AS13335");
+        assert_eq!(response.asn_org, "Cloudflare, Inc.");
+        assert_eq!(response.players_online, 142);
+        assert_eq!(response.server_count, 2);
+        assert_eq!(response.summary.total_players, 142);
+        assert_eq!(response.summary.tracked_servers, 2);
+        assert_eq!(response.servers.len(), 2);
+        assert_eq!(response.servers[0].id, id_match_a.to_string());
+        assert_eq!(response.servers[1].id, id_match_b.to_string());
+        assert!(manager.asn_detail_response("AS99999", "Missing").await.is_none());
     }
 
     #[tokio::test]

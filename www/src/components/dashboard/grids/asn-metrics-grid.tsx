@@ -1,8 +1,11 @@
+import { Link } from "@tanstack/react-router";
+
 import {
   EntityCardStats,
   EntityMetricsGrid,
 } from "@/components/dashboard/grids/entity-metrics-grid";
 import type { AsnListItem, AsnTimeseriesResponse } from "@/lib/api/asns";
+import { asnDisplayName, asnDetailSearch } from "@/lib/api/asns";
 import { asnTimeseriesQueryOptions } from "@/lib/api/asns.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
 import { createPlayersChart } from "@/lib/metrics/charts/players";
@@ -16,22 +19,21 @@ type AsnMetricsGridProps = {
   isLoading?: boolean;
 };
 
-function asnDisplayName(asn: AsnListItem): string {
-  if (asn.asnOrg) {
-    return asn.asnOrg;
-  }
-  if (asn.asn) {
-    return asn.asn;
-  }
-  return "Unknown network";
-}
-
 function AsnMetricsCardHeader({ asn }: { asn: AsnListItem }) {
   return (
     <div className="entity-metrics-card-header">
       <div className="entity-metrics-identity">
         <div className="min-w-0">
-          <div className="entity-metrics-name">{asnDisplayName(asn)}</div>
+          <div className="entity-metrics-name">
+            <Link
+              to="/asns/$asn"
+              params={{ asn: asn.asn }}
+              search={asnDetailSearch(asn.asnOrg)}
+              className="hover:text-monitor focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:hover:text-warning dark:focus-visible:ring-warning"
+            >
+              {asnDisplayName(asn)}
+            </Link>
+          </div>
           <div className="entity-metrics-subtitle">
             {asn.asn || "Unknown ASN"}
             {asn.serverCount > 0
@@ -71,13 +73,7 @@ export function AsnMetricsGrid({
       }}
       timeseriesOptions={(asn, timeWindow) =>
         toVisibleTimeseriesOptions(
-          asnTimeseriesQueryOptions(asn.asn, asn.asnOrg, timeWindow) as {
-            queryKey: readonly unknown[];
-            queryFn?: (
-              context: never,
-            ) => AsnTimeseriesResponse | Promise<AsnTimeseriesResponse>;
-            enabled?: boolean;
-          },
+          asnTimeseriesQueryOptions(asn.asn, asn.asnOrg, timeWindow),
         )
       }
       timeseriesEnabled={(asn) => asn.asn.length > 0}

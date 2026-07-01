@@ -1,17 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { AdminServerFormFields } from "@/components/admin/admin-server-form-fields";
+import { AdminServersTable } from "@/components/admin/admin-servers-table";
+import { PageHeader } from "@/components/layout/app-sidebar-nav";
 import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -20,9 +16,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { createAdminServer, deleteAdminServer } from "@/lib/api/admin/servers";
+import {
+  createAdminServer,
+  deleteAdminServer,
+  updateAdminServer,
+} from "@/lib/api/admin/servers";
 import type { AdminServer, CreateServerRequest } from "@/lib/api/admin/servers";
 import {
   adminServersQueryKey,
@@ -47,17 +45,50 @@ const emptyForm: CreateServerRequest = {
   type: "PC",
 };
 
+function serverToForm(server: AdminServer): CreateServerRequest {
+  return {
+    name: server.name,
+    host: server.host,
+    port: server.port,
+    type: server.type,
+  };
+}
+
 function AdminServersPage() {
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery(adminServersQueryOptions());
   const [form, setForm] = useState(emptyForm);
+  const [editTarget, setEditTarget] = useState<AdminServer | null>(null);
+  const [editForm, setEditForm] = useState<CreateServerRequest>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<AdminServer | null>(null);
+
+  useEffect(() => {
+    if (editTarget) {
+      setEditForm(serverToForm(editTarget));
+    }
+  }, [editTarget]);
 
   const createMutation = useMutation({
     mutationFn: createAdminServer,
     onSuccess: async () => {
       toast.success("Server added");
       setForm(emptyForm);
+      await queryClient.invalidateQueries({ queryKey: adminServersQueryKey });
+    },
+    onError: (err) => toast.error(errorMessage(err)),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: CreateServerRequest }) =>
+      updateAdminServer(id, {
+        name: body.name.trim(),
+        host: body.host.trim(),
+        port: body.port,
+        type: body.type,
+      }),
+    onSuccess: async () => {
+      toast.success("Server updated");
+      setEditTarget(null);
       await queryClient.invalidateQueries({ queryKey: adminServersQueryKey });
     },
     onError: (err) => toast.error(errorMessage(err)),
@@ -91,131 +122,112 @@ function AdminServersPage() {
     });
   }
 
+  function handleEdit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editTarget) {
+      return;
+    }
+    updateMutation.mutate({
+      id: editTarget.id,
+      body: editForm,
+    });
+  }
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Add server</CardTitle>
-          <CardDescription>
-            Track a Java (PC) or Bedrock (PE) Minecraft server.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleCreate}>
-            <div className="grid gap-2">
-              <Label htmlFor="server-name">Name</Label>
-              <Input
-                id="server-name"
-                value={form.name}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    name: event.target.value,
-                  }))
-                }
-                required
+    <>
+      <PageHeader
+        title="Servers"
+        description="Add and manage Minecraft servers tracked by this instance."
+      />
+
+      <div className="flex flex-col gap-6">
+        <section className="app-shell-section">
+          <div className="app-shell-section-header">
+            <h2 className="app-shell-section-title">Add server</h2>
+            <p className="app-shell-section-description">
+              Track a Java (PC) or Bedrock (PE) Minecraft server.
+            </p>
+          </div>
+          <div className="app-shell-section-body">
+            <form className="app-shell-form-grid" onSubmit={handleCreate}>
+              <AdminServerFormFields
+                idPrefix="create"
+                values={form}
+                onChange={setForm}
               />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="server-host">Host</Label>
-              <Input
-                id="server-host"
-                value={form.host}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    host: event.target.value,
-                  }))
-                }
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="server-port">Port</Label>
-              <Input
-                id="server-port"
-                type="number"
-                value={form.port ?? ""}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    port: event.target.value
-                      ? Number(event.target.value)
-                      : null,
-                  }))
-                }
-                placeholder="Default"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="server-type">Type</Label>
-              <select
-                id="server-type"
-                className="flex h-8 w-full rounded-snug border border-border bg-card px-2 text-sm"
-                value={form.type}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    type: event.target.value,
-                  }))
-                }
+              <div className="sm:col-span-2">
+                <Button
+                  type="submit"
+                  variant="brand"
+                  disabled={createMutation.isPending}
+                >
+                  {createMutation.isPending ? "Adding…" : "Add server"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section className="app-shell-section">
+          <div className="app-shell-section-header">
+            <h2 className="app-shell-section-title">Tracked servers</h2>
+            <p className="app-shell-section-description">
+              {data.servers.length} tracked server
+              {data.servers.length === 1 ? "" : "s"}.
+            </p>
+          </div>
+          <div className="app-shell-section-body">
+            <AdminServersTable
+              servers={data.servers}
+              onEdit={setEditTarget}
+              onDelete={setDeleteTarget}
+            />
+          </div>
+        </section>
+      </div>
+
+      <Dialog
+        open={editTarget != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditTarget(null);
+          }
+        }}
+      >
+        <DialogContent showCloseButton>
+          <DialogHeader>
+            <DialogTitle>Edit server</DialogTitle>
+            <DialogDescription>
+              {editTarget
+                ? `Update connection details for "${editTarget.name}".`
+                : null}
+            </DialogDescription>
+          </DialogHeader>
+          <form className="grid gap-4" onSubmit={handleEdit}>
+            <AdminServerFormFields
+              idPrefix="edit"
+              values={editForm}
+              onChange={setEditForm}
+            />
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditTarget(null)}
               >
-                <option value="PC">Java (PC)</option>
-                <option value="PE">Bedrock (PE)</option>
-              </select>
-            </div>
-            <div className="sm:col-span-2">
+                Cancel
+              </Button>
               <Button
                 type="submit"
                 variant="brand"
-                disabled={createMutation.isPending}
+                disabled={updateMutation.isPending || !editTarget}
               >
-                {createMutation.isPending ? "Adding…" : "Add server"}
+                {updateMutation.isPending ? "Saving…" : "Save changes"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Tracked servers</CardTitle>
-          <CardDescription>
-            {data.servers.length} server{data.servers.length === 1 ? "" : "s"}{" "}
-            in memory and the database.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {data.servers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No servers yet.</p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {data.servers.map((server) => (
-                <li
-                  key={server.id}
-                  className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
-                >
-                  <div>
-                    <p className="font-medium">{server.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {server.type} · {server.host}
-                      {server.port != null ? `:${server.port}` : ""}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setDeleteTarget(server)}
-                  >
-                    Delete
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={deleteTarget != null}
@@ -257,6 +269,6 @@ function AdminServersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

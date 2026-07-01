@@ -18,7 +18,7 @@ import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 import { formatPlayers } from "@/lib/format-players";
 import { peakTimestampTooltip } from "@/lib/format-peak-at";
 
-type EntityMetricsSectionCopy = {
+export type EntityMetricsSectionCopy = {
   title: string;
   subtitleDefault: string;
   subtitleSearch: (shown: number, total: number) => string;
@@ -34,8 +34,10 @@ export type EntityMetricsGridConfig<
   items: T[];
   window: MetricTimeWindow;
   hasActiveSearch: boolean;
+  hasActiveFilter?: boolean;
   trackedCount: number;
   isLoading?: boolean;
+  headerTrailing?: ReactNode;
   getKey: (item: T) => string;
   renderHeader: (item: T) => ReactNode;
   chartDef: (item: T) => ChartDefinition;
@@ -124,8 +126,10 @@ export function EntityMetricsGrid<
   items,
   window,
   hasActiveSearch,
+  hasActiveFilter = hasActiveSearch,
   trackedCount,
   isLoading = false,
+  headerTrailing,
   getKey,
   renderHeader,
   chartDef,
@@ -165,12 +169,17 @@ export function EntityMetricsGrid<
       aria-busy={isLoading}
     >
       <div className="entity-metrics-section-header">
-        <h2 className="entity-metrics-section-title">{section.title}</h2>
-        <p className="entity-metrics-section-subtitle">
-          {hasActiveSearch
-            ? section.subtitleSearch(items.length, trackedCount)
-            : section.subtitleDefault}
-        </p>
+        <div className="min-w-0">
+          <h2 className="entity-metrics-section-title">{section.title}</h2>
+          <p className="entity-metrics-section-subtitle">
+            {hasActiveFilter
+              ? section.subtitleSearch(items.length, trackedCount)
+              : section.subtitleDefault}
+          </p>
+        </div>
+        {headerTrailing ? (
+          <div className="shrink-0">{headerTrailing}</div>
+        ) : null}
       </div>
 
       <div className={isLoading ? "entity-metrics-grid-loading" : undefined}>

@@ -1,4 +1,4 @@
-mod common;
+use mc_test_support as common;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};

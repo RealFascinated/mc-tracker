@@ -7,9 +7,9 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use mc_api_types::{
-    AsnsListResponse, AsnTimeseriesQuery, AsnsListQuery, ErrorResponse, HealthResponse,
-    ServersListQuery, ServersListResponse, ServersSearchQuery, ServersSearchResponse,
-    TimeseriesQuery,
+    AsnDetailQuery, AsnsListResponse, AsnTimeseriesQuery, AsnsListQuery, ErrorResponse,
+    HealthResponse, ServersListQuery, ServersListResponse, ServersSearchQuery,
+    ServersSearchResponse, TimeseriesQuery,
 };
 use mc_db::AppSettings;
 use mc_db::DbPool;
@@ -75,9 +75,11 @@ pub fn router(
         .route("/servers", get(list_servers))
         .route("/servers/search", get(search_servers))
         .route("/servers/timeseries/total", get(total_timeseries))
+        .route("/servers/{id}", get(get_server))
         .route("/servers/{id}/timeseries", get(server_timeseries))
         .route("/asns", get(list_asns))
         .route("/asns/timeseries", get(asn_timeseries))
+        .route("/asns/{asn}", get(get_asn))
         .nest("/auth", crate::auth::router())
         .nest(
             "/admin",
@@ -118,6 +120,20 @@ async fn list_servers(
     Json(state.manager.servers_list_response(search).await)
 }
 
+async fn get_server(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Response {
+    match state.manager.server_detail_response(id).await {
+        Some(response) => Json(response).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse::new("server not found")),
+        )
+            .into_response(),
+    }
+}
+
 async fn search_servers(
     State(state): State<AppState>,
     Query(query): Query<ServersSearchQuery>,
@@ -145,6 +161,22 @@ async fn list_asns(
         .map(str::trim)
         .filter(|value| !value.is_empty());
     Json(state.manager.asns_list_response(search).await)
+}
+
+async fn get_asn(
+    State(state): State<AppState>,
+    Path(asn): Path<String>,
+    Query(query): Query<AsnDetailQuery>,
+) -> Response {
+    let asn_org = query.asn_org.as_deref().unwrap_or_default();
+    match state.manager.asn_detail_response(&asn, asn_org).await {
+        Some(response) => Json(response).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse::new("asn not found")),
+        )
+            .into_response(),
+    }
 }
 
 async fn asn_timeseries(

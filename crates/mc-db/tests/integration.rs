@@ -1,8 +1,8 @@
-mod common;
+use mc_test_support::{setup_pool, start_postgres};
 
 #[tokio::test]
 async fn migrations_apply_idempotently() {
-    let (_postgres, database_url) = common::start_postgres().await;
+    let (_postgres, database_url) = start_postgres().await;
 
     mc_db::run_migrations(&database_url).await.unwrap();
     mc_db::run_migrations(&database_url).await.unwrap();
@@ -10,16 +10,16 @@ async fn migrations_apply_idempotently() {
 
 #[tokio::test]
 async fn health_check_succeeds() {
-    let (_postgres, database_url) = common::start_postgres().await;
-    let pool = common::setup_pool(&database_url).await;
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
 
     assert!(mc_db::health_check(&pool).await);
 }
 
 #[tokio::test]
 async fn settings_seed_loads_into_app_settings() {
-    let (_postgres, database_url) = common::start_postgres().await;
-    let pool = common::setup_pool(&database_url).await;
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
 
     let settings = mc_db::db::repos::settings::load_all(&pool).await.unwrap();
     assert_eq!(settings.pinger_timeout_ms, 5000);
@@ -28,8 +28,8 @@ async fn settings_seed_loads_into_app_settings() {
 
 #[tokio::test]
 async fn settings_get_set_round_trip() {
-    let (_postgres, database_url) = common::start_postgres().await;
-    let pool = common::setup_pool(&database_url).await;
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
 
     mc_db::db::repos::settings::set(&pool, "pinger_timeout_ms", "6000")
         .await
@@ -43,8 +43,8 @@ async fn settings_get_set_round_trip() {
 
 #[tokio::test]
 async fn servers_crud() {
-    let (_postgres, database_url) = common::start_postgres().await;
-    let pool = common::setup_pool(&database_url).await;
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
 
     let created = mc_db::db::repos::servers::insert(
         &pool,
@@ -97,8 +97,8 @@ async fn servers_crud() {
 
 #[tokio::test]
 async fn servers_unique_host_port_platform_violation() {
-    let (_postgres, database_url) = common::start_postgres().await;
-    let pool = common::setup_pool(&database_url).await;
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
 
     let new = mc_db::db::repos::servers::NewServer {
         id: None,
@@ -127,8 +127,8 @@ async fn servers_unique_host_port_platform_violation() {
 
 #[tokio::test]
 async fn users_create_and_get() {
-    let (_postgres, database_url) = common::start_postgres().await;
-    let pool = common::setup_pool(&database_url).await;
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
 
     let user =
         mc_db::db::repos::users::create(&pool, "alice", "password123", mc_db::UserRole::User)
@@ -156,8 +156,8 @@ async fn users_create_and_get() {
 
 #[tokio::test]
 async fn users_wrong_password_fails_verify() {
-    let (_postgres, database_url) = common::start_postgres().await;
-    let pool = common::setup_pool(&database_url).await;
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
 
     let user =
         mc_db::db::repos::users::create(&pool, "carol", "correcthorse", mc_db::UserRole::User)
@@ -176,8 +176,8 @@ async fn users_hash_password_round_trip() {
 
 #[tokio::test]
 async fn users_duplicate_username_fails() {
-    let (_postgres, database_url) = common::start_postgres().await;
-    let pool = common::setup_pool(&database_url).await;
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
 
     mc_db::db::repos::users::create(&pool, "bob", "pass", mc_db::UserRole::User)
         .await
@@ -190,8 +190,8 @@ async fn users_duplicate_username_fails() {
 
 #[tokio::test]
 async fn bootstrap_creates_admin_when_empty() {
-    let (_postgres, database_url) = common::start_postgres().await;
-    let pool = common::setup_pool(&database_url).await;
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
 
     mc_db::ensure_admin_user(
         &pool,
@@ -211,8 +211,8 @@ async fn bootstrap_creates_admin_when_empty() {
 
 #[tokio::test]
 async fn bootstrap_ignored_when_users_exist() {
-    let (_postgres, database_url) = common::start_postgres().await;
-    let pool = common::setup_pool(&database_url).await;
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
 
     mc_db::db::repos::users::create(&pool, "existing", "pass", mc_db::UserRole::User)
         .await
@@ -236,8 +236,8 @@ async fn bootstrap_ignored_when_users_exist() {
 
 #[tokio::test]
 async fn bootstrap_fails_without_credentials() {
-    let (_postgres, database_url) = common::start_postgres().await;
-    let pool = common::setup_pool(&database_url).await;
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
 
     let err = mc_db::ensure_admin_user(
         &pool,

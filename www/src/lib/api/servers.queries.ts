@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { createListQueryOptions } from "@/lib/api/list-query";
 import {
+  getServer,
   getServerTimeseries,
   getServers,
   getTotalTimeseries,
@@ -15,10 +16,22 @@ import {
 
 export const serversQueryKey = ["servers", "list"] as const;
 
+export const serverQueryKey = ["servers", "detail"] as const;
+
+export const serversTimeseriesQueryKey = ["servers", "timeseries"] as const;
+
 export const serversQueryOptions = createListQueryOptions({
   queryKey: serversQueryKey,
   fetch: getServers,
 });
+
+export function serverQueryOptions(id: string) {
+  return queryOptions({
+    queryKey: [...serverQueryKey, id] as const,
+    queryFn: () => getServer(id),
+    enabled: id.length > 0,
+  });
+}
 
 export const serversSearchQueryKey = ["servers", "search"] as const;
 
@@ -38,8 +51,7 @@ export function serverTimeseriesQueryOptions(
 ) {
   return queryOptions({
     queryKey: [
-      "servers",
-      "timeseries",
+      ...serversTimeseriesQueryKey,
       id,
       metricTimeWindowQueryKey(window),
     ] as const,
@@ -54,8 +66,7 @@ export function serverTimeseriesQueryOptions(
 export function totalTimeseriesQueryOptions(window: MetricTimeWindow) {
   return queryOptions({
     queryKey: [
-      "servers",
-      "timeseries",
+      ...serversTimeseriesQueryKey,
       "total",
       metricTimeWindowQueryKey(window),
     ] as const,

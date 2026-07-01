@@ -1,6 +1,8 @@
 use serde::Serialize;
 
-use super::servers::{EntityPeakStats, PlayersPeakSummary};
+use super::servers::{
+    EntityPeakStats, PlayersPeakSummary, ServerListItemResponse, ServersSummaryResponse,
+};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -28,6 +30,18 @@ pub struct AsnListItemResponse {
     pub players_online: u32,
     pub server_count: u32,
     pub peaks: EntityPeakStats,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AsnDetailResponse {
+    pub asn: String,
+    pub asn_org: String,
+    pub players_online: u32,
+    pub server_count: u32,
+    pub peaks: EntityPeakStats,
+    pub summary: ServersSummaryResponse,
+    pub servers: Vec<ServerListItemResponse>,
 }
 
 #[derive(Debug, Clone, Serialize)]
