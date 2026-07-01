@@ -1,6 +1,6 @@
 import { StatValueTooltip } from "@/components/dashboard/stats/stat-value-tooltip";
 import { useCountUp } from "@/hooks/use-count-up";
-import { formatPlayers } from "@/lib/format-players";
+import { formatPlayers } from "@/lib/formatter";
 
 type AnimatedStatValueProps = {
   value: number | null | undefined;

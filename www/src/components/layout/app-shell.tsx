@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 import { AppSidebarMobileNav } from "./app-sidebar-mobile-nav";
 import { AppSidebarNav } from "./app-sidebar-nav";

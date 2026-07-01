@@ -2,7 +2,6 @@ import uPlot from "uplot";
 import type { ChartAxisFormat } from "@/lib/metrics/chart-axis-format";
 import type { AxisRenderConfig } from "@/lib/metrics/charts/types";
 import type { ChartSeriesRender } from "@/lib/metrics/series";
-import type { ResolvedTheme } from "@/lib/theme/context";
 import { formatChartAxisTicks } from "@/lib/formatter";
 import { readCssVar } from "@/lib/css-vars";
 import { getChartColors } from "@/lib/metrics/chart-colors";
@@ -204,7 +203,6 @@ function buildGradientFill(
 }
 
 type BuildUPlotOptionsParams = {
-  theme: ResolvedTheme;
   labels: Array<string>;
   height: number;
   chartAxes: Array<AxisRenderConfig>;
@@ -326,7 +324,6 @@ function buildAxisConfig({
 }
 
 export function buildUPlotOptions({
-  theme,
   labels,
   height,
   chartAxes,
@@ -347,7 +344,7 @@ export function buildUPlotOptions({
   seriesFills,
   xDrag = false,
 }: BuildUPlotOptionsParams): uPlot.Options {
-  const colors = getChartColors(theme);
+  const colors = getChartColors();
   const gridColor = readCssVar("--border");
   const axisColor = readCssVar("--muted-foreground");
   const scales = axisScaleMap(chartAxes);

@@ -1,11 +1,9 @@
-export function readCssVar(name: string, fallback?: string): string {
+export function readCssVar(name: string): string {
   if (typeof document === "undefined") {
-    return fallback ?? "";
+    return "";
   }
 
-  const value = getComputedStyle(document.documentElement)
+  return getComputedStyle(document.documentElement)
     .getPropertyValue(name)
     .trim();
-
-  return value || fallback || "";
 }

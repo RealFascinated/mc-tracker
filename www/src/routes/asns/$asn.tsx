@@ -1,7 +1,7 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { AsnIdentityHeader } from "@/components/dashboard/asn-identity-header";
 import { AsnPlayersChart } from "@/components/dashboard/charts/asn-players-chart";
@@ -16,25 +16,22 @@ import {
   SiteHeaderNav,
   SiteHeaderToolbar,
 } from "@/components/site-header-toolbar";
+import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
-import { asnDisplayName } from "@/lib/api/asns";
-import { ApiClientError } from "@/lib/api/client";
+import { useSearchParamNavigation } from "@/hooks/use-search-param-navigation";
+import { asnDisplayName, parseAsnOrgSearchParam } from "@/lib/api/asns";
+import { ensureQueryOrNotFound } from "@/lib/api/ensure-query-or-not-found";
 import { asnQueryOptions } from "@/lib/api/asns.queries";
 import {
   filterServersByPlatform,
-  parseServerPlatformFilterParam
-  
-} from "@/lib/api/servers";
-import type {ServerPlatformFilter} from "@/lib/api/servers";
-import { useDashboardRefresh } from "@/lib/dashboard/use-dashboard-refresh";
+  parseServerPlatformFilterParam,
+} from "@/lib/api/platform";
+import type { ServerPlatformFilter } from "@/lib/api/platform";
+import { withDashboardEntityQuery } from "@/lib/dashboard/entity-query";
+import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
 import { pageTitle } from "@/lib/page-title";
-import { asnPageDescription, embedHead } from "@/lib/embed-meta";
-import { DEFAULT_METRIC_TIME_RANGE } from "@/lib/metrics/range";
 import type { MetricTimeRange } from "@/lib/metrics/range";
-import {
-  metricTimeWindowFromSearch,
-  parseMetricTimeWindowSearch,
-} from "@/lib/metrics/time-window";
+import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 
 type AsnDetailSearch = {
   range?: MetricTimeRange;
@@ -44,44 +41,28 @@ type AsnDetailSearch = {
   platform?: ServerPlatformFilter;
 };
 
-function parseAsnOrgParam(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
-
 export const Route = createFileRoute("/asns/$asn")({
   validateSearch: (search: Record<string, unknown>): AsnDetailSearch => ({
     ...parseMetricTimeWindowSearch(search),
-    asnOrg: parseAsnOrgParam(search.asnOrg),
+    asnOrg: parseAsnOrgSearchParam(search.asnOrg),
     platform: parseServerPlatformFilterParam(search.platform),
   }),
   loaderDeps: ({ search }) => ({
-    asnOrg: parseAsnOrgParam(search.asnOrg) ?? "",
+    asnOrg: parseAsnOrgSearchParam(search.asnOrg) ?? "",
   }),
-  loader: async ({ context: { queryClient }, params, deps: { asnOrg } }) => {
-    try {
-      return await queryClient.ensureQueryData(
-        asnQueryOptions(params.asn, asnOrg),
-      );
-    } catch (error) {
-      if (error instanceof ApiClientError && error.status === 404) {
-        throw notFound();
-      }
-      throw error;
-    }
-  },
-  head: ({ loaderData, match }) =>
-    embedHead({
-      title: pageTitle(
-        loaderData ? asnDisplayName(loaderData) : "Network",
-      ),
-      description: loaderData ? asnPageDescription(loaderData) : undefined,
-      pathname: match.pathname,
-    }),
+  loader: async ({ context: { queryClient }, params, deps: { asnOrg } }) =>
+    ensureQueryOrNotFound(() =>
+      queryClient.ensureQueryData(asnQueryOptions(params.asn, asnOrg)),
+    ),
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: pageTitle(
+          loaderData ? asnDisplayName(loaderData) : "Network",
+        ),
+      },
+    ],
+  }),
   component: AsnDetailPage,
 });
 
@@ -102,82 +83,27 @@ function AsnDetailPage() {
   const asnOrg = searchAsnOrg ?? "";
   const platformFilter: ServerPlatformFilter = urlPlatform ?? "all";
 
-  const { data: asnDetail = initialAsn } = useQuery({
-    ...asnQueryOptions(asn, asnOrg),
-    initialData: initialAsn,
-    initialDataUpdatedAt: Date.now(),
-    refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
-  });
-
-  const timeWindow = useMemo(
-    () =>
-      metricTimeWindowFromSearch({
-        range: searchRange,
-        from: searchFrom,
-        to: searchTo,
-      }),
-    [searchFrom, searchRange, searchTo],
+  const { data: asnDetail = initialAsn } = useQuery(
+    withDashboardEntityQuery(
+      asnQueryOptions(asn, asnOrg),
+      initialAsn,
+      refreshIntervalMs,
+    ),
   );
 
-  const setPresetTimeRange = useCallback(
-    (range: MetricTimeRange) => {
-      void navigate({
-        search: (prev) => ({
-          ...prev,
-          range: range === DEFAULT_METRIC_TIME_RANGE ? undefined : range,
-          from: undefined,
-          to: undefined,
-        }),
-        replace: true,
-        resetScroll: false,
-      });
-    },
-    [navigate],
+  const {
+    timeWindow,
+    setPresetTimeRange,
+    setCustomTimeRange,
+    handleZoomToRange,
+  } = useMetricTimeWindowControls(
+    { range: searchRange, from: searchFrom, to: searchTo },
+    navigate,
   );
-
-  const navigateCustomTimeRange = useCallback(
-    (from: number, to: number, options?: { replace?: boolean }) => {
-      void navigate({
-        search: (prev) => ({
-          ...prev,
-          range: undefined,
-          from,
-          to,
-        }),
-        replace: options?.replace ?? false,
-        resetScroll: false,
-      });
-    },
-    [navigate],
-  );
-  const setCustomTimeRange = useCallback(
-    (from: number, to: number) => {
-      navigateCustomTimeRange(from, to, { replace: true });
-    },
-    [navigateCustomTimeRange],
-  );
-  const handleZoomToRange = useCallback(
-    (from: number, to: number) => {
-      navigateCustomTimeRange(
-        from,
-        Math.min(to, Math.floor(Date.now() / 1000)),
-      );
-    },
-    [navigateCustomTimeRange],
-  );
-
-  const setPlatformFilter = useCallback(
-    (platform: ServerPlatformFilter) => {
-      void navigate({
-        search: (prev) => ({
-          ...prev,
-          platform: platform === "all" ? undefined : platform,
-        }),
-        replace: true,
-        resetScroll: false,
-      });
-    },
-    [navigate],
+  const setPlatformFilter = useSearchParamNavigation<ServerPlatformFilter>(
+    navigate,
+    "platform",
+    "all",
   );
 
   const filteredServers = useMemo(

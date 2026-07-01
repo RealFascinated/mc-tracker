@@ -34,7 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { AdminServer } from "@/lib/api/admin/servers";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",

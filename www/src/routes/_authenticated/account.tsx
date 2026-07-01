@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { errorMessage } from "@/lib/api/error-message";
-import { changePassword, useAuth } from "@/lib/auth";
+import { changePassword } from "@/lib/auth";
+import { useAuth } from "@/lib/auth/context";
 import { pageTitle } from "@/lib/page-title";
 import { privatePageHead } from "@/lib/embed-meta";
 

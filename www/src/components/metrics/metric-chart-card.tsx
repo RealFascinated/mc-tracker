@@ -14,8 +14,8 @@ import { resolveChartSeriesColor } from "@/lib/metrics/chart-colors";
 import { useChartHydration } from "@/hooks/use-chart-hydration";
 import { useChartSeriesVisibility } from "@/hooks/use-chart-series-visibility";
 import { MetricChart } from "@/components/metrics/metric-chart";
-import { cn } from "@/lib/utils";
-import { useTheme } from "@/lib/theme";
+import { cn } from "cnfast";
+import { useTheme } from "@/hooks/use-theme";
 import {
   Dialog,
   DialogContent,

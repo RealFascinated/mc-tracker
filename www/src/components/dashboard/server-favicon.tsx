@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 const MINECRAFT_DEFAULT_SERVER_FAVICON = `${import.meta.env.BASE_URL}minecraft-unknown-server.png`;
 

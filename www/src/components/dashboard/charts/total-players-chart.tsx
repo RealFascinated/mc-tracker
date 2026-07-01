@@ -1,20 +1,12 @@
 import { useMemo } from "react";
 
-import { LoadingState } from "@/components/loading-state";
-import { ChartEmpty } from "@/components/metrics/chart-empty";
+import { PlayersMetricChart } from "@/components/dashboard/charts/players-metric-chart";
 import { MetricChartView } from "@/components/metrics/metric-chart-view";
-import { useIntersectionVisible } from "@/hooks/use-intersection-visible";
-import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
 import { EMPTY_METRIC_TIME_SERIES } from "@/lib/api/metric-timeseries";
 import { totalTimeseriesQueryOptions } from "@/lib/api/servers.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
-import { playersTimeseriesToMetric } from "@/lib/metrics/adapters";
 import { totalPlayersChart } from "@/lib/metrics/charts/players";
-import {
-  DASHBOARD_CHART_PROPS,
-  DASHBOARD_CHART_EMPTY_MESSAGE,
-  DASHBOARD_PLAYER_HISTORY_ERROR_MESSAGE,
-} from "@/lib/metrics/dashboard-chart-constants";
+import { DASHBOARD_CHART_PROPS } from "@/lib/metrics/dashboard-chart-constants";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 
 type TotalPlayersChartProps = {
@@ -28,19 +20,9 @@ export function TotalPlayersChart({
   window,
   height = 300,
 }: TotalPlayersChartProps) {
-  const { ref, isIntersecting, hasBeenVisible } = useIntersectionVisible();
   const timeseriesOptions = useMemo(
     () => toVisibleTimeseriesOptions(totalTimeseriesQueryOptions(window)),
     [window],
-  );
-  const { data, isPending, isError } = useVisibleTimeseriesQuery(
-    timeseriesOptions,
-    isIntersecting,
-  );
-
-  const chartData = useMemo(
-    () => (data ? playersTimeseriesToMetric(data) : null),
-    [data],
   );
 
   if (!hasServers) {
@@ -55,40 +37,11 @@ export function TotalPlayersChart({
     );
   }
 
-  if (!hasBeenVisible && !data) {
-    return <div ref={ref} style={{ height }} aria-hidden />;
-  }
-
-  if (isError) {
-    return (
-      <div ref={ref} className="w-full">
-        <ChartEmpty
-          message={DASHBOARD_PLAYER_HISTORY_ERROR_MESSAGE}
-          height={height}
-          className="text-sm text-destructive"
-        />
-      </div>
-    );
-  }
-
-  const showLoading = isIntersecting && isPending && !data;
-
   return (
-    <div ref={ref} className="relative" style={{ height }}>
-      <MetricChartView
-        def={totalPlayersChart}
-        data={chartData ?? EMPTY_METRIC_TIME_SERIES}
-        height={height}
-        emptyMessage={DASHBOARD_CHART_EMPTY_MESSAGE}
-        className="h-full"
-        hydrateWhen={hasBeenVisible}
-        {...DASHBOARD_CHART_PROPS}
-      />
-      {showLoading ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
-          <LoadingState message="Loading player history…" />
-        </div>
-      ) : null}
-    </div>
+    <PlayersMetricChart
+      def={totalPlayersChart}
+      timeseriesOptions={timeseriesOptions}
+      height={height}
+    />
   );
 }

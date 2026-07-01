@@ -1,3 +1,5 @@
+import type { PlayersTimeseriesPayload } from "@/lib/api/types";
+
 export type MetricTimeSeries = {
   from: number;
   to: number;
@@ -77,4 +79,18 @@ export function backfillMetricTimeSeries(
     timestamps,
     series,
   };
+}
+
+export function playersTimeseriesToMetric(
+  data: PlayersTimeseriesPayload,
+): MetricTimeSeries {
+  return backfillMetricTimeSeries(
+    buildMetricTimeSeries({
+      from: data.from,
+      to: data.to,
+      step: data.step,
+      timestamps: data.timestamps,
+      series: { players_online: data.playersOnline },
+    }),
+  );
 }

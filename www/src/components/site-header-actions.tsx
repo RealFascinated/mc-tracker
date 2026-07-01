@@ -19,8 +19,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { logout, useAuth } from "@/lib/auth";
-import { cn } from "@/lib/utils";
+import { logout } from "@/lib/auth";
+import { useAuth } from "@/lib/auth/context";
+import { cn } from "cnfast";
 
 type SiteHeaderUserMenuProps = {
   iconOnly?: boolean;

@@ -7,7 +7,6 @@
     "build": "vite build",
     "start": "srvx --prod --dir . -s dist/client --entry dist/server/server.js",
     "preview": "vite preview",
-    "test": "vitest run",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx}\"",
     "check": "prettier --check \"**/*.{ts,tsx,js,jsx}\"",
@@ -39,18 +38,15 @@
   "devDependencies": {
     "@tanstack/devtools-vite": "latest",
     "@tanstack/eslint-config": "latest",
-    "@testing-library/react": "^16.3.2",
     "@types/node": "^25.9.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^10.5.0",
-    "jsdom": "^29.1.1",
     "prettier": "^3.8.4",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "shadcn": "^4.11.0",
     "typescript": "^6.0.3",
-    "vite": "^8.0.16",
-    "vitest": "^4.1.9"
+    "vite": "^8.0.16"
   }
 }

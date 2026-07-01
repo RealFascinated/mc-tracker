@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import type { ServerSearchItem } from "@/lib/api/servers";
 import { serversSearchQueryOptions } from "@/lib/api/servers.queries";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 type DashboardSearchInputProps = {
   value: string;

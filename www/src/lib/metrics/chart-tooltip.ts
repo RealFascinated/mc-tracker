@@ -1,6 +1,6 @@
 import type uPlot from "uplot";
 
-import type { ResolvedTheme } from "@/lib/theme/context";
+import type { ResolvedTheme } from "@/lib/theme/theme-context";
 import type { TooltipSortEntry } from "@/lib/metrics/charts/types";
 import { formatPercentValue, formatTooltipTimestamp } from "@/lib/formatter";
 

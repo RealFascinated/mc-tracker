@@ -5,6 +5,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { flushSync } from "react-dom";
 
 import { startThemeViewTransition } from "@/lib/theme/transition";
 import { THEME_STORAGE_KEY, ThemeContext } from "@/lib/theme/theme-context";
@@ -12,12 +13,6 @@ import type {
   ResolvedTheme,
   SetThemeOptions,
   ThemePreference,
-} from "@/lib/theme/theme-context";
-
-export {
-  THEME_STORAGE_KEY,
-  type ResolvedTheme,
-  type ThemePreference,
 } from "@/lib/theme/theme-context";
 
 function subscribeToSystemTheme(onStoreChange: () => void) {
@@ -83,11 +78,13 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
       const apply = () => {
         localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
         applyTheme(nextResolved);
-        setThemeState(nextTheme);
+        flushSync(() => {
+          setThemeState(nextTheme);
+        });
       };
 
       if (options?.transition && resolvedChanges) {
-        startThemeViewTransition(apply, options.transitionOrigin);
+        startThemeViewTransition(apply);
         return;
       }
 

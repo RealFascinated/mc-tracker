@@ -8,7 +8,7 @@ import {
 import { Toaster as Sonner } from "sonner";
 import type { ToasterProps } from "sonner";
 
-import { useTheme } from "@/lib/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 function Toaster({ ...props }: ToasterProps) {
   const { resolvedTheme } = useTheme();

@@ -1,7 +1,7 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { DashboardCardHeader } from "@/components/dashboard/dashboard-card-header";
@@ -18,19 +18,16 @@ import {
   SiteHeaderNav,
   SiteHeaderToolbar,
 } from "@/components/site-header-toolbar";
+import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import { asnDetailSearch } from "@/lib/api/asns";
-import { ApiClientError } from "@/lib/api/client";
+import { ensureQueryOrNotFound } from "@/lib/api/ensure-query-or-not-found";
 import { serverQueryOptions } from "@/lib/api/servers.queries";
-import { useDashboardRefresh } from "@/lib/dashboard/use-dashboard-refresh";
+import { withDashboardEntityQuery } from "@/lib/dashboard/entity-query";
+import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
 import { pageTitle } from "@/lib/page-title";
-import { embedHead, serverPageDescription } from "@/lib/embed-meta";
-import { DEFAULT_METRIC_TIME_RANGE } from "@/lib/metrics/range";
 import type { MetricTimeRange } from "@/lib/metrics/range";
-import {
-  metricTimeWindowFromSearch,
-  parseMetricTimeWindowSearch,
-} from "@/lib/metrics/time-window";
+import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 
 type ServerDetailSearch = {
   range?: MetricTimeRange;
@@ -41,27 +38,13 @@ type ServerDetailSearch = {
 export const Route = createFileRoute("/servers/$serverId")({
   validateSearch: (search: Record<string, unknown>): ServerDetailSearch =>
     parseMetricTimeWindowSearch(search),
-  loader: async ({ context: { queryClient }, params }) => {
-    try {
-      return await queryClient.ensureQueryData(
-        serverQueryOptions(params.serverId),
-      );
-    } catch (error) {
-      if (error instanceof ApiClientError && error.status === 404) {
-        throw notFound();
-      }
-      throw error;
-    }
-  },
-  head: ({ loaderData, match }) =>
-    embedHead({
-      title: pageTitle(loaderData?.name ?? "Server"),
-      description: loaderData
-        ? serverPageDescription(loaderData)
-        : undefined,
-      image: loaderData?.favicon,
-      pathname: match.pathname,
-    }),
+  loader: async ({ context: { queryClient }, params }) =>
+    ensureQueryOrNotFound(() =>
+      queryClient.ensureQueryData(serverQueryOptions(params.serverId)),
+    ),
+  head: ({ loaderData }) => ({
+    meta: [{ title: pageTitle(loaderData?.name ?? "Server") }],
+  }),
   component: ServerDetailPage,
 });
 
@@ -78,68 +61,22 @@ function ServerDetailPage() {
   const initialServer = Route.useLoaderData();
   const [searchInput, setSearchInput] = useState("");
 
-  const { data: server = initialServer } = useQuery({
-    ...serverQueryOptions(serverId),
-    initialData: initialServer,
-    initialDataUpdatedAt: Date.now(),
-    refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
-  });
-
-  const timeWindow = useMemo(
-    () =>
-      metricTimeWindowFromSearch({
-        range: searchRange,
-        from: searchFrom,
-        to: searchTo,
-      }),
-    [searchFrom, searchRange, searchTo],
+  const { data: server = initialServer } = useQuery(
+    withDashboardEntityQuery(
+      serverQueryOptions(serverId),
+      initialServer,
+      refreshIntervalMs,
+    ),
   );
 
-  const setPresetTimeRange = useCallback(
-    (range: MetricTimeRange) => {
-      void navigate({
-        search: (prev) => ({
-          ...prev,
-          range: range === DEFAULT_METRIC_TIME_RANGE ? undefined : range,
-          from: undefined,
-          to: undefined,
-        }),
-        replace: true,
-        resetScroll: false,
-      });
-    },
-    [navigate],
-  );
-
-  const navigateCustomTimeRange = useCallback(
-    (from: number, to: number, options?: { replace?: boolean }) => {
-      void navigate({
-        search: (prev) => ({
-          ...prev,
-          range: undefined,
-          from,
-          to,
-        }),
-        replace: options?.replace ?? false,
-        resetScroll: false,
-      });
-    },
-    [navigate],
-  );
-  const setCustomTimeRange = useCallback(
-    (from: number, to: number) => {
-      navigateCustomTimeRange(from, to, { replace: true });
-    },
-    [navigateCustomTimeRange],
-  );
-  const handleZoomToRange = useCallback(
-    (from: number, to: number) => {
-      navigateCustomTimeRange(
-        from,
-        Math.min(to, Math.floor(Date.now() / 1000)),
-      );
-    },
-    [navigateCustomTimeRange],
+  const {
+    timeWindow,
+    setPresetTimeRange,
+    setCustomTimeRange,
+    handleZoomToRange,
+  } = useMetricTimeWindowControls(
+    { range: searchRange, from: searchFrom, to: searchTo },
+    navigate,
   );
 
   return (

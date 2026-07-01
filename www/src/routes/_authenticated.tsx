@@ -2,7 +2,7 @@ import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 
 import { LoadingState } from "@/components/loading-state";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/auth/context";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,

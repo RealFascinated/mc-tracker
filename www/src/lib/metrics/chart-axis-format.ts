@@ -3,8 +3,9 @@ import {
   formatDecimal,
   formatNetworkBps,
   formatPercentValue,
+  formatPlayers,
+  formatPlayersAxisTick,
 } from "@/lib/formatter";
-import { formatPlayers, formatPlayersAxisTick } from "@/lib/format-players";
 
 export type ChartAxisFormat = {
   formatValue: (value: number) => string;

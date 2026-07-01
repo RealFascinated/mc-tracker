@@ -13,11 +13,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useDashboardRefresh } from "@/lib/dashboard/use-dashboard-refresh";
+import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
 import { DASHBOARD_REFRESH_INTERVAL_OPTIONS } from "@/lib/dashboard/refresh-interval";
 import type { MetricTimeRange } from "@/lib/metrics/range";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 type DashboardTimeControlsProps = {
   window: MetricTimeWindow;

@@ -8,13 +8,9 @@ import {
 } from "@/components/dashboard/grids/entity-metrics-grid";
 import type {EntityMetricsSectionCopy} from "@/components/dashboard/grids/entity-metrics-grid";
 import { ServerIdentityHeader } from "@/components/dashboard/server-identity-header";
-import {
-  SERVER_PLATFORM_FILTER_OPTIONS
-  
-  
-  
-} from "@/lib/api/servers";
-import type {ServerListItem, ServerPlatformFilter, ServerTimeseriesResponse} from "@/lib/api/servers";
+import { SERVER_PLATFORM_FILTER_OPTIONS } from "@/lib/api/platform";
+import type { ServerPlatformFilter } from "@/lib/api/platform";
+import type { ServerListItem, ServerTimeseriesResponse } from "@/lib/api/servers";
 import { serverTimeseriesQueryOptions } from "@/lib/api/servers.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
 import { createPlayersChart } from "@/lib/metrics/charts/players";

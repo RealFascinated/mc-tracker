@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CreateServerRequest } from "@/lib/api/admin/servers";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 type AdminServerFormFieldsProps = {
   idPrefix: string;

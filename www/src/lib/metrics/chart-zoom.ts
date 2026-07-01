@@ -1,4 +1,4 @@
-import { createContext, use } from "react";
+import { createContext } from "react";
 import type uPlot from "uplot";
 
 import { METRIC_WINDOW_MIN_SPAN_SECONDS } from "@/lib/metrics/window-policy";
@@ -42,10 +42,6 @@ export type MetricsChartZoomContextValue = {
 
 export const MetricsChartZoomContext =
   createContext<MetricsChartZoomContextValue | null>(null);
-
-export function useMetricsChartZoom() {
-  return use(MetricsChartZoomContext);
-}
 
 export function bindChartZoomNavigate(
   chart: uPlot,

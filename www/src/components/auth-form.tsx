@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { errorMessage } from "@/lib/api/error-message";
-import { login, useAuth, validateCredentials } from "@/lib/auth";
+import { login } from "@/lib/auth";
+import { useAuth } from "@/lib/auth/context";
+import { validateCredentials } from "@/lib/auth/validation";
 
 function AuthForm() {
   const navigate = useNavigate();

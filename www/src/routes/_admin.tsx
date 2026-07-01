@@ -2,7 +2,7 @@ import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { Server, Settings } from "lucide-react";
 
 import { AppShell } from "@/components/layout/app-shell";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 const adminNav = [
   {

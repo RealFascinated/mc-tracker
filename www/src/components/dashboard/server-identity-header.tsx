@@ -5,7 +5,7 @@ import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-li
 import { ServerFavicon } from "@/components/dashboard/server-favicon";
 import type { ServerListItem } from "@/lib/api/servers";
 import { asnDetailSearch } from "@/lib/api/asns";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 function serverAsnName(server: ServerListItem): string | null {
   if (server.asnOrg) {

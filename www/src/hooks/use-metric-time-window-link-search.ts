@@ -2,10 +2,9 @@ import { useRouterState } from "@tanstack/react-router";
 
 import {
   metricTimeWindowSearchParams,
-  parseMetricTimeWindowSearch
-  
+  parseMetricTimeWindowSearch,
 } from "@/lib/metrics/time-window";
-import type {MetricTimeWindowSearch} from "@/lib/metrics/time-window";
+import type { MetricTimeWindowSearch } from "@/lib/metrics/time-window";
 
 export function useMetricTimeWindowLinkSearch(): MetricTimeWindowSearch {
   return useRouterState({

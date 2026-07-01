@@ -6,7 +6,7 @@ import type {
   SetStateAction,
 } from "react";
 
-import type { ResolvedTheme } from "@/lib/theme";
+import type { ResolvedTheme } from "@/lib/theme/theme-context";
 import type {
   AxisRenderConfig,
   TooltipSortEntry,
@@ -22,16 +22,14 @@ import {
 import {
   getChartColors,
 } from "@/lib/metrics/chart-colors";
+import { useMetricsChartSyncKey } from "@/hooks/use-metrics-chart-sync-key";
 import {
   createChartZoomSyncHook,
   registerMetricsChartSync,
   unregisterMetricsChartSync,
-  useMetricsChartSyncKey,
 } from "@/lib/metrics/chart-sync";
-import {
-  bindChartZoomNavigate,
-  useMetricsChartZoom,
-} from "@/lib/metrics/chart-zoom";
+import { useMetricsChartZoom } from "@/hooks/use-metrics-chart-zoom";
+import { bindChartZoomNavigate } from "@/lib/metrics/chart-zoom";
 import {
   buildUPlotOptions,
   chartLayoutForWidth,
@@ -168,7 +166,6 @@ function useMetricChartInstance({
     const mountBands = preparedBandsRef.current;
 
     const options = buildUPlotOptions({
-      theme: resolvedTheme,
       labels,
       height: initialHeight,
       chartAxes,
@@ -190,7 +187,7 @@ function useMetricChartInstance({
       xDrag,
     });
 
-    const colors = seriesColors ?? getChartColors(resolvedTheme);
+    const colors = seriesColors ?? getChartColors();
     const formatSeriesValue = (value: number, seriesIndex: number) => {
       const sourceIndex =
         sourceIndicesRef.current?.[seriesIndex] ?? seriesIndex;

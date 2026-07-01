@@ -6,13 +6,6 @@ import type {
   PlayersTimeseriesPayload,
 } from "@/lib/api/types";
 
-export type { ServerPlatform, ServerPlatformFilter } from "@/lib/api/platform";
-export {
-  filterServersByPlatform,
-  parseServerPlatformFilterParam,
-  SERVER_PLATFORM_FILTER_OPTIONS,
-} from "@/lib/api/platform";
-
 export type ServersSummary = PlayersSummaryBase & {
   trackedServers: number;
 };

@@ -1,11 +1,7 @@
-import { createContext, use } from "react";
+import { createContext } from "react";
 import uPlot from "uplot";
 
 export const MetricsChartSyncContext = createContext<string | null>(null);
-
-export function useMetricsChartSyncKey() {
-  return use(MetricsChartSyncContext);
-}
 
 export function registerMetricsChartSync(syncKey: string, chart: uPlot) {
   uPlot.sync(syncKey).sub(chart);

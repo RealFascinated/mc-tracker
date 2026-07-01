@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { SiteHeaderActions } from "@/components/site-header-actions";
 import { useSiteHeaderToolbar } from "@/components/site-header-toolbar";
 import { APP_NAME } from "@/lib/page-title";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 type SiteHeaderProps = {
   className?: string;

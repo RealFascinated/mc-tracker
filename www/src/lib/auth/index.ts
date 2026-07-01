@@ -2,19 +2,6 @@ import { ApiClientError, apiFetch } from "@/lib/api/client";
 import { getMe } from "@/lib/auth/session";
 import type { Credentials, LoginResponse, User } from "@/lib/auth/types";
 
-export type {
-  Credentials,
-  LoginResponse,
-  MeResponse,
-  User,
-  UserRole,
-} from "@/lib/auth/types";
-export { ApiClientError, apiFetch } from "@/lib/api/client";
-export { AuthProvider, useAuth } from "@/lib/auth/context";
-export { fetchCurrentUser, getMe } from "@/lib/auth/session";
-export { requireAdmin } from "@/lib/auth/require-admin";
-export { validateCredentials } from "@/lib/auth/validation";
-
 export type AuthResult = { error: string } | { user: User };
 
 export async function login(credentials: Credentials): Promise<AuthResult> {

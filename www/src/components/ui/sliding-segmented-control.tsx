@@ -13,7 +13,7 @@ import {
   slidingSegmentedControlIndicatorClassName,
   slidingSegmentedControlTrackClassName,
 } from "@/components/ui/sliding-segmented-control-styles";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 type SlidingSegmentedControlContextValue = {
   value: string;

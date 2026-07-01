@@ -5,7 +5,7 @@ import { Toggle as TogglePrimitive } from "radix-ui";
 import type { VariantProps } from "class-variance-authority";
 
 import { toggleVariants } from "@/components/ui/toggle-variants";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 function Toggle({
   className,

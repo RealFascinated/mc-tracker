@@ -2,22 +2,25 @@ import type { VisibleTimeseriesQueryOptions } from "@/lib/api/visible-timeseries
 import { useMemo } from "react";
 import type { ReactNode } from "react";
 
+import type {
+  EntityPeakStats,
+  PlayersTimeseriesPayload,
+} from "@/lib/api/types";
+
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { LazyMetricChartBody } from "@/components/dashboard/charts/lazy-metric-chart-body";
 import { resolveLazyMetricChartState } from "@/components/dashboard/charts/lazy-metric-chart-state";
 import { AnimatedStatValue } from "@/components/dashboard/stats/animated-stat-value";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
-import { useGridItemVisible } from "@/hooks/use-grid-item-visible";
+import { useGridItemVisible } from "@/hooks/use-intersection-visible";
 import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
-import { EMPTY_METRIC_TIME_SERIES } from "@/lib/api/metric-timeseries";
-import type {
-  EntityPeakStats,
-  PlayersTimeseriesPayload,
-} from "@/lib/api/types";
-import { playersTimeseriesToMetric } from "@/lib/metrics/adapters";
+import {
+  EMPTY_METRIC_TIME_SERIES,
+  playersTimeseriesToMetric,
+} from "@/lib/api/metric-timeseries";
 import type { ChartDefinition } from "@/lib/metrics/charts/types";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
-import { peakTimestampTooltip } from "@/lib/format-peak-at";
+import { peakTimestampTooltip } from "@/lib/formatter";
 
 export type EntityMetricsSectionCopy = {
   title: string;

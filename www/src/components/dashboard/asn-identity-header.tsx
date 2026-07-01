@@ -4,7 +4,7 @@ import { EntityCardStats } from "@/components/dashboard/grids/entity-metrics-gri
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import type { AsnDetailResponse } from "@/lib/api/asns";
 import { asnDetailSearch, asnDisplayName } from "@/lib/api/asns";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 type AsnIdentityHeaderProps = {
   asn: Pick<AsnDetailResponse, "asn" | "asnOrg" | "playersOnline" | "peaks">;

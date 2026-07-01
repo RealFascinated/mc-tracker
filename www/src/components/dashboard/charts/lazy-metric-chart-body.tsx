@@ -12,7 +12,7 @@ import {
   DASHBOARD_CHART_ERROR_MESSAGE,
   DASHBOARD_CHART_PROPS,
 } from "@/lib/metrics/dashboard-chart-constants";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 type LazyMetricChartBodyProps = {
   state: LazyMetricChartState;

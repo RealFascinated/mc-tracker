@@ -1,13 +1,20 @@
-import { useCallback, useEffect, useId, useState, useSyncExternalStore } from "react";
-
-type UseIntersectionVisibleOptions = {
-  rootMargin?: string;
-  threshold?: number;
-};
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 type ItemVisibility = {
   intersecting: boolean;
   hasBeenVisible: boolean;
+};
+
+type UseIntersectionVisibleOptions = {
+  key?: string;
+  rootMargin?: string;
+  threshold?: number;
 };
 
 const items = new Map<string, ItemVisibility>();
@@ -71,11 +78,17 @@ function updateVisibility(key: string, intersecting: boolean) {
   scheduleNotify(key);
 }
 
+/**
+ * Batched intersection visibility so only the observed element re-renders when
+ * its viewport state changes.
+ */
 export function useIntersectionVisible({
+  key: keyOverride,
   rootMargin = "80px 0px",
   threshold = 0,
 }: UseIntersectionVisibleOptions = {}) {
-  const key = useId();
+  const generatedKey = useId();
+  const key = keyOverride ?? generatedKey;
   const [element, setElement] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -114,4 +127,9 @@ export function useIntersectionVisible({
   );
 
   return { ref: setElement, isIntersecting: intersecting, hasBeenVisible };
+}
+
+/** Grid cards pass a stable key so only the card that scrolls into view updates. */
+export function useGridItemVisible(key: string, rootMargin = "80px 0px") {
+  return useIntersectionVisible({ key, rootMargin, threshold: 0 });
 }

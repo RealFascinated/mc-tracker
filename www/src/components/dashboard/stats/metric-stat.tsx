@@ -1,5 +1,5 @@
 import { AnimatedStatValue } from "@/components/dashboard/stats/animated-stat-value";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 type MetricStatProps = {
   label: string;

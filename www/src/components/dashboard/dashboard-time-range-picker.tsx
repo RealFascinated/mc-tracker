@@ -4,11 +4,9 @@ import { useReducer, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover } from "@/components/ui/popover-root";
+import { PopoverContent } from "@/components/ui/popover-content";
+import { PopoverTrigger } from "@/components/ui/popover-trigger";
 import {
   datetimeLocalValueToEpoch,
   epochToDatetimeLocalValue,
@@ -22,7 +20,7 @@ import {
   validateMetricEpochWindow,
 } from "@/lib/metrics/time-window";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 type DashboardTimeRangePickerProps = {
   window: MetricTimeWindow;

@@ -59,6 +59,15 @@ export function asnDetailSearch(
   };
 }
 
+export function parseAsnOrgSearchParam(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 export function asnDisplayName(asn: Pick<AsnListItem, "asn" | "asnOrg">): string {
   if (asn.asnOrg) {
     return asn.asnOrg;

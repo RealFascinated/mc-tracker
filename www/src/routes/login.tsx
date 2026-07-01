@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getSignupEnabled } from "@/lib/api/auth-config";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/auth/context";
 import { pageTitle } from "@/lib/page-title";
 import { privatePageHead } from "@/lib/embed-meta";
 

@@ -2,7 +2,7 @@ import {
   SlidingSegmentedControl,
   SlidingSegmentedControlItem,
 } from "@/components/ui/sliding-segmented-control";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 export type DashboardRangeOption<T extends string> = {
   value: T;

@@ -14,8 +14,8 @@ import {
   chartLayoutForDensity,
   readAxisUnitInsets,
 } from "@/lib/metrics/uplot-theme";
-import { cn } from "@/lib/utils";
-import { useTheme } from "@/lib/theme";
+import { cn } from "cnfast";
+import { useTheme } from "@/hooks/use-theme";
 import { useMetricChartInstance } from "@/hooks/use-metric-chart-instance";
 
 export type MetricChartMode = "line" | "stack";

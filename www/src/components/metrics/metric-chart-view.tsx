@@ -7,7 +7,7 @@ import { MetricChartCard } from "@/components/metrics/metric-chart-card";
 import { ChartEmpty } from "@/components/metrics/chart-empty";
 import { buildChartConfig } from "@/lib/metrics/build-chart-config";
 import { buildMultiSeriesData } from "@/lib/metrics/series";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 type MetricChartViewProps = {
   def: ChartDefinition;

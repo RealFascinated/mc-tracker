@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { AsnMetricsGrid } from "@/components/dashboard/grids/asn-metrics-grid";
 import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
@@ -16,28 +16,21 @@ import {
   SiteHeaderNav,
   SiteHeaderToolbar,
 } from "@/components/site-header-toolbar";
-import { useDashboardRefresh } from "@/lib/dashboard/use-dashboard-refresh";
+import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
+import { useSearchParamNavigation } from "@/hooks/use-search-param-navigation";
+import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
+import { parseDashboardViewParam } from "@/lib/dashboard/dashboard-search";
+import type { DashboardView } from "@/lib/dashboard/dashboard-search";
 import { asnsQueryOptions } from "@/lib/api/asns.queries";
 import {
   filterServersByPlatform,
-  parseServerPlatformFilterParam
-  
-} from "@/lib/api/servers";
-import type {ServerPlatformFilter} from "@/lib/api/servers";
+  parseServerPlatformFilterParam,
+} from "@/lib/api/platform";
+import type { ServerPlatformFilter } from "@/lib/api/platform";
 import { serversQueryOptions } from "@/lib/api/servers.queries";
 import { pageTitle } from "@/lib/page-title";
-import {
-  DASHBOARD_DESCRIPTION,
-  embedHead,
-} from "@/lib/embed-meta";
-import { DEFAULT_METRIC_TIME_RANGE } from "@/lib/metrics/range";
 import type { MetricTimeRange } from "@/lib/metrics/range";
-import {
-  metricTimeWindowFromSearch,
-  parseMetricTimeWindowSearch,
-} from "@/lib/metrics/time-window";
-
-type DashboardView = "server" | "asn";
+import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 
 const DASHBOARD_VIEW_OPTIONS: Array<DashboardRangeOption<DashboardView>> = [
   { value: "server", shortLabel: "Servers", label: "Per server" },
@@ -52,13 +45,6 @@ type DashboardSearch = {
   platform?: ServerPlatformFilter;
 };
 
-function parseDashboardViewParam(value: unknown): DashboardView | undefined {
-  if (value === "server" || value === "asn") {
-    return value;
-  }
-  return undefined;
-}
-
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): DashboardSearch => ({
     ...parseMetricTimeWindowSearch(search),
@@ -72,12 +58,9 @@ export const Route = createFileRoute("/")({
     view === "asn"
       ? queryClient.ensureQueryData(asnsQueryOptions())
       : queryClient.ensureQueryData(serversQueryOptions()),
-  head: ({ match }) =>
-    embedHead({
-      title: pageTitle("Dashboard"),
-      description: DASHBOARD_DESCRIPTION,
-      pathname: match.pathname,
-    }),
+  head: () => ({
+    meta: [{ title: pageTitle("Dashboard") }],
+  }),
   component: DashboardPage,
 });
 
@@ -106,85 +89,24 @@ function DashboardPage() {
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
 
-  const timeWindow = useMemo(
-    () =>
-      metricTimeWindowFromSearch({
-        range: searchRange,
-        from: searchFrom,
-        to: searchTo,
-      }),
-    [searchFrom, searchRange, searchTo],
+  const {
+    timeWindow,
+    setPresetTimeRange,
+    setCustomTimeRange,
+    handleZoomToRange,
+  } = useMetricTimeWindowControls(
+    { range: searchRange, from: searchFrom, to: searchTo },
+    navigate,
   );
-  const setPresetTimeRange = useCallback(
-    (range: MetricTimeRange) => {
-      void navigate({
-        search: (prev) => ({
-          ...prev,
-          range: range === DEFAULT_METRIC_TIME_RANGE ? undefined : range,
-          from: undefined,
-          to: undefined,
-        }),
-        replace: true,
-        resetScroll: false,
-      });
-    },
-    [navigate],
+  const setDashboardView = useSearchParamNavigation<DashboardView>(
+    navigate,
+    "view",
+    "server",
   );
-  const navigateCustomTimeRange = useCallback(
-    (from: number, to: number, options?: { replace?: boolean }) => {
-      void navigate({
-        search: (prev) => ({
-          ...prev,
-          range: undefined,
-          from,
-          to,
-        }),
-        replace: options?.replace ?? false,
-        resetScroll: false,
-      });
-    },
-    [navigate],
-  );
-  const setCustomTimeRange = useCallback(
-    (from: number, to: number) => {
-      navigateCustomTimeRange(from, to, { replace: true });
-    },
-    [navigateCustomTimeRange],
-  );
-  const handleZoomToRange = useCallback(
-    (from: number, to: number) => {
-      navigateCustomTimeRange(
-        from,
-        Math.min(to, Math.floor(Date.now() / 1000)),
-      );
-    },
-    [navigateCustomTimeRange],
-  );
-  const setDashboardView = useCallback(
-    (view: DashboardView) => {
-      void navigate({
-        search: (prev) => ({
-          ...prev,
-          view: view === "server" ? undefined : view,
-        }),
-        replace: true,
-        resetScroll: false,
-      });
-    },
-    [navigate],
-  );
-  const setPlatformFilter = useCallback(
-    (platform: ServerPlatformFilter) => {
-      void navigate({
-        search: (prev) => ({
-          ...prev,
-          platform: platform === "all" ? undefined : platform,
-        }),
-        replace: true,
-        resetScroll: false,
-      });
-    },
-    [navigate],
+  const setPlatformFilter = useSearchParamNavigation<ServerPlatformFilter>(
+    navigate,
+    "platform",
+    "all",
   );
   const filteredServers = useMemo(
     () => filterServersByPlatform(serversData?.servers ?? [], platformFilter),

@@ -9,10 +9,10 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteHeaderToolbarProvider } from "@/components/site-header-toolbar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider } from "@/lib/auth/context";
 import { DashboardRefreshProvider } from "@/lib/dashboard/refresh-context";
 import { defaultSiteHead } from "@/lib/embed-meta";
-import { ThemeProvider } from "@/lib/theme";
+import { ThemeProvider } from "@/lib/theme/context";
 import { themeInitScript } from "@/lib/theme/script";
 import appCss from "../styles.css?url";
 

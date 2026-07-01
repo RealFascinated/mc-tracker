@@ -1,7 +1,7 @@
 import type { CSSProperties, ElementType, ReactNode } from "react";
 
 import { useIntersectionVisible } from "@/hooks/use-intersection-visible";
-import { cn } from "@/lib/utils";
+import { cn } from "cnfast";
 
 import "./fade-in-animation.css";
 

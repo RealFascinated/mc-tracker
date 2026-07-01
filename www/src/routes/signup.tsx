@@ -17,7 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSignupEnabled } from "@/lib/api/auth-config";
 import { errorMessage } from "@/lib/api/error-message";
-import { signup, useAuth, validateCredentials } from "@/lib/auth";
+import { signup } from "@/lib/auth";
+import { useAuth } from "@/lib/auth/context";
+import { validateCredentials } from "@/lib/auth/validation";
 import { pageTitle } from "@/lib/page-title";
 import { privatePageHead } from "@/lib/embed-meta";
 

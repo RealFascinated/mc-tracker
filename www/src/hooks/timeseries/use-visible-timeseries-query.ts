@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 import { useTimeseriesDirtyRefresh } from "@/hooks/timeseries/use-timeseries-dirty-refresh";
-import { useDashboardRefreshIntervalMs } from "@/lib/dashboard/use-dashboard-refresh";
+import { useDashboardRefreshIntervalMs } from "@/hooks/use-dashboard-refresh";
 
 type VisibleTimeseriesSource<TData> = {
   queryKey: readonly unknown[];
