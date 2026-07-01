@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-const MAX_POINTS: u64 = 400;
+const MAX_POINTS: u64 = 600;
 const MIN_STEP: Duration = Duration::from_secs(15);
 const MIN_SPAN: Duration = Duration::from_secs(5 * 60);
 const MAX_SPAN: Duration = Duration::from_secs(730 * 24 * 60 * 60);
@@ -14,6 +14,14 @@ pub fn min_span() -> Duration {
 
 pub fn max_span() -> Duration {
     MAX_SPAN
+}
+
+pub fn max_points() -> u64 {
+    MAX_POINTS
+}
+
+pub fn min_step() -> Duration {
+    MIN_STEP
 }
 
 pub fn step_for(span: Duration) -> Duration {
@@ -32,7 +40,7 @@ mod tests {
 
     #[test]
     fn step_for_one_hour_returns_15_seconds() {
-        assert_eq!(step_for(Duration::from_secs(3600)), Duration::from_secs(15));
+        assert_eq!(step_for(Duration::from_secs(3600)), min_step());
     }
 
     #[test]

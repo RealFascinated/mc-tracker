@@ -6,9 +6,10 @@ import {
   parseMetricRangeSearchParam,
 } from "@/lib/metrics/range";
 import { formatEpochRangeParts } from "@/lib/formatter";
-
-const METRIC_WINDOW_MIN_SPAN_SECONDS = 5 * 60;
-const METRIC_WINDOW_MAX_SPAN_SECONDS = 730 * 24 * 60 * 60;
+import {
+  METRIC_WINDOW_MAX_SPAN_SECONDS,
+  METRIC_WINDOW_MIN_SPAN_SECONDS,
+} from "@/lib/metrics/window-policy";
 
 export type MetricTimeWindow =
   | { kind: "preset"; range: MetricTimeRange }

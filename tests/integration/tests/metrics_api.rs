@@ -5,7 +5,7 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use chrono::Utc;
 use mc_db::model::{Platform, Server};
-use mc_metrics::{peak_players_24h, peak_players_7d, player_count_series};
+use mc_metrics::{max_points, min_span, peak_players_24h, peak_players_7d, player_count_series};
 use tower::ServiceExt;
 use uuid::Uuid;
 use wiremock::matchers::{method, query_param};
@@ -335,7 +335,7 @@ async fn get_servers_timeseries_returns_aligned_series() {
     let fixture = load_api_fixture("servers-timeseries-sample.json");
     assert_eq!(body["id"], fixture["id"]);
     assert_eq!(body["step"], fixture["step"]);
-    assert!(body["timestamps"].as_array().unwrap().len() <= 400);
+    assert!(body["timestamps"].as_array().unwrap().len() <= max_points() as usize);
     assert_eq!(
         body["timestamps"].as_array().unwrap().len(),
         body["playersOnline"].as_array().unwrap().len()
@@ -360,9 +360,10 @@ async fn get_servers_timeseries_rejects_short_window() {
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_secs() as i64;
+    let too_short = min_span().as_secs() - 60;
     let uri = format!(
         "/servers/{server_id}/timeseries?from={}&to={}",
-        now - 60,
+        now - too_short as i64,
         now
     );
 

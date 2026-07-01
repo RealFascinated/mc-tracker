@@ -1,3 +1,5 @@
+import { METRIC_WINDOW_MAX_SPAN_SECONDS } from "@/lib/metrics/window-policy";
+
 const DAY_SECONDS = 86_400;
 
 export type MetricTimeRange =
@@ -28,7 +30,7 @@ export const METRIC_RANGE_LOOKBACK_SECONDS: Record<MetricTimeRange, number> = {
   "3mo": 90 * DAY_SECONDS,
   "6mo": 180 * DAY_SECONDS,
   "1y": 365 * DAY_SECONDS,
-  "2y": 730 * DAY_SECONDS,
+  "2y": METRIC_WINDOW_MAX_SPAN_SECONDS,
 };
 
 const METRIC_RANGES = [

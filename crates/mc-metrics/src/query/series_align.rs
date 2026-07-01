@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::query::MetricQueryWindow;
 
-/// Expand sparse VictoriaMetrics samples onto the query window grid (max 400 points).
+/// Expand sparse VictoriaMetrics samples onto the query window grid (at most [`max_points`]).
 pub fn align_samples_to_window(
     window: &MetricQueryWindow,
     samples: &[(i64, Option<f64>)],

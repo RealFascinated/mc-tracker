@@ -102,7 +102,8 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs() as i64;
-        let from = to - 4 * 60;
+        let min_span_secs = step_policy::min_span().as_secs() as i64;
+        let from = to - (min_span_secs - 60);
         assert!(MetricQueryWindow::parse(from, to).is_err());
     }
 
@@ -112,7 +113,8 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs() as i64;
-        let from = to - 731 * 24 * 60 * 60;
+        let max_span_secs = step_policy::max_span().as_secs() as i64;
+        let from = to - (max_span_secs + 86_400);
         assert!(MetricQueryWindow::parse(from, to).is_err());
     }
 
@@ -127,19 +129,19 @@ mod tests {
             .unwrap()
             .as_secs() as i64;
         let window = MetricQueryWindow::parse(from, to).unwrap();
-        assert_eq!(window.step(), Duration::from_secs(15));
+        assert_eq!(window.step(), step_policy::min_step());
         assert!(window.to() <= SystemTime::now());
     }
 
     #[test]
-    fn point_count_stays_within_400_for_one_hour() {
+    fn point_count_stays_within_max_for_one_hour() {
         let to = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs() as i64;
         let from = to - 3600;
         let window = MetricQueryWindow::parse(from, to).unwrap();
-        assert!(window.point_count() <= 400);
+        assert!(window.point_count() <= step_policy::max_points());
     }
 
     #[test]
@@ -153,20 +155,21 @@ mod tests {
     }
 
     #[test]
-    fn point_count_stays_within_400_for_policy_table_spans() {
+    fn point_count_stays_within_max_for_policy_table_spans() {
         let to = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs() as i64;
-        let spans_secs = [
-            5 * 60,
+        let max_span_secs = step_policy::max_span().as_secs();
+        let spans_secs: [i64; 8] = [
+            step_policy::min_span().as_secs() as i64,
             3600,
             6 * 3600,
             24 * 3600,
             7 * 24 * 3600,
             30 * 24 * 3600,
             365 * 24 * 3600,
-            730 * 24 * 3600 - 60,
+            max_span_secs as i64 - 60,
         ];
 
         for span in spans_secs {
@@ -174,7 +177,7 @@ mod tests {
             let window = MetricQueryWindow::parse(from, to)
                 .unwrap_or_else(|err| panic!("span {span}s should be valid: {err}"));
             assert!(
-                window.point_count() <= 400,
+                window.point_count() <= step_policy::max_points(),
                 "span={span}s step={}s points={}",
                 window.step_seconds(),
                 window.point_count()

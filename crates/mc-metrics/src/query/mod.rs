@@ -13,6 +13,7 @@ pub use server_queries::{
     peak_players_24h, peak_players_24h_by_server, peak_players_7d, player_count_series,
     total_players_series,
 };
+pub use step_policy::{max_points, max_span, min_span, min_step};
 pub use vm_query::VmQueryBuilder;
 
 pub(crate) use vm_query::VmQuery;
