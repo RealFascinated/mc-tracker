@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-const MAX_POINTS: u64 = 600;
+const MAX_POINTS: u64 = 800;
 const MIN_STEP: Duration = Duration::from_secs(15);
 const MIN_SPAN: Duration = Duration::from_secs(5 * 60);
 const MAX_SPAN: Duration = Duration::from_secs(730 * 24 * 60 * 60);
@@ -44,10 +44,10 @@ mod tests {
     }
 
     #[test]
-    fn step_for_seven_days_returns_30_minutes() {
+    fn step_for_seven_days_returns_15_minutes() {
         assert_eq!(
             step_for(Duration::from_secs(7 * 24 * 60 * 60)),
-            Duration::from_secs(1800)
+            Duration::from_secs(900)
         );
     }
 
@@ -62,7 +62,7 @@ mod tests {
     #[test]
     fn step_for_boundary_snaps_to_nice_interval() {
         let span = Duration::from_secs(400 * 60);
-        assert_eq!(step_for(span), Duration::from_secs(60));
+        assert_eq!(step_for(span), Duration::from_secs(30));
     }
 
     /// Port of Server Monitor `MetricStepPolicyTest` table cases.
@@ -70,10 +70,10 @@ mod tests {
     fn step_for_metric_step_policy_table() {
         let cases = [
             (Duration::from_secs(3600), 15),
-            (Duration::from_secs(6 * 3600), 60),
-            (Duration::from_secs(24 * 3600), 300),
-            (Duration::from_secs(7 * 24 * 3600), 1800),
-            (Duration::from_secs(30 * 24 * 3600), 7200),
+            (Duration::from_secs(6 * 3600), 30),
+            (Duration::from_secs(24 * 3600), 120),
+            (Duration::from_secs(7 * 24 * 3600), 900),
+            (Duration::from_secs(30 * 24 * 3600), 3600),
             (Duration::from_secs(365 * 24 * 3600), 86400),
         ];
 
@@ -88,6 +88,6 @@ mod tests {
 
     #[test]
     fn step_for_max_span_uses_largest_nice_interval() {
-        assert_eq!(step_for(max_span()), Duration::from_secs(172_800));
+        assert_eq!(step_for(max_span()), Duration::from_secs(86_400));
     }
 }

@@ -1,4 +1,7 @@
+import type { ReactNode } from "react";
+
 import { LoadingState } from "@/components/loading-state";
+import { ChartEmpty } from "@/components/metrics/chart-empty";
 import type { LazyMetricChartState } from "@/components/dashboard/charts/lazy-metric-chart-state";
 import { MetricChartView } from "@/components/metrics/metric-chart-view";
 import type { MetricTimeSeries } from "@/lib/api/metric-timeseries";
@@ -9,6 +12,7 @@ import {
   DASHBOARD_CHART_ERROR_MESSAGE,
   DASHBOARD_CHART_PROPS,
 } from "@/lib/metrics/dashboard-chart-constants";
+import { cn } from "@/lib/utils";
 
 type LazyMetricChartBodyProps = {
   state: LazyMetricChartState;
@@ -17,6 +21,28 @@ type LazyMetricChartBodyProps = {
   hydrateWhen: boolean;
   height?: number;
 };
+
+function LazyMetricChartOverlay({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="relative h-full min-h-0">
+      <div className="h-full" aria-hidden />
+      <div
+        className={cn(
+          "absolute inset-0 z-10 flex items-center justify-center",
+          className,
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export function LazyMetricChartBody({
   state,
@@ -27,24 +53,27 @@ export function LazyMetricChartBody({
 }: LazyMetricChartBodyProps) {
   if (state.kind === "error") {
     return (
-      <div className="flex h-full items-center px-4">
-        <p className="text-sm text-destructive">
-          {DASHBOARD_CHART_ERROR_MESSAGE}
-        </p>
+      <ChartEmpty
+        message={DASHBOARD_CHART_ERROR_MESSAGE}
+        height={height}
+        className="text-sm text-destructive"
+      />
+    );
+  }
+
+  if (state.kind === "idle") {
+    return (
+      <div className="relative h-full min-h-0">
+        <div className="h-full" aria-hidden />
       </div>
     );
   }
 
-  if (state.kind === "idle" || state.kind === "loading") {
+  if (state.kind === "loading") {
     return (
-      <div className="relative h-full min-h-0">
-        <div className="h-full" aria-hidden />
-        {state.kind === "loading" ? (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
-            <LoadingState message="Loading…" />
-          </div>
-        ) : null}
-      </div>
+      <LazyMetricChartOverlay className="bg-card/80">
+        <LoadingState message="Loading…" />
+      </LazyMetricChartOverlay>
     );
   }
 

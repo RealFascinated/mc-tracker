@@ -1,16 +1,21 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { AsnIdentityHeader } from "@/components/dashboard/asn-identity-header";
 import { AsnPlayersChart } from "@/components/dashboard/charts/asn-players-chart";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { DashboardCardHeader } from "@/components/dashboard/dashboard-card-header";
+import { DashboardSearchInput } from "@/components/dashboard/dashboard-search-input";
 import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
-import { SiteHeaderNav } from "@/components/site-header-toolbar";
+import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
+import {
+  SiteHeaderNav,
+  SiteHeaderToolbar,
+} from "@/components/site-header-toolbar";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import { asnDisplayName } from "@/lib/api/asns";
 import { ApiClientError } from "@/lib/api/client";
@@ -87,6 +92,7 @@ function AsnDetailPage() {
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const { refreshIntervalMs } = useDashboardRefresh();
   const initialAsn = Route.useLoaderData();
+  const [searchInput, setSearchInput] = useState("");
   const asnOrg = searchAsnOrg ?? "";
   const platformFilter: ServerPlatformFilter = urlPlatform ?? "all";
 
@@ -123,8 +129,8 @@ function AsnDetailPage() {
     [navigate],
   );
 
-  const setCustomTimeRange = useCallback(
-    (from: number, to: number) => {
+  const navigateCustomTimeRange = useCallback(
+    (from: number, to: number, options?: { replace?: boolean }) => {
       void navigate({
         search: (prev) => ({
           ...prev,
@@ -132,11 +138,26 @@ function AsnDetailPage() {
           from,
           to,
         }),
-        replace: true,
+        replace: options?.replace ?? false,
         resetScroll: false,
       });
     },
     [navigate],
+  );
+  const setCustomTimeRange = useCallback(
+    (from: number, to: number) => {
+      navigateCustomTimeRange(from, to, { replace: true });
+    },
+    [navigateCustomTimeRange],
+  );
+  const handleZoomToRange = useCallback(
+    (from: number, to: number) => {
+      navigateCustomTimeRange(
+        from,
+        Math.min(to, Math.floor(Date.now() / 1000)),
+      );
+    },
+    [navigateCustomTimeRange],
   );
 
   const setPlatformFilter = useCallback(
@@ -167,6 +188,14 @@ function AsnDetailPage() {
           onCustomChange={setCustomTimeRange}
         />
       </SiteHeaderNav>
+      <SiteHeaderToolbar>
+        <div className="dashboard-header-search-slot">
+          <DashboardSearchInput
+            value={searchInput}
+            onChange={setSearchInput}
+          />
+        </div>
+      </SiteHeaderToolbar>
 
       <main className="dashboard-shell server-detail-page">
           <Link
@@ -184,34 +213,39 @@ function AsnDetailPage() {
             </DashboardCard>
           </FadeInAnimation>
 
-          <FadeInAnimation>
-            <DashboardCard className="hero-chart-panel">
-              <DashboardCardHeader title="Player history" />
-              <AsnPlayersChart
-                asn={asnDetail.asn}
-                asnOrg={asnDetail.asnOrg}
-                window={timeWindow}
-                height={360}
-              />
-            </DashboardCard>
-          </FadeInAnimation>
-
-          <ServerMetricsGrid
-            servers={filteredServers}
+          <MetricChartsScope
             window={timeWindow}
-            platformFilter={platformFilter}
-            onPlatformFilterChange={setPlatformFilter}
-            trackedServers={asnDetail.summary.trackedServers}
-            section={{
-              title: "Servers on this network",
-              subtitleDefault: `${asnDetail.serverCount} tracked server${asnDetail.serverCount === 1 ? "" : "s"}`,
-              subtitleFiltered: (shown, total) =>
-                `Showing ${shown} of ${total} servers`,
-              emptyTracked: "No servers are tracked on this network.",
-              emptyFiltered: "No servers match the selected platform.",
-              emptyFilteredHint: "Switch to All, Java, or Bedrock.",
-            }}
-          />
+            onZoomToRange={handleZoomToRange}
+          >
+            <FadeInAnimation>
+              <DashboardCard className="hero-chart-panel">
+                <DashboardCardHeader title="Player history" />
+                <AsnPlayersChart
+                  asn={asnDetail.asn}
+                  asnOrg={asnDetail.asnOrg}
+                  window={timeWindow}
+                  height={360}
+                />
+              </DashboardCard>
+            </FadeInAnimation>
+
+            <ServerMetricsGrid
+              servers={filteredServers}
+              window={timeWindow}
+              platformFilter={platformFilter}
+              onPlatformFilterChange={setPlatformFilter}
+              trackedServers={asnDetail.summary.trackedServers}
+              section={{
+                title: "Servers on this network",
+                subtitleDefault: `${asnDetail.serverCount} tracked server${asnDetail.serverCount === 1 ? "" : "s"}`,
+                subtitleFiltered: (shown, total) =>
+                  `Showing ${shown} of ${total} servers`,
+                emptyTracked: "No servers are tracked on this network.",
+                emptyFiltered: "No servers match the selected platform.",
+                emptyFilteredHint: "Switch to All, Java, or Bedrock.",
+              }}
+            />
+          </MetricChartsScope>
       </main>
     </>
   );

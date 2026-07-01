@@ -1,18 +1,23 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { DashboardCardHeader } from "@/components/dashboard/dashboard-card-header";
 import { ServerPlayersChart } from "@/components/dashboard/charts/server-players-chart";
+import { DashboardSearchInput } from "@/components/dashboard/dashboard-search-input";
 import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
 import {
   ServerDetailMeta,
   ServerIdentityHeader,
 } from "@/components/dashboard/server-identity-header";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
-import { SiteHeaderNav } from "@/components/site-header-toolbar";
+import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
+import {
+  SiteHeaderNav,
+  SiteHeaderToolbar,
+} from "@/components/site-header-toolbar";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import { asnDetailSearch } from "@/lib/api/asns";
 import { ApiClientError } from "@/lib/api/client";
@@ -64,6 +69,7 @@ function ServerDetailPage() {
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const { refreshIntervalMs } = useDashboardRefresh();
   const initialServer = Route.useLoaderData();
+  const [searchInput, setSearchInput] = useState("");
 
   const { data: server = initialServer } = useQuery({
     ...serverQueryOptions(serverId),
@@ -98,8 +104,8 @@ function ServerDetailPage() {
     [navigate],
   );
 
-  const setCustomTimeRange = useCallback(
-    (from: number, to: number) => {
+  const navigateCustomTimeRange = useCallback(
+    (from: number, to: number, options?: { replace?: boolean }) => {
       void navigate({
         search: (prev) => ({
           ...prev,
@@ -107,11 +113,26 @@ function ServerDetailPage() {
           from,
           to,
         }),
-        replace: true,
+        replace: options?.replace ?? false,
         resetScroll: false,
       });
     },
     [navigate],
+  );
+  const setCustomTimeRange = useCallback(
+    (from: number, to: number) => {
+      navigateCustomTimeRange(from, to, { replace: true });
+    },
+    [navigateCustomTimeRange],
+  );
+  const handleZoomToRange = useCallback(
+    (from: number, to: number) => {
+      navigateCustomTimeRange(
+        from,
+        Math.min(to, Math.floor(Date.now() / 1000)),
+      );
+    },
+    [navigateCustomTimeRange],
   );
 
   return (
@@ -123,6 +144,14 @@ function ServerDetailPage() {
           onCustomChange={setCustomTimeRange}
         />
       </SiteHeaderNav>
+      <SiteHeaderToolbar>
+        <div className="dashboard-header-search-slot">
+          <DashboardSearchInput
+            value={searchInput}
+            onChange={setSearchInput}
+          />
+        </div>
+      </SiteHeaderToolbar>
 
       <main className="dashboard-shell server-detail-page">
           <Link
@@ -157,16 +186,21 @@ function ServerDetailPage() {
             </DashboardCard>
           </FadeInAnimation>
 
-          <FadeInAnimation>
-            <DashboardCard className="hero-chart-panel">
-              <DashboardCardHeader title="Player history" />
-              <ServerPlayersChart
-                serverId={server.id}
-                window={timeWindow}
-                height={360}
-              />
-            </DashboardCard>
-          </FadeInAnimation>
+          <MetricChartsScope
+            window={timeWindow}
+            onZoomToRange={handleZoomToRange}
+          >
+            <FadeInAnimation>
+              <DashboardCard className="hero-chart-panel">
+                <DashboardCardHeader title="Player history" />
+                <ServerPlayersChart
+                  serverId={server.id}
+                  window={timeWindow}
+                  height={360}
+                />
+              </DashboardCard>
+            </FadeInAnimation>
+          </MetricChartsScope>
       </main>
     </>
   );

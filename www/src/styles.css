@@ -752,6 +752,7 @@
 
   .dashboard-time-controls-segment--range {
     @apply text-monitor dark:text-warning;
+    @apply max-sm:text-[0.625rem];
   }
 
   .dashboard-time-controls-segment--refresh {

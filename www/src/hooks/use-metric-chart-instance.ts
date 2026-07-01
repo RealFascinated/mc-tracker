@@ -1,4 +1,4 @@
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
 import uPlot from "uplot";
 import type {
   Dispatch,
@@ -22,6 +22,16 @@ import {
 import {
   getChartColors,
 } from "@/lib/metrics/chart-colors";
+import {
+  createChartZoomSyncHook,
+  registerMetricsChartSync,
+  unregisterMetricsChartSync,
+  useMetricsChartSyncKey,
+} from "@/lib/metrics/chart-sync";
+import {
+  bindChartZoomNavigate,
+  useMetricsChartZoom,
+} from "@/lib/metrics/chart-zoom";
 import {
   buildUPlotOptions,
   chartLayoutForWidth,
@@ -119,6 +129,11 @@ function useMetricChartInstance({
   tooltipSort,
   setLayoutDensity,
 }: UseMetricChartInstanceParams) {
+  const chartZoom = useMetricsChartZoom();
+  const syncKey = useMetricsChartSyncKey() ?? undefined;
+  const chartZoomRef = useRef(chartZoom);
+  chartZoomRef.current = chartZoom;
+
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -126,7 +141,9 @@ function useMetricChartInstance({
     let chart: uPlot | null = null;
     let resizeObserver: ResizeObserver | null = null;
     let unbindInteractionDismiss: (() => void) | null = null;
+    let unbindZoomNavigate: (() => void) | null = null;
     let tooltip: HTMLDivElement | null = null;
+    const xDrag = Boolean(chartZoomRef.current) && !compact;
 
     if (showTooltip) {
       tooltip = createChartTooltipElement(resolvedTheme);
@@ -170,6 +187,7 @@ function useMetricChartInstance({
       layout,
       seriesColors,
       seriesFills,
+      xDrag,
     });
 
     const colors = seriesColors ?? getChartColors(resolvedTheme);
@@ -183,6 +201,9 @@ function useMetricChartInstance({
     };
 
     const hooks: uPlot.Hooks.Arrays = {};
+    if (syncKey) {
+      hooks.setScale = [createChartZoomSyncHook(syncKey)];
+    }
     if (showTooltip && tooltip) {
       hooks.setCursor = [
         createCursorTooltipHandler({
@@ -216,6 +237,9 @@ function useMetricChartInstance({
       container,
     );
     chartRef.current = chart;
+    if (syncKey) {
+      registerMetricsChartSync(syncKey, chart);
+    }
     applySeriesVisibility(chart);
     syncUnitInsets(chart);
 
@@ -246,10 +270,19 @@ function useMetricChartInstance({
         ? bindChartInteractionDismiss(chart, tooltip)
         : null;
 
+    const zoom = chartZoomRef.current;
+    if (zoom) {
+      unbindZoomNavigate = bindChartZoomNavigate(chart, zoom.getZoomContext);
+    }
+
     return () => {
       unbindInteractionDismiss?.();
+      unbindZoomNavigate?.();
       resizeObserver.disconnect();
       if (tooltip) destroyChartTooltipElement(tooltip);
+      if (syncKey) {
+        unregisterMetricsChartSync(syncKey, chart);
+      }
       chart.destroy();
       chartRef.current = null;
     };
@@ -290,6 +323,7 @@ function useMetricChartInstance({
     sizeRef,
     sourceIndicesRef,
     stacked,
+    syncKey,
     syncUnitInsets,
     tooltipColumnSize,
     tooltipSort,

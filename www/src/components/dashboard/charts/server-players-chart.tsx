@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import { LoadingState } from "@/components/loading-state";
+import { ChartEmpty } from "@/components/metrics/chart-empty";
 import { MetricChartView } from "@/components/metrics/metric-chart-view";
 import { useIntersectionVisible } from "@/hooks/use-intersection-visible";
 import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
@@ -12,6 +13,7 @@ import { createPlayersChart } from "@/lib/metrics/charts/players";
 import {
   DASHBOARD_CHART_PROPS,
   DASHBOARD_CHART_EMPTY_MESSAGE,
+  DASHBOARD_PLAYER_HISTORY_ERROR_MESSAGE,
 } from "@/lib/metrics/dashboard-chart-constants";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 
@@ -52,10 +54,12 @@ export function ServerPlayersChart({
 
   if (isError) {
     return (
-      <div ref={ref} className="flex items-center px-4" style={{ height }}>
-        <p className="text-sm text-destructive">
-          Failed to load player history.
-        </p>
+      <div ref={ref} className="w-full">
+        <ChartEmpty
+          message={DASHBOARD_PLAYER_HISTORY_ERROR_MESSAGE}
+          height={height}
+          className="text-sm text-destructive"
+        />
       </div>
     );
   }

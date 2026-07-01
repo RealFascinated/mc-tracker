@@ -10,7 +10,7 @@ function ChartEmpty({ message, className, height = 220 }: Props) {
   return (
     <div
       className={cn(
-        "flex items-center justify-center text-xs text-muted-foreground",
+        "flex w-full items-center justify-center text-center text-xs text-muted-foreground",
         className,
       )}
       style={{ height }}

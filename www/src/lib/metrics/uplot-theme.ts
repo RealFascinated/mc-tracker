@@ -223,6 +223,7 @@ type BuildUPlotOptionsParams = {
   layout?: ChartLayout;
   seriesColors?: Array<string>;
   seriesFills?: Array<boolean | undefined>;
+  xDrag?: boolean;
 };
 
 const SCALE_KEYS = ["y", "y2", "y3", "y4", "y5"] as const;
@@ -344,6 +345,7 @@ export function buildUPlotOptions({
   layout = NORMAL_LAYOUT,
   seriesColors,
   seriesFills,
+  xDrag = false,
 }: BuildUPlotOptionsParams): uPlot.Options {
   const colors = getChartColors(theme);
   const gridColor = readCssVar("--border");
@@ -485,7 +487,7 @@ export function buildUPlotOptions({
     bands,
     cursor: {
       show: !compact,
-      drag: { x: false, y: false },
+      drag: { x: xDrag, y: false },
       focus: { prox: 24 },
     },
     scales: yScales,

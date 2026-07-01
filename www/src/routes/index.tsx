@@ -11,6 +11,7 @@ import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
 import { DashboardSearchInput } from "@/components/dashboard/dashboard-search-input";
 import { LoadingState } from "@/components/loading-state";
+import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
 import {
   SiteHeaderNav,
   SiteHeaderToolbar,
@@ -122,8 +123,8 @@ function DashboardPage() {
     },
     [navigate],
   );
-  const setCustomTimeRange = useCallback(
-    (from: number, to: number) => {
+  const navigateCustomTimeRange = useCallback(
+    (from: number, to: number, options?: { replace?: boolean }) => {
       void navigate({
         search: (prev) => ({
           ...prev,
@@ -131,11 +132,26 @@ function DashboardPage() {
           from,
           to,
         }),
-        replace: true,
+        replace: options?.replace ?? false,
         resetScroll: false,
       });
     },
     [navigate],
+  );
+  const setCustomTimeRange = useCallback(
+    (from: number, to: number) => {
+      navigateCustomTimeRange(from, to, { replace: true });
+    },
+    [navigateCustomTimeRange],
+  );
+  const handleZoomToRange = useCallback(
+    (from: number, to: number) => {
+      navigateCustomTimeRange(
+        from,
+        Math.min(to, Math.floor(Date.now() / 1000)),
+      );
+    },
+    [navigateCustomTimeRange],
   );
   const setDashboardView = useCallback(
     (view: DashboardView) => {
@@ -210,26 +226,31 @@ function DashboardPage() {
         <main className="dashboard-shell">
           <DashboardStatsRow summary={activeData.summary} />
 
-          <HeroChartPanel
-            hasServers={activeData.summary.trackedServers > 0}
+          <MetricChartsScope
             window={timeWindow}
-          />
+            onZoomToRange={handleZoomToRange}
+          >
+            <HeroChartPanel
+              hasServers={activeData.summary.trackedServers > 0}
+              window={timeWindow}
+            />
 
-          {dashboardView === "asn" ? (
-            <AsnMetricsGrid
-              asns={asnsData?.asns ?? []}
-              window={timeWindow}
-              trackedAsns={asnsData?.summary.trackedAsns ?? 0}
-            />
-          ) : (
-            <ServerMetricsGrid
-              servers={filteredServers}
-              window={timeWindow}
-              platformFilter={platformFilter}
-              onPlatformFilterChange={setPlatformFilter}
-              trackedServers={serversData?.summary.trackedServers ?? 0}
-            />
-          )}
+            {dashboardView === "asn" ? (
+              <AsnMetricsGrid
+                asns={asnsData?.asns ?? []}
+                window={timeWindow}
+                trackedAsns={asnsData?.summary.trackedAsns ?? 0}
+              />
+            ) : (
+              <ServerMetricsGrid
+                servers={filteredServers}
+                window={timeWindow}
+                platformFilter={platformFilter}
+                onPlatformFilterChange={setPlatformFilter}
+                trackedServers={serversData?.summary.trackedServers ?? 0}
+              />
+            )}
+          </MetricChartsScope>
         </main>
       )}
     </>
