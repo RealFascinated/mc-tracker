@@ -68,6 +68,21 @@ export function validateMetricEpochWindow(
   return undefined;
 }
 
+export function metricTimeWindowSearchParams(
+  search: MetricTimeWindowSearch,
+): MetricTimeWindowSearch {
+  const window = metricTimeWindowFromSearch(search);
+  if (window.kind === "custom") {
+    return { from: window.from, to: window.to };
+  }
+
+  if (window.range === DEFAULT_METRIC_TIME_RANGE) {
+    return {};
+  }
+
+  return { range: window.range };
+}
+
 export function metricTimeWindowFromSearch(
   search: MetricTimeWindowSearch,
 ): MetricTimeWindow {

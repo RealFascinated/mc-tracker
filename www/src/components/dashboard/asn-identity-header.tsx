@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import { EntityCardStats } from "@/components/dashboard/grids/entity-metrics-grid";
+import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import type { AsnDetailResponse } from "@/lib/api/asns";
 import { asnDetailSearch, asnDisplayName } from "@/lib/api/asns";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ export function AsnIdentityHeader({
   linkToDetail = false,
   layout = "card",
 }: AsnIdentityHeaderProps) {
+  const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const displayName = asnDisplayName(asn);
   const nameContent = (
     <div className="entity-metrics-name">{displayName}</div>
@@ -36,7 +38,7 @@ export function AsnIdentityHeader({
               <Link
                 to="/asns/$asn"
                 params={{ asn: asn.asn }}
-                search={asnDetailSearch(asn.asnOrg)}
+                search={asnDetailSearch(asn.asnOrg, timeWindowSearch)}
                 className="min-w-0 hover:text-monitor focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:hover:text-warning dark:focus-visible:ring-warning"
               >
                 {nameContent}

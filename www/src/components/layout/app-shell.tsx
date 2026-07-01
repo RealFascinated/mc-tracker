@@ -2,9 +2,10 @@ import { cn } from "@/lib/utils";
 
 import {
   AppSidebarMobileNav,
-  AppSidebarNav,
-  type AppSidebarNavItem,
+  AppSidebarNav
+  
 } from "./app-sidebar-nav";
+import type {AppSidebarNavItem} from "./app-sidebar-nav";
 
 type AppShellProps = {
   section: string;

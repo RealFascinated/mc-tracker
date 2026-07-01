@@ -1,18 +1,21 @@
 import {
-  DashboardRangeToggle,
-  type DashboardRangeOption,
+  DashboardRangeToggle
+  
 } from "@/components/dashboard/dashboard-card";
+import type {DashboardRangeOption} from "@/components/dashboard/dashboard-card";
 import {
-  EntityMetricsGrid,
-  type EntityMetricsSectionCopy,
+  EntityMetricsGrid
+  
 } from "@/components/dashboard/grids/entity-metrics-grid";
+import type {EntityMetricsSectionCopy} from "@/components/dashboard/grids/entity-metrics-grid";
 import { ServerIdentityHeader } from "@/components/dashboard/server-identity-header";
 import {
-  SERVER_PLATFORM_FILTER_OPTIONS,
-  type ServerListItem,
-  type ServerPlatformFilter,
-  type ServerTimeseriesResponse,
+  SERVER_PLATFORM_FILTER_OPTIONS
+  
+  
+  
 } from "@/lib/api/servers";
+import type {ServerListItem, ServerPlatformFilter, ServerTimeseriesResponse} from "@/lib/api/servers";
 import { serverTimeseriesQueryOptions } from "@/lib/api/servers.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
 import { createPlayersChart } from "@/lib/metrics/charts/players";
@@ -36,26 +39,26 @@ type ServerMetricsGridProps = {
 };
 
 function serverGridEmptyCopy(platformFilter: ServerPlatformFilter): {
-  emptySearch: string;
-  emptySearchHint: string;
+  emptyFiltered: string;
+  emptyFilteredHint: string;
 } {
   if (platformFilter === "PC") {
     return {
-      emptySearch: "No Java servers to show.",
-      emptySearchHint: "Switch to All or Bedrock, or track a Java server.",
+      emptyFiltered: "No Java servers to show.",
+      emptyFilteredHint: "Switch to All or Bedrock, or track a Java server.",
     };
   }
 
   if (platformFilter === "PE") {
     return {
-      emptySearch: "No Bedrock servers to show.",
-      emptySearchHint: "Switch to All or Java, or track a Bedrock server.",
+      emptyFiltered: "No Bedrock servers to show.",
+      emptyFilteredHint: "Switch to All or Java, or track a Bedrock server.",
     };
   }
 
   return {
-    emptySearch: "No servers to show.",
-    emptySearchHint: "Try a different platform filter.",
+    emptyFiltered: "No servers to show.",
+    emptyFilteredHint: "Try a different platform filter.",
   };
 }
 
@@ -74,7 +77,6 @@ export function ServerMetricsGrid({
     <EntityMetricsGrid<ServerListItem, ServerTimeseriesResponse>
       items={servers}
       window={window}
-      hasActiveSearch={false}
       hasActiveFilter={hasActivePlatformFilter}
       trackedCount={trackedServers}
       headerTrailing={
@@ -100,11 +102,11 @@ export function ServerMetricsGrid({
         section ?? {
           title: "Per server",
           subtitleDefault: "Player history for each tracked server",
-          subtitleSearch: (shown, total) =>
+          subtitleFiltered: (shown, total) =>
             `Showing ${shown} of ${total} servers`,
           emptyTracked: "No servers are being tracked yet.",
-          emptySearch: emptyCopy.emptySearch,
-          emptySearchHint: emptyCopy.emptySearchHint,
+          emptyFiltered: emptyCopy.emptyFiltered,
+          emptyFilteredHint: emptyCopy.emptyFilteredHint,
         }
       }
     />

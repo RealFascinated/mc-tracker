@@ -4,8 +4,12 @@ import type {
   PlayersSummaryBase,
   PlayersTimeseriesPayload,
 } from "@/lib/api/types";
-import { fetchList } from "@/lib/api/types";
 import type { ServerListItem } from "@/lib/api/servers";
+import {
+  metricTimeWindowSearchParams
+  
+} from "@/lib/metrics/time-window";
+import type {MetricTimeWindowSearch} from "@/lib/metrics/time-window";
 
 export type AsnsSummary = PlayersSummaryBase & {
   trackedAsns: number;
@@ -44,9 +48,15 @@ export type AsnDetailSearch = {
   asnOrg?: string;
 };
 
-export function asnDetailSearch(asnOrg: string): AsnDetailSearch {
+export function asnDetailSearch(
+  asnOrg: string,
+  timeWindow: MetricTimeWindowSearch = {},
+): AsnDetailSearch & MetricTimeWindowSearch {
   const trimmed = asnOrg.trim();
-  return trimmed.length > 0 ? { asnOrg: trimmed } : {};
+  return {
+    ...metricTimeWindowSearchParams(timeWindow),
+    ...(trimmed.length > 0 ? { asnOrg: trimmed } : {}),
+  };
 }
 
 export function asnDisplayName(asn: Pick<AsnListItem, "asn" | "asnOrg">): string {
@@ -59,8 +69,8 @@ export function asnDisplayName(asn: Pick<AsnListItem, "asn" | "asnOrg">): string
   return "Unknown network";
 }
 
-export function getAsns(search?: string) {
-  return fetchList<AsnsListResponse>("/asns", search);
+export function getAsns() {
+  return apiFetch<AsnsListResponse>("/asns", { credentials: "omit" });
 }
 
 export function getAsn(asn: string, asnOrg = "") {

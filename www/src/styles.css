@@ -1057,6 +1057,10 @@
     @apply absolute top-[calc(100%+0.25rem)] right-0 left-0 z-50 max-h-72 overflow-y-auto rounded-soft border border-border bg-popover p-1 shadow-md;
   }
 
+  .dashboard-search-suggestions [role="listbox"] {
+    @apply m-0 list-none p-0;
+  }
+
   .dashboard-search-suggestion-status {
     @apply px-2.5 py-2 text-xs text-muted-foreground;
   }
@@ -1092,10 +1096,6 @@
   .entity-metrics-grid-container {
     container-type: inline-size;
     width: 100%;
-  }
-
-  .entity-metrics-grid-loading {
-    @apply pointer-events-none opacity-60 transition-opacity duration-150;
   }
 
   .entity-metrics-grid {

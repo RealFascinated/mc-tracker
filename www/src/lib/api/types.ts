@@ -1,5 +1,3 @@
-import { apiFetch } from "@/lib/api/client";
-
 type PeakPlayersRecord = {
   players: number;
   timestamp: number;
@@ -29,15 +27,3 @@ export type PlayersTimeseriesPayload = {
   timestamps: number[];
   playersOnline: Array<number | null>;
 };
-
-export function fetchList<T>(endpoint: string, search?: string): Promise<T> {
-  const params = new URLSearchParams();
-  const trimmed = search?.trim();
-  if (trimmed) {
-    params.set("search", trimmed);
-  }
-  const query = params.toString();
-  return apiFetch<T>(query ? `${endpoint}?${query}` : endpoint, {
-    credentials: "omit",
-  });
-}

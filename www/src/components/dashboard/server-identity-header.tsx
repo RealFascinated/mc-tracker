@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import { EntityCardStats } from "@/components/dashboard/grids/entity-metrics-grid";
+import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import { ServerFavicon } from "@/components/dashboard/server-favicon";
 import type { ServerListItem } from "@/lib/api/servers";
 import { asnDetailSearch } from "@/lib/api/asns";
@@ -34,6 +35,7 @@ export function ServerIdentityHeader({
   linkToDetail = false,
   layout = "card",
 }: ServerIdentityHeaderProps) {
+  const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const asnName = serverAsnName(server);
   const address = formatServerAddress(server);
 
@@ -57,6 +59,7 @@ export function ServerIdentityHeader({
               <Link
                 to="/servers/$serverId"
                 params={{ serverId: server.id }}
+                search={timeWindowSearch}
                 className="min-w-0 hover:text-monitor focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:hover:text-warning dark:focus-visible:ring-warning"
               >
                 {nameContent}
@@ -82,7 +85,7 @@ export function ServerIdentityHeader({
                   <Link
                     to="/asns/$asn"
                     params={{ asn: server.asn }}
-                    search={asnDetailSearch(server.asnOrg)}
+                    search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
                     className="hover:text-foreground hover:underline underline-offset-4"
                   >
                     {asnName}

@@ -6,6 +6,7 @@ import type { KeyboardEvent } from "react";
 
 import { ServerFavicon } from "@/components/dashboard/server-favicon";
 import { Input } from "@/components/ui/input";
+import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import type { ServerSearchItem } from "@/lib/api/servers";
 import { serversSearchQueryOptions } from "@/lib/api/servers.queries";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,7 @@ export function DashboardSearchInput({
   const listboxId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -50,10 +52,12 @@ export function DashboardSearchInput({
   });
 
   const suggestions = searchQuery.data?.servers ?? [];
+  const isSearching = searchQuery.isFetching && suggestions.length === 0;
   const showSuggestions =
     isOpen &&
     value.trim().length >= AUTOCOMPLETE_MIN_CHARS &&
     (searchQuery.isFetching || suggestions.length > 0);
+  const showListbox = showSuggestions && !isSearching;
 
   const closeSuggestions = useCallback(() => {
     setIsOpen(false);
@@ -67,9 +71,10 @@ export function DashboardSearchInput({
       void navigate({
         to: "/servers/$serverId",
         params: { serverId: server.id },
+        search: timeWindowSearch,
       });
     },
-    [closeSuggestions, navigate],
+    [closeSuggestions, navigate, timeWindowSearch],
   );
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -132,9 +137,10 @@ export function DashboardSearchInput({
         placeholder="Search servers…"
         aria-label="Search servers"
         aria-expanded={showSuggestions}
-        aria-controls={showSuggestions ? listboxId : undefined}
+        aria-busy={searchQuery.isFetching || undefined}
+        aria-controls={showListbox ? listboxId : undefined}
         aria-activedescendant={
-          showSuggestions && activeIndex >= 0
+          showListbox && activeIndex >= 0
             ? `${listboxId}-option-${activeIndex}`
             : undefined
         }
@@ -157,54 +163,54 @@ export function DashboardSearchInput({
         </button>
       ) : null}
       {showSuggestions ? (
-        <ul
-          id={listboxId}
-          role="listbox"
-          className="dashboard-search-suggestions"
-        >
-          {searchQuery.isFetching && suggestions.length === 0 ? (
-            <li className="dashboard-search-suggestion-status" role="status">
-              Searching…
-            </li>
-          ) : null}
-          {suggestions.map((server, index) => (
-            <li
-              key={server.id}
-              id={`${listboxId}-option-${index}`}
-              role="option"
-              aria-selected={index === activeIndex}
+        <div className="dashboard-search-suggestions">
+          {isSearching ? (
+            <div
+              className="dashboard-search-suggestion-status"
+              role="status"
+              aria-live="polite"
             >
-              <button
-                type="button"
-                className={cn(
-                  "dashboard-search-suggestion",
-                  index === activeIndex && "dashboard-search-suggestion-active",
-                )}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => selectSuggestion(server)}
-              >
-                <ServerFavicon
-                  name={server.name}
-                  favicon={server.favicon}
-                  size="sm"
-                />
-                <span className="dashboard-search-suggestion-copy">
-                  <span className="dashboard-search-suggestion-name">
-                    {server.name}
+              Searching…
+            </div>
+          ) : (
+            <ul id={listboxId} role="listbox">
+              {suggestions.map((server, index) => (
+                <li
+                  key={server.id}
+                  id={`${listboxId}-option-${index}`}
+                  role="option"
+                  aria-selected={index === activeIndex}
+                  className={cn(
+                    "dashboard-search-suggestion",
+                    index === activeIndex &&
+                      "dashboard-search-suggestion-active",
+                  )}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => selectSuggestion(server)}
+                >
+                  <ServerFavicon
+                    name={server.name}
+                    favicon={server.favicon}
+                    size="sm"
+                  />
+                  <span className="dashboard-search-suggestion-copy">
+                    <span className="dashboard-search-suggestion-name">
+                      {server.name}
+                    </span>
+                    <span className="dashboard-search-suggestion-host">
+                      {formatServerAddress(server)}
+                    </span>
                   </span>
-                  <span className="dashboard-search-suggestion-host">
-                    {formatServerAddress(server)}
-                  </span>
-                </span>
-                {server.playersOnline != null ? (
-                  <span className="dashboard-search-suggestion-players">
-                    {server.playersOnline.toLocaleString()}
-                  </span>
-                ) : null}
-              </button>
-            </li>
-          ))}
-        </ul>
+                  {server.playersOnline != null ? (
+                    <span className="dashboard-search-suggestion-players">
+                      {server.playersOnline.toLocaleString()}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       ) : null}
     </div>
   );

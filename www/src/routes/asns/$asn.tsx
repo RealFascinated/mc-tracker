@@ -11,16 +11,17 @@ import {
 } from "@/components/dashboard/dashboard-card";
 import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
-import { LoadingState } from "@/components/loading-state";
 import { SiteHeaderNav } from "@/components/site-header-toolbar";
+import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import { asnDisplayName } from "@/lib/api/asns";
 import { ApiClientError } from "@/lib/api/client";
 import { asnQueryOptions } from "@/lib/api/asns.queries";
 import {
   filterServersByPlatform,
-  parseServerPlatformFilterParam,
-  type ServerPlatformFilter,
+  parseServerPlatformFilterParam
+  
 } from "@/lib/api/servers";
+import type {ServerPlatformFilter} from "@/lib/api/servers";
 import { useDashboardRefresh } from "@/lib/dashboard/refresh-context";
 import { pageTitle } from "@/lib/page-title";
 import { DEFAULT_METRIC_TIME_RANGE } from "@/lib/metrics/range";
@@ -84,6 +85,7 @@ function AsnDetailPage() {
     platform: urlPlatform,
   } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const { refreshIntervalMs } = useDashboardRefresh();
   const initialAsn = Route.useLoaderData();
   const asnOrg = searchAsnOrg ?? "";
@@ -154,9 +156,8 @@ function AsnDetailPage() {
 
   const asnDetail = asnQuery.data;
   const filteredServers = useMemo(
-    () =>
-      filterServersByPlatform(asnDetail?.servers ?? [], platformFilter),
-    [asnDetail?.servers, platformFilter],
+    () => filterServersByPlatform(asnDetail.servers, platformFilter),
+    [asnDetail.servers, platformFilter],
   );
 
   return (
@@ -169,15 +170,10 @@ function AsnDetailPage() {
         />
       </SiteHeaderNav>
 
-      {!asnDetail ? (
-        <main className="dashboard-shell">
-          <LoadingState message="Loading network…" centered />
-        </main>
-      ) : (
-        <main className="dashboard-shell server-detail-page">
+      <main className="dashboard-shell server-detail-page">
           <Link
             to="/"
-            search={{ view: "asn" }}
+            search={{ ...timeWindowSearch, view: "asn" }}
             className="server-detail-back inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" aria-hidden />
@@ -207,15 +203,14 @@ function AsnDetailPage() {
             section={{
               title: "Servers on this network",
               subtitleDefault: `${asnDetail.serverCount} tracked server${asnDetail.serverCount === 1 ? "" : "s"}`,
-              subtitleSearch: (shown, total) =>
+              subtitleFiltered: (shown, total) =>
                 `Showing ${shown} of ${total} servers`,
               emptyTracked: "No servers are tracked on this network.",
-              emptySearch: "No servers match the selected platform.",
-              emptySearchHint: "Switch to All, Java, or Bedrock.",
+              emptyFiltered: "No servers match the selected platform.",
+              emptyFilteredHint: "Switch to All, Java, or Bedrock.",
             }}
           />
-        </main>
-      )}
+      </main>
     </>
   );
 }

@@ -4,6 +4,7 @@ import {
   EntityCardStats,
   EntityMetricsGrid,
 } from "@/components/dashboard/grids/entity-metrics-grid";
+import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import type { AsnListItem, AsnTimeseriesResponse } from "@/lib/api/asns";
 import { asnDisplayName, asnDetailSearch } from "@/lib/api/asns";
 import { asnTimeseriesQueryOptions } from "@/lib/api/asns.queries";
@@ -18,6 +19,8 @@ type AsnMetricsGridProps = {
 };
 
 function AsnMetricsCardHeader({ asn }: { asn: AsnListItem }) {
+  const timeWindowSearch = useMetricTimeWindowLinkSearch();
+
   return (
     <div className="entity-metrics-card-header">
       <div className="entity-metrics-identity">
@@ -26,7 +29,7 @@ function AsnMetricsCardHeader({ asn }: { asn: AsnListItem }) {
             <Link
               to="/asns/$asn"
               params={{ asn: asn.asn }}
-              search={asnDetailSearch(asn.asnOrg)}
+              search={asnDetailSearch(asn.asnOrg, timeWindowSearch)}
               className="hover:text-monitor focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:hover:text-warning dark:focus-visible:ring-warning"
             >
               {asnDisplayName(asn)}
@@ -55,7 +58,6 @@ export function AsnMetricsGrid({
     <EntityMetricsGrid<AsnListItem, AsnTimeseriesResponse>
       items={asns}
       window={window}
-      hasActiveSearch={false}
       trackedCount={trackedAsns}
       getKey={(asn) => `${asn.asn}\u0000${asn.asnOrg}`}
       renderHeader={(asn) => <AsnMetricsCardHeader asn={asn} />}
@@ -75,11 +77,11 @@ export function AsnMetricsGrid({
       section={{
         title: "Per ASN",
         subtitleDefault: "Player history grouped by network",
-        subtitleSearch: (shown, total) =>
+        subtitleFiltered: (shown, total) =>
           `Showing ${shown} of ${total} networks`,
         emptyTracked: "No networks are being tracked yet.",
-        emptySearch: "No networks to show.",
-        emptySearchHint: "Networks appear here once servers are tracked.",
+        emptyFiltered: "No networks to show.",
+        emptyFilteredHint: "Networks appear here once servers are tracked.",
       }}
     />
   );

@@ -19,9 +19,10 @@ import { useDashboardRefresh } from "@/lib/dashboard/refresh-context";
 import { asnsQueryOptions } from "@/lib/api/asns.queries";
 import {
   filterServersByPlatform,
-  parseServerPlatformFilterParam,
-  type ServerPlatformFilter,
+  parseServerPlatformFilterParam
+  
 } from "@/lib/api/servers";
+import type {ServerPlatformFilter} from "@/lib/api/servers";
 import { serversQueryOptions } from "@/lib/api/servers.queries";
 import { pageTitle } from "@/lib/page-title";
 import { DEFAULT_METRIC_TIME_RANGE } from "@/lib/metrics/range";

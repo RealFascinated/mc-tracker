@@ -5,7 +5,6 @@ import type {
   PlayersSummaryBase,
   PlayersTimeseriesPayload,
 } from "@/lib/api/types";
-import { fetchList } from "@/lib/api/types";
 
 export type { ServerPlatform, ServerPlatformFilter } from "@/lib/api/platform";
 export {
@@ -54,8 +53,8 @@ export type ServersSearchResponse = {
   servers: ServerSearchItem[];
 };
 
-export function getServers(search?: string) {
-  return fetchList<ServersListResponse>("/servers", search);
+export function getServers() {
+  return apiFetch<ServersListResponse>("/servers", { credentials: "omit" });
 }
 
 export function getServer(id: string) {

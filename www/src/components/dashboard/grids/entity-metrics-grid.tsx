@@ -21,10 +21,10 @@ import { peakTimestampTooltip } from "@/lib/format-peak-at";
 export type EntityMetricsSectionCopy = {
   title: string;
   subtitleDefault: string;
-  subtitleSearch: (shown: number, total: number) => string;
+  subtitleFiltered: (shown: number, total: number) => string;
   emptyTracked: string;
-  emptySearch: string;
-  emptySearchHint: string;
+  emptyFiltered: string;
+  emptyFilteredHint: string;
 };
 
 export type EntityMetricsGridConfig<
@@ -33,10 +33,8 @@ export type EntityMetricsGridConfig<
 > = {
   items: T[];
   window: MetricTimeWindow;
-  hasActiveSearch: boolean;
   hasActiveFilter?: boolean;
   trackedCount: number;
-  isLoading?: boolean;
   headerTrailing?: ReactNode;
   getKey: (item: T) => string;
   renderHeader: (item: T) => ReactNode;
@@ -125,10 +123,8 @@ export function EntityMetricsGrid<
 >({
   items,
   window,
-  hasActiveSearch,
-  hasActiveFilter = hasActiveSearch,
+  hasActiveFilter = false,
   trackedCount,
-  isLoading = false,
   headerTrailing,
   getKey,
   renderHeader,
@@ -151,12 +147,12 @@ export function EntityMetricsGrid<
         <div className="entity-metrics-section-header">
           <h2 className="entity-metrics-section-title">{section.title}</h2>
           <p className="entity-metrics-section-subtitle">
-            {section.emptySearch}
+            {section.emptyFiltered}
           </p>
         </div>
         <div className="entity-metrics-empty">
           <p className="text-sm text-muted-foreground">
-            {section.emptySearchHint}
+            {section.emptyFilteredHint}
           </p>
         </div>
       </section>
@@ -164,16 +160,13 @@ export function EntityMetricsGrid<
   }
 
   return (
-    <section
-      className="entity-metrics-section motion-chart-reveal"
-      aria-busy={isLoading}
-    >
+    <section className="entity-metrics-section motion-chart-reveal">
       <div className="entity-metrics-section-header">
         <div className="min-w-0">
           <h2 className="entity-metrics-section-title">{section.title}</h2>
           <p className="entity-metrics-section-subtitle">
             {hasActiveFilter
-              ? section.subtitleSearch(items.length, trackedCount)
+              ? section.subtitleFiltered(items.length, trackedCount)
               : section.subtitleDefault}
           </p>
         </div>
@@ -182,10 +175,9 @@ export function EntityMetricsGrid<
         ) : null}
       </div>
 
-      <div className={isLoading ? "entity-metrics-grid-loading" : undefined}>
-        <div className="entity-metrics-grid-container">
-          <div className="entity-metrics-grid">
-            {items.map((item) => (
+      <div className="entity-metrics-grid-container">
+        <div className="entity-metrics-grid">
+          {items.map((item) => (
               <LazyVisibleMount
                 key={getKey(item)}
                 placeholder={
@@ -208,7 +200,6 @@ export function EntityMetricsGrid<
                 )}
               </LazyVisibleMount>
             ))}
-          </div>
         </div>
       </div>
     </section>

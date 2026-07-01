@@ -13,8 +13,8 @@ import {
   ServerDetailMeta,
   ServerIdentityHeader,
 } from "@/components/dashboard/server-identity-header";
-import { LoadingState } from "@/components/loading-state";
 import { SiteHeaderNav } from "@/components/site-header-toolbar";
+import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import { asnDetailSearch } from "@/lib/api/asns";
 import { ApiClientError } from "@/lib/api/client";
 import { serverQueryOptions } from "@/lib/api/servers.queries";
@@ -62,6 +62,7 @@ function ServerDetailPage() {
     to: searchTo,
   } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const { refreshIntervalMs } = useDashboardRefresh();
   const initialServer = Route.useLoaderData();
 
@@ -126,14 +127,10 @@ function ServerDetailPage() {
         />
       </SiteHeaderNav>
 
-      {!server ? (
-        <main className="dashboard-shell">
-          <LoadingState message="Loading server…" centered />
-        </main>
-      ) : (
-        <main className="dashboard-shell server-detail-page">
+      <main className="dashboard-shell server-detail-page">
           <Link
             to="/"
+            search={timeWindowSearch}
             className="server-detail-back inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" aria-hidden />
@@ -150,7 +147,7 @@ function ServerDetailPage() {
                   <Link
                     to="/asns/$asn"
                     params={{ asn: server.asn }}
-                    search={asnDetailSearch(server.asnOrg)}
+                    search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
                     className="font-medium text-foreground underline-offset-4 hover:underline"
                   >
                     network page
@@ -169,8 +166,7 @@ function ServerDetailPage() {
               height={360}
             />
           </DashboardCard>
-        </main>
-      )}
+      </main>
     </>
   );
 }

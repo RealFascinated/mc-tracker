@@ -1,4 +1,4 @@
-import { createContext, useContext, useLayoutEffect, useState } from "react";
+import { createContext, useContext, useLayoutEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 type SiteHeaderToolbarContextValue = {
@@ -15,10 +15,13 @@ function SiteHeaderToolbarProvider({ children }: { children: ReactNode }) {
   const [toolbar, setToolbar] = useState<ReactNode>(null);
   const [nav, setNav] = useState<ReactNode>(null);
 
+  const value = useMemo(
+    () => ({ toolbar, setToolbar, nav, setNav }),
+    [toolbar, nav],
+  );
+
   return (
-    <SiteHeaderToolbarContext.Provider
-      value={{ toolbar, setToolbar, nav, setNav }}
-    >
+    <SiteHeaderToolbarContext.Provider value={value}>
       {children}
     </SiteHeaderToolbarContext.Provider>
   );
