@@ -1762,6 +1762,7 @@ dependencies = [
  "mc-db",
  "mc-metrics",
  "mc-test-support",
+ "mc-tracker",
  "serde_json",
  "tokio",
  "tower",

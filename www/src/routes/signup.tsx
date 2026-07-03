@@ -1,5 +1,4 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -15,10 +14,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSignupEnabled } from "@/lib/api/auth-config";
 import { errorMessage } from "@/lib/api/error-message";
 import { signup } from "@/lib/auth";
 import { useAuth } from "@/lib/auth/context";
+import { useSignupEnabled } from "@/lib/auth/signup-enabled";
 import { validateCredentials } from "@/lib/auth/validation";
 import { pageTitle } from "@/lib/page-title";
 import { privatePageHead } from "@/lib/embed-meta";
@@ -32,14 +31,10 @@ export const Route = createFileRoute("/signup")({
 function SignupPage() {
   const { user, isLoading, setUser } = useAuth();
   const navigate = useNavigate();
+  const { signUpEnabled, isPending: signupConfigPending } = useSignupEnabled();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { data: signupConfig, isPending: signupConfigPending } = useQuery({
-    queryKey: ["auth", "signup-enabled"],
-    queryFn: getSignupEnabled,
-  });
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -51,28 +46,12 @@ function SignupPage() {
     return <LoadingState message="Loading…" centered />;
   }
 
-  if (!signupConfig?.signUpEnabled) {
-    return (
-      <AuthPageShell>
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Sign up unavailable</CardTitle>
-            <CardDescription>
-              New account registration is disabled on this tracker.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" asChild>
-              <Link to="/login">Back to sign in</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </AuthPageShell>
-    );
-  }
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!signUpEnabled) {
+      return;
+    }
+
     const parsed = validateCredentials({ username, password });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Invalid credentials");
@@ -102,7 +81,9 @@ function SignupPage() {
         <CardHeader>
           <CardTitle>Create account</CardTitle>
           <CardDescription>
-            Register a user account for this MC Tracker instance.
+            {signUpEnabled
+              ? "Register a user account for this MC Tracker instance."
+              : "New account registration is disabled on this tracker."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -115,6 +96,7 @@ function SignupPage() {
                 autoComplete="username"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
+                disabled={!signUpEnabled}
               />
             </div>
             <div className="grid gap-2">
@@ -126,9 +108,14 @@ function SignupPage() {
                 autoComplete="new-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                disabled={!signUpEnabled}
               />
             </div>
-            <Button type="submit" variant="brand" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              variant="brand"
+              disabled={!signUpEnabled || isSubmitting}
+            >
               {isSubmitting ? "Creating account…" : "Create account"}
             </Button>
             <p className="text-center text-sm text-muted-foreground">

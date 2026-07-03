@@ -7,12 +7,15 @@ use crate::llm::types::{ToolDefinition, ToolFunctionSchema};
 use crate::tools::compact::{
     compact_asn_detail, compact_asn_search, compact_asn_timeseries_summary, compact_asns_list,
     compact_compare_servers, compact_search, compact_server_detail,
-    compact_server_timeseries_summary, compact_servers_list, compact_timeseries_summary,
+    compact_server_timeseries_summary, compact_servers_growth_rank, compact_servers_list,
+    compact_timeseries_summary,
 };
 use crate::traits::{ChatTool, ChatToolDeps};
 
 const MAX_COMPARE_SERVERS: usize = 5;
 const LIST_CAP: usize = 25;
+const DEFAULT_RANK_LIMIT: u32 = 10;
+const MAX_RANK_LIMIT: u32 = LIST_CAP as u32;
 const SEARCH_CAP: u32 = LIST_CAP as u32;
 
 fn tool_def(name: &str, description: &str, parameters: serde_json::Value) -> serde_json::Value {
@@ -213,6 +216,62 @@ impl ChatTool for ServerTimeseriesSummaryTool {
             .server_timeseries_summary(id, from, to)
             .await?;
         Ok(compact_server_timeseries_summary(summary))
+    }
+}
+
+pub struct RankServersByGrowthTool;
+
+#[async_trait]
+impl ChatTool for RankServersByGrowthTool {
+    fn name(&self) -> &'static str {
+        "rank_servers_by_growth"
+    }
+
+    fn definition(&self) -> serde_json::Value {
+        tool_def(
+            "rank_servers_by_growth",
+            "Rank all tracked servers by player count change over a time range. Use for which server gained or lost the most — one call, not per-server summaries.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "from": { "type": "string", "description": "Start bound, e.g. 30d or 7d" },
+                    "to": { "type": "string", "description": "End bound, e.g. now" },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Max servers to return (default 10)"
+                    },
+                    "order": {
+                        "type": "string",
+                        "enum": ["gainers", "losers"],
+                        "description": "Rank by highest growth (gainers) or largest decline (losers). Default gainers."
+                    }
+                },
+                "required": ["from", "to"]
+            }),
+        )
+    }
+
+    async fn execute(
+        &self,
+        deps: &ChatToolDeps,
+        args: serde_json::Value,
+    ) -> Result<serde_json::Value, ChatError> {
+        let from = require_str(&args, "from")?;
+        let to = require_str(&args, "to")?;
+        let limit = args
+            .get("limit")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(DEFAULT_RANK_LIMIT as u64) as u32;
+        let limit = limit.clamp(1, MAX_RANK_LIMIT);
+        let order = match args.get("order").and_then(|v| v.as_str()) {
+            Some("losers") => mc_api_types::GrowthRankOrder::Losers,
+            _ => mc_api_types::GrowthRankOrder::Gainers,
+        };
+        let response = deps
+            .insights
+            .rank_servers_by_growth(from, to, limit, order)
+            .await?;
+        Ok(compact_servers_growth_rank(response))
     }
 }
 

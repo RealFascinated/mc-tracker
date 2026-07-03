@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useRouterState } from "@tanstack/react-router";
 import {
   CircleCheckIcon,
   LoaderCircleIcon,
@@ -124,6 +124,30 @@ function QuotaUsage({ quota }: { quota: ChatQuota }) {
         ? `Weekly limit reached — resets ${resetLabel}`
         : `${remaining} of ${quota.limit} messages left this week`}
     </p>
+  );
+}
+
+function ChatAuthGate() {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+      <MessageCircleIcon className="text-muted-foreground size-8 stroke-1" />
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-foreground">
+          Sign in to use the assistant
+        </p>
+        <p className="text-muted-foreground text-xs">
+          Ask about player counts, trends, and peaks across tracked servers.
+        </p>
+      </div>
+      <div className="flex w-full flex-col gap-2">
+        <Button variant="brand" asChild>
+          <Link to="/login">Sign in</Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link to="/signup">Create account</Link>
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -459,14 +483,14 @@ export function TrackerChatWidget() {
     chatQuota,
   ]);
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading) {
     return null;
   }
 
   return (
     <>
       {open ? (
-        <DashboardCard className="fixed right-4 bottom-4 z-50 flex h-[min(32rem,calc(100dvh-2rem))] w-[min(26rem,calc(100vw-2rem))] flex-col shadow-lg">
+        <DashboardCard className="fixed right-4 bottom-4 z-50 flex h-[min(32rem,calc(100dvh-2rem))] w-[min(26rem,calc(100vw-2rem))] flex-col border-monitor/25 shadow-2xl ring-1 ring-black/10 dark:border-warning/30 dark:ring-white/10">
           <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
             <div className="min-w-0">
               <h2 className="truncate text-sm font-bold text-foreground">
@@ -487,7 +511,11 @@ export function TrackerChatWidget() {
             </Button>
           </header>
 
-          <div className="min-h-0 flex-1">
+          {!isAuthenticated ? (
+            <ChatAuthGate />
+          ) : (
+            <>
+              <div className="min-h-0 flex-1">
             <MessageScrollerProvider
               autoScroll
               defaultScrollPosition="last-anchor"
@@ -570,6 +598,8 @@ export function TrackerChatWidget() {
               </Button>
             </form>
           </div>
+            </>
+          )}
         </DashboardCard>
       ) : null}
 
@@ -578,7 +608,7 @@ export function TrackerChatWidget() {
         variant="brand"
         size="icon-lg"
         className={cn(
-          "fixed right-4 bottom-4 z-50 size-12 rounded-full shadow-lg",
+          "fixed right-4 bottom-4 z-50 size-12 rounded-full shadow-lg ring-2 ring-background",
           open && "pointer-events-none scale-0 opacity-0",
         )}
         aria-label="Open chat"

@@ -121,6 +121,31 @@ pub fn compact_compare_servers(
     })
 }
 
+pub fn compact_servers_growth_rank(response: mc_api_types::ServersGrowthRankResponse) -> Value {
+    let order = match response.order {
+        mc_api_types::GrowthRankOrder::Gainers => "gainers",
+        mc_api_types::GrowthRankOrder::Losers => "losers",
+    };
+    json!({
+        "from": response.from,
+        "to": response.to,
+        "order": order,
+        "servers": response.servers.iter().map(|server| {
+            json!({
+                "id": server.id,
+                "name": server.name,
+                "start": server.start,
+                "end": server.end,
+                "changePct": server.change_pct,
+                "trend": server.trend,
+            })
+        }).collect::<Vec<_>>(),
+        "errors": response.errors.iter().map(|entry| {
+            json!({ "id": entry.id, "error": entry.error })
+        }).collect::<Vec<_>>(),
+    })
+}
+
 fn compact_server(server: &ServerListItemResponse) -> Value {
     json!({
         "id": server.id,

@@ -5,8 +5,9 @@ use async_trait::async_trait;
 use futures::Stream;
 use mc_api_types::{
     AsnDetailResponse, AsnSearchResponse, AsnTimeseriesSummaryResponse, AsnsListResponse,
-    ServerListItemResponse, ServerTimeseriesSummaryResponse, ServersListResponse,
-    ServersSearchResponse, TimeseriesSummaryResponse,
+    GrowthRankOrder, ServerListItemResponse, ServerTimeseriesSummaryResponse,
+    ServersGrowthRankResponse, ServersListResponse, ServersSearchResponse,
+    TimeseriesSummaryResponse,
 };
 use uuid::Uuid;
 
@@ -50,6 +51,14 @@ pub trait InsightsRead: Send + Sync {
         from: &str,
         to: &str,
     ) -> Result<AsnTimeseriesSummaryResponse, mc_insights::InsightsError>;
+
+    async fn rank_servers_by_growth(
+        &self,
+        from: &str,
+        to: &str,
+        limit: u32,
+        order: GrowthRankOrder,
+    ) -> Result<ServersGrowthRankResponse, mc_insights::InsightsError>;
 }
 
 #[async_trait]

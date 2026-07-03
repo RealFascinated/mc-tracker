@@ -567,6 +567,16 @@ mod tests {
         {
             Err(mc_insights::InsightsError::NoData)
         }
+
+        async fn rank_servers_by_growth(
+            &self,
+            _: &str,
+            _: &str,
+            _: u32,
+            _: mc_api_types::GrowthRankOrder,
+        ) -> Result<mc_api_types::ServersGrowthRankResponse, mc_insights::InsightsError> {
+            Err(mc_insights::InsightsError::NoData)
+        }
     }
 
     #[tokio::test]

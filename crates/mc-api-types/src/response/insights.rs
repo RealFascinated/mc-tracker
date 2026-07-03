@@ -49,3 +49,38 @@ pub struct AsnTimeseriesSummaryResponse {
     #[serde(flatten)]
     pub summary: TimeseriesSummaryResponse,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum GrowthRankOrder {
+    Gainers,
+    Losers,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServerGrowthRankItem {
+    pub id: String,
+    pub name: String,
+    pub start: Option<f64>,
+    pub end: Option<f64>,
+    pub change_pct: Option<f64>,
+    pub trend: TrendDirection,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServersGrowthRankResponse {
+    pub from: i64,
+    pub to: i64,
+    pub order: GrowthRankOrder,
+    pub servers: Vec<ServerGrowthRankItem>,
+    pub errors: Vec<ServerGrowthRankError>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServerGrowthRankError {
+    pub id: String,
+    pub error: String,
+}

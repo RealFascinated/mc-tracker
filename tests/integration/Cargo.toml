@@ -17,6 +17,7 @@ mc-chat = { path = "../../crates/mc-chat" }
 mc-db = { path = "../../crates/mc-db" }
 mc-metrics = { path = "../../crates/mc-metrics" }
 mc-test-support = { path = "../../crates/mc-test-support" }
+mc-tracker = { path = "../../crates/mc-tracker" }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 tower = { version = "0.5", features = ["util"] }

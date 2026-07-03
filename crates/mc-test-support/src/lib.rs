@@ -121,6 +121,14 @@ async fn build_app_with_options(
 }
 
 pub async fn manager_with_vm_url(pool: &DbPool, vm_base_url: &str) -> Arc<ServerManager> {
+    manager_with_vm_url_env(pool, vm_base_url, "production").await
+}
+
+pub async fn manager_with_vm_url_env(
+    pool: &DbPool,
+    vm_base_url: &str,
+    deployment_environment: &str,
+) -> Arc<ServerManager> {
     let settings = Arc::new(RwLock::new(
         mc_db::db::repos::settings::load_all(pool).await.unwrap(),
     ));
@@ -140,7 +148,7 @@ pub async fn manager_with_vm_url(pool: &DbPool, vm_base_url: &str) -> Arc<Server
         fixture_geo(),
         None,
         &bootstrap,
-        "production",
+        deployment_environment,
     ))
 }
 
@@ -183,4 +191,13 @@ pub async fn create_user(pool: &DbPool, username: &str, password: &str, role: mc
     mc_db::db::repos::users::create(pool, username, password, role)
         .await
         .unwrap();
+}
+
+pub async fn enable_sign_up(pool: &DbPool, manager: &Arc<ServerManager>) {
+    let mut settings = manager.settings().await;
+    settings.sign_up_enabled = true;
+    mc_db::db::repos::settings::set(pool, "sign_up_enabled", "true")
+        .await
+        .unwrap();
+    manager.apply_settings(settings).await;
 }

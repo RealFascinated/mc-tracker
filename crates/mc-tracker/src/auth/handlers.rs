@@ -15,6 +15,8 @@ use super::rate_limit::client_ip_from_headers;
 use super::session::COOKIE_NAME;
 use crate::api::AppState;
 use crate::chat_quota::quota_for_user;
+use crate::manager::ServerManager;
+use mc_db::AppSettings;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -103,7 +105,7 @@ async fn me(
 async fn signup_enabled(State(state): State<AppState>) -> Json<SignupEnabledResponse> {
     let settings = state.manager.settings().await;
     Json(SignupEnabledResponse {
-        sign_up_enabled: settings.sign_up_enabled,
+        sign_up_enabled: sign_up_allowed(&state.manager, &settings),
     })
 }
 
@@ -112,7 +114,8 @@ async fn signup(
     headers: axum::http::HeaderMap,
     Json(body): Json<SignupRequest>,
 ) -> Response {
-    if !state.manager.settings().await.sign_up_enabled {
+    let settings = state.manager.settings().await;
+    if !sign_up_allowed(&state.manager, &settings) {
         return (
             StatusCode::FORBIDDEN,
             Json(ErrorResponse::new("sign up is disabled")),
@@ -209,6 +212,10 @@ async fn issue_session(state: &AppState, user: &mc_db::User) -> Response {
         response,
     )
         .into_response()
+}
+
+fn sign_up_allowed(manager: &ServerManager, settings: &AppSettings) -> bool {
+    settings.sign_up_enabled || manager.environment() == "development"
 }
 
 fn invalid_credentials() -> Response {
