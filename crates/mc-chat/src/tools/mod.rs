@@ -4,6 +4,7 @@ mod compare_servers;
 mod constants;
 mod get_asn;
 mod get_server;
+mod get_server_stats;
 mod get_tracker_summary;
 mod helpers;
 mod list_asns;

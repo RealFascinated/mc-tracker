@@ -7,6 +7,7 @@ use super::asn_timeseries_summary::AsnTimeseriesSummaryTool;
 use super::compare_servers::CompareServersTool;
 use super::get_asn::GetAsnTool;
 use super::get_server::GetServerTool;
+use super::get_server_stats::GetServerStatsTool;
 use super::get_tracker_summary::GetTrackerSummaryTool;
 use super::list_asns::ListAsnsTool;
 use super::list_servers::ListServersTool;
@@ -31,6 +32,7 @@ impl ToolRegistry {
             Arc::new(ListServersTool),
             Arc::new(SearchServersTool),
             Arc::new(GetServerTool),
+            Arc::new(GetServerStatsTool),
             Arc::new(GetTrackerSummaryTool),
             Arc::new(GetAsnTool),
             Arc::new(LookupIpTool),

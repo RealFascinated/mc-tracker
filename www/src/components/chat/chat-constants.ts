@@ -27,7 +27,7 @@ export const THINKING_MESSAGES = [
 
 export function serverSuggestions(serverName: string): string[] {
   return [
-    `Show ${serverName}'s player count trend over the last 7 days`,
+    `Give me stats on ${serverName} over the last 7 and 30 days`,
     `Compare ${serverName}'s player trend to the top 4 servers this week`,
     `What hosting provider and ASN does ${serverName} use?`,
     `Is ${serverName}'s current player count near its 24h peak?`,

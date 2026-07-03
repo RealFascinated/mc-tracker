@@ -78,6 +78,41 @@ pub fn compact_timeseries_summary(summary: &TimeseriesSummaryResponse) -> Value 
     })
 }
 
+pub fn compact_timeseries_metrics(summary: &TimeseriesSummaryResponse) -> Value {
+    json!({
+        "from": summary.from,
+        "to": summary.to,
+        "start": summary.start,
+        "end": summary.end,
+        "min": summary.min,
+        "max": summary.max,
+        "avg": summary.avg,
+        "changePct": summary.change_pct,
+        "trend": summary.trend,
+    })
+}
+
+pub fn compact_server_stats(
+    server: &ServerListItemResponse,
+    trends: &[(&str, Result<TimeseriesSummaryResponse, String>)],
+) -> Value {
+    let trend_values: Value = trends
+        .iter()
+        .map(|(label, result)| {
+            let value = match result {
+                Ok(summary) => compact_timeseries_metrics(summary),
+                Err(error) => json!({ "error": error }),
+            };
+            (label.to_string(), value)
+        })
+        .collect();
+    let mut value = compact_server(server);
+    if let Value::Object(ref mut map) = value {
+        map.insert("trends".into(), trend_values);
+    }
+    value
+}
+
 pub fn compact_server_timeseries_summary(response: ServerTimeseriesSummaryResponse) -> Value {
     let ServerTimeseriesSummaryResponse { id, name, summary } = response;
     let mut value = compact_timeseries_summary(&summary);

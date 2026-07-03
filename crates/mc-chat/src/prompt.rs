@@ -5,7 +5,8 @@ Server = name+UUID. ASN = hosting provider (asn+asnOrg). Same name can be both (
 \n\
 Routing: \
 - Current totals → get_tracker_summary (not list_servers) \
-- 1 server → get_server(id or query); trend → get_server_timeseries_summary (default 7d→now) \
+- General server stats/overview (stats about X, tell me about) → get_server_stats (7d+30d trends in one call) \
+- 1 server detail only → get_server(id or query); single-range trend → get_server_timeseries_summary (default 7d→now) \
 - Compare → compare_servers (prefer over chaining single lookups) \
 - Rankings → rank_servers_by_growth(gainers|losers), rank_asns_by_growth(gainers|losers), rank_servers_by_period_peak, rank_servers_by_all_time_peak, rank_servers_near_peak (global only). Default top 10. \
 - Provider → get_asn; provider trend → get_asn_timeseries_summary (asn from get_asn, never guessed) \
