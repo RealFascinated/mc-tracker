@@ -15,6 +15,7 @@ import { METRIC_RANGE_GROUPS } from "@/lib/metrics/range";
 import type { MetricTimeRange } from "@/lib/metrics/range";
 import {
   formatMetricTimeWindowLabel,
+  formatMetricTimeWindowShortLabel,
   isPresetMetricTimeWindow,
   metricTimeWindowToEpochWindow,
   validateMetricEpochWindow,
@@ -131,14 +132,20 @@ export function DashboardTimeRangePicker({
             "dashboard-time-controls-segment dashboard-time-controls-segment--range",
             className,
           )}
-          aria-label="Chart time range"
+          aria-label={`Time range: ${formatMetricTimeWindowLabel(window)}`}
           onMouseDown={(event) => event.preventDefault()}
         >
           <Clock3 className="size-3.5 shrink-0" aria-hidden />
-          <span className="truncate">
+          <span className="dashboard-time-controls-segment-label dashboard-time-controls-segment-label--short">
+            {formatMetricTimeWindowShortLabel(window)}
+          </span>
+          <span className="dashboard-time-controls-segment-label dashboard-time-controls-segment-label--full">
             {formatMetricTimeWindowLabel(window)}
           </span>
-          <ChevronDown className="size-3 shrink-0 opacity-70" aria-hidden />
+          <ChevronDown
+            className="dashboard-time-controls-segment-chevron size-3.5"
+            aria-hidden
+          />
         </button>
       </PopoverTrigger>
       <PopoverContent

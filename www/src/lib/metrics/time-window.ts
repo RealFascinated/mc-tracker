@@ -138,6 +138,41 @@ export function formatMetricTimeWindowLabel(window: MetricTimeWindow): string {
   return headline;
 }
 
+const compactEpochDateFormatter = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+});
+
+function formatCompactEpochDate(epoch: number): string {
+  const date = new Date(epoch * 1000);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return compactEpochDateFormatter.format(date);
+}
+
+export function formatMetricTimeWindowShortLabel(
+  window: MetricTimeWindow,
+): string {
+  if (window.kind === "preset") {
+    return getMetricRangeOption(window.range).shortLabel;
+  }
+
+  const startDate = new Date(window.from * 1000);
+  const endDate = new Date(window.to * 1000);
+  const sameDay =
+    startDate.getFullYear() === endDate.getFullYear() &&
+    startDate.getMonth() === endDate.getMonth() &&
+    startDate.getDate() === endDate.getDate();
+
+  if (sameDay) {
+    return formatCompactEpochDate(window.from);
+  }
+
+  return `${formatCompactEpochDate(window.from)} – ${formatCompactEpochDate(window.to)}`;
+}
+
 export function isPresetMetricTimeWindow(
   window: MetricTimeWindow,
   range: MetricTimeRange,

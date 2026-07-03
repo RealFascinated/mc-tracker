@@ -742,7 +742,7 @@
   }
 
   .site-header-controls .dashboard-time-controls {
-    @apply w-fit max-w-full min-w-0 shrink;
+    @apply w-fit max-w-full min-w-0 shrink max-sm:shrink-0;
   }
 
   .site-header-controls .site-header-view-toggle {
@@ -792,7 +792,6 @@
 
   .dashboard-time-controls-segment--range {
     @apply text-monitor dark:text-warning;
-    @apply max-sm:text-[0.625rem];
   }
 
   .dashboard-time-controls-segment--refresh {
@@ -801,6 +800,32 @@
 
   .dashboard-time-controls-segment--manual {
     @apply px-2 text-muted-foreground hover:bg-transparent hover:text-foreground;
+  }
+
+  .dashboard-time-controls-segment-label {
+    @apply shrink-0;
+  }
+
+  .dashboard-time-controls-segment-label--short {
+    @apply sm:hidden;
+  }
+
+  .dashboard-time-controls-segment-label--full {
+    @apply hidden truncate sm:inline;
+  }
+
+  .dashboard-time-controls-segment-chevron {
+    @apply shrink-0 opacity-70;
+  }
+
+  @media (max-width: 39.999rem) {
+    .dashboard-time-controls-segment-chevron {
+      @apply hidden;
+    }
+
+    .dashboard-time-controls-segment {
+      @apply shrink-0 gap-1 px-2;
+    }
   }
 
   .dashboard-time-range-picker {

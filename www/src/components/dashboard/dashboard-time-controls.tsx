@@ -55,11 +55,16 @@ export function DashboardTimeControls({
           <button
             type="button"
             className="dashboard-time-controls-segment dashboard-time-controls-segment--refresh"
-            aria-label="Auto-refresh interval"
+            aria-label={`Auto-refresh: ${refreshIntervalLabel}`}
           >
             <Timer className="size-3.5 shrink-0" aria-hidden />
-            <span className="truncate">{refreshIntervalLabel}</span>
-            <ChevronDown className="size-3 shrink-0 opacity-70" aria-hidden />
+            <span className="dashboard-time-controls-segment-label">
+              {refreshIntervalLabel}
+            </span>
+            <ChevronDown
+              className="dashboard-time-controls-segment-chevron size-3.5"
+              aria-hidden
+            />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
