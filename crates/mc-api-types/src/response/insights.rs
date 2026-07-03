@@ -80,6 +80,24 @@ pub struct ServersGrowthRankResponse {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ServerPeriodPeakRankItem {
+    pub id: String,
+    pub name: String,
+    pub max: Option<f64>,
+    pub avg: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServersPeriodPeakRankResponse {
+    pub from: i64,
+    pub to: i64,
+    pub servers: Vec<ServerPeriodPeakRankItem>,
+    pub errors: Vec<ServerGrowthRankError>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ServerGrowthRankError {
     pub id: String,
     pub error: String,

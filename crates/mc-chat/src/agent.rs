@@ -171,9 +171,7 @@ async fn run_agent(
 
     check_timeout(started, timeout)?;
 
-    // Snapshot before streaming. The frontend echoes this back next turn so the
-    // prompt prefix stays byte-identical for provider prompt caching.
-    let history_snapshot: Vec<serde_json::Value> = messages
+    let mut history_snapshot: Vec<serde_json::Value> = messages
         .iter()
         .filter_map(|m| serde_json::to_value(m).ok())
         .collect();
@@ -193,6 +191,7 @@ async fn run_agent(
         })
         .await?;
 
+    let mut assistant_content = String::new();
     while let Some(chunk) = stream.next().await {
         check_timeout(started, timeout)?;
         let chunk = chunk?;
@@ -202,10 +201,20 @@ async fn run_agent(
         for choice in chunk.choices {
             if let Some(content) = choice.delta.content {
                 if !content.is_empty() {
+                    assistant_content.push_str(&content);
                     let _ = tx.send(Ok(ChatStreamEvent::Delta { content })).await;
                 }
             }
         }
+    }
+
+    if let Ok(assistant) = serde_json::to_value(ChatMessage {
+        role: "assistant".into(),
+        content: Some(assistant_content),
+        tool_calls: None,
+        tool_call_id: None,
+    }) {
+        history_snapshot.push(assistant);
     }
 
     log_context_usage(session_id.as_deref(), context_max, &usage);
@@ -225,6 +234,35 @@ async fn run_agent(
         }))
         .await;
     Ok(())
+}
+
+/// Parse opaque history echoed from the previous turn. Invalid entries are dropped
+/// with a warning instead of discarding the entire history.
+pub fn parse_raw_history(values: Vec<serde_json::Value>) -> Option<Vec<ChatMessage>> {
+    if values.is_empty() {
+        return None;
+    }
+
+    let mut messages = Vec::with_capacity(values.len());
+    for (index, value) in values.into_iter().enumerate() {
+        match serde_json::from_value::<ChatMessage>(value) {
+            Ok(message) => messages.push(message),
+            Err(err) => {
+                tracing::warn!(
+                    index,
+                    error = %err,
+                    "dropping invalid raw_history message"
+                );
+            }
+        }
+    }
+
+    if messages.is_empty() {
+        tracing::warn!("raw_history contained no valid messages");
+        None
+    } else {
+        Some(messages)
+    }
 }
 
 fn validate_request(request: &AgentChatRequest) -> Result<(), ChatError> {
@@ -615,6 +653,15 @@ mod tests {
         ) -> Result<mc_api_types::ServersGrowthRankResponse, mc_insights::InsightsError> {
             Err(mc_insights::InsightsError::NoData)
         }
+
+        async fn rank_servers_by_period_peak(
+            &self,
+            _: &str,
+            _: &str,
+            _: u32,
+        ) -> Result<mc_api_types::ServersPeriodPeakRankResponse, mc_insights::InsightsError> {
+            Err(mc_insights::InsightsError::NoData)
+        }
     }
 
     #[tokio::test]
@@ -664,5 +711,50 @@ mod tests {
         let long = "x".repeat(300);
         let trimmed = session_id_for_llm(Some(&long)).unwrap();
         assert_eq!(trimmed.len(), 256);
+    }
+
+    #[test]
+    fn parse_raw_history_keeps_valid_messages_when_one_entry_is_invalid() {
+        let values = vec![
+            serde_json::json!({"role": "system", "content": "prompt"}),
+            serde_json::json!({"role": "user", "content": "hi"}),
+            serde_json::json!({"role": "assistant", "content": 123}),
+        ];
+        let parsed = parse_raw_history(values).expect("partial history");
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0].role, "system");
+        assert_eq!(parsed[1].role, "user");
+    }
+
+    #[test]
+    fn build_messages_extends_restored_history_with_new_user_turn() {
+        let history = vec![
+            ChatMessage {
+                role: "system".into(),
+                content: Some("prompt".into()),
+                tool_calls: None,
+                tool_call_id: None,
+            },
+            ChatMessage {
+                role: "user".into(),
+                content: Some("first".into()),
+                tool_calls: None,
+                tool_call_id: None,
+            },
+            ChatMessage {
+                role: "assistant".into(),
+                content: Some("reply".into()),
+                tool_calls: None,
+                tool_call_id: None,
+            },
+        ];
+        let messages = build_messages(&AgentChatRequest {
+            message: "second".into(),
+            session_id: None,
+            raw_history: Some(history),
+            context_server: None,
+        });
+        assert_eq!(messages.len(), 4);
+        assert_eq!(messages[3].content.as_deref(), Some("second"));
     }
 }

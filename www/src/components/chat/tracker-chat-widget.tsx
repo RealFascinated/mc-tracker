@@ -39,18 +39,20 @@ import { cn } from "cnfast";
 const STREAMING_ID = "streaming";
 
 const DEFAULT_SUGGESTIONS = [
-  "Which server gained the most players this month?",
-  "How is Hypixel trending this week?",
-  "What hosting providers run the most servers?",
-  "Which servers are at their peak right now?",
+  "Rank servers by player count growth over the last 7 days",
+  "Rank servers by biggest player count decline over the last 30 days",
+  "Show total tracked player count trend over the last 30 days",
+  "Which servers are at 90%+ of their recent peak player count right now?",
+  "List hosting providers ranked by total players online",
+  "Which server reached the highest player count in the last 7 days?",
 ] as const;
 
 function serverSuggestions(serverName: string): string[] {
   return [
-    `How is ${serverName} trending this week?`,
-    `What was ${serverName}'s peak in the last 24 hours?`,
-    `How does ${serverName} compare to other servers?`,
-    `What ASN does ${serverName} use?`,
+    `Show ${serverName}'s player count trend over the last 7 days`,
+    `Compare ${serverName}'s player trend to the top 4 servers this week`,
+    `What hosting provider and ASN does ${serverName} use?`,
+    `Is ${serverName}'s current player count near its 24h peak?`,
   ];
 }
 
@@ -324,11 +326,38 @@ function ChatSuggestions({
   );
 }
 
-function ThinkingIndicator({ label = "Thinking…" }: { label?: string }) {
+const THINKING_MESSAGES = [
+  "Thinking…",
+  "Working on it…",
+  "One moment…",
+  "Still thinking…",
+  "Putting it together…",
+  "Almost there…",
+  "Considering options…",
+  "Formulating a response…",
+  "Just a second…",
+  "Bear with me…",
+  "Processing…",
+  "Taking a closer look…",
+  "On it…",
+  "Give me a moment…",
+  "Hang tight…",
+] as const;
+
+function ThinkingIndicator() {
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setMessageIndex((i) => (i + 1) % THINKING_MESSAGES.length);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, []);
+
   return (
     <span className="text-muted-foreground inline-flex items-center gap-2 text-xs italic">
       <LoaderCircleIcon className="size-3.5 shrink-0 animate-spin" />
-      {label}
+      {THINKING_MESSAGES[messageIndex]}
     </span>
   );
 }
@@ -435,8 +464,11 @@ export function TrackerChatWidget() {
   const [toolStatus, setToolStatus] = useState<string | null>(null);
   const [tokenUsage, setTokenUsage] = useState<ChatTokenUsage | null>(null);
   const [quotaUsed, setQuotaUsed] = useState<number | null>(null);
-  // Opaque LLM message list echoed back next turn for llama.cpp cache reuse.
+  // Opaque LLM message list echoed back each turn to maintain conversation context.
   const [rawHistory, setRawHistory] = useState<unknown[] | null>(null);
+  // Ref keeps sendMessage reading the latest value without closure staleness.
+  const rawHistoryRef = useRef<unknown[] | null>(null);
+  rawHistoryRef.current = rawHistory;
   const serverContext = useServerPageContext();
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -478,6 +510,7 @@ export function TrackerChatWidget() {
     cancelStream();
     setMessages([]);
     setRawHistory(null);
+    rawHistoryRef.current = null;
     setTokenUsage(null);
     setToolStatus(null);
     setInput("");
@@ -520,15 +553,12 @@ export function TrackerChatWidget() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Accumulate streamed text locally so we can append it to raw_history
-    // on Done, giving the backend the exact prefix it will see next turn.
-    let accumulated = "";
-
+    const currentRawHistory = rawHistoryRef.current;
     try {
       await streamChat(
         {
           message: text,
-          rawHistory: rawHistory ?? undefined,
+          rawHistory: currentRawHistory ?? undefined,
           contextServer: serverContext,
           sessionId,
         },
@@ -551,7 +581,6 @@ export function TrackerChatWidget() {
               setToolStatus(null);
               break;
             case "delta":
-              accumulated += event.content;
               setToolStatus(null);
               setMessages((current) =>
                 current.map((message) =>
@@ -565,12 +594,8 @@ export function TrackerChatWidget() {
               throw new ChatStreamError(event.message, 0);
             case "done":
               if (event.rawHistory) {
-                // Append the assistant reply so the next turn's prefix includes
-                // both the tool exchanges and the final response text.
-                setRawHistory([
-                  ...event.rawHistory,
-                  { role: "assistant", content: accumulated },
-                ]);
+                setRawHistory(event.rawHistory);
+                rawHistoryRef.current = event.rawHistory;
               }
               if (event.usage) {
                 setTokenUsage(event.usage);
@@ -628,7 +653,6 @@ export function TrackerChatWidget() {
     input,
     isStreaming,
     messages,
-    rawHistory,
     serverContext,
     sessionId,
     quotaExceeded,
@@ -642,7 +666,7 @@ export function TrackerChatWidget() {
   return (
     <>
       {open ? (
-        <DashboardCard className="fixed right-4 bottom-4 z-50 flex h-[min(32rem,calc(100dvh-2rem))] w-[min(26rem,calc(100vw-2rem))] flex-col border-monitor/25 shadow-2xl ring-1 ring-black/10 dark:border-warning/30 dark:ring-white/10">
+        <DashboardCard className="fixed right-4 bottom-4 z-50 flex h-[min(38rem,calc(100dvh-2rem))] w-[min(32rem,calc(100vw-2rem))] flex-col border-monitor/25 shadow-2xl ring-1 ring-black/10 dark:border-warning/30 dark:ring-white/10">
           <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
             <div className="min-w-0">
               <h2 className="truncate text-sm font-bold text-foreground">

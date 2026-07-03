@@ -158,6 +158,72 @@ pub fn compact_servers_all_time_peak(servers: &[ServerListItemResponse]) -> Valu
     })
 }
 
+pub fn compact_servers_period_peak_rank(
+    response: mc_api_types::ServersPeriodPeakRankResponse,
+) -> Value {
+    json!({
+        "from": response.from,
+        "to": response.to,
+        "servers": response.servers.iter().map(|server| {
+            json!({
+                "id": server.id,
+                "name": server.name,
+                "max": server.max,
+                "avg": server.avg,
+            })
+        }).collect::<Vec<_>>(),
+        "errors": response.errors.iter().map(|entry| {
+            json!({ "id": entry.id, "error": entry.error })
+        }).collect::<Vec<_>>(),
+    })
+}
+
+pub fn compact_servers_near_peak(
+    servers: &[ServerListItemResponse],
+    limit: usize,
+    min_utilization_pct: f64,
+) -> Value {
+    let mut ranked: Vec<(f64, &ServerListItemResponse, f64)> = servers
+        .iter()
+        .filter_map(|server| {
+            let online = server.players_online? as f64;
+            let reference = server
+                .peaks
+                .players_24h
+                .filter(|peak| *peak > 0.0)
+                .or_else(|| {
+                    server
+                        .peaks
+                        .all_time
+                        .as_ref()
+                        .map(|peak| peak.players as f64)
+                        .filter(|peak| *peak > 0.0)
+                })?;
+            let utilization_pct = (online / reference) * 100.0;
+            if utilization_pct < min_utilization_pct {
+                return None;
+            }
+            Some((utilization_pct, server, reference))
+        })
+        .collect();
+
+    ranked.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+    ranked.truncate(limit);
+
+    json!({
+        "minUtilizationPct": min_utilization_pct,
+        "servers": ranked.into_iter().map(|(utilization_pct, server, reference_peak)| {
+            json!({
+                "id": server.id,
+                "name": server.name,
+                "playersOnline": server.players_online,
+                "referencePeak": reference_peak,
+                "utilizationPct": (utilization_pct * 10.0).round() / 10.0,
+            })
+        }).collect::<Vec<_>>(),
+    })
+}
+
 pub fn compact_servers_growth_rank(response: mc_api_types::ServersGrowthRankResponse) -> Value {
     let order = match response.order {
         mc_api_types::GrowthRankOrder::Gainers => "gainers",
@@ -193,8 +259,26 @@ fn compact_server(server: &ServerListItemResponse) -> Value {
         "playersOnline": server.players_online,
         "asn": server.asn,
         "asnOrg": server.asn_org,
-        "peak24h": server.peaks.players_24h,
+        "peaks": compact_entity_peaks(&server.peaks),
     })
+}
+
+fn compact_entity_peaks(peaks: &mc_api_types::EntityPeakStats) -> Value {
+    let mut value = json!({
+        "peak24h": peaks.players_24h,
+    });
+    if let Some(all_time) = &peaks.all_time {
+        if let Value::Object(ref mut map) = value {
+            map.insert(
+                "allTime".into(),
+                json!({
+                    "players": all_time.players,
+                    "peakAt": all_time.timestamp,
+                }),
+            );
+        }
+    }
+    value
 }
 
 fn compact_search_item(server: &ServerSearchItemResponse) -> Value {
@@ -224,6 +308,10 @@ fn compact_players_summary(summary: &mc_api_types::ServersSummaryResponse) -> Va
         "playersPc": summary.players_pc,
         "playersPe": summary.players_pe,
         "trackedServers": summary.tracked_servers,
+        "peaks": {
+            "players24h": summary.peaks.players_24h,
+            "players7d": summary.peaks.players_7d,
+        },
     })
 }
 
@@ -233,4 +321,53 @@ fn compact_asns_summary(summary: &mc_api_types::AsnsSummaryResponse) -> Value {
         "trackedAsns": summary.tracked_asns,
         "trackedServers": summary.tracked_servers,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use mc_api_types::{EntityPeakStats, PeakPlayersRecord, ServerListItemResponse};
+
+    use super::*;
+
+    fn sample_server(name: &str, online: u32, peak24h: f64) -> ServerListItemResponse {
+        ServerListItemResponse {
+            id: format!("id-{name}"),
+            name: name.into(),
+            server_type: "java".into(),
+            host: "example.com".into(),
+            port: Some(25565),
+            asn: "AS1".into(),
+            asn_org: "Host".into(),
+            players_online: Some(online),
+            favicon: None,
+            peaks: EntityPeakStats {
+                players_24h: Some(peak24h),
+                all_time: Some(PeakPlayersRecord {
+                    players: peak24h as u32,
+                    timestamp: 1,
+                }),
+            },
+        }
+    }
+
+    #[test]
+    fn compact_server_includes_all_time_peak() {
+        let server = sample_server("Hypixel", 100, 1000.0);
+        let value = compact_server(&server);
+        assert_eq!(value["peaks"]["peak24h"], 1000.0);
+        assert_eq!(value["peaks"]["allTime"]["players"], 1000);
+    }
+
+    #[test]
+    fn compact_servers_near_peak_ranks_by_utilization() {
+        let servers = vec![
+            sample_server("Low", 500, 1000.0),
+            sample_server("High", 950, 1000.0),
+        ];
+        let value = compact_servers_near_peak(&servers, 10, 90.0);
+        let ranked = value["servers"].as_array().unwrap();
+        assert_eq!(ranked.len(), 1);
+        assert_eq!(ranked[0]["name"], "High");
+        assert_eq!(ranked[0]["utilizationPct"], 95.0);
+    }
 }

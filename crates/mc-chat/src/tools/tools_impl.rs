@@ -8,7 +8,8 @@ use crate::tools::compact::{
     compact_asn_detail, compact_asn_search, compact_asn_timeseries_summary, compact_asns_list,
     compact_compare_servers, compact_search, compact_server_detail,
     compact_server_timeseries_summary, compact_servers_all_time_peak, compact_servers_growth_rank,
-    compact_servers_list, compact_timeseries_summary,
+    compact_servers_list, compact_servers_near_peak, compact_servers_period_peak_rank,
+    compact_timeseries_summary,
 };
 use crate::traits::{ChatTool, ChatToolDeps};
 
@@ -16,6 +17,8 @@ const MAX_COMPARE_SERVERS: usize = 5;
 const LIST_CAP: usize = 25;
 const DEFAULT_RANK_LIMIT: u32 = 10;
 const MAX_RANK_LIMIT: u32 = LIST_CAP as u32;
+const DEFAULT_NEAR_PEAK_LIMIT: u32 = 10;
+const DEFAULT_NEAR_PEAK_MIN_UTILIZATION: f64 = 90.0;
 const SEARCH_CAP: u32 = LIST_CAP as u32;
 
 fn tool_def(name: &str, description: &str, parameters: serde_json::Value) -> serde_json::Value {
@@ -301,6 +304,105 @@ impl ChatTool for RankServersByAllTimePeakTool {
     ) -> Result<serde_json::Value, ChatError> {
         let response = deps.tracker.list_servers().await;
         Ok(compact_servers_all_time_peak(&response.servers))
+    }
+}
+
+pub struct RankServersNearPeakTool;
+
+#[async_trait]
+impl ChatTool for RankServersNearPeakTool {
+    fn name(&self) -> &'static str {
+        "rank_servers_near_peak"
+    }
+
+    fn definition(&self) -> serde_json::Value {
+        tool_def(
+            "rank_servers_near_peak",
+            "Find servers currently near their recent peak player count. Ranks by utilization (players online vs 24h peak, falling back to all-time peak).",
+            json!({
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "description": "Max servers to return (default 10)"
+                    },
+                    "min_utilization_pct": {
+                        "type": "number",
+                        "description": "Minimum utilization percent vs reference peak (default 90)"
+                    }
+                }
+            }),
+        )
+    }
+
+    async fn execute(
+        &self,
+        deps: &ChatToolDeps,
+        args: serde_json::Value,
+    ) -> Result<serde_json::Value, ChatError> {
+        let limit = args
+            .get("limit")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(DEFAULT_NEAR_PEAK_LIMIT as u64) as usize;
+        let limit = limit.clamp(1, LIST_CAP);
+        let min_utilization_pct = args
+            .get("min_utilization_pct")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(DEFAULT_NEAR_PEAK_MIN_UTILIZATION)
+            .clamp(1.0, 100.0);
+        let response = deps.tracker.list_servers().await;
+        Ok(compact_servers_near_peak(
+            &response.servers,
+            limit,
+            min_utilization_pct,
+        ))
+    }
+}
+
+pub struct RankServersByPeriodPeakTool;
+
+#[async_trait]
+impl ChatTool for RankServersByPeriodPeakTool {
+    fn name(&self) -> &'static str {
+        "rank_servers_by_period_peak"
+    }
+
+    fn definition(&self) -> serde_json::Value {
+        tool_def(
+            "rank_servers_by_period_peak",
+            "Rank tracked servers by highest player count reached during a time range. Use for which server had the most players this week/month — one call, not per-server summaries.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "from": { "type": "string", "description": "Start bound, e.g. 30d or 7d" },
+                    "to": { "type": "string", "description": "End bound, e.g. now" },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Max servers to return (default 10)"
+                    }
+                },
+                "required": ["from", "to"]
+            }),
+        )
+    }
+
+    async fn execute(
+        &self,
+        deps: &ChatToolDeps,
+        args: serde_json::Value,
+    ) -> Result<serde_json::Value, ChatError> {
+        let from = require_str(&args, "from")?;
+        let to = require_str(&args, "to")?;
+        let limit = args
+            .get("limit")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(DEFAULT_RANK_LIMIT as u64) as u32;
+        let limit = limit.clamp(1, MAX_RANK_LIMIT);
+        let response = deps
+            .insights
+            .rank_servers_by_period_peak(from, to, limit)
+            .await?;
+        Ok(compact_servers_period_peak_rank(response))
     }
 }
 

@@ -6,7 +6,7 @@ pub mod tools;
 pub mod traits;
 pub mod types;
 
-pub use agent::AgentLoop;
+pub use agent::{parse_raw_history, AgentLoop};
 pub use error::ChatError;
 pub use llm::ChatMessage;
 pub use llm::OpenAiLlmClient;

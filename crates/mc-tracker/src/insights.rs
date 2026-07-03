@@ -4,7 +4,8 @@ use async_trait::async_trait;
 use futures::future::join_all;
 use mc_api_types::{
     AsnTimeseriesSummaryResponse, GrowthRankOrder, ServerGrowthRankError, ServerGrowthRankItem,
-    ServerTimeseriesSummaryResponse, ServersGrowthRankResponse, TimeseriesSummaryResponse,
+    ServerPeriodPeakRankItem, ServerTimeseriesSummaryResponse, ServersGrowthRankResponse,
+    ServersPeriodPeakRankResponse, TimeseriesSummaryResponse,
 };
 use mc_insights::{
     AnalyzeOptions, DefaultTimeRangeParser, DefaultTimeseriesAnalyzer, InsightsError,
@@ -160,6 +161,55 @@ impl InsightsService {
         })
     }
 
+    pub async fn rank_servers_by_period_peak(
+        &self,
+        from: &str,
+        to: &str,
+        limit: u32,
+    ) -> Result<ServersPeriodPeakRankResponse, InsightsError> {
+        let range = self.parse_range(from, to)?;
+        let limit = limit.clamp(1, 25) as usize;
+        let list = self.manager.servers_list_response(None).await;
+        let ids: Vec<Uuid> = list
+            .servers
+            .iter()
+            .filter_map(|server| Uuid::parse_str(&server.id).ok())
+            .collect();
+
+        let futures: Vec<_> = ids
+            .iter()
+            .map(|&id| self.server_timeseries_summary(id, from, to))
+            .collect();
+        let results = join_all(futures).await;
+
+        let mut ranked = Vec::with_capacity(results.len());
+        let mut errors = Vec::new();
+        for (id, result) in ids.into_iter().zip(results) {
+            match result {
+                Ok(summary) => ranked.push(ServerPeriodPeakRankItem {
+                    id: summary.id,
+                    name: summary.name,
+                    max: summary.summary.max,
+                    avg: summary.summary.avg,
+                }),
+                Err(err) => errors.push(ServerGrowthRankError {
+                    id: id.to_string(),
+                    error: err.to_string(),
+                }),
+            }
+        }
+
+        ranked.sort_by(|left, right| compare_optional_f64(right.max, left.max));
+        ranked.truncate(limit);
+
+        Ok(ServersPeriodPeakRankResponse {
+            from: range.from,
+            to: range.to,
+            servers: ranked,
+            errors,
+        })
+    }
+
     fn parse_range(&self, from: &str, to: &str) -> Result<ResolvedTimeRange, InsightsError> {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -221,12 +271,25 @@ impl mc_chat::InsightsRead for InsightsService {
     ) -> Result<ServersGrowthRankResponse, InsightsError> {
         self.rank_servers_by_growth(from, to, limit, order).await
     }
+
+    async fn rank_servers_by_period_peak(
+        &self,
+        from: &str,
+        to: &str,
+        limit: u32,
+    ) -> Result<ServersPeriodPeakRankResponse, InsightsError> {
+        self.rank_servers_by_period_peak(from, to, limit).await
+    }
 }
 
 fn compare_change_pct(
     left: Option<f64>,
     right: Option<f64>,
 ) -> std::cmp::Ordering {
+    compare_optional_f64(left, right)
+}
+
+fn compare_optional_f64(left: Option<f64>, right: Option<f64>) -> std::cmp::Ordering {
     match (left, right) {
         (None, None) => std::cmp::Ordering::Equal,
         (None, Some(_)) => std::cmp::Ordering::Less,

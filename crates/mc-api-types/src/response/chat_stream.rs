@@ -31,11 +31,11 @@ pub enum ChatStreamEvent {
         content: String,
     },
     Done {
-        #[serde(default)]
+        #[serde(rename = "toolCalls")]
         tool_calls: Vec<ChatToolCallRecord>,
         #[serde(skip_serializing_if = "Option::is_none")]
         usage: Option<ChatTokenUsage>,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none", rename = "rawHistory")]
         raw_history: Option<Vec<serde_json::Value>>,
     },
     Error {

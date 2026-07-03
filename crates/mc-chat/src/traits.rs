@@ -59,6 +59,13 @@ pub trait InsightsRead: Send + Sync {
         limit: u32,
         order: GrowthRankOrder,
     ) -> Result<ServersGrowthRankResponse, mc_insights::InsightsError>;
+
+    async fn rank_servers_by_period_peak(
+        &self,
+        from: &str,
+        to: &str,
+        limit: u32,
+    ) -> Result<mc_api_types::ServersPeriodPeakRankResponse, mc_insights::InsightsError>;
 }
 
 #[async_trait]

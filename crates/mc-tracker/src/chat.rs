@@ -12,7 +12,7 @@ use axum::routing::post;
 use axum::{Json, Router};
 use futures::stream::{self, StreamExt};
 use mc_api_types::{ChatRequest, ChatStreamEvent, ErrorResponse};
-use mc_chat::{AgentChatRequest, ChatMessage};
+use mc_chat::{parse_raw_history, AgentChatRequest};
 use mc_db::db::repos::chat_messages;
 use mc_db::model::UserRole;
 
@@ -94,12 +94,7 @@ async fn post_chat(
         }
     }
 
-    let raw_history = body.raw_history.and_then(|values| {
-        values
-            .into_iter()
-            .map(|v| serde_json::from_value::<ChatMessage>(v).ok())
-            .collect::<Option<Vec<_>>>()
-    });
+    let raw_history = body.raw_history.and_then(parse_raw_history);
 
     let request = AgentChatRequest {
         message: body.message,
