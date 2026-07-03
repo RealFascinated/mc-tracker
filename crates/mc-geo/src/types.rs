@@ -1,5 +1,3 @@
-pub const ASN_EDITION: &str = "GeoLite2-ASN";
-
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct AsnLookup {
     pub asn: String,

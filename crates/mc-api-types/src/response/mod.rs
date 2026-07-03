@@ -27,8 +27,7 @@ pub use self::health::HealthResponse;
 pub use self::insights::{
     AsnTimeseriesSummaryResponse, GrowthRankOrder, ServerGrowthRankError, ServerGrowthRankItem,
     ServerPeriodPeakRankItem, ServerTimeseriesSummaryResponse, ServersGrowthRankResponse,
-    ServersPeriodPeakRankResponse, SummaryPoint,
-    TimeseriesSummaryResponse, TrendDirection,
+    ServersPeriodPeakRankResponse, SummaryPoint, TimeseriesSummaryResponse, TrendDirection,
 };
 pub use self::pinned_servers::PinnedServersListResponse;
 pub use self::servers::{

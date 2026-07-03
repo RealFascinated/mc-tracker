@@ -19,8 +19,18 @@ pub fn compact_search(response: ServersSearchResponse) -> Value {
     })
 }
 
-pub fn compact_server_detail(server: ServerListItemResponse) -> Value {
-    compact_server(&server)
+pub(crate) fn compact_server(server: &ServerListItemResponse) -> Value {
+    json!({
+        "id": server.id,
+        "name": server.name,
+        "host": server.host,
+        "port": server.port,
+        "type": server.server_type,
+        "playersOnline": server.players_online,
+        "asn": server.asn,
+        "asnOrg": server.asn_org,
+        "peaks": compact_entity_peaks(&server.peaks),
+    })
 }
 
 pub fn compact_asn_detail(detail: AsnDetailResponse) -> Value {
@@ -134,20 +144,14 @@ pub fn compact_compare_servers(
 pub fn compact_servers_all_time_peak(servers: &[ServerListItemResponse]) -> Value {
     let mut ranked: Vec<_> = servers
         .iter()
-        .filter_map(|server| {
-            server
-                .peaks
-                .all_time
-                .as_ref()
-                .map(|peak| (server, peak))
-        })
+        .filter_map(|server| server.peaks.all_time.as_ref().map(|peak| (server, peak)))
         .collect();
 
     if ranked.is_empty() {
         return json!({ "peakPlayers": null, "servers": [] });
     }
 
-    ranked.sort_by(|a, b| b.1.players.cmp(&a.1.players));
+    ranked.sort_by_key(|b| std::cmp::Reverse(b.1.players));
     let peak_players = ranked[0].1.players;
     let top: Vec<_> = ranked
         .iter()
@@ -256,20 +260,6 @@ pub fn compact_servers_growth_rank(response: mc_api_types::ServersGrowthRankResp
         "errors": response.errors.iter().map(|entry| {
             json!({ "id": entry.id, "error": entry.error })
         }).collect::<Vec<_>>(),
-    })
-}
-
-fn compact_server(server: &ServerListItemResponse) -> Value {
-    json!({
-        "id": server.id,
-        "name": server.name,
-        "host": server.host,
-        "port": server.port,
-        "type": server.server_type,
-        "playersOnline": server.players_online,
-        "asn": server.asn,
-        "asnOrg": server.asn_org,
-        "peaks": compact_entity_peaks(&server.peaks),
     })
 }
 

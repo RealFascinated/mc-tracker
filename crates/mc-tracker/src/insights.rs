@@ -7,6 +7,7 @@ use mc_api_types::{
     ServerPeriodPeakRankItem, ServerTimeseriesSummaryResponse, ServersGrowthRankResponse,
     ServersPeriodPeakRankResponse, TimeseriesSummaryResponse,
 };
+use mc_common::constants::limits::DEFAULT_LIST_LIMIT;
 use mc_insights::{
     AnalyzeOptions, DefaultTimeRangeParser, DefaultTimeseriesAnalyzer, InsightsError,
     ResolvedTimeRange, TimeRangeParser, TimeseriesAnalyzer,
@@ -113,7 +114,7 @@ impl InsightsService {
         order: GrowthRankOrder,
     ) -> Result<ServersGrowthRankResponse, InsightsError> {
         let range = self.parse_range(from, to)?;
-        let limit = limit.clamp(1, 25) as usize;
+        let limit = limit.clamp(1, DEFAULT_LIST_LIMIT) as usize;
         let list = self
             .manager
             .servers_list_response(
@@ -175,7 +176,7 @@ impl InsightsService {
         limit: u32,
     ) -> Result<ServersPeriodPeakRankResponse, InsightsError> {
         let range = self.parse_range(from, to)?;
-        let limit = limit.clamp(1, 25) as usize;
+        let limit = limit.clamp(1, DEFAULT_LIST_LIMIT) as usize;
         let list = self
             .manager
             .servers_list_response(
@@ -296,10 +297,7 @@ impl mc_chat::InsightsRead for InsightsService {
     }
 }
 
-fn compare_change_pct(
-    left: Option<f64>,
-    right: Option<f64>,
-) -> std::cmp::Ordering {
+fn compare_change_pct(left: Option<f64>, right: Option<f64>) -> std::cmp::Ordering {
     compare_optional_f64(left, right)
 }
 

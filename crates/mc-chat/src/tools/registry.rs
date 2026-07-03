@@ -3,13 +3,22 @@ use std::sync::Arc;
 use crate::error::ChatError;
 use crate::traits::ChatTool;
 
-use super::tools_impl::{
-    AsnTimeseriesSummaryTool, CompareServersTool, GetAsnTool, GetServerTool, ListAsnsTool,
-    ListServersTool, LookupIpTool, RankServersByAllTimePeakTool, RankServersByGrowthTool,
-    RankServersByPeriodPeakTool, RankServersNearPeakTool, SearchServersTool,
-    ServerTimeseriesSummaryTool, TotalTimeseriesSummaryTool,
-};
+use super::asn_timeseries_summary::AsnTimeseriesSummaryTool;
+use super::compare_servers::CompareServersTool;
+use super::get_asn::GetAsnTool;
+use super::get_server::GetServerTool;
+use super::list_asns::ListAsnsTool;
+use super::list_servers::ListServersTool;
+use super::lookup_ip::LookupIpTool;
+use super::rank_servers_by_all_time_peak::RankServersByAllTimePeakTool;
+use super::rank_servers_by_growth::RankServersByGrowthTool;
+use super::rank_servers_by_period_peak::RankServersByPeriodPeakTool;
+use super::rank_servers_near_peak::RankServersNearPeakTool;
+use super::search_servers::SearchServersTool;
+use super::server_timeseries_summary::ServerTimeseriesSummaryTool;
+use super::total_timeseries_summary::TotalTimeseriesSummaryTool;
 
+#[derive(Clone)]
 pub struct ToolRegistry {
     pub(crate) tools: Vec<Arc<dyn ChatTool>>,
 }
@@ -64,11 +73,5 @@ impl ToolRegistry {
             .find(|tool| tool.name() == name)
             .ok_or_else(|| ChatError::Tool(format!("unknown tool: {name}")))?;
         tool.execute(deps, args).await
-    }
-
-    pub fn clone_registry(&self) -> Self {
-        Self {
-            tools: self.tools.clone(),
-        }
     }
 }

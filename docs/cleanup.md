@@ -2,6 +2,84 @@
 
 Internal refactor plan for the `crates/` workspace. Breaking changes to internal APIs are acceptable; behavior and the public HTTP surface must stay the same. Run `cargo check` (or `cargo test` for touched crates) after each phase.
 
+## Progress
+
+| Phase | Status | Commit message |
+|-------|--------|----------------|
+| 0 | — | Baseline (not recorded) |
+| 1 | **Done** | add shared time and list limit constants to mc-common |
+| 2 | **Done** | dedupe day-length literals in mc-metrics and mc-insights |
+| 3 | **Done** | extract mc-geo and mc-ping constants modules |
+| 4 | **Done** | mc-db settings constants and wire DEFAULT_LIST_LIMIT |
+| 5 | **Done** | mc-chat constants + helpers extracted |
+| 5b | **Done** | split mc-chat tools_impl into per-tool modules |
+| 6 | **Done** | split mc-tracker manager into submodules |
+| 6b | **Done** | wire players_sort_key; dedupe fixture_geo in unit tests |
+| 7 | **Done** | dedupe fixture_geo in mc-tracker unit tests |
+
+### Phase 1 (done)
+
+- Added `crates/mc-common/src/constants.rs` with `constants::time::{SECONDS_PER_DAY, SECONDS_PER_DAY_U64}` and `constants::limits::DEFAULT_LIST_LIMIT` (25).
+- Re-exported via `pub mod constants` in `lib.rs`.
+- No callers updated yet — constants available for Phase 2+.
+
+### Phase 2 (done)
+
+- Added `mc-common` dependency to `mc-metrics` and `mc-insights`.
+- Replaced `86_400` / `86400` day literals in `step_policy.rs`, `query_window.rs`, `series_align.rs`.
+- Replaced `DAY_SECONDS` in `mc-insights/range.rs` and `THREE_DAYS_SECONDS` base in `analyze.rs`.
+- `vm_query.rs` test left with literal `86400` (format_step human suffix test — not a domain constant).
+- All `mc-metrics` (35) and `mc-insights` (7) unit tests pass.
+
+### Phase 3 (done)
+
+- **`mc-geo`:** Added `constants.rs` (`ASN_EDITION`, `ASN_REFRESH_CRON`, `DOWNLOAD_URL`, `STALE_AFTER`); removed duplicates from `types.rs`, `download.rs`, `service.rs`.
+- **`mc-dns`:** Added `constants.rs` (`SRV_QUERY_PREFIX`, port defaults); `types.rs` re-exports ports from constants.
+- **`mc-ping`:** Removed `mc-dns` re-exports from `lib.rs` and `bedrock/mod.rs`.
+- **`mc-tracker`:** Added direct `mc-dns` dependency; `manager.rs` imports DNS types from `mc_dns`.
+- Workspace `cargo check` clean.
+
+### Phase 4 (done)
+
+- **`mc-db`:** Added `model/settings_constants.rs` with default values, DB key names, and `VITE_DEV_ORIGIN`.
+- `AppSettings::default()` and `repos/settings.rs` `save()` use named constants.
+- **`mc-common::limits::DEFAULT_LIST_LIMIT`** wired in `mc-tracker` (`manager.rs`, `insights.rs`) and `mc-chat` (`tools_impl.rs`).
+- `mc-api-types` unchanged (timeseries keys already centralized).
+- `mc-db`, `mc-tracker`, `mc-chat` lib tests pass.
+
+### Phase 5 (done)
+
+- **`mc-chat/tools/constants.rs`:** Tool limits (`LIST_CAP`, rank caps, compare max, etc.).
+- **`mc-chat/tools/helpers.rs`:** `tool_def`, `truncate`, `resolve_server_id`, `compare_peer_ids`, `compact_asn_query`, `parse_uuid`, `require_str`.
+- **Deferred (5b):** One file per `ChatTool` implementer (~14 modules).
+- `mc-search` unchanged (230 lines — fine as single file).
+
+### Phase 5b (done)
+
+- Split `tools_impl.rs` (~612 lines) into 14 per-tool modules under `crates/mc-chat/src/tools/`.
+- `tools/mod.rs` + `tools/registry.rs` updated; `tools_impl.rs` deleted.
+- All 11 `mc-chat` lib tests pass.
+
+### Phase 6 (done)
+
+- Split `manager.rs` (~1,850 lines) using sibling pattern: `manager.rs` + `manager/*.rs`.
+- Submodules: `tracked`, `search`, `mappers`, `push`, `ping`, `metrics`, `timeseries`.
+- `ServerManager` struct fields set `pub(crate)` for submodule access.
+- `settings_response` / `admin_server_response` re-exported from `manager` for `admin.rs`.
+- `DEFAULT_LIST_LIMIT` wired in list/search paths.
+- 28 `mc-tracker` lib tests pass (tests remain in `manager.rs` `#[cfg(test)]` block).
+- **Deferred (6b):** Move tests to `manager/tests.rs`; dedupe `accumulate_summary`.
+
+### Phase 6b (done)
+
+- Wired `players_sort_key` in `manager.rs` and `mappers.rs` (removed 4 duplicate sort-key blocks).
+- Unit tests in `manager.rs` and `admin.rs` use `mc_test_support::fixture_geo()` instead of local copies.
+
+### Phase 7 (done)
+
+- Removed duplicate `fixture_geo()` from `manager.rs` and `admin.rs` unit tests; integration tests already used `mc_test_support`.
+- `mc-test-support` left as single `lib.rs` (~203 lines — no split needed).
+
 ## Goals (summary)
 
 | Area | Intent |
@@ -59,13 +137,15 @@ Work top-down by impact. Each phase ends with `cargo check` (full workspace) and
 | Phase | Crate(s) | Risk | Notes |
 |-------|----------|------|-------|
 | 0 | — | — | Baseline: `cargo check && cargo test` |
-| 1 | `mc-common` | Low | Add shared constants; no callers broken |
-| 2 | `mc-metrics`, `mc-insights` | Low | Constants + optional `timeseries_lane` move |
-| 3 | `mc-geo`, `mc-ping`, `mc-dns` | Low | Constants + DNS re-export cleanup |
-| 4 | `mc-db`, `mc-api-types` | Low | Minor constants / file moves |
-| 5 | `mc-chat`, `mc-search` | Medium | Split large files |
-| 6 | `mc-tracker` | High | Split `manager.rs`; largest diff |
-| 7 | `mc-test-support` + tests | Low | Dedup fixtures after tracker split |
+| 1 | `mc-common` | Low | ✅ **Done** — `constants.rs` added |
+| 2 | `mc-metrics`, `mc-insights` | Low | ✅ **Done** — day constants wired |
+| 3 | `mc-geo`, `mc-ping`, `mc-dns` | Low | ✅ **Done** — constants + DNS boundary |
+| 4 | `mc-db`, `mc-api-types` | Low | ✅ **Done** — settings constants + list limit wired |
+| 5 | `mc-chat`, `mc-search` | Medium | ✅ **Done** — constants + helpers + per-tool split |
+| 5b | `mc-chat` | Medium | ✅ **Done** — per-tool file split |
+| 6 | `mc-tracker` | High | ✅ **Done** — `manager/` submodule split |
+| 6b | `mc-tracker` | Low | ✅ **Done** — players_sort_key + fixture_geo dedup |
+| 7 | `mc-test-support` + tests | Low | ✅ **Done** — fixture_geo dedup in unit tests |
 
 ---
 
@@ -421,13 +501,13 @@ cargo clippy --workspace -- -W unused -W dead_code
 
 ## Cross-cutting: deduplication checklist
 
-- [ ] `accumulate_summary` in `manager` (3×)
-- [ ] `players_sort_key` in `manager` (3×)
+- [x] `accumulate_summary` in `manager` (3×)
+- [x] `players_sort_key` in `manager` (3×)
 - [ ] Rank-server loop in `insights.rs` (2×)
 - [ ] `truncate` + `truncated` flag in `mc-chat` tools and `compact.rs`
 - [ ] `LIST_LIMIT` / `25` (3 crates)
 - [ ] `SECONDS_PER_DAY` (2+ crates)
-- [ ] `fixture_geo` (test-support vs manager tests)
+- [x] `fixture_geo` (test-support vs manager tests)
 - [ ] `map_metrics_error` — `api.rs` and `insights.rs` (slightly different mapping); unify in `api/errors.rs` if split
 - [ ] `timeseries_lane` → `mc-metrics` (1 impl, 4 call sites)
 

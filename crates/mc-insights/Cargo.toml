@@ -11,6 +11,7 @@ workspace = true
 [dependencies]
 chrono = { workspace = true }
 mc-api-types = { path = "../mc-api-types" }
+mc-common = { path = "../mc-common" }
 mc-metrics = { path = "../mc-metrics" }
 serde = { workspace = true }
 thiserror = { workspace = true }

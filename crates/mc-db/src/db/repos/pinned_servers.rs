@@ -1,6 +1,6 @@
 use diesel::prelude::*;
-use diesel_async::RunQueryDsl;
 use diesel_async::AsyncConnection;
+use diesel_async::RunQueryDsl;
 use uuid::Uuid;
 
 use crate::db::schema::pinned_servers;
@@ -36,10 +36,7 @@ const PINNED_SERVER_COLUMNS: (
 fn is_unique_violation(err: &diesel::result::Error) -> bool {
     matches!(
         err,
-        diesel::result::Error::DatabaseError(
-            diesel::result::DatabaseErrorKind::UniqueViolation,
-            _,
-        )
+        diesel::result::Error::DatabaseError(diesel::result::DatabaseErrorKind::UniqueViolation, _,)
     )
 }
 
@@ -56,7 +53,11 @@ pub async fn list_by_user(pool: &DbPool, user_id: Uuid) -> Result<Vec<PinnedServ
     Ok(rows.into_iter().map(row_to_pinned_server).collect())
 }
 
-pub async fn insert(pool: &DbPool, user_id: Uuid, server_id: Uuid) -> Result<PinnedServer, DbError> {
+pub async fn insert(
+    pool: &DbPool,
+    user_id: Uuid,
+    server_id: Uuid,
+) -> Result<PinnedServer, DbError> {
     let mut conn = get_conn(pool).await?;
     let next_position = pinned_servers::table
         .filter(pinned_servers::user_id.eq(user_id))
@@ -134,11 +135,7 @@ async fn compact_positions(
     Ok(())
 }
 
-pub async fn reorder(
-    pool: &DbPool,
-    user_id: Uuid,
-    server_ids: &[Uuid],
-) -> Result<(), DbError> {
+pub async fn reorder(pool: &DbPool, user_id: Uuid, server_ids: &[Uuid]) -> Result<(), DbError> {
     let mut conn = get_conn(pool).await?;
     conn.transaction::<(), DbError, _>(async |conn| {
         let existing = pinned_servers::table

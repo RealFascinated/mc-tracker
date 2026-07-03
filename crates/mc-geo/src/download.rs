@@ -1,18 +1,14 @@
 use std::fs::{self, File};
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 use flate2::read::GzDecoder;
 use tar::Archive;
 use tracing::{info, warn};
 
+use crate::constants::{ASN_EDITION, DOWNLOAD_URL, STALE_AFTER};
 use crate::error::GeoError;
-use crate::types::ASN_EDITION;
-
-const DOWNLOAD_URL: &str =
-    "https://download.maxmind.com/app/geoip_download?edition_id={edition}&license_key={key}&suffix=tar.gz";
-const STALE_AFTER: Duration = Duration::from_secs(3 * 24 * 60 * 60);
 
 pub fn database_file_path(database_dir: impl AsRef<Path>) -> PathBuf {
     database_dir.as_ref().join(format!("{ASN_EDITION}.mmdb"))
@@ -197,9 +193,11 @@ mod tests {
 
     #[test]
     fn staleness_uses_three_day_threshold() {
-        let stale = Duration::from_secs(4 * 24 * 60 * 60);
-        let fresh = Duration::from_secs(2 * 24 * 60 * 60);
-        let threshold = Duration::from_secs(3 * 24 * 60 * 60);
+        use crate::constants::STALE_AFTER;
+
+        let stale = STALE_AFTER + std::time::Duration::from_secs(24 * 60 * 60);
+        let fresh = STALE_AFTER - std::time::Duration::from_secs(24 * 60 * 60);
+        let threshold = STALE_AFTER;
         assert!(stale > threshold);
         assert!(fresh <= threshold);
     }

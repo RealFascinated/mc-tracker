@@ -1,11 +1,10 @@
 use chrono::{DateTime, Datelike, NaiveDate, TimeZone, Utc};
 
+use mc_common::constants::time::SECONDS_PER_DAY;
 use mc_metrics::{max_span, min_span};
 
 use crate::error::InsightsError;
 use crate::traits::{ResolvedTimeRange, TimeRangeParser};
-
-const DAY_SECONDS: i64 = 86_400;
 
 pub struct DefaultTimeRangeParser;
 
@@ -47,7 +46,7 @@ fn parse_bound(input: &str, now: i64, is_to: bool) -> Result<i64, InsightsError>
     }
     if let Some(rest) = lower.strip_suffix('d') {
         if let Ok(days) = rest.parse::<i64>() {
-            let offset = days * DAY_SECONDS;
+            let offset = days * SECONDS_PER_DAY;
             return Ok(if is_to { now } else { now - offset });
         }
     }
@@ -92,7 +91,7 @@ mod tests {
         let parser = DefaultTimeRangeParser;
         let range = parser.parse("7d", "now", NOW).unwrap();
         assert_eq!(range.to, NOW);
-        assert_eq!(range.from, NOW - 7 * DAY_SECONDS);
+        assert_eq!(range.from, NOW - 7 * SECONDS_PER_DAY);
     }
 
     #[test]

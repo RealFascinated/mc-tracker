@@ -8,10 +8,9 @@ use hickory_resolver::Resolver;
 use hickory_resolver::TokioResolver;
 
 use crate::cache::DnsCache;
+use crate::constants::SRV_QUERY_PREFIX;
 use crate::error::DnsError;
 use crate::types::SrvRecord;
-
-const SRV_QUERY_PREFIX: &str = "_minecraft._tcp";
 
 #[async_trait]
 pub trait DnsResolver: Send + Sync {

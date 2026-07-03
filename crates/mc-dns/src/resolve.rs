@@ -1,6 +1,7 @@
+use crate::constants::{DEFAULT_BEDROCK_PORT, DEFAULT_JAVA_PORT};
 use crate::error::DnsError;
 use crate::resolver::DnsResolver;
-use crate::types::{ResolvedTarget, DEFAULT_BEDROCK_PORT, DEFAULT_JAVA_PORT};
+use crate::types::ResolvedTarget;
 
 /// Resolve hostname + port for Java ping (SRV rewrite, then A/AAAA record).
 ///

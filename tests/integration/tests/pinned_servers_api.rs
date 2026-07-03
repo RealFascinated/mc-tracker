@@ -6,8 +6,8 @@ use tower::ServiceExt;
 use uuid::Uuid;
 
 use mc_test_support::{
-    bootstrap_admin, build_app_with_env, create_user, login_admin, login_as,
-    manager_with_vm_url, setup_pool, start_postgres,
+    bootstrap_admin, build_app_with_env, create_user, login_admin, login_as, manager_with_vm_url,
+    setup_pool, start_postgres,
 };
 
 fn sample_server(id: Uuid, name: &str, host: &str) -> Server {
@@ -48,12 +48,7 @@ async fn seed_server(
     manager.append_server(server).await;
 }
 
-fn request(
-    method: &str,
-    uri: &str,
-    cookie: Option<&str>,
-    body: Option<String>,
-) -> Request<Body> {
+fn request(method: &str, uri: &str, cookie: Option<&str>, body: Option<String>) -> Request<Body> {
     let mut builder = Request::builder().method(method).uri(uri);
     if let Some(cookie) = cookie {
         builder = builder.header("cookie", cookie);
@@ -108,7 +103,11 @@ async fn pinned_servers_requires_auth() {
             .oneshot(request(method, uri, None, body))
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::UNAUTHORIZED, "{method} {uri}");
+        assert_eq!(
+            response.status(),
+            StatusCode::UNAUTHORIZED,
+            "{method} {uri}"
+        );
     }
 }
 
@@ -193,9 +192,7 @@ async fn pin_reorder_and_unpin_servers() {
             "PUT",
             "/pinned-servers/order",
             Some(&cookie),
-            Some(format!(
-                r#"{{"serverIds":["{server_b}","{server_a}"]}}"#
-            )),
+            Some(format!(r#"{{"serverIds":["{server_b}","{server_a}"]}}"#)),
         ))
         .await
         .unwrap();

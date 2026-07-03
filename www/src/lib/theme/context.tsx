@@ -44,7 +44,7 @@ function applyTheme(theme: ResolvedTheme) {
 
 function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useLocalStorage(THEME_STORAGE_KEY, {
-    defaultValue: "system" as ThemePreference,
+    defaultValue: "system",
     ...localStorageStringOptions,
     deserialize: (raw) => (isThemePreference(raw) ? raw : null),
   });

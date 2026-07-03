@@ -1,5 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+use super::settings_constants::{
+    self, DNS_CACHE_ENABLED, DNS_CACHE_TTL_MINUTES, METRICS_PUSH_CRON, PINGER_RETRY_ATTEMPTS,
+    PINGER_RETRY_DELAY_MS, PINGER_TIMEOUT_MS, SIGN_UP_ENABLED, VICTORIAMETRICS_URL,
+};
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AppSettings {
     pub pinger_timeout_ms: u64,
@@ -19,14 +24,14 @@ pub struct AppSettings {
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
-            pinger_timeout_ms: 5000,
-            pinger_retry_attempts: 3,
-            pinger_retry_delay_ms: 1000,
-            dns_cache_enabled: true,
-            dns_cache_ttl_minutes: 5,
-            victoriametrics_url: "http://localhost:8428".to_string(),
-            metrics_push_cron: "*/10 * * * * *".to_string(),
-            sign_up_enabled: false,
+            pinger_timeout_ms: PINGER_TIMEOUT_MS,
+            pinger_retry_attempts: PINGER_RETRY_ATTEMPTS,
+            pinger_retry_delay_ms: PINGER_RETRY_DELAY_MS,
+            dns_cache_enabled: DNS_CACHE_ENABLED,
+            dns_cache_ttl_minutes: DNS_CACHE_TTL_MINUTES,
+            victoriametrics_url: VICTORIAMETRICS_URL.to_string(),
+            metrics_push_cron: METRICS_PUSH_CRON.to_string(),
+            sign_up_enabled: SIGN_UP_ENABLED,
             www_origin: String::new(),
         }
     }
@@ -116,7 +121,7 @@ impl AppSettings {
     ) -> Result<Vec<String>, String> {
         let mut origins = Vec::new();
         if deployment_environment == "development" {
-            origins.push("http://localhost:5173".to_string());
+            origins.push(settings_constants::VITE_DEV_ORIGIN.to_string());
         }
         let www = self.www_origin.trim();
         if !www.is_empty() {

@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use mc_common::constants::time::SECONDS_PER_DAY_U64;
+
 const MAX_POINTS: u64 = 800;
 const MIN_STEP: Duration = Duration::from_secs(15);
 const MIN_SPAN: Duration = Duration::from_secs(5 * 60);
@@ -25,7 +27,7 @@ pub fn min_step() -> Duration {
 }
 
 pub fn daily_step() -> Duration {
-    Duration::from_secs(86_400)
+    Duration::from_secs(SECONDS_PER_DAY_U64)
 }
 
 pub fn step_for(span: Duration) -> Duration {
@@ -59,7 +61,7 @@ mod tests {
     fn step_for_one_year_returns_one_day() {
         assert_eq!(
             step_for(Duration::from_secs(365 * 24 * 60 * 60)),
-            Duration::from_secs(86400)
+            Duration::from_secs(SECONDS_PER_DAY_U64)
         );
     }
 
@@ -78,7 +80,7 @@ mod tests {
             (Duration::from_secs(24 * 3600), 120),
             (Duration::from_secs(7 * 24 * 3600), 900),
             (Duration::from_secs(30 * 24 * 3600), 3600),
-            (Duration::from_secs(365 * 24 * 3600), 86400),
+            (Duration::from_secs(365 * 24 * 3600), SECONDS_PER_DAY_U64),
         ];
 
         for (span, expected_step_secs) in cases {
@@ -92,6 +94,9 @@ mod tests {
 
     #[test]
     fn step_for_max_span_uses_largest_nice_interval() {
-        assert_eq!(step_for(max_span()), Duration::from_secs(86_400));
+        assert_eq!(
+            step_for(max_span()),
+            Duration::from_secs(SECONDS_PER_DAY_U64)
+        );
     }
 }

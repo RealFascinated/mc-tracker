@@ -41,10 +41,7 @@ mod tests {
 
     #[test]
     fn chat_quota_exempt_for_flagged_user() {
-        assert!(chat_quota_exempt(
-            UserRole::User,
-            UserFlags::UNLIMITED_CHAT
-        ));
+        assert!(chat_quota_exempt(UserRole::User, UserFlags::UNLIMITED_CHAT));
     }
 
     #[test]

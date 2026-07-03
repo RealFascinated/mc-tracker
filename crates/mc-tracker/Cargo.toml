@@ -34,6 +34,7 @@ mc-api-types = { path = "../mc-api-types" }
 mc-chat = { path = "../mc-chat" }
 mc-common = { path = "../mc-common" }
 mc-db = { path = "../mc-db" }
+mc-dns = { path = "../mc-dns" }
 mc-geo = { path = "../mc-geo" }
 mc-insights = { path = "../mc-insights" }
 mc-metrics = { path = "../mc-metrics" }

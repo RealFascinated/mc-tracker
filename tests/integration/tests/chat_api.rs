@@ -243,7 +243,11 @@ async fn post_chat_flagged_user_unlimited() {
 
     for i in 0..21 {
         let response = post_chat(&app, Some(&cookie), &format!("vip{i}"), i as u8 + 1).await;
-        assert_eq!(response.status(), StatusCode::OK, "flagged user request {i}");
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "flagged user request {i}"
+        );
     }
 }
 

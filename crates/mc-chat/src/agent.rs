@@ -9,8 +9,8 @@ use tokio_stream::wrappers::ReceiverStream;
 
 use crate::error::ChatError;
 use crate::llm::types::{
-    ChatCompletionRequest, ChatCompletionResponse, ChatMessage, CompletionUsage,
-    LlmRequestOptions, ToolChoice, ToolDefinition,
+    ChatCompletionRequest, ChatCompletionResponse, ChatMessage, CompletionUsage, LlmRequestOptions,
+    ToolChoice, ToolDefinition,
 };
 use crate::prompt::SYSTEM_PROMPT;
 use crate::tools::ToolRegistry;
@@ -60,7 +60,7 @@ impl ChatAgent for AgentLoop {
         request: AgentChatRequest,
     ) -> Pin<Box<dyn Stream<Item = Result<ChatStreamEvent, ChatError>> + Send>> {
         let llm = Arc::clone(&self.llm);
-        let tools = self.tools.clone_registry();
+        let tools = self.tools.clone();
         let deps = ChatToolDeps {
             tracker: Arc::clone(&self.deps.tracker),
             insights: Arc::clone(&self.deps.insights),
@@ -413,11 +413,7 @@ fn session_id_for_llm(session_id: Option<&str>) -> Option<String> {
     })
 }
 
-fn log_context_usage(
-    session_id: Option<&str>,
-    context_max: u32,
-    usage: &CompletionUsage,
-) {
+fn log_context_usage(session_id: Option<&str>, context_max: u32, usage: &CompletionUsage) {
     let prompt = usage.prompt_tokens;
     let pct = if context_max > 0 {
         (f64::from(prompt) / f64::from(context_max)) * 100.0
@@ -610,10 +606,7 @@ mod tests {
             }
         }
 
-        async fn lookup_ip(
-            &self,
-            _: &str,
-        ) -> Result<mc_api_types::IpLookupResponse, ChatError> {
+        async fn lookup_ip(&self, _: &str) -> Result<mc_api_types::IpLookupResponse, ChatError> {
             Err(ChatError::Tool("not implemented".into()))
         }
     }
@@ -666,7 +659,8 @@ mod tests {
             _: &str,
             _: &str,
             _: u32,
-        ) -> Result<mc_api_types::ServersPeriodPeakRankResponse, mc_insights::InsightsError> {
+        ) -> Result<mc_api_types::ServersPeriodPeakRankResponse, mc_insights::InsightsError>
+        {
             Err(mc_insights::InsightsError::NoData)
         }
     }

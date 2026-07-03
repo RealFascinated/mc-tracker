@@ -137,8 +137,7 @@ fn patch_settings_request_deserializes_partial_fields() {
 
 #[test]
 fn servers_list_query_deserializes_sort_and_order() {
-    let query: ServersListQuery =
-        serde_json::from_str(r#"{"sort":"name","order":"asc"}"#).unwrap();
+    let query: ServersListQuery = serde_json::from_str(r#"{"sort":"name","order":"asc"}"#).unwrap();
     assert_eq!(query.sort, ServersListSortField::Name);
     assert_eq!(query.order, SortOrder::Asc);
 }

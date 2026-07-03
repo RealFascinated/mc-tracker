@@ -7,6 +7,11 @@ use std::collections::HashMap;
 use crate::db::schema::settings;
 use crate::db::DbPool;
 use crate::error::DbError;
+use crate::model::settings_constants::{
+    KEY_DNS_CACHE_ENABLED, KEY_DNS_CACHE_TTL_MINUTES, KEY_METRICS_PUSH_CRON,
+    KEY_PINGER_RETRY_ATTEMPTS, KEY_PINGER_RETRY_DELAY_MS, KEY_PINGER_TIMEOUT_MS,
+    KEY_SIGN_UP_ENABLED, KEY_VICTORIAMETRICS_URL, KEY_WWW_ORIGIN,
+};
 use crate::model::AppSettings;
 
 use super::{db_err, get_conn};
@@ -67,25 +72,25 @@ pub async fn save(pool: &DbPool, settings: &AppSettings) -> Result<(), DbError> 
     conn.transaction::<(), DbError, _>(async |conn| {
         upsert(
             conn,
-            "pinger_timeout_ms",
+            KEY_PINGER_TIMEOUT_MS,
             &settings.pinger_timeout_ms.to_string(),
         )
         .await?;
         upsert(
             conn,
-            "pinger_retry_attempts",
+            KEY_PINGER_RETRY_ATTEMPTS,
             &settings.pinger_retry_attempts.to_string(),
         )
         .await?;
         upsert(
             conn,
-            "pinger_retry_delay_ms",
+            KEY_PINGER_RETRY_DELAY_MS,
             &settings.pinger_retry_delay_ms.to_string(),
         )
         .await?;
         upsert(
             conn,
-            "dns_cache_enabled",
+            KEY_DNS_CACHE_ENABLED,
             if settings.dns_cache_enabled {
                 "true"
             } else {
@@ -95,15 +100,15 @@ pub async fn save(pool: &DbPool, settings: &AppSettings) -> Result<(), DbError> 
         .await?;
         upsert(
             conn,
-            "dns_cache_ttl_minutes",
+            KEY_DNS_CACHE_TTL_MINUTES,
             &settings.dns_cache_ttl_minutes.to_string(),
         )
         .await?;
-        upsert(conn, "victoriametrics_url", &settings.victoriametrics_url).await?;
-        upsert(conn, "metrics_push_cron", &settings.metrics_push_cron).await?;
+        upsert(conn, KEY_VICTORIAMETRICS_URL, &settings.victoriametrics_url).await?;
+        upsert(conn, KEY_METRICS_PUSH_CRON, &settings.metrics_push_cron).await?;
         upsert(
             conn,
-            "sign_up_enabled",
+            KEY_SIGN_UP_ENABLED,
             if settings.sign_up_enabled {
                 "true"
             } else {
@@ -111,7 +116,7 @@ pub async fn save(pool: &DbPool, settings: &AppSettings) -> Result<(), DbError> 
             },
         )
         .await?;
-        upsert(conn, "www_origin", &settings.www_origin).await?;
+        upsert(conn, KEY_WWW_ORIGIN, &settings.www_origin).await?;
         Ok(())
     })
     .await

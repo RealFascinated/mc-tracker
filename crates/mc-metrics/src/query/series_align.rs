@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use mc_common::constants::time::SECONDS_PER_DAY;
+
 use crate::query::MetricQueryWindow;
 
 #[derive(Debug, Default)]
@@ -64,7 +66,7 @@ fn align_samples_to_window_with(
         let Some(value) = *value else {
             continue;
         };
-        let bucket_ts = if step == 86_400 {
+        let bucket_ts = if step == SECONDS_PER_DAY {
             (*sample_ts / step) * step
         } else {
             let index = (*sample_ts - start) / step;
@@ -150,8 +152,8 @@ mod tests {
 
     #[test]
     fn align_samples_avg_averages_colliding_buckets() {
-        let to = UNIX_EPOCH + Duration::from_secs(3 * 86_400);
-        let from = to - Duration::from_secs(3 * 86_400);
+        let to = UNIX_EPOCH + Duration::from_secs((3 * SECONDS_PER_DAY) as u64);
+        let from = to - Duration::from_secs((3 * SECONDS_PER_DAY) as u64);
         let window = MetricQueryWindow::parse_daily(
             from.duration_since(UNIX_EPOCH).unwrap().as_secs() as i64,
             to.duration_since(UNIX_EPOCH).unwrap().as_secs() as i64,
@@ -179,7 +181,7 @@ mod tests {
 
     #[test]
     fn align_samples_avg_keeps_day_values_when_zoom_starts_mid_day() {
-        let step = 86_400;
+        let step = SECONDS_PER_DAY;
         let day0 = 1782777600;
         let day1 = day0 + step;
         let window = MetricQueryWindow::parse_daily(day0 + 3_600, day1).unwrap();

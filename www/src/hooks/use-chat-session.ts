@@ -7,7 +7,8 @@ import { useAuth } from "@/lib/auth/context";
 import type { ChatQuota } from "@/lib/auth/types";
 import { chatQuotaExempt } from "@/lib/user-flags";
 
-import { STREAMING_ID, type ChatMessage } from "@/components/chat/chat-types";
+import { STREAMING_ID  } from "@/components/chat/chat-types";
+import type {ChatMessage} from "@/components/chat/chat-types";
 import { toolStatusLabel } from "@/components/chat/chat-utils";
 import { useChatServerContext } from "@/hooks/use-chat-server-context";
 

@@ -1,215 +1,59 @@
-use std::collections::BTreeMap;
-use std::str::FromStr;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::time::Duration;
+mod mappers;
+mod metrics;
+mod ping;
+mod push;
+mod search;
+mod timeseries;
+mod tracked;
 
-use chrono::Utc;
-use cron::Schedule;
-use futures::future::join_all;
-use mc_api_types::{
-    timeseries_keys, AdminServerResponse, AdminServersListResponse, AsnDetailResponse,
-    AsnListItemResponse, AsnSearchResponse, AsnTimeseriesResponse, AsnsListResponse,
-    AsnsSummaryResponse, EntityPeakStats, IpLookupResponse, PeakPlayersRecord,
-    PlayersPeakSummary, ServerListItemResponse, ServerSearchItemResponse, ServerTimeseriesResponse,
-    ServersListResponse, ServersListSortField, ServersSearchResponse, ServersSummaryResponse,
-    SortOrder,
-    TimeseriesLane,
-    TimeseriesLanes,
+pub use mappers::{admin_server_response, settings_response};
+pub use push::{spawn_push_loop, PushLoopHandle};
+pub use tracked::{ServerSummary, TrackedServer};
+
+use self::mappers::{
+    asn_peak_all_time, dns_cache_for, entity_peak_stats_with_all_time, server_list_item,
+    sort_server_list_items,
 };
-use mc_db::db::repos::servers;
-use mc_db::model::{Platform, Server};
+use self::search::{
+    asn_key, matches_asn_key, matches_asn_org, matches_asn_search, matches_server_search,
+    players_sort_key, server_search_relevance, AsnAggregate, AsnAggregateKey,
+};
+use self::tracked::accumulate_summary;
+
+use std::collections::BTreeMap;
+use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
+
+use mc_api_types::{
+    AdminServersListResponse, AsnDetailResponse, AsnListItemResponse, AsnSearchResponse,
+    AsnsListResponse, AsnsSummaryResponse, IpLookupResponse, PlayersPeakSummary,
+    ServerListItemResponse, ServerSearchItemResponse, ServersListResponse, ServersListSortField,
+    ServersSearchResponse, ServersSummaryResponse, SortOrder,
+};
+use mc_common::constants::limits::DEFAULT_LIST_LIMIT;
+use mc_db::model::Server;
 use mc_db::AppSettings;
 use mc_db::DbPool;
-use mc_geo::{AsnLookup, GeoError, GeoService};
+use mc_dns::{DnsResolver, HickoryDnsResolver};
+use mc_geo::{AsnLookup, GeoService};
 use mc_metrics::{
-    align_samples_to_window, align_samples_to_window_avg, labels, peak_players_24h,
-    peak_players_24h_by_asn, peak_players_24h_by_server, peak_players_7d,
-    player_count_daily_average_series, player_count_series, players_for_asn_series,
-    total_players_series, MetricQueryWindow, MetricsError, PlayerCountEntry, PlayerCountRegistry,
-    VmPushClient, VmQueryBuilder, VmQueryClient,
+    peak_players_24h, peak_players_7d, PlayerCountRegistry, VmPushClient, VmQueryClient,
 };
-use mc_ping::{
-    ping_bedrock, ping_java, resolve_bedrock, resolve_java, with_retry, DnsError, DnsResolver,
-    HickoryDnsResolver, Ping, PingError,
-};
-use mc_search::{matches, score_str, SearchField};
-use tokio::sync::{watch, RwLock};
-use tokio::task::JoinHandle;
-use tracing::{info, warn};
+use tokio::sync::RwLock;
 use uuid::Uuid;
 
-#[derive(Debug)]
-enum PingServerError {
-    NotTracked,
-    Dns(DnsError),
-    Ping(PingError),
-    Asn { ip: String, error: GeoError },
-}
-
-impl std::fmt::Display for PingServerError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::NotTracked => write!(f, "server not found in tracker"),
-            Self::Dns(err) => write!(f, "dns resolve failed: {err}"),
-            Self::Ping(err) => write!(f, "{err}"),
-            Self::Asn { ip, error } => write!(f, "asn lookup failed for {ip}: {error}"),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct TrackedServer {
-    pub config: Server,
-    pub players_online: Option<u32>,
-    pub last_ping_at: Option<i64>,
-    pub favicon: Option<String>,
-    pub asn: AsnLookup,
-    pub last_asn_ip: Option<String>,
-    pub peak_players: Option<u32>,
-    pub peak_players_timestamp: Option<i64>,
-}
-
-impl TrackedServer {
-    fn from_config(config: Server) -> Self {
-        Self {
-            peak_players: config.peak_players,
-            peak_players_timestamp: config.peak_players_timestamp,
-            config,
-            players_online: None,
-            last_ping_at: None,
-            favicon: None,
-            asn: AsnLookup::empty(),
-            last_asn_ip: None,
-        }
-    }
-
-    fn clear_ping_state(&mut self) {
-        self.players_online = None;
-        self.last_ping_at = None;
-    }
-
-    fn is_tracking(&self) -> bool {
-        !self.config.paused
-    }
-
-    fn apply_success(&mut self, ping: &Ping, asn: AsnLookup, resolved_ip: &str) -> bool {
-        self.players_online = Some(ping.players.online);
-        self.last_ping_at = Some(ping.timestamp);
-        if let Some(favicon) = ping.favicon.as_ref() {
-            self.favicon = Some(favicon.clone());
-        }
-        if asn != self.asn || self.last_asn_ip.as_deref() != Some(resolved_ip) {
-            self.asn = asn;
-            self.last_asn_ip = Some(resolved_ip.to_string());
-        }
-        self.record_peak_if_higher(ping.players.online, ping.timestamp)
-    }
-
-    fn record_peak_if_higher(&mut self, players: u32, at: i64) -> bool {
-        let is_higher = self.peak_players.map(|peak| players > peak).unwrap_or(true);
-        if is_higher {
-            self.peak_players = Some(players);
-            self.peak_players_timestamp = Some(at);
-        }
-        is_higher
-    }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ServerSummary {
-    pub total_players: u64,
-    pub players_pc: u64,
-    pub players_pe: u64,
-    pub tracked_servers: u32,
-}
-
-fn server_search_values<'a>(
-    server: &'a TrackedServer,
-    id: &'a str,
-    port: Option<&'a str>,
-) -> Vec<&'a str> {
-    let mut values = vec![
-        server.config.name.as_str(),
-        server.config.host.as_str(),
-        server.config.platform.as_str(),
-        server.asn.asn.as_str(),
-        server.asn.asn_org.as_str(),
-        id,
-    ];
-    if let Some(port) = port {
-        values.push(port);
-    }
-    values
-}
-
-fn matches_server_search(server: &TrackedServer, search: Option<&str>) -> bool {
-    let id = server.config.id.to_string();
-    let port = server.config.port.map(|value| value.to_string());
-    let values = server_search_values(server, &id, port.as_deref());
-    let fields: Vec<SearchField<'_>> = values.iter().map(|v| SearchField::new(v)).collect();
-    matches(search, &fields)
-}
-
-fn server_search_relevance(server: &TrackedServer, query: &str) -> u8 {
-    let id = server.config.id.to_string();
-    let port = server.config.port.map(|value| value.to_string());
-    let values = server_search_values(server, &id, port.as_deref());
-    score_str(query, &values)
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-struct AsnAggregateKey {
-    asn: String,
-    asn_org: String,
-}
-
-#[derive(Debug, Clone)]
-struct AsnAggregate {
-    key: AsnAggregateKey,
-    players_online: u64,
-    server_count: u32,
-}
-
-fn asn_key(server: &TrackedServer) -> AsnAggregateKey {
-    AsnAggregateKey {
-        asn: server.asn.asn.clone(),
-        asn_org: server.asn.asn_org.clone(),
-    }
-}
-
-fn matches_asn_org(server: &TrackedServer, query: &str) -> bool {
-    mc_search::matches_field(query, server.asn.asn_org.as_str())
-}
-
-fn matches_asn_key(server: &TrackedServer, asn: &str, asn_org: &str) -> bool {
-    server.asn.asn == asn && server.asn.asn_org == asn_org
-}
-
-fn matches_asn_search(asn: &AsnAggregateKey, search: Option<&str>) -> bool {
-    matches(
-        search,
-        &[
-            SearchField::new(asn.asn.as_str()),
-            SearchField::new(asn.asn_org.as_str()),
-        ],
-    )
-}
-
-const LIST_LIMIT: u32 = 25;
-
 pub struct ServerManager {
-    pool: Option<DbPool>,
-    servers: RwLock<Vec<TrackedServer>>,
-    settings: Arc<RwLock<AppSettings>>,
-    metrics_environment: String,
-    dns: RwLock<HickoryDnsResolver>,
-    geo: Arc<GeoService>,
-    metrics: RwLock<PlayerCountRegistry>,
-    push_client: RwLock<VmPushClient>,
-    query_client: RwLock<VmQueryClient>,
-    vm_auth_token: Option<String>,
-    pushing: AtomicBool,
+    pub(crate) pool: Option<DbPool>,
+    pub(crate) servers: RwLock<Vec<TrackedServer>>,
+    pub(crate) settings: Arc<RwLock<AppSettings>>,
+    pub(crate) metrics_environment: String,
+    pub(crate) dns: RwLock<HickoryDnsResolver>,
+    pub(crate) geo: Arc<GeoService>,
+    pub(crate) metrics: RwLock<PlayerCountRegistry>,
+    pub(crate) push_client: RwLock<VmPushClient>,
+    pub(crate) query_client: RwLock<VmQueryClient>,
+    pub(crate) vm_auth_token: Option<String>,
+    pub(crate) pushing: AtomicBool,
 }
 
 impl ServerManager {
@@ -315,24 +159,7 @@ impl ServerManager {
 
     pub async fn summary(&self) -> ServerSummary {
         let servers = self.servers.read().await;
-        let mut summary = ServerSummary {
-            tracked_servers: servers.iter().filter(|server| server.is_tracking()).count() as u32,
-            ..Default::default()
-        };
-
-        for server in servers.iter().filter(|server| server.is_tracking()) {
-            let Some(players) = server.players_online else {
-                continue;
-            };
-            let players = players as u64;
-            summary.total_players += players;
-            match server.config.platform {
-                Platform::Pc => summary.players_pc += players,
-                Platform::Pe => summary.players_pe += players,
-            }
-        }
-
-        summary
+        accumulate_summary(servers.iter().filter(|server| server.is_tracking()))
     }
 
     pub async fn servers_list_response(
@@ -352,8 +179,8 @@ impl ServerManager {
 
         let environment = self.environment();
         let (peak_players24h, peak_players_7d, peaks_24h) = tokio::join!(
-            self.peak_players_24h(),
-            self.peak_players_7d(),
+            self.query_scalar(peak_players_24h),
+            self.query_scalar(peak_players_7d),
             self.peaks_24h_by_server_id(environment),
         );
 
@@ -381,7 +208,7 @@ impl ServerManager {
     }
 
     async fn servers_by_asn_org(&self, query: &str, limit: u32) -> (ServersListResponse, bool) {
-        let limit = limit.clamp(1, LIST_LIMIT) as usize;
+        let limit = limit.clamp(1, DEFAULT_LIST_LIMIT) as usize;
         let all_tracked = self.servers.read().await.clone();
         let mut tracked: Vec<_> = all_tracked
             .iter()
@@ -390,23 +217,11 @@ impl ServerManager {
             .cloned()
             .collect();
 
-        let mut summary = ServerSummary::default();
-        for server in &tracked {
-            summary.tracked_servers += 1;
-            let Some(players) = server.players_online else {
-                continue;
-            };
-            let players = players as u64;
-            summary.total_players += players;
-            match server.config.platform {
-                Platform::Pc => summary.players_pc += players,
-                Platform::Pe => summary.players_pe += players,
-            }
-        }
+        let summary = accumulate_summary(&tracked);
 
         tracked.sort_by(|left, right| {
-            let left_players = left.players_online.map(i64::from).unwrap_or(-1);
-            let right_players = right.players_online.map(i64::from).unwrap_or(-1);
+            let left_players = players_sort_key(left.players_online);
+            let right_players = players_sort_key(right.players_online);
             right_players
                 .cmp(&left_players)
                 .then_with(|| left.config.name.cmp(&right.config.name))
@@ -447,7 +262,7 @@ impl ServerManager {
     }
 
     pub async fn search_asns_response(&self, query: &str, limit: u32) -> AsnSearchResponse {
-        let limit = limit.clamp(1, LIST_LIMIT);
+        let limit = limit.clamp(1, DEFAULT_LIST_LIMIT);
         let mut matching_networks = self.asns_list_response(Some(query)).await;
         let networks_truncated = matching_networks.asns.len() > limit as usize;
         if networks_truncated {
@@ -513,7 +328,7 @@ impl ServerManager {
             };
         };
 
-        let limit = limit.clamp(1, LIST_LIMIT) as usize;
+        let limit = limit.clamp(1, DEFAULT_LIST_LIMIT) as usize;
         let servers = self.servers.read().await;
 
         let mut matches: Vec<_> = servers
@@ -528,8 +343,8 @@ impl ServerManager {
             right_score
                 .cmp(&left_score)
                 .then_with(|| {
-                    let left_players = left.players_online.map(i64::from).unwrap_or(-1);
-                    let right_players = right.players_online.map(i64::from).unwrap_or(-1);
+                    let left_players = players_sort_key(left.players_online);
+                    let right_players = players_sort_key(right.players_online);
                     right_players.cmp(&left_players)
                 })
                 .then_with(|| left.config.name.cmp(&right.config.name))
@@ -579,8 +394,8 @@ impl ServerManager {
 
         let environment = self.environment();
         let (peak_players24h, peak_players_7d, peaks_24h) = tokio::join!(
-            self.peak_players_24h(),
-            self.peak_players_7d(),
+            self.query_scalar(peak_players_24h),
+            self.query_scalar(peak_players_7d),
             self.peaks_24h_by_asn_key(environment),
         );
 
@@ -629,19 +444,7 @@ impl ServerManager {
             return None;
         }
 
-        let mut summary = ServerSummary::default();
-        for server in &tracked {
-            summary.tracked_servers += 1;
-            let Some(players) = server.players_online else {
-                continue;
-            };
-            let players = players as u64;
-            summary.total_players += players;
-            match server.config.platform {
-                Platform::Pc => summary.players_pc += players,
-                Platform::Pe => summary.players_pe += players,
-            }
-        }
+        let summary = accumulate_summary(&tracked);
 
         let key = AsnAggregateKey {
             asn: asn.to_string(),
@@ -666,8 +469,8 @@ impl ServerManager {
         }
 
         servers.sort_by(|left, right| {
-            let left_players = left.players_online.map(i64::from).unwrap_or(-1);
-            let right_players = right.players_online.map(i64::from).unwrap_or(-1);
+            let left_players = players_sort_key(left.players_online);
+            let right_players = players_sort_key(right.players_online);
             right_players.cmp(&left_players)
         });
 
@@ -722,265 +525,6 @@ impl ServerManager {
         })
     }
 
-    pub async fn asn_timeseries(
-        &self,
-        asn: &str,
-        asn_org: &str,
-        from_epoch: i64,
-        to_epoch: i64,
-    ) -> Result<AsnTimeseriesResponse, MetricsError> {
-        if !self.asn_is_tracked(asn, asn_org).await {
-            return Err(MetricsError::InvalidWindow("asn not found".into()));
-        }
-
-        let window = MetricQueryWindow::parse(from_epoch, to_epoch)?;
-        let promql = players_for_asn_series(self.environment(), asn, asn_org);
-        let samples = self.query_player_count_series(&window, &promql).await?;
-        let lane = timeseries_lane(&window, &samples, false);
-
-        let mut timeseries = TimeseriesLanes::new(window.from_epoch(), window.to_epoch());
-        timeseries.insert_lane(
-            timeseries_keys::PLAYERS_ONLINE,
-            lane.step,
-            lane.timestamps,
-            lane.values,
-        );
-
-        Ok(AsnTimeseriesResponse {
-            asn: asn.to_string(),
-            asn_org: asn_org.to_string(),
-            timeseries,
-        })
-    }
-
-    pub async fn server_timeseries(
-        &self,
-        id: Uuid,
-        from_epoch: i64,
-        to_epoch: i64,
-    ) -> Result<ServerTimeseriesResponse, MetricsError> {
-        if self
-            .get_tracked(id)
-            .await
-            .is_none_or(|server| !server.is_tracking())
-        {
-            return Err(MetricsError::InvalidWindow("server not found".into()));
-        }
-
-        let fine_window = MetricQueryWindow::parse(from_epoch, to_epoch)?;
-        let daily_window = MetricQueryWindow::parse_daily(from_epoch, to_epoch)?;
-        let server_id = id.to_string();
-        let fine_promql = player_count_series(self.environment(), &server_id);
-        let daily_promql = player_count_daily_average_series(self.environment(), &server_id);
-
-        let (fine_samples, daily_samples) = tokio::try_join!(
-            self.query_player_count_series(&fine_window, &fine_promql),
-            self.query_player_count_series(&daily_window, &daily_promql),
-        )?;
-
-        let fine_lane = timeseries_lane(&fine_window, &fine_samples, false);
-        let daily_lane = timeseries_lane(&daily_window, &daily_samples, true);
-
-        let mut timeseries = TimeseriesLanes::new(fine_window.from_epoch(), fine_window.to_epoch());
-        timeseries.insert_lane(
-            timeseries_keys::PLAYERS_ONLINE,
-            fine_lane.step,
-            fine_lane.timestamps,
-            fine_lane.values,
-        );
-        timeseries.insert_lane(
-            timeseries_keys::PLAYERS_DAILY_AVG,
-            daily_lane.step,
-            daily_lane.timestamps,
-            daily_lane.values,
-        );
-
-        Ok(ServerTimeseriesResponse {
-            id: server_id,
-            timeseries,
-        })
-    }
-
-    pub async fn total_timeseries(
-        &self,
-        from_epoch: i64,
-        to_epoch: i64,
-    ) -> Result<ServerTimeseriesResponse, MetricsError> {
-        let window = MetricQueryWindow::parse(from_epoch, to_epoch)?;
-        let promql = total_players_series(self.environment());
-        let samples = self.query_player_count_series(&window, &promql).await?;
-        let lane = timeseries_lane(&window, &samples, false);
-
-        let mut timeseries = TimeseriesLanes::new(window.from_epoch(), window.to_epoch());
-        timeseries.insert_lane(
-            timeseries_keys::PLAYERS_ONLINE,
-            lane.step,
-            lane.timestamps,
-            lane.values,
-        );
-
-        Ok(ServerTimeseriesResponse {
-            id: "total".to_string(),
-            timeseries,
-        })
-    }
-
-    async fn query_player_count_series(
-        &self,
-        window: &MetricQueryWindow,
-        promql: &str,
-    ) -> Result<Vec<(i64, Option<f64>)>, MetricsError> {
-        let query = VmQueryBuilder::default()
-            .query(promql)
-            .from(window.vm_query_from())
-            .to(window.vm_query_to())
-            .step(window.step())
-            .build()?;
-
-        let client = self.query_client.read().await;
-        let response = client.execute(&query).await?;
-        drop(client);
-
-        Ok(VmQueryClient::matrix_samples(&response))
-    }
-
-    pub async fn drain_push_cycle(&self) {
-        while self.pushing.load(Ordering::Acquire) {
-            tokio::time::sleep(Duration::from_millis(25)).await;
-        }
-    }
-
-    pub async fn run_push_cycle(&self) -> Result<(), anyhow::Error> {
-        if self
-            .pushing
-            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Relaxed)
-            .is_err()
-        {
-            info!("skipping push cycle because a previous cycle is still running");
-            return Ok(());
-        }
-
-        struct Guard<'a>(&'a AtomicBool);
-        impl Drop for Guard<'_> {
-            fn drop(&mut self) {
-                self.0.store(false, Ordering::Release);
-            }
-        }
-        let _guard = Guard(&self.pushing);
-
-        let settings = self.settings.read().await.clone();
-        let server_ids: Vec<Uuid> = self
-            .servers
-            .read()
-            .await
-            .iter()
-            .filter(|server| server.is_tracking())
-            .map(|server| server.config.id)
-            .collect();
-
-        let fetch_started = std::time::Instant::now();
-        let ping_results = join_all(server_ids.into_iter().map(|id| {
-            let settings = settings.clone();
-            async move { (id, self.ping_server(id, &settings).await) }
-        }))
-        .await;
-        let fetch_elapsed = fetch_started.elapsed();
-        let online = ping_results
-            .iter()
-            .filter(|(_, result)| result.is_ok())
-            .count();
-        let offline = ping_results.len() - online;
-        info!(
-            total = ping_results.len(),
-            online,
-            offline,
-            elapsed_ms = fetch_elapsed.as_millis(),
-            "fetched all servers"
-        );
-
-        for (id, result) in ping_results {
-            match result {
-                Ok((ping, asn, resolved_ip)) => {
-                    let mut peak_update = None;
-                    let mut servers = self.servers.write().await;
-                    if let Some(server) = servers.iter_mut().find(|s| s.config.id == id) {
-                        if server.apply_success(&ping, asn, &resolved_ip) {
-                            peak_update = Some((ping.players.online, ping.timestamp));
-                        }
-                    }
-                    drop(servers);
-                    if let Some((players, at)) = peak_update {
-                        if let Some(pool) = &self.pool {
-                            if let Err(err) =
-                                servers::update_peak_if_higher(pool, id, players, at).await
-                            {
-                                warn!(
-                                    server_id = %id,
-                                    error = %err,
-                                    "failed to persist all-time player peak"
-                                );
-                            }
-                        }
-                    }
-                }
-                Err(err) => {
-                    let mut servers = self.servers.write().await;
-                    if let Some(server) = servers.iter_mut().find(|s| s.config.id == id) {
-                        warn!(
-                            server_id = %id,
-                            server = %server.config.name,
-                            host = %server.config.host,
-                            platform = %server.config.platform.as_str(),
-                            error = %err,
-                            "server could not be pinged"
-                        );
-                        server.clear_ping_state();
-                    }
-                }
-            }
-        }
-
-        let mut metrics = self.metrics.write().await;
-        metrics.reset();
-        for server in self
-            .servers
-            .read()
-            .await
-            .iter()
-            .filter(|server| server.is_tracking())
-        {
-            let Some(players_online) = server.players_online else {
-                continue;
-            };
-            metrics.set(PlayerCountEntry {
-                id: server.config.id.to_string(),
-                name: server.config.name.clone(),
-                server_type: server.config.platform.as_str().to_string(),
-                asn: server.asn.asn.clone(),
-                asn_org: server.asn.asn_org.clone(),
-                value: players_online as f64,
-            });
-        }
-        let body = metrics.encode();
-        drop(metrics);
-
-        let client = self.push_client.read().await;
-        client.push(&body).await?;
-
-        Ok(())
-    }
-
-    async fn refresh_vm_clients(&self, settings: &AppSettings) {
-        *self.push_client.write().await = VmPushClient::new(
-            settings.victoriametrics_import_url(),
-            self.vm_auth_token.clone(),
-        );
-        *self.query_client.write().await = VmQueryClient::new(
-            settings.victoriametrics_base_url(),
-            self.vm_auth_token.clone(),
-        );
-    }
-
     pub async fn settings(&self) -> AppSettings {
         self.settings.read().await.clone()
     }
@@ -1003,397 +547,6 @@ impl ServerManager {
             self.refresh_vm_clients(&updated).await;
         }
     }
-
-    async fn ping_server(
-        &self,
-        id: Uuid,
-        settings: &AppSettings,
-    ) -> Result<(Ping, AsnLookup, String), PingServerError> {
-        let server = self
-            .get_tracked(id)
-            .await
-            .filter(|server| server.is_tracking())
-            .ok_or(PingServerError::NotTracked)?;
-
-        let port = server.config.port.map(|value| value as u16);
-
-        let resolved = {
-            let dns = self.dns.read().await;
-            match server.config.platform {
-                Platform::Pc => resolve_java(&*dns, &server.config.host, port)
-                    .await
-                    .map_err(PingServerError::Dns)?,
-                Platform::Pe => resolve_bedrock(&*dns, &server.config.host, port)
-                    .await
-                    .map_err(PingServerError::Dns)?,
-            }
-        };
-
-        let hostname = resolved.hostname.clone();
-        let ip = resolved.ip.clone();
-        let port = resolved.port;
-        let timeout_ms = settings.pinger_timeout_ms;
-        let attempts = settings.pinger_retry_attempts;
-        let delay_ms = settings.pinger_retry_delay_ms;
-
-        let ping = match server.config.platform {
-            Platform::Pc => with_retry(attempts, delay_ms, &hostname, || {
-                ping_java(&hostname, &ip, port, timeout_ms)
-            })
-            .await
-            .map_err(PingServerError::Ping)?,
-            Platform::Pe => with_retry(attempts, delay_ms, &hostname, || {
-                ping_bedrock(&hostname, &ip, port, timeout_ms)
-            })
-            .await
-            .map_err(PingServerError::Ping)?,
-        };
-
-        let asn = self
-            .geo
-            .lookup_asn(&ip)
-            .await
-            .map_err(|error| PingServerError::Asn {
-                ip: ip.clone(),
-                error,
-            })?;
-        Ok((ping, asn, ip))
-    }
-
-    async fn peak_players_24h(&self) -> Option<f64> {
-        self.query_scalar(peak_players_24h).await
-    }
-
-    async fn peak_players_7d(&self) -> Option<f64> {
-        self.query_scalar(peak_players_7d).await
-    }
-
-    async fn peaks_24h_by_server_id(&self, environment: &str) -> BTreeMap<String, f64> {
-        let mut peaks: BTreeMap<String, f64> = BTreeMap::new();
-        for entry in self
-            .query_labeled_instant(peak_players_24h_by_server(environment))
-            .await
-        {
-            let Some(id) = label_value(&entry.labels, labels::ID) else {
-                continue;
-            };
-            peaks
-                .entry(id)
-                .and_modify(|current| *current = current.max(entry.value))
-                .or_insert(entry.value);
-        }
-        peaks
-    }
-
-    async fn peaks_24h_by_asn_key(&self, environment: &str) -> BTreeMap<AsnAggregateKey, f64> {
-        let mut peaks: BTreeMap<AsnAggregateKey, f64> = BTreeMap::new();
-        for entry in self
-            .query_labeled_instant(peak_players_24h_by_asn(environment))
-            .await
-        {
-            let Some(key) = asn_key_from_labels(&entry.labels) else {
-                continue;
-            };
-            peaks
-                .entry(key)
-                .and_modify(|current| *current = current.max(entry.value))
-                .or_insert(entry.value);
-        }
-        peaks
-    }
-
-    async fn asn_is_tracked(&self, asn: &str, asn_org: &str) -> bool {
-        self.servers
-            .read()
-            .await
-            .iter()
-            .filter(|server| server.is_tracking())
-            .any(|server| server.asn.asn == asn && server.asn.asn_org == asn_org)
-    }
-
-    async fn query_labeled_instant(&self, promql: String) -> Vec<mc_metrics::LabeledInstantValue> {
-        let query = match VmQueryBuilder::default().query(promql).build() {
-            Ok(query) => query,
-            Err(err) => {
-                warn!(error = %err, "metrics labeled instant query build failed");
-                return Vec::new();
-            }
-        };
-        let client = self.query_client.read().await;
-        let response = match client.execute(&query).await {
-            Ok(response) => response,
-            Err(err) => {
-                warn!(error = %err, "metrics labeled instant query execute failed");
-                return Vec::new();
-            }
-        };
-        VmQueryClient::labeled_instant_values(&response)
-    }
-
-    async fn query_scalar(&self, build_query: fn(&str) -> String) -> Option<f64> {
-        self.query_scalar_promql(build_query(self.environment()))
-            .await
-    }
-
-    async fn query_scalar_promql(&self, promql: String) -> Option<f64> {
-        let query = match VmQueryBuilder::default().query(promql).build() {
-            Ok(query) => query,
-            Err(err) => {
-                warn!(error = %err, "metrics scalar query build failed");
-                return None;
-            }
-        };
-        let client = self.query_client.read().await;
-        let response = match client.execute(&query).await {
-            Ok(response) => response,
-            Err(err) => {
-                warn!(error = %err, "metrics scalar query execute failed");
-                return None;
-            }
-        };
-        VmQueryClient::scalar_value(&response)
-    }
-}
-
-fn label_value(labels: &serde_json::Map<String, serde_json::Value>, key: &str) -> Option<String> {
-    labels
-        .get(key)
-        .and_then(|value| value.as_str())
-        .map(str::to_owned)
-}
-
-fn asn_key_from_labels(
-    labels: &serde_json::Map<String, serde_json::Value>,
-) -> Option<AsnAggregateKey> {
-    Some(AsnAggregateKey {
-        asn: label_value(labels, labels::ASN)?,
-        asn_org: label_value(labels, labels::ASN_ORG).unwrap_or_default(),
-    })
-}
-
-fn peak_players_record(players: Option<u32>, timestamp: Option<i64>) -> Option<PeakPlayersRecord> {
-    Some(PeakPlayersRecord {
-        players: players?,
-        timestamp: timestamp?,
-    })
-}
-
-fn server_list_item(server: &TrackedServer, peak_24h: Option<f64>) -> ServerListItemResponse {
-    let id = server.config.id.to_string();
-    ServerListItemResponse {
-        id,
-        name: server.config.name.clone(),
-        server_type: server.config.platform.as_str().to_string(),
-        host: server.config.host.clone(),
-        port: server.config.port,
-        asn: server.asn.asn.clone(),
-        asn_org: server.asn.asn_org.clone(),
-        players_online: server.players_online,
-        favicon: server.favicon.clone(),
-        peaks: entity_peak_stats(peak_24h, server),
-    }
-}
-
-fn sort_server_list_items(
-    servers: &mut [ServerListItemResponse],
-    sort: ServersListSortField,
-    order: SortOrder,
-) {
-    match sort {
-        ServersListSortField::Players => {
-            servers.sort_by(|left, right| {
-                let left_players = left.players_online.map(i64::from).unwrap_or(-1);
-                let right_players = right.players_online.map(i64::from).unwrap_or(-1);
-                match order {
-                    SortOrder::Desc => right_players.cmp(&left_players),
-                    SortOrder::Asc => left_players.cmp(&right_players),
-                }
-            });
-        }
-        ServersListSortField::Name => {
-            servers.sort_by(|left, right| {
-                let cmp = left
-                    .name
-                    .to_lowercase()
-                    .cmp(&right.name.to_lowercase())
-                    .then_with(|| left.id.cmp(&right.id));
-                match order {
-                    SortOrder::Asc => cmp,
-                    SortOrder::Desc => cmp.reverse(),
-                }
-            });
-        }
-    }
-}
-
-fn entity_peak_stats(players_24h: Option<f64>, server: &TrackedServer) -> EntityPeakStats {
-    entity_peak_stats_with_all_time(
-        players_24h,
-        peak_players_record(server.peak_players, server.peak_players_timestamp),
-    )
-}
-
-fn entity_peak_stats_with_all_time(
-    players_24h: Option<f64>,
-    all_time: Option<PeakPlayersRecord>,
-) -> EntityPeakStats {
-    EntityPeakStats {
-        players_24h,
-        all_time,
-    }
-}
-
-fn asn_peak_all_time(
-    servers: &[TrackedServer],
-    key: &AsnAggregateKey,
-) -> Option<PeakPlayersRecord> {
-    servers
-        .iter()
-        .filter(|server| asn_key(server) == *key)
-        .filter_map(|server| {
-            peak_players_record(server.peak_players, server.peak_players_timestamp)
-        })
-        .max_by_key(|peak| peak.players)
-}
-
-fn dns_cache_for(settings: &AppSettings) -> Option<mc_ping::DnsCache> {
-    settings.dns_cache_enabled.then(|| {
-        mc_ping::DnsCache::new(Duration::from_secs(
-            settings.dns_cache_ttl_minutes as u64 * 60,
-        ))
-    })
-}
-
-pub(crate) fn settings_response(settings: &AppSettings) -> mc_api_types::SettingsResponse {
-    mc_api_types::SettingsResponse {
-        pinger_timeout_ms: settings.pinger_timeout_ms,
-        pinger_retry_attempts: settings.pinger_retry_attempts,
-        pinger_retry_delay_ms: settings.pinger_retry_delay_ms,
-        dns_cache_enabled: settings.dns_cache_enabled,
-        dns_cache_ttl_minutes: settings.dns_cache_ttl_minutes,
-        victoriametrics_url: settings.victoriametrics_url.clone(),
-        metrics_push_cron: settings.metrics_push_cron.clone(),
-        sign_up_enabled: settings.sign_up_enabled,
-        www_origin: settings.www_origin.clone(),
-    }
-}
-
-pub(crate) fn admin_server_response(server: &Server) -> AdminServerResponse {
-    AdminServerResponse {
-        id: server.id.to_string(),
-        name: server.name.clone(),
-        server_type: server.platform.as_str().to_string(),
-        host: server.host.clone(),
-        port: server.port,
-        created_at: server.created_at.to_rfc3339(),
-        updated_at: server.updated_at.to_rfc3339(),
-        paused: server.paused,
-    }
-}
-
-pub struct PushLoopHandle {
-    shutdown: watch::Sender<bool>,
-    task: JoinHandle<()>,
-}
-
-impl PushLoopHandle {
-    pub async fn drain(self) {
-        let _ = self.shutdown.send(true);
-        let _ = self.task.await;
-    }
-}
-
-pub fn spawn_push_loop(manager: Arc<ServerManager>) -> PushLoopHandle {
-    let (shutdown_tx, shutdown_rx) = watch::channel(false);
-
-    let task = tokio::spawn(async move {
-        let mut shutdown_rx = shutdown_rx;
-        let mut cron_expr = String::new();
-        let mut schedule: Option<Schedule> = None;
-
-        loop {
-            let next_cron = manager.settings.read().await.metrics_push_cron.clone();
-            if next_cron != cron_expr {
-                cron_expr = next_cron;
-                match Schedule::from_str(&cron_expr) {
-                    Ok(parsed) => schedule = Some(parsed),
-                    Err(err) => {
-                        warn!(
-                            error = %err,
-                            cron = %cron_expr,
-                            "invalid metrics push cron; retrying in 5s"
-                        );
-                        schedule = None;
-                    }
-                }
-            }
-
-            if *shutdown_rx.borrow() {
-                break;
-            }
-
-            if schedule.is_some() {
-                if let Err(err) = manager.run_push_cycle().await {
-                    warn!(error = %err, "push cycle failed");
-                }
-            }
-
-            if *shutdown_rx.borrow() {
-                break;
-            }
-
-            let sleep = match &schedule {
-                Some(schedule) => duration_until_next_cron_tick(schedule),
-                None => Duration::from_secs(5),
-            };
-
-            tokio::select! {
-                _ = tokio::time::sleep(sleep) => {},
-                changed = shutdown_rx.changed() => {
-                    if changed.is_err() || *shutdown_rx.borrow() {
-                        break;
-                    }
-                }
-            }
-        }
-
-        manager.drain_push_cycle().await;
-    });
-
-    PushLoopHandle {
-        shutdown: shutdown_tx,
-        task,
-    }
-}
-
-fn timeseries_lane(
-    window: &MetricQueryWindow,
-    samples: &[(i64, Option<f64>)],
-    average: bool,
-) -> TimeseriesLane {
-    let (timestamps, values) = if average {
-        align_samples_to_window_avg(window, samples)
-    } else {
-        align_samples_to_window(window, samples)
-    };
-
-    TimeseriesLane {
-        step: window.step_seconds(),
-        timestamps,
-        values,
-    }
-}
-
-fn duration_until_next_cron_tick(schedule: &Schedule) -> Duration {
-    let now = Utc::now();
-    let next = schedule
-        .upcoming(Utc)
-        .next()
-        .expect("valid cron schedule has upcoming ticks");
-    next.signed_duration_since(now)
-        .to_std()
-        .unwrap_or(Duration::ZERO)
-        .max(Duration::from_millis(1))
 }
 
 #[cfg(test)]
@@ -1402,13 +555,9 @@ mod tests {
     use chrono::Utc;
     use mc_common::now_ms;
     use mc_db::model::Platform;
-    use std::path::PathBuf;
-
-    fn fixture_geo() -> Arc<GeoService> {
-        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../mc-geo/tests/fixtures/GeoLite2-ASN-Test.mmdb");
-        Arc::new(GeoService::from_database_file(path).unwrap())
-    }
+    use mc_db::model::Server;
+    use mc_test_support::fixture_geo;
+    use std::time::Duration;
 
     fn sample_server() -> Server {
         Server {

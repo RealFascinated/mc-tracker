@@ -10,14 +10,12 @@ use tokio::sync::RwLock;
 use tracing::{info, warn};
 
 use crate::cache::LookupCache;
+use crate::constants::{ASN_EDITION, ASN_REFRESH_CRON};
 use crate::download::{database_file_path, ensure_database};
 use crate::error::GeoError;
 use crate::ip::is_non_public;
 use crate::lookup::AsnDatabase;
-use crate::types::{AsnLookup, GeoConfig, ASN_EDITION};
-
-/// Daily ASN database refresh at 2:00 local time.
-const ASN_REFRESH_CRON: &str = "0 0 2 * * *";
+use crate::types::{AsnLookup, GeoConfig};
 
 pub struct GeoService {
     config: GeoConfig,

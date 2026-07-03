@@ -1,10 +1,11 @@
 use mc_api_types::{timeseries_keys, SummaryPoint, TimeseriesLane, TimeseriesSummaryResponse};
+use mc_common::constants::time::SECONDS_PER_DAY;
 
 use crate::error::InsightsError;
 use crate::traits::{AnalyzeOptions, TimeseriesAnalyzer};
 use crate::trend::{change_pct_start_to_end, classify_trend};
 
-const THREE_DAYS_SECONDS: i64 = 3 * 86_400;
+const THREE_DAYS_SECONDS: i64 = 3 * SECONDS_PER_DAY;
 
 pub struct DefaultTimeseriesAnalyzer;
 

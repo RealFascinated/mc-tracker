@@ -71,8 +71,7 @@ async fn reorder_pinned_servers(
 ) -> Result<Json<PinnedServersListResponse>, Response> {
     let mut server_ids = Vec::with_capacity(body.server_ids.len());
     for server_id in body.server_ids {
-        let id = Uuid::parse_str(server_id.trim())
-            .map_err(|_| bad_request("invalid server id"))?;
+        let id = Uuid::parse_str(server_id.trim()).map_err(|_| bad_request("invalid server id"))?;
         server_ids.push(id);
     }
 
@@ -97,27 +96,15 @@ async fn build_pinned_response(
 }
 
 fn not_found(message: &str) -> Response {
-    (
-        StatusCode::NOT_FOUND,
-        Json(ErrorResponse::new(message)),
-    )
-        .into_response()
+    (StatusCode::NOT_FOUND, Json(ErrorResponse::new(message))).into_response()
 }
 
 fn conflict(message: &str) -> Response {
-    (
-        StatusCode::CONFLICT,
-        Json(ErrorResponse::new(message)),
-    )
-        .into_response()
+    (StatusCode::CONFLICT, Json(ErrorResponse::new(message))).into_response()
 }
 
 fn bad_request(message: &str) -> Response {
-    (
-        StatusCode::BAD_REQUEST,
-        Json(ErrorResponse::new(message)),
-    )
-        .into_response()
+    (StatusCode::BAD_REQUEST, Json(ErrorResponse::new(message))).into_response()
 }
 
 fn map_db_error(err: DbError) -> Response {

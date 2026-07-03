@@ -1,5 +1,7 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use mc_common::constants::time::SECONDS_PER_DAY;
+
 use crate::error::MetricsError;
 use crate::query::step_policy;
 
@@ -85,7 +87,7 @@ impl MetricQueryWindow {
     /// mid-day.
     pub fn vm_query_from(&self) -> SystemTime {
         let from_epoch = self.from_epoch();
-        let epoch = if self.step_seconds() == 86_400 {
+        let epoch = if self.step_seconds() == SECONDS_PER_DAY {
             let step = self.step_seconds();
             (from_epoch / step) * step
         } else {
@@ -139,7 +141,7 @@ mod tests {
             .unwrap()
             .as_secs() as i64;
         let max_span_secs = step_policy::max_span().as_secs() as i64;
-        let from = to - (max_span_secs + 86_400);
+        let from = to - (max_span_secs + SECONDS_PER_DAY);
         assert!(MetricQueryWindow::parse(from, to).is_err());
     }
 

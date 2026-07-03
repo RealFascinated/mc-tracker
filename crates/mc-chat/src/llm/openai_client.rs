@@ -287,12 +287,8 @@ mod tests {
 
     #[test]
     fn openrouter_anthropic_request_includes_cache_control() {
-        let client = OpenAiLlmClient::new(
-            "https://openrouter.ai/api",
-            None,
-            Duration::from_secs(1),
-            2,
-        );
+        let client =
+            OpenAiLlmClient::new("https://openrouter.ai/api", None, Duration::from_secs(1), 2);
         let body = client.build_body(&ChatCompletionRequest {
             model: "anthropic/claude-sonnet-4".into(),
             messages: vec![],
@@ -311,12 +307,8 @@ mod tests {
 
     #[test]
     fn openrouter_openai_request_omits_cache_control() {
-        let client = OpenAiLlmClient::new(
-            "https://openrouter.ai/api",
-            None,
-            Duration::from_secs(1),
-            2,
-        );
+        let client =
+            OpenAiLlmClient::new("https://openrouter.ai/api", None, Duration::from_secs(1), 2);
         let body = client.build_body(&ChatCompletionRequest {
             model: "openai/gpt-4o".into(),
             messages: vec![],

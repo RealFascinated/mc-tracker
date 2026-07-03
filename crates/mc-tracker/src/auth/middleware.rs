@@ -6,8 +6,8 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 use mc_api_types::ErrorResponse;
 use mc_db::db::repos::users;
-use mc_db::model::UserRole;
 use mc_db::model::UserFlags;
+use mc_db::model::UserRole;
 use uuid::Uuid;
 
 use super::session::COOKIE_NAME;

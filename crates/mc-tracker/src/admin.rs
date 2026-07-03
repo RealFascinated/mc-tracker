@@ -232,18 +232,12 @@ mod tests {
     use chrono::Utc;
     use mc_db::model::{Platform, Server};
     use mc_db::AppSettings;
-    use mc_geo::GeoService;
+    use mc_test_support::fixture_geo;
     use tokio::sync::RwLock;
     use uuid::Uuid;
 
     use super::parse_platform;
     use crate::manager::ServerManager;
-
-    fn fixture_geo() -> Arc<GeoService> {
-        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../mc-geo/tests/fixtures/GeoLite2-ASN-Test.mmdb");
-        Arc::new(GeoService::from_database_file(path).unwrap())
-    }
 
     #[tokio::test]
     async fn admin_servers_list_returns_config_fields() {

@@ -1677,6 +1677,7 @@ dependencies = [
  "async-trait",
  "futures",
  "mc-api-types",
+ "mc-common",
  "mc-insights",
  "reqwest",
  "serde",
@@ -1745,6 +1746,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "mc-api-types",
+ "mc-common",
  "mc-metrics",
  "serde",
  "serde_json",
@@ -1776,6 +1778,7 @@ name = "mc-metrics"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "mc-common",
  "reqwest",
  "serde",
  "serde_json",
@@ -1836,6 +1839,7 @@ dependencies = [
  "mc-chat",
  "mc-common",
  "mc-db",
+ "mc-dns",
  "mc-geo",
  "mc-insights",
  "mc-metrics",

@@ -6,8 +6,8 @@ use mc_tracker::manager::ServerManager;
 use tower::ServiceExt;
 
 use mc_test_support::{
-    bootstrap_admin, build_app_with_env, enable_sign_up, manager_with_vm_url_env,
-    setup_pool, start_postgres,
+    bootstrap_admin, build_app_with_env, enable_sign_up, manager_with_vm_url_env, setup_pool,
+    start_postgres,
 };
 
 async fn production_app(pool: mc_db::DbPool, manager: Arc<ServerManager>) -> axum::Router {
@@ -40,9 +40,12 @@ async fn signup_enabled_true_in_development() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body: serde_json::Value =
-        serde_json::from_slice(&axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap())
-            .unwrap();
+    let body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
     assert_eq!(body["signUpEnabled"], true);
 }
 
@@ -66,9 +69,12 @@ async fn signup_enabled_false_in_production_when_disabled() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body: serde_json::Value =
-        serde_json::from_slice(&axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap())
-            .unwrap();
+    let body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
     assert_eq!(body["signUpEnabled"], false);
 }
 
@@ -132,9 +138,12 @@ async fn signup_creates_user_and_session() {
         .unwrap()
         .to_string();
 
-    let login_body: serde_json::Value =
-        serde_json::from_slice(&axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap())
-            .unwrap();
+    let login_body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
     assert_eq!(login_body["username"], "newbie");
     assert_eq!(login_body["role"], "user");
 
@@ -149,9 +158,12 @@ async fn signup_creates_user_and_session() {
         .await
         .unwrap();
     assert_eq!(me.status(), StatusCode::OK);
-    let me_body: serde_json::Value =
-        serde_json::from_slice(&axum::body::to_bytes(me.into_body(), usize::MAX).await.unwrap())
-            .unwrap();
+    let me_body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(me.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
     assert_eq!(me_body["username"], "newbie");
     assert_eq!(me_body["role"], "user");
     assert_eq!(me_body["chatQuota"]["used"], 0);
