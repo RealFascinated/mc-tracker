@@ -9,10 +9,11 @@ use cron::Schedule;
 use futures::future::join_all;
 use mc_api_types::{
     timeseries_keys, AdminServerResponse, AdminServersListResponse, AsnDetailResponse,
-    AsnListItemResponse, AsnTimeseriesResponse, AsnsListResponse, AsnsSummaryResponse,
-    EntityPeakStats, PeakPlayersRecord, PlayersPeakSummary, ServerListItemResponse,
-    ServerSearchItemResponse, ServerTimeseriesResponse, ServersListResponse, ServersSearchResponse,
-    ServersSummaryResponse, TimeseriesLane, TimeseriesLanes,
+    AsnListItemResponse, AsnSearchResponse, AsnTimeseriesResponse, AsnsListResponse,
+    AsnsSummaryResponse, EntityPeakStats, PeakPlayersRecord, PlayersPeakSummary,
+    ServerListItemResponse, ServerSearchItemResponse, ServerTimeseriesResponse,
+    ServersListResponse, ServersSearchResponse, ServersSummaryResponse, TimeseriesLane,
+    TimeseriesLanes,
 };
 use mc_db::db::repos::servers;
 use mc_db::model::{Platform, Server};
@@ -30,6 +31,7 @@ use mc_ping::{
     ping_bedrock, ping_java, resolve_bedrock, resolve_java, with_retry, DnsError,
     HickoryDnsResolver, Ping, PingError,
 };
+use mc_search::{matches, score_str, SearchField};
 use tokio::sync::{watch, RwLock};
 use tokio::task::JoinHandle;
 use tracing::{info, warn};
@@ -120,41 +122,38 @@ pub struct ServerSummary {
     pub tracked_servers: u32,
 }
 
-fn matches_server_search(server: &TrackedServer, search: Option<&str>) -> bool {
-    let Some(query) = search.map(str::trim).filter(|value| !value.is_empty()) else {
-        return true;
-    };
-
-    let needle = query.to_ascii_lowercase();
-    let fields = [
+fn server_search_values<'a>(
+    server: &'a TrackedServer,
+    id: &'a str,
+    port: Option<&'a str>,
+) -> Vec<&'a str> {
+    let mut values = vec![
         server.config.name.as_str(),
         server.config.host.as_str(),
         server.config.platform.as_str(),
         server.asn.asn.as_str(),
         server.asn.asn_org.as_str(),
+        id,
     ];
+    if let Some(port) = port {
+        values.push(port);
+    }
+    values
+}
 
-    fields
-        .iter()
-        .any(|field| field.to_ascii_lowercase().contains(&needle))
-        || server
-            .config
-            .port
-            .is_some_and(|port| port.to_string().contains(query))
+fn matches_server_search(server: &TrackedServer, search: Option<&str>) -> bool {
+    let id = server.config.id.to_string();
+    let port = server.config.port.map(|value| value.to_string());
+    let values = server_search_values(server, &id, port.as_deref());
+    let fields: Vec<SearchField<'_>> = values.iter().map(|v| SearchField::new(v)).collect();
+    matches(search, &fields)
 }
 
 fn server_search_relevance(server: &TrackedServer, query: &str) -> u8 {
-    let needle = query.to_ascii_lowercase();
-    let name = server.config.name.to_ascii_lowercase();
-    let host = server.config.host.to_ascii_lowercase();
-
-    if name.starts_with(&needle) {
-        return 3;
-    }
-    if host.starts_with(&needle) {
-        return 2;
-    }
-    1
+    let id = server.config.id.to_string();
+    let port = server.config.port.map(|value| value.to_string());
+    let values = server_search_values(server, &id, port.as_deref());
+    score_str(query, &values)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -177,20 +176,25 @@ fn asn_key(server: &TrackedServer) -> AsnAggregateKey {
     }
 }
 
+fn matches_asn_org(server: &TrackedServer, query: &str) -> bool {
+    mc_search::matches_field(query, server.asn.asn_org.as_str())
+}
+
 fn matches_asn_key(server: &TrackedServer, asn: &str, asn_org: &str) -> bool {
     server.asn.asn == asn && server.asn.asn_org == asn_org
 }
 
 fn matches_asn_search(asn: &AsnAggregateKey, search: Option<&str>) -> bool {
-    let Some(query) = search.map(str::trim).filter(|value| !value.is_empty()) else {
-        return true;
-    };
-
-    let needle = query.to_ascii_lowercase();
-    [asn.asn.as_str(), asn.asn_org.as_str()]
-        .iter()
-        .any(|field| field.to_ascii_lowercase().contains(&needle))
+    matches(
+        search,
+        &[
+            SearchField::new(asn.asn.as_str()),
+            SearchField::new(asn.asn_org.as_str()),
+        ],
+    )
 }
+
+const LIST_LIMIT: u32 = 25;
 
 pub struct ServerManager {
     pool: Option<DbPool>,
@@ -349,18 +353,7 @@ impl ServerManager {
         let mut servers = Vec::with_capacity(tracked.len());
         for server in tracked {
             let id = server.config.id.to_string();
-            servers.push(ServerListItemResponse {
-                id: id.clone(),
-                name: server.config.name.clone(),
-                server_type: server.config.platform.as_str().to_string(),
-                host: server.config.host.clone(),
-                port: server.config.port,
-                asn: server.asn.asn.clone(),
-                asn_org: server.asn.asn_org.clone(),
-                players_online: server.players_online,
-                favicon: server.favicon.clone(),
-                peaks: entity_peak_stats(peaks_24h.get(&id).copied(), &server),
-            });
+            servers.push(server_list_item(&server, peaks_24h.get(&id).copied()));
         }
 
         servers.sort_by(|left, right| {
@@ -384,6 +377,90 @@ impl ServerManager {
         }
     }
 
+    async fn servers_by_asn_org(&self, query: &str, limit: u32) -> (ServersListResponse, bool) {
+        let limit = limit.clamp(1, LIST_LIMIT) as usize;
+        let all_tracked = self.servers.read().await.clone();
+        let mut tracked: Vec<_> = all_tracked
+            .iter()
+            .filter(|server| server.is_tracking())
+            .filter(|server| matches_asn_org(server, query))
+            .cloned()
+            .collect();
+
+        let mut summary = ServerSummary::default();
+        for server in &tracked {
+            summary.tracked_servers += 1;
+            let Some(players) = server.players_online else {
+                continue;
+            };
+            let players = players as u64;
+            summary.total_players += players;
+            match server.config.platform {
+                Platform::Pc => summary.players_pc += players,
+                Platform::Pe => summary.players_pe += players,
+            }
+        }
+
+        tracked.sort_by(|left, right| {
+            let left_players = left.players_online.map(i64::from).unwrap_or(-1);
+            let right_players = right.players_online.map(i64::from).unwrap_or(-1);
+            right_players
+                .cmp(&left_players)
+                .then_with(|| left.config.name.cmp(&right.config.name))
+        });
+
+        let truncated = tracked.len() > limit;
+        if truncated {
+            tracked.truncate(limit);
+        }
+
+        let environment = self.environment();
+        let peaks_24h = self.peaks_24h_by_server_id(environment).await;
+
+        let servers = tracked
+            .into_iter()
+            .map(|server| {
+                let id = server.config.id.to_string();
+                server_list_item(&server, peaks_24h.get(&id).copied())
+            })
+            .collect();
+
+        (
+            ServersListResponse {
+                summary: ServersSummaryResponse {
+                    total_players: summary.total_players,
+                    players_pc: summary.players_pc,
+                    players_pe: summary.players_pe,
+                    tracked_servers: summary.tracked_servers,
+                    peaks: PlayersPeakSummary {
+                        players_24h: None,
+                        players_7d: None,
+                    },
+                },
+                servers,
+            },
+            truncated,
+        )
+    }
+
+    pub async fn search_asns_response(&self, query: &str, limit: u32) -> AsnSearchResponse {
+        let limit = limit.clamp(1, LIST_LIMIT);
+        let mut matching_networks = self.asns_list_response(Some(query)).await;
+        let networks_truncated = matching_networks.asns.len() > limit as usize;
+        if networks_truncated {
+            matching_networks.asns.truncate(limit as usize);
+        }
+        let (servers_with_asn_org, org_servers_truncated) =
+            self.servers_by_asn_org(query, limit).await;
+        AsnSearchResponse {
+            query: query.to_string(),
+            matching_networks,
+            networks_truncated,
+            servers_with_asn_org,
+            org_servers_truncated,
+        }
+    }
+
     pub async fn server_detail_response(&self, id: Uuid) -> Option<ServerListItemResponse> {
         let server = self.get_tracked(id).await?;
         if !server.is_tracking() {
@@ -393,18 +470,7 @@ impl ServerManager {
         let id_str = id.to_string();
         let peaks_24h = self.peaks_24h_by_server_id(environment).await;
 
-        Some(ServerListItemResponse {
-            id: id_str.clone(),
-            name: server.config.name.clone(),
-            server_type: server.config.platform.as_str().to_string(),
-            host: server.config.host.clone(),
-            port: server.config.port,
-            asn: server.asn.asn.clone(),
-            asn_org: server.asn.asn_org.clone(),
-            players_online: server.players_online,
-            favicon: server.favicon.clone(),
-            peaks: entity_peak_stats(peaks_24h.get(&id_str).copied(), &server),
-        })
+        Some(server_list_item(&server, peaks_24h.get(&id_str).copied()))
     }
 
     pub async fn servers_search_response(
@@ -418,8 +484,7 @@ impl ServerManager {
             };
         };
 
-        const MAX_LIMIT: u32 = 25;
-        let limit = limit.clamp(1, MAX_LIMIT) as usize;
+        let limit = limit.clamp(1, LIST_LIMIT) as usize;
         let servers = self.servers.read().await;
 
         let mut matches: Vec<_> = servers
@@ -565,18 +630,10 @@ impl ServerManager {
         let mut servers = Vec::with_capacity(tracked.len());
         for server in tracked {
             let id = server.config.id.to_string();
-            servers.push(ServerListItemResponse {
-                id: id.clone(),
-                name: server.config.name.clone(),
-                server_type: server.config.platform.as_str().to_string(),
-                host: server.config.host.clone(),
-                port: server.config.port,
-                asn: server.asn.asn.clone(),
-                asn_org: server.asn.asn_org.clone(),
-                players_online: server.players_online,
-                favicon: server.favicon.clone(),
-                peaks: entity_peak_stats(peaks_24h_by_server.get(&id).copied(), &server),
-            });
+            servers.push(server_list_item(
+                &server,
+                peaks_24h_by_server.get(&id).copied(),
+            ));
         }
 
         servers.sort_by(|left, right| {
@@ -1061,6 +1118,22 @@ fn peak_players_record(players: Option<u32>, timestamp: Option<i64>) -> Option<P
     })
 }
 
+fn server_list_item(server: &TrackedServer, peak_24h: Option<f64>) -> ServerListItemResponse {
+    let id = server.config.id.to_string();
+    ServerListItemResponse {
+        id,
+        name: server.config.name.clone(),
+        server_type: server.config.platform.as_str().to_string(),
+        host: server.config.host.clone(),
+        port: server.config.port,
+        asn: server.asn.asn.clone(),
+        asn_org: server.asn.asn_org.clone(),
+        players_online: server.players_online,
+        favicon: server.favicon.clone(),
+        peaks: entity_peak_stats(peak_24h, server),
+    }
+}
+
 fn entity_peak_stats(players_24h: Option<f64>, server: &TrackedServer) -> EntityPeakStats {
     entity_peak_stats_with_all_time(
         players_24h,
@@ -1410,6 +1483,109 @@ mod tests {
         assert!(matches_server_search(&server, Some("25565")));
         assert!(matches_server_search(&server, Some("PC")));
         assert!(!matches_server_search(&server, Some("mineplex")));
+    }
+
+    #[test]
+    fn matches_server_search_is_loose_on_spacing_and_case() {
+        let mut server = TrackedServer::from_config(Server {
+            id: Uuid::new_v4(),
+            name: "WildNetwork".into(),
+            host: "play.wildnetwork.net".into(),
+            port: Some(25565),
+            platform: Platform::Pc,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            peak_players: None,
+            peak_players_timestamp: None,
+            paused: false,
+        });
+        server.asn = AsnLookup {
+            asn: "AS1".into(),
+            asn_org: "Wild Network Hosting".into(),
+            cidr: None,
+        };
+
+        assert!(matches_server_search(&server, Some("wild network")));
+        assert!(matches_server_search(&server, Some("wildnetwork")));
+        assert!(matches_server_search(&server, Some("WILD NETWORK")));
+        assert!(matches_server_search(&server, Some("wild network hosting")));
+    }
+
+    #[test]
+    fn matches_asn_org_matches_org_label_not_server_name() {
+        let mut server = TrackedServer::from_config(Server {
+            id: Uuid::new_v4(),
+            name: "DonutSMP".into(),
+            host: "donutsmp.net".into(),
+            port: Some(25565),
+            platform: Platform::Pc,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            peak_players: None,
+            peak_players_timestamp: None,
+            paused: false,
+        });
+        server.asn = AsnLookup {
+            asn: "AS99999".into(),
+            asn_org: "DonutSMP Network".into(),
+            cidr: None,
+        };
+
+        assert!(matches_asn_org(&server, "DonutSMP"));
+        assert!(matches_asn_org(&server, "donut smp"));
+        assert!(!matches_asn_org(&server, "donutsmp.net"));
+    }
+
+    #[test]
+    fn matches_asn_search_is_loose_on_spacing_and_case() {
+        let key = AsnAggregateKey {
+            asn: "AS12345".into(),
+            asn_org: "WildNetwork".into(),
+        };
+        assert!(matches_asn_search(&key, Some("wild network")));
+        assert!(matches_asn_search(&key, Some("wildnetwork")));
+        assert!(matches_asn_search(&key, Some("AS12345")));
+    }
+
+    #[tokio::test]
+    async fn search_asns_response_counts_matching_org_servers() {
+        let settings = Arc::new(RwLock::new(AppSettings::default()));
+        let bootstrap = settings.read().await.clone();
+        let manager = ServerManager::new(
+            vec![
+                sample_server_with_id(Uuid::new_v4()),
+                sample_server_with_id(Uuid::new_v4()),
+            ],
+            None,
+            settings,
+            fixture_geo(),
+            None,
+            &bootstrap,
+            "development",
+        );
+
+        {
+            let mut servers = manager.servers.write().await;
+            servers[0].asn = AsnLookup {
+                asn: "AS1".into(),
+                asn_org: "DonutSMP".into(),
+                cidr: None,
+            };
+            servers[0].players_online = Some(100);
+            servers[1].asn = AsnLookup {
+                asn: "AS2".into(),
+                asn_org: "DonutSMP".into(),
+                cidr: None,
+            };
+            servers[1].players_online = Some(50);
+        }
+
+        let response = manager.search_asns_response("DonutSMP", 25).await;
+        let org_servers = &response.servers_with_asn_org;
+        assert!(!response.org_servers_truncated);
+        assert_eq!(org_servers.summary.tracked_servers, 2);
+        assert_eq!(org_servers.summary.total_players, 150);
+        assert_eq!(org_servers.servers.len(), 2);
     }
 
     #[tokio::test]

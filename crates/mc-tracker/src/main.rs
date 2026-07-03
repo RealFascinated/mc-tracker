@@ -1,7 +1,10 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use clap::Parser;
+use mc_chat::tools::ToolRegistry;
+use mc_chat::{AgentLoop, ChatToolDeps, OpenAiLlmClient};
 use mc_db::{
     db::repos::{servers, settings},
     ensure_admin_user, setup_database, BootstrapConfig, DbContext, PoolSettings,
@@ -9,6 +12,8 @@ use mc_db::{
 use mc_geo::{GeoConfig, GeoService};
 use mc_tracker::api::{router, AppState};
 use mc_tracker::auth::{AuthContext, LoginRateLimiter, SessionManager};
+use mc_tracker::chat::ChatRateLimiter;
+use mc_tracker::insights::InsightsService;
 use mc_tracker::manager::{spawn_push_loop, ServerManager};
 use tokio::signal;
 use tokio::sync::RwLock;
@@ -52,6 +57,30 @@ struct Config {
     /// HMAC secret for signing session cookies
     #[arg(long, env = "SESSION_SECRET")]
     session_secret: String,
+
+    /// OpenAI-compatible LLM base URL (enables POST /chat when set)
+    #[arg(long, env = "LLM_BASE_URL")]
+    llm_base_url: Option<String>,
+
+    /// LLM model name
+    #[arg(long, env = "LLM_MODEL", default_value = "default")]
+    llm_model: String,
+
+    /// Optional LLM API key
+    #[arg(long, env = "LLM_API_KEY")]
+    llm_api_key: Option<String>,
+
+    /// LLM request timeout in seconds
+    #[arg(long, env = "LLM_TIMEOUT_SECS", default_value = "60")]
+    llm_timeout_secs: u64,
+
+    /// Parallel llama.cpp slots for session affinity hashing
+    #[arg(long, env = "LLM_PARALLEL_SLOTS", default_value = "2")]
+    llm_parallel_slots: u32,
+
+    /// llama.cpp context size (for chat token display)
+    #[arg(long, env = "LLM_CTX_SIZE", default_value = "16384")]
+    llm_ctx_size: u32,
 }
 
 #[tokio::main]
@@ -106,6 +135,29 @@ async fn main() -> anyhow::Result<()> {
 
     let push_loop = spawn_push_loop(Arc::clone(&manager));
 
+    let insights = Arc::new(InsightsService::with_defaults(Arc::clone(&manager)));
+
+    let chat = config.llm_base_url.map(|base_url| {
+        let llm = Arc::new(OpenAiLlmClient::new(
+            base_url,
+            config.llm_api_key.clone(),
+            Duration::from_secs(config.llm_timeout_secs),
+        ));
+        let deps = ChatToolDeps {
+            tracker: Arc::clone(&manager) as Arc<dyn mc_chat::TrackerRead>,
+            insights: Arc::clone(&insights) as Arc<dyn mc_chat::InsightsRead>,
+        };
+        Arc::new(AgentLoop::new(
+            llm,
+            ToolRegistry::default_tools(),
+            deps,
+            config.llm_model.clone(),
+            config.llm_parallel_slots,
+            Duration::from_secs(config.llm_timeout_secs),
+            config.llm_ctx_size,
+        )) as Arc<dyn mc_chat::ChatAgent>
+    });
+
     let bind_addr: SocketAddr = "0.0.0.0:3000".parse().expect("hardcoded API bind address");
     let secure_cookies = config.environment != "development";
     let sessions = Arc::new(SessionManager::new(
@@ -123,6 +175,9 @@ async fn main() -> anyhow::Result<()> {
             manager,
             geo,
             auth,
+            insights,
+            chat,
+            chat_rate_limiter: Arc::new(ChatRateLimiter::new()),
         },
         &app_settings,
         &config.environment,
@@ -138,9 +193,12 @@ async fn main() -> anyhow::Result<()> {
     );
 
     let listener = tokio::net::TcpListener::bind(bind_addr).await?;
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await?;
 
     info!("http server stopped, draining push cycle");
     push_loop.drain().await;

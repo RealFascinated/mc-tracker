@@ -1,9 +1,20 @@
 use serde::Serialize;
 
 use super::servers::{
-    EntityPeakStats, PlayersPeakSummary, ServerListItemResponse, ServersSummaryResponse,
+    EntityPeakStats, PlayersPeakSummary, ServerListItemResponse, ServersListResponse,
+    ServersSummaryResponse,
 };
 use super::timeseries::TimeseriesLanes;
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AsnSearchResponse {
+    pub query: String,
+    pub matching_networks: AsnsListResponse,
+    pub networks_truncated: bool,
+    pub servers_with_asn_org: ServersListResponse,
+    pub org_servers_truncated: bool,
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

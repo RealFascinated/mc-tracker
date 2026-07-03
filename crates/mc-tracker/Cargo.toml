@@ -22,6 +22,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = { workspace = true }
+async-trait = "0.1"
 axum = "0.8"
 base64 = "0.22"
 chrono = { workspace = true }
@@ -30,11 +31,14 @@ cron = { workspace = true }
 futures = "0.3"
 hmac = "0.12"
 mc-api-types = { path = "../mc-api-types" }
+mc-chat = { path = "../mc-chat" }
 mc-common = { path = "../mc-common" }
 mc-db = { path = "../mc-db" }
 mc-geo = { path = "../mc-geo" }
+mc-insights = { path = "../mc-insights" }
 mc-metrics = { path = "../mc-metrics" }
 mc-ping = { path = "../mc-ping" }
+mc-search = { path = "../mc-search" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = "0.10"

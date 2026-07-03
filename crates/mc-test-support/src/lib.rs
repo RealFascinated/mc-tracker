@@ -7,6 +7,8 @@ use mc_db::{DbPool, PoolSettings};
 use mc_geo::GeoService;
 use mc_tracker::api::{router, AppState};
 use mc_tracker::auth::{AuthContext, LoginRateLimiter, SessionManager};
+use mc_tracker::chat::ChatRateLimiter;
+use mc_tracker::insights::InsightsService;
 use mc_tracker::manager::ServerManager;
 use testcontainers::runners::AsyncRunner;
 use testcontainers::ImageExt;
@@ -79,6 +81,24 @@ pub async fn build_app_with_env(
     manager: Arc<ServerManager>,
     deployment_environment: &str,
 ) -> axum::Router {
+    build_app_with_options(pool, manager, deployment_environment, None).await
+}
+
+pub async fn build_app_with_chat(
+    pool: DbPool,
+    manager: Arc<ServerManager>,
+    deployment_environment: &str,
+    chat: Arc<dyn mc_chat::ChatAgent>,
+) -> axum::Router {
+    build_app_with_options(pool, manager, deployment_environment, Some(chat)).await
+}
+
+async fn build_app_with_options(
+    pool: DbPool,
+    manager: Arc<ServerManager>,
+    deployment_environment: &str,
+    chat: Option<Arc<dyn mc_chat::ChatAgent>>,
+) -> axum::Router {
     let sessions = Arc::new(SessionManager::new(b"test-secret", false));
     let settings = manager.settings().await;
     router(
@@ -90,6 +110,9 @@ pub async fn build_app_with_env(
                 sessions,
                 rate_limiter: LoginRateLimiter::new(),
             },
+            insights: Arc::new(InsightsService::with_defaults(Arc::clone(&manager))),
+            chat,
+            chat_rate_limiter: Arc::new(ChatRateLimiter::new()),
         },
         &settings,
         deployment_environment,

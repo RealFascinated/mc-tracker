@@ -7,9 +7,9 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use mc_api_types::{
-    AsnDetailQuery, AsnTimeseriesQuery, AsnsListQuery, AsnsListResponse, ErrorResponse,
-    HealthResponse, ServersListQuery, ServersListResponse, ServersSearchQuery,
-    ServersSearchResponse, TimeseriesQuery,
+    AsnDetailQuery, AsnTimeseriesQuery, AsnTimeseriesSummaryQuery, AsnsListQuery, AsnsListResponse,
+    ErrorResponse, HealthResponse, ServersListQuery, ServersListResponse, ServersSearchQuery,
+    ServersSearchResponse, TimeseriesQuery, TimeseriesSummaryQuery,
 };
 use mc_db::AppSettings;
 use mc_db::DbPool;
@@ -19,6 +19,8 @@ use uuid::Uuid;
 
 use crate::admin;
 use crate::auth::{require_admin, AuthContext};
+use crate::chat::ChatRateLimiter;
+use crate::insights::{map_insights_error, InsightsService};
 use crate::manager::ServerManager;
 
 #[derive(Clone)]
@@ -27,6 +29,9 @@ pub struct AppState {
     pub manager: Arc<ServerManager>,
     pub geo: Arc<GeoService>,
     pub auth: AuthContext,
+    pub insights: Arc<InsightsService>,
+    pub chat: Option<Arc<dyn mc_chat::ChatAgent>>,
+    pub chat_rate_limiter: Arc<ChatRateLimiter>,
 }
 
 pub fn cors_layer(
@@ -77,9 +82,19 @@ pub fn router(
         .route("/servers/timeseries/total", get(total_timeseries))
         .route("/servers/{id}", get(get_server))
         .route("/servers/{id}/timeseries", get(server_timeseries))
+        .route(
+            "/servers/{id}/timeseries/summary",
+            get(server_timeseries_summary),
+        )
+        .route(
+            "/servers/timeseries/total/summary",
+            get(total_timeseries_summary),
+        )
         .route("/asns", get(list_asns))
         .route("/asns/timeseries", get(asn_timeseries))
+        .route("/asns/timeseries/summary", get(asn_timeseries_summary))
         .route("/asns/{asn}", get(get_asn))
+        .merge(crate::chat::router())
         .nest("/auth", crate::auth::router())
         .nest(
             "/admin",
@@ -105,16 +120,20 @@ async fn health(State(state): State<AppState>) -> Json<HealthResponse> {
     Json(HealthResponse::ok(db_ok, maxmind_ok))
 }
 
+fn trim_search(value: Option<&str>) -> Option<&str> {
+    value.map(str::trim).filter(|query| !query.is_empty())
+}
+
 async fn list_servers(
     State(state): State<AppState>,
     Query(query): Query<ServersListQuery>,
 ) -> Json<ServersListResponse> {
-    let search = query
-        .search
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty());
-    Json(state.manager.servers_list_response(search).await)
+    Json(
+        state
+            .manager
+            .servers_list_response(trim_search(query.search.as_deref()))
+            .await,
+    )
 }
 
 async fn get_server(State(state): State<AppState>, Path(id): Path<Uuid>) -> Response {
@@ -132,15 +151,10 @@ async fn search_servers(
     State(state): State<AppState>,
     Query(query): Query<ServersSearchQuery>,
 ) -> Json<ServersSearchResponse> {
-    let search = query
-        .search
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty());
     Json(
         state
             .manager
-            .servers_search_response(search, query.limit)
+            .servers_search_response(trim_search(query.search.as_deref()), query.limit)
             .await,
     )
 }
@@ -149,12 +163,12 @@ async fn list_asns(
     State(state): State<AppState>,
     Query(query): Query<AsnsListQuery>,
 ) -> Json<AsnsListResponse> {
-    let search = query
-        .search
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty());
-    Json(state.manager.asns_list_response(search).await)
+    Json(
+        state
+            .manager
+            .asns_list_response(trim_search(query.search.as_deref()))
+            .await,
+    )
 }
 
 async fn get_asn(
@@ -214,6 +228,63 @@ async fn server_timeseries(
     {
         Ok(response) => Json(response).into_response(),
         Err(err) => map_metrics_error(err),
+    }
+}
+
+async fn server_timeseries_summary(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+    Query(query): Query<TimeseriesSummaryQuery>,
+) -> Response {
+    match state
+        .insights
+        .server_timeseries_summary(id, &query.from, &query.to)
+        .await
+    {
+        Ok(response) => Json(response).into_response(),
+        Err(err) => {
+            let (status, message) = map_insights_error(err);
+            (status, Json(ErrorResponse::new(message))).into_response()
+        }
+    }
+}
+
+async fn total_timeseries_summary(
+    State(state): State<AppState>,
+    Query(query): Query<TimeseriesSummaryQuery>,
+) -> Response {
+    match state
+        .insights
+        .total_timeseries_summary(&query.from, &query.to)
+        .await
+    {
+        Ok(response) => Json(response).into_response(),
+        Err(err) => {
+            let (status, message) = map_insights_error(err);
+            (status, Json(ErrorResponse::new(message))).into_response()
+        }
+    }
+}
+
+async fn asn_timeseries_summary(
+    State(state): State<AppState>,
+    Query(query): Query<AsnTimeseriesSummaryQuery>,
+) -> Response {
+    match state
+        .insights
+        .asn_timeseries_summary(
+            &query.asn,
+            query.asn_org.as_deref().unwrap_or_default(),
+            &query.from,
+            &query.to,
+        )
+        .await
+    {
+        Ok(response) => Json(response).into_response(),
+        Err(err) => {
+            let (status, message) = map_insights_error(err);
+            (status, Json(ErrorResponse::new(message))).into_response()
+        }
     }
 }
 

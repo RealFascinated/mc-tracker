@@ -11,6 +11,9 @@ workspace = true
 [dependencies]
 axum = "0.8"
 chrono = { workspace = true }
+futures = "0.3"
+mc-api-types = { path = "../../crates/mc-api-types" }
+mc-chat = { path = "../../crates/mc-chat" }
 mc-db = { path = "../../crates/mc-db" }
 mc-metrics = { path = "../../crates/mc-metrics" }
 mc-test-support = { path = "../../crates/mc-test-support" }

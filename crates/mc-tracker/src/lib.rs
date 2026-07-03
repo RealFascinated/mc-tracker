@@ -1,7 +1,10 @@
 pub mod admin;
 pub mod api;
 pub mod auth;
+pub mod chat;
 #[cfg(feature = "embedded-ui")]
 pub mod embedded;
+pub mod insights;
 pub mod manager;
 pub mod settings;
+pub mod tracker_read;

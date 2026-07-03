@@ -1,0 +1,9 @@
+[package]
+name = "mc-search"
+description = "Loose text search across labeled fields for mc-tracker"
+edition.workspace = true
+version.workspace = true
+publish = false
+
+[lints]
+workspace = true

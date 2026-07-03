@@ -9,6 +9,9 @@ members = [
     "crates/mc-geo",
     "crates/mc-metrics",
     "crates/mc-ping",
+    "crates/mc-search",
+    "crates/mc-insights",
+    "crates/mc-chat",
     "crates/mc-tracker",
     "tests/integration",
 ]
