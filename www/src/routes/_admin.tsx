@@ -1,5 +1,5 @@
 import { Outlet, createFileRoute } from "@tanstack/react-router";
-import { Server, Settings } from "lucide-react";
+import { Server, Settings, Users } from "lucide-react";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { requireAdmin } from "@/lib/auth/require-admin";
@@ -15,6 +15,12 @@ const adminNav = [
     to: "/admin/servers",
     label: "Servers",
     icon: Server,
+    exact: true,
+  },
+  {
+    to: "/admin/users",
+    label: "Users",
+    icon: Users,
     exact: true,
   },
 ] as const;

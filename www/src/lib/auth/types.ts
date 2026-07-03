@@ -9,6 +9,7 @@ export type ChatQuota = {
 export type User = {
   username: string;
   role: UserRole;
+  flags: number;
   chatQuota?: ChatQuota | null;
 };
 

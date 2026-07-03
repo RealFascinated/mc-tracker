@@ -5,6 +5,7 @@ import type { ChatTokenUsage } from "@/lib/api/chat";
 import { ChatStreamError, streamChat } from "@/lib/api/chat";
 import { useAuth } from "@/lib/auth/context";
 import type { ChatQuota } from "@/lib/auth/types";
+import { chatQuotaExempt } from "@/lib/user-flags";
 
 import { STREAMING_ID, type ChatMessage } from "@/components/chat/chat-types";
 import { toolStatusLabel } from "@/components/chat/chat-utils";
@@ -29,7 +30,7 @@ export function useChatSession(open: boolean) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const chatQuota = useMemo((): ChatQuota | null => {
-    if (user?.role === "admin" || !user?.chatQuota) {
+    if (!user || chatQuotaExempt(user.role, user.flags) || !user.chatQuota) {
       return null;
     }
     return { ...user.chatQuota, used: quotaUsed ?? user.chatQuota.used };

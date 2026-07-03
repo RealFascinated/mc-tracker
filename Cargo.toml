@@ -30,6 +30,7 @@ rust-version = "1.85"
 
 [workspace.dependencies]
 anyhow = "1"
+bitflags = "2"
 chrono = { version = "0.4", features = ["serde"] }
 cron = "0.17"
 serde = { version = "1", features = ["derive"] }
