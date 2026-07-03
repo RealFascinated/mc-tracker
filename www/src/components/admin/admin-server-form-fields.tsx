@@ -63,8 +63,8 @@ function AdminServerFormFields({
           value={values.type}
           onChange={(event) => patch({ type: event.target.value })}
         >
-          <option value="PC">Java (PC)</option>
-          <option value="PE">Bedrock (PE)</option>
+          <option value="PC">Java</option>
+          <option value="PE">Bedrock</option>
         </select>
       </div>
     </>

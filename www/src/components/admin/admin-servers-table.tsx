@@ -34,6 +34,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { AdminServer } from "@/lib/api/admin/servers";
+import {
+  formatServerPlatformLabel,
+  serverPlatformBadgeClassName,
+  type ServerPlatform,
+} from "@/lib/api/platform";
 import { cn } from "cnfast";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -47,17 +52,6 @@ type AdminServersTableProps = {
   onPauseChange: (server: AdminServer, paused: boolean) => void;
   onDelete: (server: AdminServer) => void;
 };
-
-function formatServerType(type: string) {
-  switch (type) {
-    case "PC":
-      return "Java (PC)";
-    case "PE":
-      return "Bedrock (PE)";
-    default:
-      return type;
-  }
-}
 
 function SortableHeader({
   header,
@@ -117,7 +111,15 @@ export function AdminServersTable({
       {
         accessorKey: "type",
         header: "Type",
-        cell: ({ row }) => formatServerType(row.original.type),
+        cell: ({ row }) => (
+          <span
+            className={serverPlatformBadgeClassName(
+              row.original.type as ServerPlatform,
+            )}
+          >
+            {formatServerPlatformLabel(row.original.type as ServerPlatform)}
+          </span>
+        ),
       },
       {
         accessorKey: "host",

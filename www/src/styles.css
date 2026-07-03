@@ -1214,18 +1214,16 @@
     font-weight: 600;
     line-height: 1;
     letter-spacing: 0.04em;
-    color: var(--monitor);
-    background: color-mix(in srgb, var(--monitor) 12%, transparent);
   }
 
-  .dark .server-platform-badge {
-    color: var(--warning);
-    background: color-mix(in srgb, var(--warning) 14%, transparent);
+  .server-platform-badge-java {
+    color: var(--chart-4);
+    background: color-mix(in srgb, var(--chart-4) 16%, transparent);
   }
 
-  .server-platform-badge-pe {
+  .server-platform-badge-bedrock {
     color: var(--chart-3);
-    background: color-mix(in srgb, var(--chart-3) 14%, transparent);
+    background: color-mix(in srgb, var(--chart-3) 16%, transparent);
   }
 
   .entity-metrics-subtitle {

@@ -248,7 +248,7 @@ function AdminServersPage() {
           <div className="app-shell-section-header">
             <h2 className="app-shell-section-title">Add server</h2>
             <p className="app-shell-section-description">
-              Track a Java (PC) or Bedrock (PE) Minecraft server.
+              Track a Java or Bedrock Minecraft server.
             </p>
           </div>
           <div className="app-shell-section-body">

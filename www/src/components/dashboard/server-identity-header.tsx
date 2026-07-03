@@ -6,6 +6,7 @@ import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-li
 import { ServerFavicon } from "@/components/dashboard/server-favicon";
 import type { ServerListItem } from "@/lib/api/servers";
 import { asnDetailSearch } from "@/lib/api/asns";
+import { formatServerPlatformLabel, serverPlatformBadgeClassName } from "@/lib/api/platform";
 import { cn } from "cnfast";
 
 function serverAsnName(server: ServerListItem): string | null {
@@ -69,13 +70,8 @@ export function ServerIdentityHeader({
               ) : (
                 nameContent
               )}
-              <span
-                className={cn(
-                  "server-platform-badge",
-                  server.type === "PE" && "server-platform-badge-pe",
-                )}
-              >
-                {server.type}
+              <span className={serverPlatformBadgeClassName(server.type)}>
+                {formatServerPlatformLabel(server.type)}
               </span>
             </div>
             <div className="entity-metrics-subtitle">
@@ -139,7 +135,11 @@ export function ServerDetailMeta({ server }: { server: ServerListItem }) {
       ) : null}
       <div className="server-detail-meta-item">
         <dt>Platform</dt>
-        <dd>{server.type === "PE" ? "Pocket Edition" : "Java Edition"}</dd>
+        <dd>
+          <span className={serverPlatformBadgeClassName(server.type)}>
+            {formatServerPlatformLabel(server.type)}
+          </span>
+        </dd>
       </div>
     </dl>
   );

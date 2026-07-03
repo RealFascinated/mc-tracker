@@ -3,6 +3,7 @@ use mc_api_types::{
     ServerListItemResponse, ServerSearchItemResponse, ServerTimeseriesSummaryResponse,
     ServersListResponse, ServersSearchResponse, TimeseriesSummaryResponse,
 };
+use mc_common::platform_display_label;
 use serde_json::{json, Value};
 
 pub fn compact_servers_list(response: ServersListResponse, truncated: bool) -> Value {
@@ -25,7 +26,7 @@ pub(crate) fn compact_server(server: &ServerListItemResponse) -> Value {
         "name": server.name,
         "host": server.host,
         "port": server.port,
-        "type": server.server_type,
+        "platform": platform_display_label(&server.server_type),
         "playersOnline": server.players_online,
         "asn": server.asn,
         "asnOrg": server.asn_org,
@@ -355,7 +356,7 @@ fn compact_search_item(server: &ServerSearchItemResponse) -> Value {
         "name": server.name,
         "host": server.host,
         "port": server.port,
-        "type": server.server_type,
+        "platform": platform_display_label(&server.server_type),
         "playersOnline": server.players_online,
     })
 }
@@ -373,8 +374,8 @@ fn compact_asn_item(asn: &AsnListItemResponse) -> Value {
 fn compact_players_summary(summary: &mc_api_types::ServersSummaryResponse) -> Value {
     json!({
         "totalPlayers": summary.total_players,
-        "playersPc": summary.players_pc,
-        "playersPe": summary.players_pe,
+        "playersJava": summary.players_pc,
+        "playersBedrock": summary.players_pe,
         "trackedServers": summary.tracked_servers,
         "peaks": {
             "players24h": summary.peaks.players_24h,

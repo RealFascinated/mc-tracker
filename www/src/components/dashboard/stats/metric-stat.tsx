@@ -5,6 +5,7 @@ type MetricStatProps = {
   label: string;
   value: number | null | undefined;
   className?: string;
+  labelClassName?: string;
   highlight?: boolean;
   compact?: boolean;
   valueTooltip?: string;
@@ -14,6 +15,7 @@ export function MetricStat({
   label,
   value,
   className,
+  labelClassName,
   highlight = false,
   compact = false,
   valueTooltip,
@@ -27,7 +29,7 @@ export function MetricStat({
         className,
       )}
     >
-      <span className="metric-stat-label">{label}</span>
+      <span className={cn("metric-stat-label", labelClassName)}>{label}</span>
       <AnimatedStatValue
         tooltip={valueTooltip}
         value={value}

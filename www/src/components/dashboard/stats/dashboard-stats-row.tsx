@@ -12,12 +12,17 @@ export function DashboardStatsRow({ summary }: DashboardStatsRowProps) {
     label: string;
     value: number | null;
     highlight?: boolean;
+    labelClassName?: string;
   }> = [
     { label: "Online now", value: summary.totalPlayers, highlight: true },
     { label: "Peak 24h", value: summary.peaks.players24h },
     { label: "Peak 7d", value: summary.peaks.players7d },
-    { label: "Java", value: summary.playersPc },
-    { label: "Bedrock", value: summary.playersPe },
+    { label: "Java", value: summary.playersPc, labelClassName: "text-chart-4" },
+    {
+      label: "Bedrock",
+      value: summary.playersPe,
+      labelClassName: "text-chart-3",
+    },
     { label: "Tracked servers", value: summary.trackedServers },
   ];
 
@@ -33,6 +38,7 @@ export function DashboardStatsRow({ summary }: DashboardStatsRowProps) {
             label={stat.label}
             value={stat.value}
             highlight={stat.highlight}
+            labelClassName={stat.labelClassName}
           />
         </SlideUpAnimation>
       ))}
