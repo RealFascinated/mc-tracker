@@ -9,6 +9,7 @@ pub mod insights;
 pub mod servers;
 pub mod settings;
 pub mod timeseries;
+pub mod users;
 
 pub use self::timeseries::{keys as timeseries_keys, TimeseriesLane, TimeseriesLanes};
 
@@ -34,3 +35,4 @@ pub use self::servers::{
     ServersSummaryResponse,
 };
 pub use self::settings::SettingsResponse;
+pub use self::users::{AdminUser, AdminUsersListResponse, PatchUserFlagsResponse};

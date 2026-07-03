@@ -218,3 +218,66 @@ async fn demoted_admin_loses_admin_access_on_next_request() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
 }
+
+#[tokio::test]
+async fn admin_can_list_users_and_patch_flags() {
+    let (_postgres, app, _manager, pool) = test_app().await;
+    common::create_user(&pool, "vip", "pass", UserRole::User).await;
+    let user = mc_db::db::repos::users::get_by_username(&pool, "vip")
+        .await
+        .unwrap();
+    let cookie = common::login_admin(&app).await;
+
+    let list = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/admin/users")
+                .header("cookie", &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(list.status(), StatusCode::OK);
+    let list_body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(list.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    let vip = list_body["users"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["username"] == "vip")
+        .unwrap();
+    assert_eq!(vip["flags"], 0);
+
+    let patch = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PATCH")
+                .uri(format!("/admin/users/{}/flags", user.id))
+                .header("cookie", &cookie)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"flags":1}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(patch.status(), StatusCode::OK);
+    let patch_body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(patch.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(patch_body["flags"], 1);
+
+    let updated = mc_db::db::repos::users::get_by_id(&pool, user.id)
+        .await
+        .unwrap();
+    assert_eq!(updated.flags, mc_db::UserFlags::UNLIMITED_CHAT);
+}

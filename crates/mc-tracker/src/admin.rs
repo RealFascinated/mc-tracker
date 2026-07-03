@@ -2,16 +2,17 @@ use axum::extract::Path;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{get, patch};
 use axum::{Json, Router};
 use mc_api_types::{
-    AdminServersListResponse, CreateServerRequest, ErrorResponse, PatchSettingsRequest,
-    SettingsResponse, UpdateServerRequest,
+    AdminServersListResponse, AdminUsersListResponse, CreateServerRequest, ErrorResponse,
+    PatchSettingsRequest, PatchUserFlagsRequest, PatchUserFlagsResponse, SettingsResponse,
+    UpdateServerRequest,
 };
 use mc_db::db::repos::servers::{self, NewServer, UpdateServer};
-use mc_db::db::repos::settings;
+use mc_db::db::repos::{settings, users};
 use mc_db::error::DbError;
-use mc_db::model::Platform;
+use mc_db::model::{Platform, User, UserFlags};
 use uuid::Uuid;
 
 use crate::api::AppState;
@@ -26,6 +27,8 @@ pub fn router() -> Router<AppState> {
             get(get_server).patch(update_server).delete(delete_server),
         )
         .route("/settings", get(get_settings).patch(patch_settings))
+        .route("/users", get(list_users))
+        .route("/users/{id}/flags", patch(patch_user_flags))
 }
 
 async fn list_servers(State(state): State<AppState>) -> Json<AdminServersListResponse> {
@@ -162,6 +165,45 @@ async fn patch_settings(
             Json(settings_response(&updated)).into_response()
         }
         Err(err) => map_db_error(err),
+    }
+}
+
+async fn list_users(State(state): State<AppState>) -> Response {
+    match users::list(&state.pool).await {
+        Ok(users) => Json(AdminUsersListResponse {
+            users: users.iter().map(admin_user_response).collect(),
+        })
+        .into_response(),
+        Err(err) => map_db_error(err),
+    }
+}
+
+async fn patch_user_flags(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+    Json(body): Json<PatchUserFlagsRequest>,
+) -> Response {
+    let flags = UserFlags::from_db(body.flags);
+    match users::update_flags(&state.pool, id, flags).await {
+        Ok(()) => (
+            StatusCode::OK,
+            Json(PatchUserFlagsResponse {
+                id: id.to_string(),
+                flags: flags.to_db(),
+            }),
+        )
+            .into_response(),
+        Err(err) => map_db_error(err),
+    }
+}
+
+fn admin_user_response(user: &User) -> mc_api_types::AdminUser {
+    mc_api_types::AdminUser {
+        id: user.id.to_string(),
+        username: user.username.clone(),
+        role: user.role.as_str().to_string(),
+        flags: user.flags.to_db(),
+        created_at: user.created_at.to_rfc3339(),
     }
 }
 

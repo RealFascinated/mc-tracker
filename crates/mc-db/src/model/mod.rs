@@ -1,6 +1,8 @@
 pub mod settings;
+pub mod user_flags;
 
 pub use settings::AppSettings;
+pub use user_flags::{chat_quota_exempt, UserFlags};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -74,6 +76,7 @@ pub struct User {
     pub username: String,
     pub password_hash: String,
     pub role: UserRole,
+    pub flags: UserFlags,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

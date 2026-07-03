@@ -13,6 +13,7 @@ pub struct ChatQuota {
 pub struct MeResponse {
     pub username: String,
     pub role: String,
+    pub flags: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub chat_quota: Option<ChatQuota>,
 }

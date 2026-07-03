@@ -156,6 +156,7 @@ async fn signup_creates_user_and_session() {
     assert_eq!(me_body["role"], "user");
     assert_eq!(me_body["chatQuota"]["used"], 0);
     assert_eq!(me_body["chatQuota"]["limit"], 20);
+    assert_eq!(me_body["flags"], 0);
 }
 
 #[tokio::test]

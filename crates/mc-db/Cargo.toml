@@ -10,6 +10,7 @@ workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
+bitflags = { workspace = true }
 argon2 = "0.5"
 rand = "0.8"
 chrono = { workspace = true }

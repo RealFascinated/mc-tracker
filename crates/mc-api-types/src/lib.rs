@@ -11,10 +11,12 @@ pub use request::servers::{
 };
 pub use request::settings::PatchSettingsRequest;
 pub use request::timeseries::TimeseriesQuery;
+pub use request::users::PatchUserFlagsRequest;
 pub use response::{
     timeseries_keys, AdminServerResponse, AdminServersListResponse, AsnDetailResponse,
     AsnListItemResponse, AsnSearchResponse, AsnTimeseriesResponse, AsnTimeseriesSummaryResponse,
-    AsnsListResponse, AsnsSummaryResponse, ChatQuota, ChatStreamEvent, ChatTokenUsage,
+    AsnsListResponse, AsnsSummaryResponse, AdminUser, AdminUsersListResponse, ChatQuota,
+    ChatStreamEvent, ChatTokenUsage,
     IpLookupResponse,
     ChatToolCallRecord, EntityPeakStats, ErrorResponse, HealthResponse, LoginResponse, MeResponse,
     PeakPlayersRecord, PlayersPeakSummary, ServerListItemResponse, ServerSearchItemResponse,
@@ -22,6 +24,7 @@ pub use response::{
     ServerPeriodPeakRankItem, ServerTimeseriesSummaryResponse, ServersGrowthRankResponse,
     ServersPeriodPeakRankResponse, ServersListResponse,
     ServersSearchResponse, ServersSummaryResponse, SettingsResponse, SignupEnabledResponse,
+    PatchUserFlagsResponse,
     SummaryPoint, TimeseriesLane, TimeseriesLanes, TimeseriesSummaryResponse, TrendDirection,
     GrowthRankOrder,
 };

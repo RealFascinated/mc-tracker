@@ -5,3 +5,4 @@ pub mod insights;
 pub mod servers;
 pub mod settings;
 pub mod timeseries;
+pub mod users;

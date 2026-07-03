@@ -8,7 +8,7 @@ use uuid::Uuid;
 use crate::db::schema::users;
 use crate::db::DbPool;
 use crate::error::DbError;
-use crate::model::{User, UserRole};
+use crate::model::{User, UserFlags, UserRole};
 
 use super::{db_err, get_conn};
 
@@ -17,8 +17,27 @@ type UserRow = (
     String,
     String,
     String,
+    i64,
     chrono::DateTime<Utc>,
     chrono::DateTime<Utc>,
+);
+
+const USER_COLUMNS: (
+    users::id,
+    users::username,
+    users::password_hash,
+    users::role,
+    users::flags,
+    users::created_at,
+    users::updated_at,
+) = (
+    users::id,
+    users::username,
+    users::password_hash,
+    users::role,
+    users::flags,
+    users::created_at,
+    users::updated_at,
 );
 
 fn row_to_user(row: UserRow) -> Result<User, DbError> {
@@ -27,8 +46,9 @@ fn row_to_user(row: UserRow) -> Result<User, DbError> {
         username: row.1,
         password_hash: row.2,
         role: UserRole::from_db(&row.3).map_err(DbError::InvalidSettings)?,
-        created_at: row.4,
-        updated_at: row.5,
+        flags: UserFlags::from_db(row.4),
+        created_at: row.5,
+        updated_at: row.6,
     })
 }
 
@@ -56,18 +76,23 @@ pub async fn count(pool: &DbPool) -> Result<i64, DbError> {
         .map_err(db_err)
 }
 
+pub async fn list(pool: &DbPool) -> Result<Vec<User>, DbError> {
+    let mut conn = get_conn(pool).await?;
+    let rows = users::table
+        .select(USER_COLUMNS)
+        .order(users::username.asc())
+        .load::<UserRow>(&mut conn)
+        .await
+        .map_err(db_err)?;
+
+    rows.into_iter().map(row_to_user).collect()
+}
+
 pub async fn get_by_id(pool: &DbPool, id: Uuid) -> Result<User, DbError> {
     let mut conn = get_conn(pool).await?;
     let row = users::table
         .filter(users::id.eq(id))
-        .select((
-            users::id,
-            users::username,
-            users::password_hash,
-            users::role,
-            users::created_at,
-            users::updated_at,
-        ))
+        .select(USER_COLUMNS)
         .first::<UserRow>(&mut conn)
         .await
         .optional()
@@ -83,14 +108,7 @@ pub async fn get_by_username(pool: &DbPool, username: &str) -> Result<User, DbEr
     let mut conn = get_conn(pool).await?;
     let row = users::table
         .filter(users::username.eq(username))
-        .select((
-            users::id,
-            users::username,
-            users::password_hash,
-            users::role,
-            users::created_at,
-            users::updated_at,
-        ))
+        .select(USER_COLUMNS)
         .first::<UserRow>(&mut conn)
         .await
         .optional()
@@ -119,6 +137,7 @@ pub async fn create(
             users::username.eq(username),
             users::password_hash.eq(&password_hash),
             users::role.eq(role.as_str()),
+            users::flags.eq(0_i64),
             users::created_at.eq(now),
             users::updated_at.eq(now),
         ))
@@ -167,6 +186,22 @@ pub async fn update_role(pool: &DbPool, id: Uuid, role: UserRole) -> Result<(), 
 
     let updated = diesel::update(users::table.filter(users::id.eq(id)))
         .set((users::role.eq(role.as_str()), users::updated_at.eq(now)))
+        .execute(&mut conn)
+        .await
+        .map_err(db_err)?;
+
+    if updated == 0 {
+        return Err(DbError::NotFound(format!("user {id}")));
+    }
+    Ok(())
+}
+
+pub async fn update_flags(pool: &DbPool, id: Uuid, flags: UserFlags) -> Result<(), DbError> {
+    let mut conn = get_conn(pool).await?;
+    let now = Utc::now();
+
+    let updated = diesel::update(users::table.filter(users::id.eq(id)))
+        .set((users::flags.eq(flags.to_db()), users::updated_at.eq(now)))
         .execute(&mut conn)
         .await
         .map_err(db_err)?;

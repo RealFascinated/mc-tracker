@@ -7,6 +7,7 @@ use axum::Json;
 use mc_api_types::ErrorResponse;
 use mc_db::db::repos::users;
 use mc_db::model::UserRole;
+use mc_db::model::UserFlags;
 use uuid::Uuid;
 
 use super::session::COOKIE_NAME;
@@ -17,6 +18,7 @@ pub struct AuthUser {
     pub id: Uuid,
     pub username: String,
     pub role: UserRole,
+    pub flags: UserFlags,
     pub token: String,
 }
 
@@ -67,6 +69,7 @@ pub(crate) async fn authenticate_request(
         id: user.id,
         username: user.username,
         role: user.role,
+        flags: user.flags,
         token,
     })
 }

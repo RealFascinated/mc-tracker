@@ -8,7 +8,7 @@ use mc_api_types::{
     SignupEnabledResponse, SignupRequest,
 };
 use mc_db::db::repos::users;
-use mc_db::model::UserRole;
+use mc_db::model::{chat_quota_exempt, UserRole};
 
 use super::middleware::{parse_cookie_value, AuthUser};
 use super::rate_limit::client_ip_from_headers;
@@ -80,10 +80,14 @@ async fn logout(State(state): State<AppState>, headers: axum::http::HeaderMap) -
 async fn me(
     State(state): State<AppState>,
     AuthUser {
-        id, username, role, ..
+        id,
+        username,
+        role,
+        flags,
+        ..
     }: AuthUser,
 ) -> Result<Json<MeResponse>, Response> {
-    let chat_quota = if role == UserRole::Admin {
+    let chat_quota = if chat_quota_exempt(role, flags) {
         None
     } else {
         Some(quota_for_user(&state.pool, id).await.map_err(|_| {
@@ -98,6 +102,7 @@ async fn me(
     Ok(Json(MeResponse {
         username,
         role: role.as_str().to_string(),
+        flags: flags.to_db(),
         chat_quota,
     }))
 }

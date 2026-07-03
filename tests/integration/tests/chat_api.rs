@@ -200,6 +200,7 @@ async fn me_includes_chat_quota_for_users_not_admins() {
     assert_eq!(user_body["chatQuota"]["used"], 0);
     assert_eq!(user_body["chatQuota"]["limit"], 20);
     assert!(user_body["chatQuota"]["resetsAt"].is_string());
+    assert_eq!(user_body["flags"], 0);
 
     let admin_cookie = login_admin(&app).await;
     let admin_me = app
@@ -220,6 +221,68 @@ async fn me_includes_chat_quota_for_users_not_admins() {
     )
     .unwrap();
     assert!(admin_body.get("chatQuota").is_none());
+    assert_eq!(admin_body["flags"], 0);
+}
+
+#[tokio::test]
+async fn post_chat_flagged_user_unlimited() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+    bootstrap_admin(&pool).await;
+    create_user(&pool, "vip", "pass", UserRole::User).await;
+    let user = mc_db::db::repos::users::get_by_username(&pool, "vip")
+        .await
+        .unwrap();
+    mc_db::db::repos::users::update_flags(&pool, user.id, mc_db::UserFlags::UNLIMITED_CHAT)
+        .await
+        .unwrap();
+
+    let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
+    let app = build_app_with_chat(pool, manager, "development", Arc::new(MockChatAgent)).await;
+    let cookie = login_as(&app, "vip", "pass").await;
+
+    for i in 0..21 {
+        let response = post_chat(&app, Some(&cookie), &format!("vip{i}"), i as u8 + 1).await;
+        assert_eq!(response.status(), StatusCode::OK, "flagged user request {i}");
+    }
+}
+
+#[tokio::test]
+async fn me_omits_chat_quota_for_flagged_user() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+    bootstrap_admin(&pool).await;
+    create_user(&pool, "vip", "pass", UserRole::User).await;
+    let user = mc_db::db::repos::users::get_by_username(&pool, "vip")
+        .await
+        .unwrap();
+    mc_db::db::repos::users::update_flags(&pool, user.id, mc_db::UserFlags::UNLIMITED_CHAT)
+        .await
+        .unwrap();
+
+    let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
+    let app = build_app_with_chat(pool, manager, "development", Arc::new(MockChatAgent)).await;
+    let cookie = login_as(&app, "vip", "pass").await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/auth/me")
+                .header("cookie", &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    assert!(body.get("chatQuota").is_none());
+    assert_eq!(body["flags"], 1);
 }
 
 #[tokio::test]

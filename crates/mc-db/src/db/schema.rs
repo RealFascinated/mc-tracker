@@ -27,6 +27,7 @@ diesel::table! {
         username -> Text,
         password_hash -> Text,
         role -> Text,
+        flags -> BigInt,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
     }

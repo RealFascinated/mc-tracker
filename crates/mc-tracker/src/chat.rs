@@ -14,7 +14,7 @@ use futures::stream::{self, StreamExt};
 use mc_api_types::{ChatRequest, ChatStreamEvent, ErrorResponse};
 use mc_chat::{parse_raw_history, AgentChatRequest};
 use mc_db::db::repos::chat_messages;
-use mc_db::model::UserRole;
+use mc_db::model::chat_quota_exempt;
 
 use crate::api::AppState;
 use crate::auth::AuthUser;
@@ -67,7 +67,7 @@ async fn post_chat(
         return sse_error(StatusCode::TOO_MANY_REQUESTS, "rate limit exceeded");
     }
 
-    if user.role != UserRole::Admin {
+    if !chat_quota_exempt(user.role, user.flags) {
         let since = calendar_week_start_utc(chrono::Utc::now());
         let used = match chat_messages::count_since(&state.pool, user.id, since).await {
             Ok(count) => count as u32,
