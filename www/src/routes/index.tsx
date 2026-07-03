@@ -69,10 +69,12 @@ export const Route = createFileRoute("/")({
     view: search.view ?? "server",
     serverSort: resolveServerSort(search),
   }),
-  loader: ({ context: { queryClient }, deps: { view, serverSort } }) =>
-    view === "asn"
-      ? queryClient.ensureQueryData(asnsQueryOptions())
-      : queryClient.ensureQueryData(serversQueryOptions(serverSort)),
+  loader: async ({ context: { queryClient }, deps: { view, serverSort } }) => {
+    await queryClient.ensureQueryData(serversQueryOptions(serverSort));
+    if (view === "asn") {
+      await queryClient.ensureQueryData(asnsQueryOptions());
+    }
+  },
   head: () => ({
     meta: [{ title: pageTitle("Dashboard") }],
   }),
@@ -102,7 +104,6 @@ function DashboardPage() {
 
   const { data: serversData, isPending: serversPending } = useQuery({
     ...serversQueryOptions(serverSort),
-    enabled: dashboardView === "server",
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
   const { data: pinnedServersData } = useQuery({
@@ -146,7 +147,9 @@ function DashboardPage() {
   );
   const activeData = dashboardView === "asn" ? asnsData : serversData;
   const activePending = dashboardView === "asn" ? asnsPending : serversPending;
+  const globalSummary = serversData?.summary;
   const showInitialLoading = activePending && !activeData;
+  const showPageLoading = serversPending && !globalSummary;
 
   return (
     <>
@@ -177,53 +180,68 @@ function DashboardPage() {
         </div>
       </SiteHeaderToolbar>
 
-      {showInitialLoading ? (
+      {showPageLoading ? (
         <LoadingState message="Loading dashboard…" centered />
-      ) : !activeData ? (
+      ) : !globalSummary && !activeData ? (
         <main className="dashboard-shell">
           <p className="text-destructive">Failed to load dashboard data.</p>
         </main>
       ) : (
         <main className="dashboard-shell">
-          <DashboardStatsRow summary={activeData.summary} />
+          {globalSummary ? (
+            <DashboardStatsRow summary={globalSummary} />
+          ) : null}
 
-          <MetricChartsScope
-            window={timeWindow}
-            onZoomToRange={handleZoomToRange}
-          >
-            <HeroChartPanel
-              hasServers={activeData.summary.trackedServers > 0}
-              window={timeWindow}
+          {showInitialLoading ? (
+            <LoadingState
+              message={
+                dashboardView === "asn"
+                  ? "Loading networks…"
+                  : "Loading servers…"
+              }
+              centered
             />
-
-            {dashboardView === "asn" ? (
-              <AsnMetricsGrid
-                asns={asnsData?.asns ?? []}
+          ) : !activeData ? (
+            <p className="text-destructive">Failed to load dashboard data.</p>
+          ) : (
+            <MetricChartsScope
+              window={timeWindow}
+              onZoomToRange={handleZoomToRange}
+            >
+              <HeroChartPanel
+                hasServers={globalSummary ? globalSummary.trackedServers > 0 : false}
                 window={timeWindow}
-                trackedAsns={asnsData?.summary.trackedAsns ?? 0}
               />
-            ) : (
-              <>
-                {pinnedServers.length > 0 ? (
-                  <PinnedServersGrid
-                    servers={pinnedServers}
-                    window={timeWindow}
-                  />
-                ) : null}
-                <ServerMetricsGrid
-                  servers={filteredServers}
+
+              {dashboardView === "asn" ? (
+                <AsnMetricsGrid
+                  asns={asnsData?.asns ?? []}
                   window={timeWindow}
-                  platformFilter={platformFilter}
-                  onPlatformFilterChange={setPlatformFilter}
-                  sort={serverSort}
-                  onSortChange={setServerSort}
-                  trackedServers={serversData?.summary.trackedServers ?? 0}
-                  pinnedServerIds={pinnedServerIds}
-                  showPinButtons={isAuthenticated}
+                  trackedAsns={asnsData?.summary.trackedAsns ?? 0}
                 />
-              </>
-            )}
-          </MetricChartsScope>
+              ) : (
+                <>
+                  {pinnedServers.length > 0 ? (
+                    <PinnedServersGrid
+                      servers={pinnedServers}
+                      window={timeWindow}
+                    />
+                  ) : null}
+                  <ServerMetricsGrid
+                    servers={filteredServers}
+                    window={timeWindow}
+                    platformFilter={platformFilter}
+                    onPlatformFilterChange={setPlatformFilter}
+                    sort={serverSort}
+                    onSortChange={setServerSort}
+                    trackedServers={serversData?.summary.trackedServers ?? 0}
+                    pinnedServerIds={pinnedServerIds}
+                    showPinButtons={isAuthenticated}
+                  />
+                </>
+              )}
+            </MetricChartsScope>
+          )}
         </main>
       )}
     </>
