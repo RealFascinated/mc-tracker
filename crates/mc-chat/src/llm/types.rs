@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct LlmRequestOptions {
-    pub cache_prompt: bool,
-    pub id_slot: Option<i32>,
+    /// OpenRouter sticky routing + llama.cpp slot affinity (hashed from this value).
+    pub session_id: Option<String>,
     pub max_tokens: Option<u32>,
     pub parse_tool_calls: bool,
 }
@@ -11,8 +11,7 @@ pub struct LlmRequestOptions {
 impl Default for LlmRequestOptions {
     fn default() -> Self {
         Self {
-            cache_prompt: true,
-            id_slot: None,
+            session_id: None,
             max_tokens: None,
             parse_tool_calls: false,
         }
@@ -76,6 +75,14 @@ pub struct ChatCompletionRequest {
 }
 
 #[derive(Debug, Clone, Copy, Default, Deserialize, Serialize)]
+pub struct PromptTokensDetails {
+    #[serde(default)]
+    pub cached_tokens: u32,
+    #[serde(default)]
+    pub cache_write_tokens: u32,
+}
+
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize)]
 pub struct CompletionUsage {
     #[serde(default)]
     pub prompt_tokens: u32,
@@ -83,13 +90,24 @@ pub struct CompletionUsage {
     pub completion_tokens: u32,
     #[serde(default)]
     pub total_tokens: u32,
+    #[serde(default)]
+    pub prompt_tokens_details: Option<PromptTokensDetails>,
 }
 
 impl CompletionUsage {
     pub fn merge_into(&self, acc: &mut CompletionUsage) {
         acc.prompt_tokens = acc.prompt_tokens.max(self.prompt_tokens);
-        acc.completion_tokens = acc.completion_tokens.saturating_add(self.completion_tokens);
+        acc.completion_tokens = acc
+            .completion_tokens
+            .saturating_add(self.completion_tokens);
         acc.total_tokens = acc.total_tokens.saturating_add(self.total_tokens);
+        if let Some(details) = self.prompt_tokens_details {
+            let acc_details = acc.prompt_tokens_details.get_or_insert_with(Default::default);
+            acc_details.cached_tokens = acc_details.cached_tokens.max(details.cached_tokens);
+            acc_details.cache_write_tokens = acc_details
+                .cache_write_tokens
+                .max(details.cache_write_tokens);
+        }
     }
 }
 

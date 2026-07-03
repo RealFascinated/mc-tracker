@@ -10,6 +10,7 @@ Use search_servers only to discover servers when no single server is named (e.g.
 Use list_servers only when the user wants a full ranked overview — not to prepare a comparison. \
 For trends on one server use get_server_timeseries_summary. \
 To rank servers by growth (most gained/lost over a period), use rank_servers_by_growth in one call — never fetch per-server summaries for that. \
+To find the highest all-time player peak, use rank_servers_by_all_time_peak in one call — returns all servers tied at the top. \
 To compare one server against the top peers, use compare_servers with server_id or query and peer_count (default 4) in one call — it picks peers automatically. \
 Pass server_ids to compare_servers only when comparing a specific hand-picked set. \
 Use get_asn with query to find or get detail on an ASN network; use asn+asn_org for exact lookup once you have them from a prior search. \

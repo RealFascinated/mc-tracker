@@ -74,11 +74,11 @@ struct Config {
     #[arg(long, env = "LLM_TIMEOUT_SECS", default_value = "60")]
     llm_timeout_secs: u64,
 
-    /// Parallel llama.cpp slots for session affinity hashing
+    /// Parallel llama.cpp slots for session affinity hashing (ignored for OpenRouter)
     #[arg(long, env = "LLM_PARALLEL_SLOTS", default_value = "2")]
     llm_parallel_slots: u32,
 
-    /// llama.cpp context size (for chat token display)
+    /// Model context window size (for chat token display and logging)
     #[arg(long, env = "LLM_CTX_SIZE", default_value = "16384")]
     llm_ctx_size: u32,
 }
@@ -142,6 +142,7 @@ async fn main() -> anyhow::Result<()> {
             base_url,
             config.llm_api_key.clone(),
             Duration::from_secs(config.llm_timeout_secs),
+            config.llm_parallel_slots,
         ));
         let deps = ChatToolDeps {
             tracker: Arc::clone(&manager) as Arc<dyn mc_chat::TrackerRead>,
@@ -152,7 +153,6 @@ async fn main() -> anyhow::Result<()> {
             ToolRegistry::default_tools(),
             deps,
             config.llm_model.clone(),
-            config.llm_parallel_slots,
             Duration::from_secs(config.llm_timeout_secs),
             config.llm_ctx_size,
         )) as Arc<dyn mc_chat::ChatAgent>

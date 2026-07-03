@@ -5,7 +5,9 @@ import {
   CircleCheckIcon,
   LoaderCircleIcon,
   MessageCircleIcon,
+  MessageSquarePlusIcon,
   SendIcon,
+  SquareIcon,
   WrenchIcon,
   XIcon,
 } from "lucide-react";
@@ -27,6 +29,11 @@ import { ChatStreamError, streamChat } from "@/lib/api/chat";
 import { useAuth } from "@/lib/auth/context";
 import type { ChatQuota } from "@/lib/auth/types";
 import { serverQueryOptions } from "@/lib/api/servers.queries";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "cnfast";
 
 const STREAMING_ID = "streaming";
@@ -75,28 +82,158 @@ function toolStatusLabel(name: string): string {
   return name.replaceAll("_", " ");
 }
 
-function formatTokenCount(value: number): string {
-  if (value >= 10_000) {
-    return `${(value / 1000).toFixed(1)}k`;
-  }
+function formatTokenCountFull(value: number): string {
   return value.toLocaleString();
 }
 
-function ContextUsage({ usage }: { usage: ChatTokenUsage }) {
-  const ratio = usage.promptTokens / usage.contextMax;
+function ContextUsageTooltip({ usage }: { usage: ChatTokenUsage }) {
+  const ratio = Math.min(usage.promptTokens / usage.contextMax, 1);
+  const pct = Math.round(ratio * 100);
   const hot = ratio >= 0.85;
+  const cached = usage.cachedTokens ?? 0;
+  const hasCache = cached > 0;
+  const cachePct =
+    hasCache && usage.promptTokens > 0
+      ? Math.round((cached / usage.promptTokens) * 100)
+      : null;
 
   return (
-    <p
-      className={cn(
-        "text-xs tabular-nums",
-        hot ? "text-destructive" : "text-muted-foreground",
-      )}
-      title="Prompt tokens / context window"
-    >
-      Context {formatTokenCount(usage.promptTokens)} /{" "}
-      {formatTokenCount(usage.contextMax)}
-    </p>
+    <div className="grid w-52 gap-2.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-popover-foreground font-medium">Context window</p>
+        <p
+          className={cn(
+            "text-sm font-semibold tabular-nums",
+            hot ? "text-destructive" : "text-popover-foreground",
+          )}
+        >
+          {pct}%
+        </p>
+      </div>
+
+      <div
+        className="bg-muted h-1.5 overflow-hidden rounded-full"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Context window usage"
+      >
+        <div
+          className={cn(
+            "h-full rounded-full transition-all",
+            hot ? "bg-destructive" : "bg-primary",
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      <dl className="grid gap-1.5 text-[11px] leading-tight">
+        <div className="flex items-baseline justify-between gap-4">
+          <dt className="text-muted-foreground">Prompt</dt>
+          <dd className="text-popover-foreground tabular-nums">
+            {formatTokenCountFull(usage.promptTokens)}
+            <span className="text-muted-foreground">
+              {" "}
+              / {formatTokenCountFull(usage.contextMax)}
+            </span>
+          </dd>
+        </div>
+        {hasCache ? (
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-muted-foreground">Cached</dt>
+            <dd className="text-popover-foreground tabular-nums">
+              {formatTokenCountFull(cached)}
+              {cachePct != null ? (
+                <span className="text-muted-foreground"> ({cachePct}%)</span>
+              ) : null}
+            </dd>
+          </div>
+        ) : null}
+        {usage.completionTokens > 0 ? (
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-muted-foreground">Response</dt>
+            <dd className="text-popover-foreground tabular-nums">
+              {formatTokenCountFull(usage.completionTokens)}
+            </dd>
+          </div>
+        ) : null}
+        {usage.cacheWriteTokens != null && usage.cacheWriteTokens > 0 ? (
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-muted-foreground">Cache write</dt>
+            <dd className="text-popover-foreground tabular-nums">
+              {formatTokenCountFull(usage.cacheWriteTokens)}
+            </dd>
+          </div>
+        ) : null}
+      </dl>
+    </div>
+  );
+}
+
+function ContextUsage({
+  usage,
+  tooltipSide = "bottom",
+}: {
+  usage: ChatTokenUsage;
+  tooltipSide?: "top" | "bottom";
+}) {
+  const ratio = Math.min(usage.promptTokens / usage.contextMax, 1);
+  const pct = Math.round(ratio * 100);
+  const hot = ratio >= 0.85;
+  const size = 18;
+  const stroke = 2;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className={cn(hot ? "text-destructive" : "text-muted-foreground")}
+          aria-label={`Context ${pct}% used`}
+        >
+          <svg
+            width={size}
+            height={size}
+            viewBox={`0 0 ${size} ${size}`}
+            className="-rotate-90"
+            aria-hidden
+          >
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={stroke}
+              className="opacity-25"
+            />
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={stroke}
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference * (1 - ratio)}
+            />
+          </svg>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent
+        side={tooltipSide}
+        sideOffset={6}
+        className="max-w-none flex-col items-stretch gap-0 px-3 py-2.5"
+      >
+        <ContextUsageTooltip usage={usage} />
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -293,7 +430,7 @@ export function TrackerChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [sessionId] = useState(() => crypto.randomUUID());
+  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
   const [isStreaming, setIsStreaming] = useState(false);
   const [toolStatus, setToolStatus] = useState<string | null>(null);
   const [tokenUsage, setTokenUsage] = useState<ChatTokenUsage | null>(null);
@@ -336,6 +473,21 @@ export function TrackerChatWidget() {
     abortRef.current?.abort();
     abortRef.current = null;
   }, []);
+
+  const startNewChat = useCallback(() => {
+    cancelStream();
+    setMessages([]);
+    setRawHistory(null);
+    setTokenUsage(null);
+    setToolStatus(null);
+    setInput("");
+    setIsStreaming(false);
+    setSessionId(crypto.randomUUID());
+    inputRef.current?.focus();
+  }, [cancelStream]);
+
+  const canStartNewChat =
+    isAuthenticated && (messages.length > 0 || isStreaming || rawHistory != null);
 
   useEffect(() => {
     if (!open) {
@@ -500,15 +652,39 @@ export function TrackerChatWidget() {
                 Player counts, trends, and peaks
               </p>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Close chat"
-              onClick={() => setOpen(false)}
-            >
-              <XIcon />
-            </Button>
+            <div className="flex shrink-0 items-center gap-1">
+              {isAuthenticated && tokenUsage ? (
+                <ContextUsage usage={tokenUsage} />
+              ) : null}
+              {isAuthenticated ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="New chat"
+                      disabled={!canStartNewChat}
+                      onClick={startNewChat}
+                    >
+                      <MessageSquarePlusIcon />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={6}>
+                    New chat
+                  </TooltipContent>
+                </Tooltip>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Close chat"
+                onClick={() => setOpen(false)}
+              >
+                <XIcon />
+              </Button>
+            </div>
           </header>
 
           {!isAuthenticated ? (
@@ -551,13 +727,8 @@ export function TrackerChatWidget() {
           </div>
 
           <div className="shrink-0 border-t border-border">
-            {tokenUsage ? (
-              <div className="px-3 pt-2">
-                <ContextUsage usage={tokenUsage} />
-              </div>
-            ) : null}
             {chatQuota ? (
-              <div className={cn("px-3", tokenUsage ? "pt-1" : "pt-2")}>
+              <div className="px-3 pt-2">
                 <QuotaUsage quota={chatQuota} />
               </div>
             ) : null}
@@ -587,14 +758,15 @@ export function TrackerChatWidget() {
                 className="monitor-input h-10! min-h-10 max-h-24 flex-1 resize-none overflow-y-auto px-3 py-0 text-sm leading-10"
               />
               <Button
-                type="submit"
-                variant="brand"
+                type={isStreaming ? "button" : "submit"}
+                variant={isStreaming ? "outline" : "brand"}
                 size="icon"
                 className="size-10 shrink-0"
-                disabled={isStreaming || quotaExceeded || !input.trim()}
-                aria-label="Send message"
+                disabled={!isStreaming && (quotaExceeded || !input.trim())}
+                aria-label={isStreaming ? "Stop response" : "Send message"}
+                onClick={isStreaming ? cancelStream : undefined}
               >
-                <SendIcon />
+                {isStreaming ? <SquareIcon /> : <SendIcon />}
               </Button>
             </form>
           </div>

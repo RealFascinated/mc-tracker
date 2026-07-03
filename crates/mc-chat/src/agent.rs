@@ -1,5 +1,3 @@
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -11,8 +9,8 @@ use tokio_stream::wrappers::ReceiverStream;
 
 use crate::error::ChatError;
 use crate::llm::types::{
-    ChatCompletionRequest, ChatCompletionResponse, ChatMessage, LlmRequestOptions, ToolChoice,
-    ToolDefinition,
+    ChatCompletionRequest, ChatCompletionResponse, ChatMessage, CompletionUsage,
+    LlmRequestOptions, ToolChoice, ToolDefinition,
 };
 use crate::prompt::SYSTEM_PROMPT;
 use crate::tools::ToolRegistry;
@@ -32,7 +30,6 @@ pub struct AgentLoop {
     tools: ToolRegistry,
     deps: ChatToolDeps,
     model: String,
-    parallel_slots: u32,
     timeout: Duration,
     context_max: u32,
 }
@@ -43,7 +40,6 @@ impl AgentLoop {
         tools: ToolRegistry,
         deps: ChatToolDeps,
         model: String,
-        parallel_slots: u32,
         timeout: Duration,
         context_max: u32,
     ) -> Self {
@@ -52,7 +48,6 @@ impl AgentLoop {
             tools,
             deps,
             model,
-            parallel_slots,
             timeout,
             context_max,
         }
@@ -71,7 +66,6 @@ impl ChatAgent for AgentLoop {
             insights: Arc::clone(&self.deps.insights),
         };
         let model = self.model.clone();
-        let parallel_slots = self.parallel_slots;
         let timeout = self.timeout;
         let context_max = self.context_max;
         let (tx, rx) = mpsc::channel(64);
@@ -81,7 +75,6 @@ impl ChatAgent for AgentLoop {
                 tools,
                 deps,
                 model,
-                parallel_slots,
                 timeout,
                 context_max,
                 request,
@@ -103,7 +96,6 @@ async fn run_agent(
     tools: ToolRegistry,
     deps: ChatToolDeps,
     model: String,
-    parallel_slots: u32,
     timeout: Duration,
     context_max: u32,
     request: AgentChatRequest,
@@ -111,16 +103,29 @@ async fn run_agent(
 ) -> Result<(), ChatError> {
     validate_request(&request)?;
     let started = Instant::now();
-    let slot = slot_for_session(request.session_id.as_deref(), parallel_slots);
+    let session_id = session_id_for_llm(request.session_id.as_deref());
     let mut messages = build_messages(&request);
     let tool_defs = tool_definitions(&tools);
     let mut tool_trace = Vec::new();
-    let mut usage = crate::llm::types::CompletionUsage::default();
+    let mut usage = CompletionUsage::default();
+
+    tracing::info!(
+        session_id = session_id.as_deref(),
+        message_count = messages.len(),
+        context_max,
+        "chat turn started"
+    );
 
     for _ in 0..MAX_TOOL_ROUNDS {
         check_timeout(started, timeout)?;
-        let response =
-            tool_round_completion(llm.as_ref(), &model, &messages, &tool_defs, slot).await?;
+        let response = tool_round_completion(
+            llm.as_ref(),
+            &model,
+            &messages,
+            &tool_defs,
+            session_id.clone(),
+        )
+        .await?;
         if let Some(round_usage) = response.usage {
             round_usage.merge_into(&mut usage);
         }
@@ -166,10 +171,8 @@ async fn run_agent(
 
     check_timeout(started, timeout)?;
 
-    // Snapshot the messages list before it's moved into the streaming request.
-    // The frontend echoes this back next turn so the LLM sees a byte-identical
-    // prefix and llama.cpp's cache_prompt can reuse the KV state.
-    // Snapshot the messages list before it's moved into the streaming request.
+    // Snapshot before streaming. The frontend echoes this back next turn so the
+    // prompt prefix stays byte-identical for provider prompt caching.
     let history_snapshot: Vec<serde_json::Value> = messages
         .iter()
         .filter_map(|m| serde_json::to_value(m).ok())
@@ -183,8 +186,7 @@ async fn run_agent(
             tool_choice: None,
             stream: true,
             options: LlmRequestOptions {
-                cache_prompt: true,
-                id_slot: slot,
+                session_id: session_id.clone(),
                 max_tokens: Some(FINAL_MAX_TOKENS),
                 parse_tool_calls: false,
             },
@@ -206,6 +208,9 @@ async fn run_agent(
         }
     }
 
+    log_context_usage(session_id.as_deref(), context_max, &usage);
+
+    let cache_details = usage.prompt_tokens_details;
     let _ = tx
         .send(Ok(ChatStreamEvent::Done {
             tool_calls: tool_trace,
@@ -213,6 +218,8 @@ async fn run_agent(
                 prompt_tokens: usage.prompt_tokens,
                 completion_tokens: usage.completion_tokens,
                 context_max,
+                cached_tokens: cache_details.map(|d| d.cached_tokens),
+                cache_write_tokens: cache_details.map(|d| d.cache_write_tokens),
             }),
             raw_history: Some(history_snapshot),
         }))
@@ -314,7 +321,7 @@ async fn tool_round_completion(
     model: &str,
     messages: &[ChatMessage],
     tool_defs: &[ToolDefinition],
-    slot: Option<i32>,
+    session_id: Option<String>,
 ) -> Result<ChatCompletionResponse, ChatError> {
     let mut last_err = None;
     for attempt in 0..TOOL_PARSE_RETRIES {
@@ -327,8 +334,7 @@ async fn tool_round_completion(
                 tool_choice: Some(ToolChoice::Auto),
                 stream: false,
                 options: LlmRequestOptions {
-                    cache_prompt: true,
-                    id_slot: slot,
+                    session_id: session_id.clone(),
                     max_tokens: Some(max_tokens),
                     parse_tool_calls: true,
                 },
@@ -355,14 +361,46 @@ fn is_tool_parse_error(err: &ChatError) -> bool {
         || lower.contains("syntax error while parsing value")
 }
 
-fn slot_for_session(session_id: Option<&str>, parallel_slots: u32) -> Option<i32> {
-    let id = session_id?;
-    if parallel_slots == 0 {
+const MAX_SESSION_ID_LEN: usize = 256;
+
+fn session_id_for_llm(session_id: Option<&str>) -> Option<String> {
+    let id = session_id?.trim();
+    if id.is_empty() {
         return None;
     }
-    let mut hasher = DefaultHasher::new();
-    id.hash(&mut hasher);
-    Some((hasher.finish() % parallel_slots as u64) as i32)
+    Some(if id.len() <= MAX_SESSION_ID_LEN {
+        id.to_string()
+    } else {
+        id[..MAX_SESSION_ID_LEN].to_string()
+    })
+}
+
+fn log_context_usage(
+    session_id: Option<&str>,
+    context_max: u32,
+    usage: &CompletionUsage,
+) {
+    let prompt = usage.prompt_tokens;
+    let pct = if context_max > 0 {
+        (f64::from(prompt) / f64::from(context_max)) * 100.0
+    } else {
+        0.0
+    };
+    let (cached_tokens, cache_write_tokens) = usage
+        .prompt_tokens_details
+        .map(|d| (d.cached_tokens, d.cache_write_tokens))
+        .unwrap_or((0, 0));
+
+    tracing::info!(
+        session_id,
+        prompt_tokens = prompt,
+        completion_tokens = usage.completion_tokens,
+        context_max,
+        context_used_pct = format!("{pct:.1}%"),
+        cached_tokens,
+        cache_write_tokens,
+        "chat context usage"
+    );
 }
 
 fn check_timeout(started: Instant, timeout: Duration) -> Result<(), ChatError> {
@@ -592,7 +630,6 @@ mod tests {
                 insights: Arc::new(MockInsights),
             },
             "test-model".into(),
-            2,
             Duration::from_secs(60),
             16_384,
         );
@@ -616,5 +653,16 @@ mod tests {
 
         let final_request = llm.stream_requests.lock().unwrap().pop().unwrap();
         assert!(final_request.tools.is_none());
+        assert_eq!(
+            final_request.options.session_id.as_deref(),
+            Some("session-1")
+        );
+    }
+
+    #[test]
+    fn session_id_for_llm_truncates_long_values() {
+        let long = "x".repeat(300);
+        let trimmed = session_id_for_llm(Some(&long)).unwrap();
+        assert_eq!(trimmed.len(), 256);
     }
 }

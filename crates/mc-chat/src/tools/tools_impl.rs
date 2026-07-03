@@ -7,8 +7,8 @@ use crate::llm::types::{ToolDefinition, ToolFunctionSchema};
 use crate::tools::compact::{
     compact_asn_detail, compact_asn_search, compact_asn_timeseries_summary, compact_asns_list,
     compact_compare_servers, compact_search, compact_server_detail,
-    compact_server_timeseries_summary, compact_servers_growth_rank, compact_servers_list,
-    compact_timeseries_summary,
+    compact_server_timeseries_summary, compact_servers_all_time_peak, compact_servers_growth_rank,
+    compact_servers_list, compact_timeseries_summary,
 };
 use crate::traits::{ChatTool, ChatToolDeps};
 
@@ -272,6 +272,35 @@ impl ChatTool for RankServersByGrowthTool {
             .rank_servers_by_growth(from, to, limit, order)
             .await?;
         Ok(compact_servers_growth_rank(response))
+    }
+}
+
+pub struct RankServersByAllTimePeakTool;
+
+#[async_trait]
+impl ChatTool for RankServersByAllTimePeakTool {
+    fn name(&self) -> &'static str {
+        "rank_servers_by_all_time_peak"
+    }
+
+    fn definition(&self) -> serde_json::Value {
+        tool_def(
+            "rank_servers_by_all_time_peak",
+            "Find which tracked server(s) have the highest all-time player peak. Returns every server tied at the top.",
+            json!({
+                "type": "object",
+                "properties": {}
+            }),
+        )
+    }
+
+    async fn execute(
+        &self,
+        deps: &ChatToolDeps,
+        _args: serde_json::Value,
+    ) -> Result<serde_json::Value, ChatError> {
+        let response = deps.tracker.list_servers().await;
+        Ok(compact_servers_all_time_peak(&response.servers))
     }
 }
 

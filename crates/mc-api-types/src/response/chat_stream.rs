@@ -6,6 +6,10 @@ pub struct ChatTokenUsage {
     pub prompt_tokens: u32,
     pub completion_tokens: u32,
     pub context_max: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cached_tokens: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_write_tokens: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize)]

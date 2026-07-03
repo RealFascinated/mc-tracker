@@ -121,6 +121,43 @@ pub fn compact_compare_servers(
     })
 }
 
+pub fn compact_servers_all_time_peak(servers: &[ServerListItemResponse]) -> Value {
+    let mut ranked: Vec<_> = servers
+        .iter()
+        .filter_map(|server| {
+            server
+                .peaks
+                .all_time
+                .as_ref()
+                .map(|peak| (server, peak))
+        })
+        .collect();
+
+    if ranked.is_empty() {
+        return json!({ "peakPlayers": null, "servers": [] });
+    }
+
+    ranked.sort_by(|a, b| b.1.players.cmp(&a.1.players));
+    let peak_players = ranked[0].1.players;
+    let top: Vec<_> = ranked
+        .iter()
+        .filter(|(_, peak)| peak.players == peak_players)
+        .map(|(server, peak)| {
+            json!({
+                "id": server.id,
+                "name": server.name,
+                "peakPlayers": peak.players,
+                "peakAt": peak.timestamp,
+            })
+        })
+        .collect();
+
+    json!({
+        "peakPlayers": peak_players,
+        "servers": top,
+    })
+}
+
 pub fn compact_servers_growth_rank(response: mc_api_types::ServersGrowthRankResponse) -> Value {
     let order = match response.order {
         mc_api_types::GrowthRankOrder::Gainers => "gainers",

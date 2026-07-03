@@ -20,6 +20,8 @@ export type ChatTokenUsage = {
   promptTokens: number;
   completionTokens: number;
   contextMax: number;
+  cachedTokens?: number;
+  cacheWriteTokens?: number;
 };
 
 export type ChatStreamEvent =

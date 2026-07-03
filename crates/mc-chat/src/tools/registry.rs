@@ -5,8 +5,8 @@ use crate::traits::ChatTool;
 
 use super::tools_impl::{
     AsnTimeseriesSummaryTool, CompareServersTool, GetAsnTool, GetServerTool, ListAsnsTool,
-    ListServersTool, RankServersByGrowthTool, SearchServersTool, ServerTimeseriesSummaryTool,
-    TotalTimeseriesSummaryTool,
+    ListServersTool, RankServersByAllTimePeakTool, RankServersByGrowthTool, SearchServersTool,
+    ServerTimeseriesSummaryTool, TotalTimeseriesSummaryTool,
 };
 
 pub struct ToolRegistry {
@@ -22,6 +22,7 @@ impl ToolRegistry {
             Arc::new(GetAsnTool),
             Arc::new(ServerTimeseriesSummaryTool),
             Arc::new(RankServersByGrowthTool),
+            Arc::new(RankServersByAllTimePeakTool),
             Arc::new(TotalTimeseriesSummaryTool),
             Arc::new(ListAsnsTool),
             Arc::new(AsnTimeseriesSummaryTool),
