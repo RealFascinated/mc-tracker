@@ -15,11 +15,11 @@ type MetricChartViewProps = {
   className?: string;
   height?: number;
   hideHeader?: boolean;
+  hideLegend?: boolean;
   showCurrentValues?: boolean;
   flush?: boolean;
   emptyMessage?: string;
   variant?: "card" | "sparkline";
-  xRange?: { min: number; max: number };
   hydrateWhen?: boolean;
 };
 
@@ -29,15 +29,22 @@ function MetricChartView({
   className,
   height,
   hideHeader,
+  hideLegend,
   showCurrentValues,
   flush,
   emptyMessage = "No data yet.",
   variant = "card",
-  xRange,
   hydrateWhen,
 }: MetricChartViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const config = useMemo(() => buildChartConfig(def, data), [def, data]);
+  const queryWindow = useMemo(
+    (): { from: number; to: number } | undefined =>
+      data.from > 0 && data.to > data.from
+        ? { from: data.from, to: data.to }
+        : undefined,
+    [data.from, data.to],
+  );
 
   if (!config) {
     return (
@@ -70,7 +77,7 @@ function MetricChartView({
           negated={built.negated}
           seriesRenders={built.renders}
           seriesFormatters={config.seriesFormatters}
-          xRange={xRange}
+          queryWindow={queryWindow}
           height={height ?? 64}
           showTooltip={false}
           compact
@@ -86,9 +93,11 @@ function MetricChartView({
         config={config}
         height={height}
         hideHeader={hideHeader}
+        hideLegend={hideLegend}
         showCurrentValues={showCurrentValues}
         flush={flush}
         hydrateWhen={hydrateWhen}
+        queryWindow={queryWindow}
       />
     </div>
   );

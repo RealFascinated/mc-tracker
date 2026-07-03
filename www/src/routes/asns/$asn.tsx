@@ -57,9 +57,7 @@ export const Route = createFileRoute("/asns/$asn")({
   head: ({ loaderData }) => ({
     meta: [
       {
-        title: pageTitle(
-          loaderData ? asnDisplayName(loaderData) : "Network",
-        ),
+        title: pageTitle(loaderData ? asnDisplayName(loaderData) : "Network"),
       },
     ],
   }),
@@ -122,62 +120,59 @@ function AsnDetailPage() {
       </SiteHeaderNav>
       <SiteHeaderToolbar>
         <div className="dashboard-header-search-slot">
-          <DashboardSearchInput
-            value={searchInput}
-            onChange={setSearchInput}
-          />
+          <DashboardSearchInput value={searchInput} onChange={setSearchInput} />
         </div>
       </SiteHeaderToolbar>
 
       <main className="dashboard-shell server-detail-page">
-          <Link
-            to="/"
-            search={{ ...timeWindowSearch, view: "asn" }}
-            className="server-detail-back inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" aria-hidden />
-            Back to networks
-          </Link>
+        <Link
+          to="/"
+          search={{ ...timeWindowSearch, view: "asn" }}
+          className="server-detail-back inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden />
+          Back to networks
+        </Link>
 
+        <FadeInAnimation>
+          <DashboardCard className="server-detail-card">
+            <AsnIdentityHeader asn={asnDetail} layout="page" />
+          </DashboardCard>
+        </FadeInAnimation>
+
+        <MetricChartsScope
+          window={timeWindow}
+          onZoomToRange={handleZoomToRange}
+        >
           <FadeInAnimation>
-            <DashboardCard className="server-detail-card">
-              <AsnIdentityHeader asn={asnDetail} layout="page" />
+            <DashboardCard className="hero-chart-panel">
+              <DashboardCardHeader title="Player history" />
+              <AsnPlayersChart
+                asn={asnDetail.asn}
+                asnOrg={asnDetail.asnOrg}
+                window={timeWindow}
+                height={360}
+              />
             </DashboardCard>
           </FadeInAnimation>
 
-          <MetricChartsScope
+          <ServerMetricsGrid
+            servers={filteredServers}
             window={timeWindow}
-            onZoomToRange={handleZoomToRange}
-          >
-            <FadeInAnimation>
-              <DashboardCard className="hero-chart-panel">
-                <DashboardCardHeader title="Player history" />
-                <AsnPlayersChart
-                  asn={asnDetail.asn}
-                  asnOrg={asnDetail.asnOrg}
-                  window={timeWindow}
-                  height={360}
-                />
-              </DashboardCard>
-            </FadeInAnimation>
-
-            <ServerMetricsGrid
-              servers={filteredServers}
-              window={timeWindow}
-              platformFilter={platformFilter}
-              onPlatformFilterChange={setPlatformFilter}
-              trackedServers={asnDetail.summary.trackedServers}
-              section={{
-                title: "Servers on this network",
-                subtitleDefault: `${asnDetail.serverCount} tracked server${asnDetail.serverCount === 1 ? "" : "s"}`,
-                subtitleFiltered: (shown, total) =>
-                  `Showing ${shown} of ${total} servers`,
-                emptyTracked: "No servers are tracked on this network.",
-                emptyFiltered: "No servers match the selected platform.",
-                emptyFilteredHint: "Switch to All, Java, or Bedrock.",
-              }}
-            />
-          </MetricChartsScope>
+            platformFilter={platformFilter}
+            onPlatformFilterChange={setPlatformFilter}
+            trackedServers={asnDetail.summary.trackedServers}
+            section={{
+              title: "Servers on this network",
+              subtitleDefault: `${asnDetail.serverCount} tracked server${asnDetail.serverCount === 1 ? "" : "s"}`,
+              subtitleFiltered: (shown, total) =>
+                `Showing ${shown} of ${total} servers`,
+              emptyTracked: "No servers are tracked on this network.",
+              emptyFiltered: "No servers match the selected platform.",
+              emptyFilteredHint: "Switch to All, Java, or Bedrock.",
+            }}
+          />
+        </MetricChartsScope>
       </main>
     </>
   );

@@ -24,7 +24,7 @@ export type ChartSeriesDefinition = {
   label: string;
   unit: UnitKind;
   axis: string;
-  render?: "line" | "bar";
+  render?: "line" | "bar" | "points";
   valueFormatter?: (value: number) => string;
   color?: ChartSeriesColor;
   fill?: boolean;

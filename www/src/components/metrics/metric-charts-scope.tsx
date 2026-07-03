@@ -27,6 +27,7 @@ export function MetricChartsScope({
 
   return (
     <MetricsChartZoomProvider
+      window={window}
       dataWindow={dataWindow}
       onZoomToRange={onZoomToRange}
       disabled={zoomDisabled}

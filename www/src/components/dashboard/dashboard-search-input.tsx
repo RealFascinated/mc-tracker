@@ -165,7 +165,10 @@ export function DashboardSearchInput({
       {showSuggestions ? (
         <div className="dashboard-search-suggestions">
           {isSearching ? (
-            <div className="dashboard-search-suggestion-status" aria-live="polite">
+            <div
+              className="dashboard-search-suggestion-status"
+              aria-live="polite"
+            >
               <output>Searching…</output>
             </div>
           ) : (

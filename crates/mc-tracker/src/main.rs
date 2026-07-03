@@ -106,9 +106,7 @@ async fn main() -> anyhow::Result<()> {
 
     let push_loop = spawn_push_loop(Arc::clone(&manager));
 
-    let bind_addr: SocketAddr = "0.0.0.0:3000"
-        .parse()
-        .expect("hardcoded API bind address");
+    let bind_addr: SocketAddr = "0.0.0.0:3000".parse().expect("hardcoded API bind address");
     let secure_cookies = config.environment != "development";
     let sessions = Arc::new(SessionManager::new(
         config.session_secret.as_bytes(),

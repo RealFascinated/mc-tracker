@@ -195,13 +195,11 @@ pub async fn update_peak_if_higher(
     let now = Utc::now();
 
     let updated = diesel::update(
-        servers::table
-            .filter(servers::id.eq(id))
-            .filter(
-                servers::peak_players
-                    .is_null()
-                    .or(servers::peak_players.lt(players_i32)),
-            ),
+        servers::table.filter(servers::id.eq(id)).filter(
+            servers::peak_players
+                .is_null()
+                .or(servers::peak_players.lt(players_i32)),
+        ),
     )
     .set((
         servers::peak_players.eq(players_i32),

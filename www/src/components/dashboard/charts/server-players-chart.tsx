@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { PlayersMetricChart } from "@/components/dashboard/charts/players-metric-chart";
 import { serverTimeseriesQueryOptions } from "@/lib/api/servers.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
-import { createPlayersChart } from "@/lib/metrics/charts/players";
+import { createServerPlayersChart } from "@/lib/metrics/charts/players";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 
 type ServerPlayersChartProps = {
@@ -18,7 +18,7 @@ export function ServerPlayersChart({
   height = 360,
 }: ServerPlayersChartProps) {
   const chartDef = useMemo(
-    () => createPlayersChart(`server-players-${serverId}`),
+    () => createServerPlayersChart(`server-players-${serverId}`),
     [serverId],
   );
   const timeseriesOptions = useMemo(

@@ -192,8 +192,12 @@ const DAY_SECONDS = 86_400;
 const MONTH_SECONDS = 86_400 * 28;
 const YEAR_SECONDS = 86_400 * 365;
 
-const chartYearFormatter = new Intl.DateTimeFormat(undefined, { year: "numeric" });
-const chartMonthFormatter = new Intl.DateTimeFormat(undefined, { month: "short" });
+const chartYearFormatter = new Intl.DateTimeFormat(undefined, {
+  year: "numeric",
+});
+const chartMonthFormatter = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+});
 const chartMonthYearFormatter = new Intl.DateTimeFormat(undefined, {
   month: "short",
   year: "numeric",
@@ -287,9 +291,9 @@ export function formatPlayersAxisTick(value: number): string {
     return playersFormatter.format(rounded);
   }
 
-  return (abs >= 100_000 ? playersCompactFormatter0 : playersCompactFormatter1).format(
-    rounded,
-  );
+  return (
+    abs >= 100_000 ? playersCompactFormatter0 : playersCompactFormatter1
+  ).format(rounded);
 }
 
 const peakTimestampFormatter = new Intl.DateTimeFormat(undefined, {

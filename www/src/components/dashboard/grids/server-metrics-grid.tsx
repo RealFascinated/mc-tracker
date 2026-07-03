@@ -2,18 +2,18 @@ import { useMemo } from "react";
 
 import { DashboardRangeToggle } from "@/components/dashboard/dashboard-range-toggle";
 import type { DashboardRangeOption } from "@/components/dashboard/dashboard-range-toggle";
-import {
-  EntityMetricsGrid
-  
-} from "@/components/dashboard/grids/entity-metrics-grid";
-import type {EntityMetricsSectionCopy} from "@/components/dashboard/grids/entity-metrics-grid";
+import { EntityMetricsGrid } from "@/components/dashboard/grids/entity-metrics-grid";
+import type { EntityMetricsSectionCopy } from "@/components/dashboard/grids/entity-metrics-grid";
 import { ServerIdentityHeader } from "@/components/dashboard/server-identity-header";
 import { SERVER_PLATFORM_FILTER_OPTIONS } from "@/lib/api/platform";
 import type { ServerPlatformFilter } from "@/lib/api/platform";
-import type { ServerListItem, ServerTimeseriesResponse } from "@/lib/api/servers";
+import type {
+  ServerListItem,
+  ServerTimeseriesResponse,
+} from "@/lib/api/servers";
 import { serverTimeseriesQueryOptions } from "@/lib/api/servers.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
-import { createPlayersChart } from "@/lib/metrics/charts/players";
+import { createServerPlayersChart } from "@/lib/metrics/charts/players";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 
 const SERVER_PLATFORM_FILTER_TOGGLE_OPTIONS: Array<
@@ -90,7 +90,9 @@ export function ServerMetricsGrid({
       renderHeader={(server) => (
         <ServerIdentityHeader server={server} linkToDetail />
       )}
-      chartDef={(server) => createPlayersChart(`server-players-${server.id}`)}
+      chartDef={(server) =>
+        createServerPlayersChart(`server-players-${server.id}`)
+      }
       timeseriesOptions={(server, timeWindow) =>
         toVisibleTimeseriesOptions(
           serverTimeseriesQueryOptions(server.id, timeWindow),

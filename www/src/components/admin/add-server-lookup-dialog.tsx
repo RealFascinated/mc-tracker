@@ -95,7 +95,9 @@ function ServerLookupDetails({ server }: { server: McutilsServer }) {
           {version ? (
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Version</dt>
-              <dd className="truncate font-medium text-foreground">{version}</dd>
+              <dd className="truncate font-medium text-foreground">
+                {version}
+              </dd>
             </div>
           ) : null}
           {location ? (

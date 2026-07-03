@@ -39,9 +39,7 @@ export function ServerIdentityHeader({
   const asnName = serverAsnName(server);
   const address = formatServerAddress(server);
 
-  const nameContent = (
-    <div className="entity-metrics-name">{server.name}</div>
-  );
+  const nameContent = <div className="entity-metrics-name">{server.name}</div>;
 
   return (
     <div

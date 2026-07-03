@@ -7,10 +7,10 @@ import { useIntersectionVisible } from "@/hooks/use-intersection-visible";
 import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
 import {
   EMPTY_METRIC_TIME_SERIES,
-  playersTimeseriesToMetric,
+  timeseriesToMetric,
 } from "@/lib/api/metric-timeseries";
 import type { VisibleTimeseriesQueryOptions } from "@/lib/api/visible-timeseries-options";
-import type { PlayersTimeseriesPayload } from "@/lib/api/types";
+import type { TimeseriesResponse } from "@/lib/api/types";
 import type { ChartDefinition } from "@/lib/metrics/charts/types";
 import {
   DASHBOARD_CHART_PROPS,
@@ -20,7 +20,7 @@ import {
 
 type PlayersMetricChartProps = {
   def: ChartDefinition;
-  timeseriesOptions: VisibleTimeseriesQueryOptions<PlayersTimeseriesPayload>;
+  timeseriesOptions: VisibleTimeseriesQueryOptions<TimeseriesResponse>;
   enabled?: boolean;
   height?: number;
   loadingMessage?: string;
@@ -41,7 +41,7 @@ export function PlayersMetricChart({
   );
 
   const chartData = useMemo(
-    () => (data ? playersTimeseriesToMetric(data) : null),
+    () => (data ? timeseriesToMetric(data) : null),
     [data],
   );
 

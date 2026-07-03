@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useId, useRef, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 
 import { enqueueChartHydration } from "@/lib/metrics/chart-hydration-queue";
 

@@ -4,30 +4,32 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures::future::join_all;
-use mc_api_types::{
-    AdminServerResponse, AdminServersListResponse, AsnDetailResponse, AsnListItemResponse,
-    AsnsListResponse, AsnsSummaryResponse, AsnTimeseriesResponse, EntityPeakStats,
-    PeakPlayersRecord, PlayersPeakSummary, ServerListItemResponse, ServerSearchItemResponse,
-    ServerTimeseriesResponse, ServersListResponse, ServersSearchResponse, ServersSummaryResponse,
-};
-use mc_db::model::{Platform, Server};
-use mc_db::AppSettings;
-use mc_geo::{AsnLookup, GeoError, GeoService};
-use mc_db::db::repos::servers;
-use mc_db::DbPool;
-use mc_metrics::{
-    align_samples_to_window, labels, peak_players_24h, peak_players_24h_by_asn,
-    peak_players_24h_by_server, peak_players_7d, player_count_series,
-    players_for_asn_series, total_players_series, MetricQueryWindow, MetricsError,
-    PlayerCountEntry, PlayerCountRegistry, VmPushClient, VmQueryBuilder, VmQueryClient,
-};
-use mc_ping::{
-    ping_bedrock, ping_java, resolve_bedrock, resolve_java, with_retry, DnsError, HickoryDnsResolver,
-    Ping, PingError,
-};
 use chrono::Utc;
 use cron::Schedule;
+use futures::future::join_all;
+use mc_api_types::{
+    timeseries_keys, AdminServerResponse, AdminServersListResponse, AsnDetailResponse,
+    AsnListItemResponse, AsnTimeseriesResponse, AsnsListResponse, AsnsSummaryResponse,
+    EntityPeakStats, PeakPlayersRecord, PlayersPeakSummary, ServerListItemResponse,
+    ServerSearchItemResponse, ServerTimeseriesResponse, ServersListResponse, ServersSearchResponse,
+    ServersSummaryResponse, TimeseriesLane, TimeseriesLanes,
+};
+use mc_db::db::repos::servers;
+use mc_db::model::{Platform, Server};
+use mc_db::AppSettings;
+use mc_db::DbPool;
+use mc_geo::{AsnLookup, GeoError, GeoService};
+use mc_metrics::{
+    align_samples_to_window, align_samples_to_window_avg, labels, peak_players_24h,
+    peak_players_24h_by_asn, peak_players_24h_by_server, peak_players_7d,
+    player_count_daily_average_series, player_count_series, players_for_asn_series,
+    total_players_series, MetricQueryWindow, MetricsError, PlayerCountEntry, PlayerCountRegistry,
+    VmPushClient, VmQueryBuilder, VmQueryClient,
+};
+use mc_ping::{
+    ping_bedrock, ping_java, resolve_bedrock, resolve_java, with_retry, DnsError,
+    HickoryDnsResolver, Ping, PingError,
+};
 use tokio::sync::{watch, RwLock};
 use tokio::task::JoinHandle;
 use tracing::{info, warn};
@@ -101,10 +103,7 @@ impl TrackedServer {
     }
 
     fn record_peak_if_higher(&mut self, players: u32, at: i64) -> bool {
-        let is_higher = self
-            .peak_players
-            .map(|peak| players > peak)
-            .unwrap_or(true);
+        let is_higher = self.peak_players.map(|peak| players > peak).unwrap_or(true);
         if is_higher {
             self.peak_players = Some(players);
             self.peak_players_timestamp = Some(at);
@@ -330,10 +329,7 @@ impl ServerManager {
         summary
     }
 
-    pub async fn servers_list_response(
-        &self,
-        search: Option<&str>,
-    ) -> ServersListResponse {
+    pub async fn servers_list_response(&self, search: Option<&str>) -> ServersListResponse {
         let summary = self.summary().await;
         let all_tracked = self.servers.read().await.clone();
         let tracked = all_tracked
@@ -469,16 +465,18 @@ impl ServerManager {
 
         let mut aggregates: BTreeMap<AsnAggregateKey, AsnAggregate> = BTreeMap::new();
         for server in tracked.iter().filter(|server| server.is_tracking()) {
-            let key = asn_key(&server);
+            let key = asn_key(server);
             if !matches_asn_search(&key, search) {
                 continue;
             }
 
-            let entry = aggregates.entry(key.clone()).or_insert_with(|| AsnAggregate {
-                key: key.clone(),
-                players_online: 0,
-                server_count: 0,
-            });
+            let entry = aggregates
+                .entry(key.clone())
+                .or_insert_with(|| AsnAggregate {
+                    key: key.clone(),
+                    players_online: 0,
+                    server_count: 0,
+                });
             entry.server_count += 1;
             if let Some(players) = server.players_online {
                 entry.players_online += players as u64;
@@ -524,11 +522,7 @@ impl ServerManager {
         }
     }
 
-    pub async fn asn_detail_response(
-        &self,
-        asn: &str,
-        asn_org: &str,
-    ) -> Option<AsnDetailResponse> {
+    pub async fn asn_detail_response(&self, asn: &str, asn_org: &str) -> Option<AsnDetailResponse> {
         let all_tracked = self.servers.read().await.clone();
         let tracked: Vec<_> = all_tracked
             .iter()
@@ -565,10 +559,8 @@ impl ServerManager {
             self.peaks_24h_by_asn_key(environment),
         );
         let asn_peak_24h = peaks_24h_by_asn.get(&key).copied();
-        let entity_peaks = entity_peak_stats_with_all_time(
-            asn_peak_24h,
-            asn_peak_all_time(&all_tracked, &key),
-        );
+        let entity_peaks =
+            entity_peak_stats_with_all_time(asn_peak_24h, asn_peak_all_time(&all_tracked, &key));
 
         let mut servers = Vec::with_capacity(tracked.len());
         for server in tracked {
@@ -627,16 +619,20 @@ impl ServerManager {
         let window = MetricQueryWindow::parse(from_epoch, to_epoch)?;
         let promql = players_for_asn_series(self.environment(), asn, asn_org);
         let samples = self.query_player_count_series(&window, &promql).await?;
-        let (timestamps, players_online) = align_samples_to_window(&window, &samples);
+        let lane = timeseries_lane(&window, &samples, false);
+
+        let mut timeseries = TimeseriesLanes::new(window.from_epoch(), window.to_epoch());
+        timeseries.insert_lane(
+            timeseries_keys::PLAYERS_ONLINE,
+            lane.step,
+            lane.timestamps,
+            lane.values,
+        );
 
         Ok(AsnTimeseriesResponse {
             asn: asn.to_string(),
             asn_org: asn_org.to_string(),
-            from: window.from_epoch(),
-            to: window.to_epoch(),
-            step: window.step_seconds(),
-            timestamps,
-            players_online,
+            timeseries,
         })
     }
 
@@ -646,14 +642,46 @@ impl ServerManager {
         from_epoch: i64,
         to_epoch: i64,
     ) -> Result<ServerTimeseriesResponse, MetricsError> {
-        if self.get_tracked(id).await.is_none_or(|server| !server.is_tracking()) {
+        if self
+            .get_tracked(id)
+            .await
+            .is_none_or(|server| !server.is_tracking())
+        {
             return Err(MetricsError::InvalidWindow("server not found".into()));
         }
 
-        self.timeseries_response(&id.to_string(), from_epoch, to_epoch, |environment, _| {
-            player_count_series(environment, &id.to_string())
+        let fine_window = MetricQueryWindow::parse(from_epoch, to_epoch)?;
+        let daily_window = MetricQueryWindow::parse_daily(from_epoch, to_epoch)?;
+        let server_id = id.to_string();
+        let fine_promql = player_count_series(self.environment(), &server_id);
+        let daily_promql = player_count_daily_average_series(self.environment(), &server_id);
+
+        let (fine_samples, daily_samples) = tokio::try_join!(
+            self.query_player_count_series(&fine_window, &fine_promql),
+            self.query_player_count_series(&daily_window, &daily_promql),
+        )?;
+
+        let fine_lane = timeseries_lane(&fine_window, &fine_samples, false);
+        let daily_lane = timeseries_lane(&daily_window, &daily_samples, true);
+
+        let mut timeseries = TimeseriesLanes::new(fine_window.from_epoch(), fine_window.to_epoch());
+        timeseries.insert_lane(
+            timeseries_keys::PLAYERS_ONLINE,
+            fine_lane.step,
+            fine_lane.timestamps,
+            fine_lane.values,
+        );
+        timeseries.insert_lane(
+            timeseries_keys::PLAYERS_DAILY_AVG,
+            daily_lane.step,
+            daily_lane.timestamps,
+            daily_lane.values,
+        );
+
+        Ok(ServerTimeseriesResponse {
+            id: server_id,
+            timeseries,
         })
-        .await
     }
 
     pub async fn total_timeseries(
@@ -661,32 +689,22 @@ impl ServerManager {
         from_epoch: i64,
         to_epoch: i64,
     ) -> Result<ServerTimeseriesResponse, MetricsError> {
-        self.timeseries_response("total", from_epoch, to_epoch, |environment, _| {
-            total_players_series(environment)
-        })
-        .await
-    }
-
-    async fn timeseries_response(
-        &self,
-        id: &str,
-        from_epoch: i64,
-        to_epoch: i64,
-        build_promql: impl FnOnce(&str, &str) -> String,
-    ) -> Result<ServerTimeseriesResponse, MetricsError> {
         let window = MetricQueryWindow::parse(from_epoch, to_epoch)?;
-        let promql = build_promql(self.environment(), id);
-
+        let promql = total_players_series(self.environment());
         let samples = self.query_player_count_series(&window, &promql).await?;
-        let (timestamps, players_online) = align_samples_to_window(&window, &samples);
+        let lane = timeseries_lane(&window, &samples, false);
+
+        let mut timeseries = TimeseriesLanes::new(window.from_epoch(), window.to_epoch());
+        timeseries.insert_lane(
+            timeseries_keys::PLAYERS_ONLINE,
+            lane.step,
+            lane.timestamps,
+            lane.values,
+        );
 
         Ok(ServerTimeseriesResponse {
-            id: id.to_string(),
-            from: window.from_epoch(),
-            to: window.to_epoch(),
-            step: window.step_seconds(),
-            timestamps,
-            players_online,
+            id: "total".to_string(),
+            timeseries,
         })
     }
 
@@ -697,8 +715,8 @@ impl ServerManager {
     ) -> Result<Vec<(i64, Option<f64>)>, MetricsError> {
         let query = VmQueryBuilder::default()
             .query(promql)
-            .from(window.from())
-            .to(window.to())
+            .from(window.vm_query_from())
+            .to(window.vm_query_to())
             .step(window.step())
             .build()?;
 
@@ -750,7 +768,10 @@ impl ServerManager {
         }))
         .await;
         let fetch_elapsed = fetch_started.elapsed();
-        let online = ping_results.iter().filter(|(_, result)| result.is_ok()).count();
+        let online = ping_results
+            .iter()
+            .filter(|(_, result)| result.is_ok())
+            .count();
         let offline = ping_results.len() - online;
         info!(
             total = ping_results.len(),
@@ -804,7 +825,13 @@ impl ServerManager {
 
         let mut metrics = self.metrics.write().await;
         metrics.reset();
-        for server in self.servers.read().await.iter().filter(|server| server.is_tracking()) {
+        for server in self
+            .servers
+            .read()
+            .await
+            .iter()
+            .filter(|server| server.is_tracking())
+        {
             let Some(players_online) = server.players_online else {
                 continue;
             };
@@ -967,10 +994,7 @@ impl ServerManager {
             .any(|server| server.asn.asn == asn && server.asn.asn_org == asn_org)
     }
 
-    async fn query_labeled_instant(
-        &self,
-        promql: String,
-    ) -> Vec<mc_metrics::LabeledInstantValue> {
+    async fn query_labeled_instant(&self, promql: String) -> Vec<mc_metrics::LabeledInstantValue> {
         let query = match VmQueryBuilder::default().query(promql).build() {
             Ok(query) => query,
             Err(err) => {
@@ -1014,11 +1038,11 @@ impl ServerManager {
     }
 }
 
-fn label_value(
-    labels: &serde_json::Map<String, serde_json::Value>,
-    key: &str,
-) -> Option<String> {
-    labels.get(key).and_then(|value| value.as_str()).map(str::to_owned)
+fn label_value(labels: &serde_json::Map<String, serde_json::Value>, key: &str) -> Option<String> {
+    labels
+        .get(key)
+        .and_then(|value| value.as_str())
+        .map(str::to_owned)
 }
 
 fn asn_key_from_labels(
@@ -1030,20 +1054,14 @@ fn asn_key_from_labels(
     })
 }
 
-fn peak_players_record(
-    players: Option<u32>,
-    timestamp: Option<i64>,
-) -> Option<PeakPlayersRecord> {
+fn peak_players_record(players: Option<u32>, timestamp: Option<i64>) -> Option<PeakPlayersRecord> {
     Some(PeakPlayersRecord {
         players: players?,
         timestamp: timestamp?,
     })
 }
 
-fn entity_peak_stats(
-    players_24h: Option<f64>,
-    server: &TrackedServer,
-) -> EntityPeakStats {
+fn entity_peak_stats(players_24h: Option<f64>, server: &TrackedServer) -> EntityPeakStats {
     entity_peak_stats_with_all_time(
         players_24h,
         peak_players_record(server.peak_players, server.peak_players_timestamp),
@@ -1180,6 +1198,24 @@ pub fn spawn_push_loop(manager: Arc<ServerManager>) -> PushLoopHandle {
     PushLoopHandle {
         shutdown: shutdown_tx,
         task,
+    }
+}
+
+fn timeseries_lane(
+    window: &MetricQueryWindow,
+    samples: &[(i64, Option<f64>)],
+    average: bool,
+) -> TimeseriesLane {
+    let (timestamps, values) = if average {
+        align_samples_to_window_avg(window, samples)
+    } else {
+        align_samples_to_window(window, samples)
+    };
+
+    TimeseriesLane {
+        step: window.step_seconds(),
+        timestamps,
+        values,
     }
 }
 
@@ -1471,7 +1507,10 @@ mod tests {
         assert_eq!(response.servers.len(), 2);
         assert_eq!(response.servers[0].id, id_match_a.to_string());
         assert_eq!(response.servers[1].id, id_match_b.to_string());
-        assert!(manager.asn_detail_response("AS99999", "Missing").await.is_none());
+        assert!(manager
+            .asn_detail_response("AS99999", "Missing")
+            .await
+            .is_none());
     }
 
     #[tokio::test]

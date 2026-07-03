@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+use super::timeseries::TimeseriesLanes;
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PeakPlayersRecord {
@@ -77,9 +79,6 @@ pub struct ServerSearchItemResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ServerTimeseriesResponse {
     pub id: String,
-    pub from: i64,
-    pub to: i64,
-    pub step: i64,
-    pub timestamps: Vec<i64>,
-    pub players_online: Vec<Option<f64>>,
+    #[serde(flatten)]
+    pub timeseries: TimeseriesLanes,
 }

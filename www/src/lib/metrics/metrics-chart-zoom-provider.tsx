@@ -1,14 +1,15 @@
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import type { ReactNode } from "react";
 
-import {
-  MetricsChartZoomContext
-  
-  
+import { MetricsChartZoomContext } from "@/lib/metrics/chart-zoom";
+import type {
+  MetricsChartZoomContextValue,
+  MetricsDataWindow,
 } from "@/lib/metrics/chart-zoom";
-import type {MetricsChartZoomContextValue, MetricsDataWindow} from "@/lib/metrics/chart-zoom";
+import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 
 type MetricsChartZoomProviderProps = {
+  window: MetricTimeWindow;
   dataWindow: MetricsDataWindow;
   onZoomToRange: (from: number, to: number) => void;
   disabled?: boolean;
@@ -16,29 +17,28 @@ type MetricsChartZoomProviderProps = {
 };
 
 export function MetricsChartZoomProvider({
+  window,
   dataWindow,
   onZoomToRange,
   disabled = false,
   children,
 }: MetricsChartZoomProviderProps) {
-  const stateRef = useRef({ dataWindow, onZoomToRange, disabled });
-  stateRef.current = { dataWindow, onZoomToRange, disabled };
-
   const value = useMemo<MetricsChartZoomContextValue>(
     () => ({
+      window: disabled ? null : window,
       getZoomContext: () => {
-        const state = stateRef.current;
-        if (state.disabled) {
+        if (disabled) {
           return null;
         }
 
         return {
-          dataWindow: state.dataWindow,
-          onZoomToRange: state.onZoomToRange,
+          window,
+          dataWindow,
+          onZoomToRange,
         };
       },
     }),
-    [],
+    [window, dataWindow, onZoomToRange, disabled],
   );
 
   return (

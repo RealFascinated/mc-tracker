@@ -21,19 +21,16 @@ pub async fn ui_handler(uri: Uri) -> Response {
             .next()
             .is_some_and(|segment| segment.contains('.'));
 
-    match requested_file
-        .map(|file| (file, path))
-        .or_else(|| {
-            (!missing_asset)
-                .then(|| UiAssets::get("_shell.html").map(|file| (file, "_shell.html")))
-                .flatten()
-        }) {
+    match requested_file.map(|file| (file, path)).or_else(|| {
+        (!missing_asset)
+            .then(|| UiAssets::get("_shell.html").map(|file| (file, "_shell.html")))
+            .flatten()
+    }) {
         Some((file, served_path)) => {
             let mime = mime_guess::from_path(served_path).first_or_octet_stream();
             let hash = file.metadata.sha256_hash();
             let etag = hex::encode(&hash[..8]);
-            let is_shell =
-                served_path == "_shell.html" || served_path.ends_with(".html");
+            let is_shell = served_path == "_shell.html" || served_path.ends_with(".html");
             let cache_control = if is_shell {
                 "no-store, must-revalidate"
             } else {

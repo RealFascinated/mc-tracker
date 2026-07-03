@@ -38,14 +38,12 @@ impl HickoryDnsResolver {
 /// Public Minecraft hostnames must not be looked up as e.g. `host.internal`.
 fn build_public_resolver() -> Result<TokioResolver, hickory_resolver::ResolveError> {
     let (system_config, options) = hickory_resolver::system_conf::read_system_conf()?;
-    let config = ResolverConfig::from_parts(
-        None,
-        vec![],
-        system_config.name_servers().to_vec(),
-    );
-    Ok(Resolver::builder_with_config(config, TokioConnectionProvider::default())
-        .with_options(options)
-        .build())
+    let config = ResolverConfig::from_parts(None, vec![], system_config.name_servers().to_vec());
+    Ok(
+        Resolver::builder_with_config(config, TokioConnectionProvider::default())
+            .with_options(options)
+            .build(),
+    )
 }
 
 fn as_fqdn(hostname: &str) -> Cow<'_, str> {

@@ -96,7 +96,8 @@ const METRIC_RANGE_OPTION_DEFS = [
   },
 ] as const;
 
-export type MetricTimeRange = (typeof METRIC_RANGE_OPTION_DEFS)[number]["value"];
+export type MetricTimeRange =
+  (typeof METRIC_RANGE_OPTION_DEFS)[number]["value"];
 
 export type MetricRangeGroupId =
   (typeof METRIC_RANGE_OPTION_DEFS)[number]["group"];
@@ -149,9 +150,9 @@ export const METRIC_RANGE_GROUPS: Array<MetricRangeGroup> =
   METRIC_RANGE_GROUP_ORDER.map((id) => ({
     id,
     label: METRIC_RANGE_GROUP_LABELS[id],
-    options: METRIC_RANGE_OPTION_DEFS.filter((option) => option.group === id).map(
-      ({ value, label, shortLabel }) => ({ value, label, shortLabel }),
-    ),
+    options: METRIC_RANGE_OPTION_DEFS.filter(
+      (option) => option.group === id,
+    ).map(({ value, label, shortLabel }) => ({ value, label, shortLabel })),
   }));
 
 const METRIC_RANGE_BY_VALUE = Object.fromEntries(

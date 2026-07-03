@@ -3,6 +3,7 @@ use serde::Serialize;
 use super::servers::{
     EntityPeakStats, PlayersPeakSummary, ServerListItemResponse, ServersSummaryResponse,
 };
+use super::timeseries::TimeseriesLanes;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -49,9 +50,6 @@ pub struct AsnDetailResponse {
 pub struct AsnTimeseriesResponse {
     pub asn: String,
     pub asn_org: String,
-    pub from: i64,
-    pub to: i64,
-    pub step: i64,
-    pub timestamps: Vec<i64>,
-    pub players_online: Vec<Option<f64>>,
+    #[serde(flatten)]
+    pub timeseries: TimeseriesLanes,
 }

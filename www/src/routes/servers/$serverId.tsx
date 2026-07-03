@@ -90,61 +90,58 @@ function ServerDetailPage() {
       </SiteHeaderNav>
       <SiteHeaderToolbar>
         <div className="dashboard-header-search-slot">
-          <DashboardSearchInput
-            value={searchInput}
-            onChange={setSearchInput}
-          />
+          <DashboardSearchInput value={searchInput} onChange={setSearchInput} />
         </div>
       </SiteHeaderToolbar>
 
       <main className="dashboard-shell server-detail-page">
-          <Link
-            to="/"
-            search={timeWindowSearch}
-            className="server-detail-back inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" aria-hidden />
-            Back to dashboard
-          </Link>
+        <Link
+          to="/"
+          search={timeWindowSearch}
+          className="server-detail-back inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden />
+          Back to dashboard
+        </Link>
 
+        <FadeInAnimation>
+          <DashboardCard className="server-detail-card">
+            <ServerIdentityHeader server={server} layout="page" />
+            <div className="server-detail-body">
+              <ServerDetailMeta server={server} />
+              {server.asn ? (
+                <p className="server-detail-asn-link text-sm text-muted-foreground">
+                  View all servers on this network on the{" "}
+                  <Link
+                    to="/asns/$asn"
+                    params={{ asn: server.asn }}
+                    search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
+                    className="font-medium text-foreground underline-offset-4 hover:underline"
+                  >
+                    network page
+                  </Link>
+                  .
+                </p>
+              ) : null}
+            </div>
+          </DashboardCard>
+        </FadeInAnimation>
+
+        <MetricChartsScope
+          window={timeWindow}
+          onZoomToRange={handleZoomToRange}
+        >
           <FadeInAnimation>
-            <DashboardCard className="server-detail-card">
-              <ServerIdentityHeader server={server} layout="page" />
-              <div className="server-detail-body">
-                <ServerDetailMeta server={server} />
-                {server.asn ? (
-                  <p className="server-detail-asn-link text-sm text-muted-foreground">
-                    View all servers on this network on the{" "}
-                    <Link
-                      to="/asns/$asn"
-                      params={{ asn: server.asn }}
-                      search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
-                      className="font-medium text-foreground underline-offset-4 hover:underline"
-                    >
-                      network page
-                    </Link>
-                    .
-                  </p>
-                ) : null}
-              </div>
+            <DashboardCard className="hero-chart-panel">
+              <DashboardCardHeader title="Player history" />
+              <ServerPlayersChart
+                serverId={server.id}
+                window={timeWindow}
+                height={360}
+              />
             </DashboardCard>
           </FadeInAnimation>
-
-          <MetricChartsScope
-            window={timeWindow}
-            onZoomToRange={handleZoomToRange}
-          >
-            <FadeInAnimation>
-              <DashboardCard className="hero-chart-panel">
-                <DashboardCardHeader title="Player history" />
-                <ServerPlayersChart
-                  serverId={server.id}
-                  window={timeWindow}
-                  height={360}
-                />
-              </DashboardCard>
-            </FadeInAnimation>
-          </MetricChartsScope>
+        </MetricChartsScope>
       </main>
     </>
   );

@@ -7,7 +7,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use mc_api_types::{
-    AsnDetailQuery, AsnsListResponse, AsnTimeseriesQuery, AsnsListQuery, ErrorResponse,
+    AsnDetailQuery, AsnTimeseriesQuery, AsnsListQuery, AsnsListResponse, ErrorResponse,
     HealthResponse, ServersListQuery, ServersListResponse, ServersSearchQuery,
     ServersSearchResponse, TimeseriesQuery,
 };
@@ -96,10 +96,7 @@ pub fn router(
             .route("/ui/{*path}", get(crate::embedded::ui_handler));
     }
 
-    Ok(app
-        .fallback(not_found)
-        .layer(cors)
-        .with_state(state))
+    Ok(app.fallback(not_found).layer(cors).with_state(state))
 }
 
 async fn health(State(state): State<AppState>) -> Json<HealthResponse> {
@@ -120,10 +117,7 @@ async fn list_servers(
     Json(state.manager.servers_list_response(search).await)
 }
 
-async fn get_server(
-    State(state): State<AppState>,
-    Path(id): Path<Uuid>,
-) -> Response {
+async fn get_server(State(state): State<AppState>, Path(id): Path<Uuid>) -> Response {
     match state.manager.server_detail_response(id).await {
         Some(response) => Json(response).into_response(),
         None => (
@@ -202,11 +196,7 @@ async fn total_timeseries(
     State(state): State<AppState>,
     Query(query): Query<TimeseriesQuery>,
 ) -> Response {
-    match state
-        .manager
-        .total_timeseries(query.from, query.to)
-        .await
-    {
+    match state.manager.total_timeseries(query.from, query.to).await {
         Ok(response) => Json(response).into_response(),
         Err(err) => map_metrics_error(err),
     }

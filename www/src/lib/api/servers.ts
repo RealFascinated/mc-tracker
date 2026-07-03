@@ -3,7 +3,7 @@ import type { ServerPlatform } from "@/lib/api/platform";
 import type {
   EntityPeakStats,
   PlayersSummaryBase,
-  PlayersTimeseriesPayload,
+  TimeseriesResponse,
 } from "@/lib/api/types";
 
 export type ServersSummary = PlayersSummaryBase & {
@@ -28,7 +28,7 @@ export type ServersListResponse = {
   servers: ServerListItem[];
 };
 
-export type ServerTimeseriesResponse = PlayersTimeseriesPayload & {
+export type ServerTimeseriesResponse = TimeseriesResponse & {
   id: string;
 };
 

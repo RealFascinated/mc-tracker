@@ -1,10 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import uPlot from "uplot";
-import type {
-  Dispatch,
-  RefObject,
-  SetStateAction,
-} from "react";
+import type { Dispatch, RefObject, SetStateAction } from "react";
 
 import type { ResolvedTheme } from "@/lib/theme/theme-context";
 import type {
@@ -12,24 +8,24 @@ import type {
   TooltipSortEntry,
 } from "@/lib/metrics/charts/types";
 import type { ChartSeriesRender } from "@/lib/metrics/series";
-import type { ChartXRange } from "@/lib/metrics/uplot-theme";
+import type { MetricsDataWindow } from "@/lib/metrics/chart-zoom";
+import {
+  applyChartXWindow,
+  createChartZoomSelectHook,
+} from "@/lib/metrics/chart-zoom";
 import {
   bindChartInteractionDismiss,
   createChartTooltipElement,
   createCursorTooltipHandler,
   destroyChartTooltipElement,
 } from "@/lib/metrics/chart-tooltip";
-import {
-  getChartColors,
-} from "@/lib/metrics/chart-colors";
+import { getChartColors } from "@/lib/metrics/chart-colors";
 import { useMetricsChartSyncKey } from "@/hooks/use-metrics-chart-sync-key";
 import {
-  createChartZoomSyncHook,
   registerMetricsChartSync,
   unregisterMetricsChartSync,
 } from "@/lib/metrics/chart-sync";
 import { useMetricsChartZoom } from "@/hooks/use-metrics-chart-zoom";
-import { bindChartZoomNavigate } from "@/lib/metrics/chart-zoom";
 import {
   buildUPlotOptions,
   chartLayoutForWidth,
@@ -39,15 +35,14 @@ import {
 type UseMetricChartInstanceParams = {
   containerRef: RefObject<HTMLDivElement | null>;
   chartRef: RefObject<uPlot | null>;
-  seriesFormattersRef: RefObject<
-    Array<(value: number) => string> | undefined
-  >;
+  seriesFormattersRef: RefObject<Array<(value: number) => string> | undefined>;
   dataRef: RefObject<uPlot.AlignedData>;
   hiddenSeriesRef: RefObject<ReadonlySet<number> | undefined>;
   sourceIndicesRef: RefObject<Array<number> | undefined>;
   layoutDensityRef: RefObject<"normal" | "compact">;
-  applySeriesVisibility: (chart: uPlot) => void;
-  syncUnitInsets: (chart: uPlot) => void;
+  applySeriesVisibilityRef: RefObject<(chart: uPlot) => void>;
+  syncUnitInsetsRef: RefObject<(chart: uPlot) => void>;
+  getXWindowRef: RefObject<() => MetricsDataWindow | undefined>;
   resolvedTheme: ResolvedTheme;
   labels: Array<string>;
   labelsKey: string;
@@ -60,13 +55,10 @@ type UseMetricChartInstanceParams = {
   seriesRenders: Array<ChartSeriesRender>;
   seriesRendersKey: string;
   seriesColors: Array<string> | undefined;
-  seriesColorsKey: string;
   seriesFills: Array<boolean | undefined> | undefined;
   seriesFillsKey: string;
-  seriesFormatters: Array<(value: number) => string> | undefined;
   height: number;
   sizeRef: RefObject<HTMLElement | null> | undefined;
-  xRange: ChartXRange | undefined;
   stacked: boolean;
   preparedDataRef: RefObject<uPlot.AlignedData>;
   preparedBandsRef: RefObject<Array<uPlot.Band> | undefined>;
@@ -79,8 +71,7 @@ type UseMetricChartInstanceParams = {
   showTooltip: boolean;
   tooltipColumnSize: number | undefined;
   tooltipSort:
-    | ((a: TooltipSortEntry, b: TooltipSortEntry) => number)
-    | undefined;
+    ((a: TooltipSortEntry, b: TooltipSortEntry) => number) | undefined;
   setLayoutDensity: Dispatch<SetStateAction<"normal" | "compact">>;
 };
 
@@ -92,8 +83,9 @@ function useMetricChartInstance({
   hiddenSeriesRef,
   sourceIndicesRef,
   layoutDensityRef,
-  applySeriesVisibility,
-  syncUnitInsets,
+  applySeriesVisibilityRef,
+  syncUnitInsetsRef,
+  getXWindowRef,
   resolvedTheme,
   labels,
   labelsKey,
@@ -106,13 +98,10 @@ function useMetricChartInstance({
   seriesRenders,
   seriesRendersKey,
   seriesColors,
-  seriesColorsKey,
   seriesFills,
   seriesFillsKey,
-  seriesFormatters,
   height,
   sizeRef,
-  xRange,
   stacked,
   preparedDataRef,
   preparedBandsRef,
@@ -130,7 +119,11 @@ function useMetricChartInstance({
   const chartZoom = useMetricsChartZoom();
   const syncKey = useMetricsChartSyncKey() ?? undefined;
   const chartZoomRef = useRef(chartZoom);
+  const themeRef = useRef(resolvedTheme);
+  const seriesColorsRef = useRef(seriesColors);
   chartZoomRef.current = chartZoom;
+  themeRef.current = resolvedTheme;
+  seriesColorsRef.current = seriesColors;
 
   useLayoutEffect(() => {
     const container = containerRef.current;
@@ -139,7 +132,6 @@ function useMetricChartInstance({
     let chart: uPlot | null = null;
     let resizeObserver: ResizeObserver | null = null;
     let unbindInteractionDismiss: (() => void) | null = null;
-    let unbindZoomNavigate: (() => void) | null = null;
     let tooltip: HTMLDivElement | null = null;
     const xDrag = Boolean(chartZoomRef.current) && !compact;
 
@@ -165,13 +157,17 @@ function useMetricChartInstance({
     const mountData = preparedDataRef.current;
     const mountBands = preparedBandsRef.current;
 
+    const mountXWindow = getXWindowRef.current();
+
     const options = buildUPlotOptions({
       labels,
       height: initialHeight,
       chartAxes,
       seriesAxisIds,
-      seriesFormatters,
-      xRange,
+      seriesFormatters: seriesFormattersRef.current,
+      xRange: mountXWindow
+        ? { min: mountXWindow.from, max: mountXWindow.to }
+        : undefined,
       seriesRenders,
       stacked,
       bands: mountBands,
@@ -182,12 +178,12 @@ function useMetricChartInstance({
       xTime,
       reserveUnitLabels,
       layout,
-      seriesColors,
+      seriesColors: seriesColorsRef.current,
       seriesFills,
       xDrag,
     });
 
-    const colors = seriesColors ?? getChartColors();
+    const colors = seriesColorsRef.current ?? getChartColors();
     const formatSeriesValue = (value: number, seriesIndex: number) => {
       const sourceIndex =
         sourceIndicesRef.current?.[seriesIndex] ?? seriesIndex;
@@ -198,8 +194,9 @@ function useMetricChartInstance({
     };
 
     const hooks: uPlot.Hooks.Arrays = {};
-    if (syncKey) {
-      hooks.setScale = [createChartZoomSyncHook(syncKey)];
+    const zoom = chartZoomRef.current;
+    if (xDrag && zoom) {
+      hooks.setSelect = [createChartZoomSelectHook(zoom.getZoomContext)];
     }
     if (showTooltip && tooltip) {
       hooks.setCursor = [
@@ -209,7 +206,7 @@ function useMetricChartInstance({
           colors,
           getData: () => dataRef.current,
           formatValue: formatSeriesValue,
-          theme: resolvedTheme,
+          getTheme: () => themeRef.current,
           stacked,
           tooltipColumnSize,
           tooltipSort,
@@ -218,6 +215,7 @@ function useMetricChartInstance({
               sourceIndicesRef.current?.[seriesIndex] ?? seriesIndex;
             return hiddenSeriesRef.current?.has(sourceIndex) ?? false;
           },
+          seriesRenders,
         }),
       ];
     }
@@ -237,8 +235,12 @@ function useMetricChartInstance({
     if (syncKey) {
       registerMetricsChartSync(syncKey, chart);
     }
-    applySeriesVisibility(chart);
-    syncUnitInsets(chart);
+    applySeriesVisibilityRef.current(chart);
+    syncUnitInsetsRef.current(chart);
+
+    if (mountXWindow) {
+      applyChartXWindow(chart, mountXWindow);
+    }
 
     let lastWidth = 0;
     let lastHeight = 0;
@@ -256,7 +258,7 @@ function useMetricChartInstance({
           lastHeight = chartHeight;
           chart.setSize({ width, height: chartHeight });
         }
-        syncUnitInsets(chart);
+        syncUnitInsetsRef.current(chart);
       }
     });
     const sizeElement = getSizeElement();
@@ -267,16 +269,12 @@ function useMetricChartInstance({
         ? bindChartInteractionDismiss(chart, tooltip)
         : null;
 
-    const zoom = chartZoomRef.current;
-    if (zoom) {
-      unbindZoomNavigate = bindChartZoomNavigate(chart, zoom.getZoomContext);
-    }
-
     return () => {
       unbindInteractionDismiss?.();
-      unbindZoomNavigate?.();
       resizeObserver.disconnect();
-      if (tooltip) destroyChartTooltipElement(tooltip);
+      if (tooltip) {
+        destroyChartTooltipElement(tooltip);
+      }
       if (syncKey) {
         unregisterMetricsChartSync(syncKey, chart);
       }
@@ -284,36 +282,28 @@ function useMetricChartInstance({
       chartRef.current = null;
     };
   }, [
-    applySeriesVisibility,
+    applySeriesVisibilityRef,
     bidirectional,
     bandsKey,
-    chartAxes,
     chartAxesKey,
     chartRef,
     compact,
     containerRef,
     dataRef,
+    getXWindowRef,
     height,
     hiddenSeriesRef,
     hideYAxis,
-    labels,
     labelsKey,
     layoutDensityRef,
-    negated,
     negatedKey,
     preparedBandsRef,
     preparedDataRef,
     reserveUnitLabels,
     resolvedTheme,
-    seriesAxisIds,
     seriesAxisIdsKey,
-    seriesColors,
-    seriesColorsKey,
-    seriesFills,
     seriesFillsKey,
-    seriesFormatters,
     seriesFormattersRef,
-    seriesRenders,
     seriesRendersKey,
     setLayoutDensity,
     showTooltip,
@@ -321,10 +311,9 @@ function useMetricChartInstance({
     sourceIndicesRef,
     stacked,
     syncKey,
-    syncUnitInsets,
+    syncUnitInsetsRef,
     tooltipColumnSize,
     tooltipSort,
-    xRange,
     xTime,
   ]);
 }

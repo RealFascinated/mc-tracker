@@ -20,10 +20,19 @@ export type PlayersSummaryBase = {
   peaks: PlayersPeakSummary;
 };
 
-export type PlayersTimeseriesPayload = {
-  from: number;
-  to: number;
+export type TimeseriesLane = {
   step: number;
   timestamps: number[];
-  playersOnline: Array<number | null>;
+  values: Array<number | null>;
 };
+
+export type TimeseriesResponse = {
+  from: number;
+  to: number;
+  series: Record<string, TimeseriesLane>;
+};
+
+export const TIMESERIES_SERIES_KEYS = {
+  playersOnline: "playersOnline",
+  playersDailyAvg: "playersDailyAvg",
+} as const;

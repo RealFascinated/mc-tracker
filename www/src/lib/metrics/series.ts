@@ -1,11 +1,11 @@
-import type uPlot from "uplot";
+import uPlot from "uplot";
 
 import type { ChartSeriesColor } from "@/lib/metrics/charts/types";
 
 export type MetricValues = Array<number | null> | null;
 export type ChartAxis = string;
 
-export type ChartSeriesRender = "line" | "bar";
+export type ChartSeriesRender = "line" | "bar" | "points";
 
 export type ChartSeries = {
   label: string;
@@ -21,7 +21,9 @@ export function chartYMax(...series: Array<MetricValues>): number {
   const samples = collectPositiveSamples(...series);
   if (samples.length === 0) return 1;
   const peak = Math.max(...samples);
-  return Math.max(peak * 1.1, 1);
+  const padded = Math.max(peak * 1.1, 1);
+  const [, niceMax] = uPlot.rangeNum(0, padded, 0, true);
+  return niceMax ?? padded;
 }
 
 function collectPositiveSamples(...series: Array<MetricValues>): Array<number> {

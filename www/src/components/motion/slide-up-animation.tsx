@@ -21,9 +21,7 @@ export function SlideUpAnimation({
   const { ref, hasBeenVisible } = useIntersectionVisible();
 
   const style: CSSProperties | undefined =
-    hasBeenVisible && delay > 0
-      ? { animationDelay: `${delay}ms` }
-      : undefined;
+    hasBeenVisible && delay > 0 ? { animationDelay: `${delay}ms` } : undefined;
 
   return (
     <Component

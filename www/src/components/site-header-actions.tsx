@@ -1,12 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  ChevronDown,
-  LogIn,
-  LogOut,
-  Shield,
-  User,
-} from "lucide-react";
+import { ChevronDown, LogIn, LogOut, Shield, User } from "lucide-react";
 import { useState } from "react";
 
 import { ThemeSwitcher } from "@/components/theme-switcher";

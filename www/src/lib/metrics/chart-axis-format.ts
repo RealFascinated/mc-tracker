@@ -52,9 +52,9 @@ const axisTickDecimalFormatters = new Map<number, Intl.NumberFormat>([
 function formatAxisTickNumber(value: number, fractionDigits = 0): string {
   const abs = Math.abs(value);
   if (abs >= 10_000) {
-    return (abs >= 100_000 ? axisTickCompactFormatter0 : axisTickCompactFormatter1).format(
-      value,
-    );
+    return (
+      abs >= 100_000 ? axisTickCompactFormatter0 : axisTickCompactFormatter1
+    ).format(value);
   }
   if (fractionDigits === 0) {
     return axisTickIntegerFormatter.format(value);

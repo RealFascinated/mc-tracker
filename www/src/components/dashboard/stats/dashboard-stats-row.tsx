@@ -4,7 +4,7 @@ import { SlideUpAnimation } from "@/components/motion/slide-up-animation";
 import type { PlayersSummaryBase } from "@/lib/api/types";
 
 type DashboardStatsRowProps = {
-  summary: PlayersSummaryBase;
+  summary: PlayersSummaryBase & { trackedServers: number };
 };
 
 export function DashboardStatsRow({ summary }: DashboardStatsRowProps) {
@@ -18,6 +18,7 @@ export function DashboardStatsRow({ summary }: DashboardStatsRowProps) {
     { label: "Peak 7d", value: summary.peaks.players7d },
     { label: "Java", value: summary.playersPc },
     { label: "Bedrock", value: summary.playersPe },
+    { label: "Tracked servers", value: summary.trackedServers },
   ];
 
   return (

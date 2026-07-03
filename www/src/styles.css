@@ -529,7 +529,7 @@
   }
 
   .dashboard-shell {
-    @apply mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:px-5 sm:py-5;
+    @apply mx-auto flex w-full flex-col gap-3 px-4 py-4 sm:px-5 sm:py-5;
   }
 
   .app-shell {
@@ -973,7 +973,7 @@
 
   @media (min-width: 64rem) {
     .dashboard-stats-row {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
     }
   }
 
@@ -1112,25 +1112,18 @@
   }
 
   .entity-metrics-grid-container {
-    container-type: inline-size;
     width: 100%;
   }
 
   .entity-metrics-grid {
     display: grid;
     gap: 0.75rem;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
     overflow-anchor: none;
   }
 
   .entity-metrics-grid > * {
     min-width: 0;
-  }
-
-  @container (min-width: 40rem) {
-    .entity-metrics-grid {
-      grid-template-columns: repeat(2, minmax(0, calc((100% - 0.75rem) / 2)));
-    }
   }
 
   .entity-metrics-card {

@@ -81,10 +81,7 @@ impl GeoService {
         };
 
         let lookup = database.lookup(ip)?;
-        if lookup.is_empty()
-            && ip.parse::<IpAddr>()
-                .is_ok_and(|addr| !is_non_public(addr))
-        {
+        if lookup.is_empty() && ip.parse::<IpAddr>().is_ok_and(|addr| !is_non_public(addr)) {
             warn!(ip, "asn lookup returned empty for public ip");
         }
         self.cache.insert(ip, lookup.clone());

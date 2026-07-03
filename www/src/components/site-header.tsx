@@ -21,7 +21,8 @@ function SiteHeader({ className }: SiteHeaderProps) {
     >
       <div
         className={cn(
-          "site-header-inner mx-auto max-w-7xl px-3 sm:px-5",
+          "site-header-inner mx-auto px-3 sm:px-5",
+          toolbar ? null : "max-w-7xl",
           toolbar
             ? "site-header-inner--with-toolbar"
             : nav

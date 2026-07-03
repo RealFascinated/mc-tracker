@@ -2,14 +2,11 @@ import { apiFetch } from "@/lib/api/client";
 import type {
   EntityPeakStats,
   PlayersSummaryBase,
-  PlayersTimeseriesPayload,
+  TimeseriesResponse,
 } from "@/lib/api/types";
 import type { ServerListItem } from "@/lib/api/servers";
-import {
-  metricTimeWindowSearchParams
-  
-} from "@/lib/metrics/time-window";
-import type {MetricTimeWindowSearch} from "@/lib/metrics/time-window";
+import { metricTimeWindowSearchParams } from "@/lib/metrics/time-window";
+import type { MetricTimeWindowSearch } from "@/lib/metrics/time-window";
 
 export type AsnsSummary = PlayersSummaryBase & {
   trackedAsns: number;
@@ -39,7 +36,7 @@ export type AsnDetailResponse = {
   servers: ServerListItem[];
 };
 
-export type AsnTimeseriesResponse = PlayersTimeseriesPayload & {
+export type AsnTimeseriesResponse = TimeseriesResponse & {
   asn: string;
   asnOrg: string;
 };
@@ -68,7 +65,9 @@ export function parseAsnOrgSearchParam(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-export function asnDisplayName(asn: Pick<AsnListItem, "asn" | "asnOrg">): string {
+export function asnDisplayName(
+  asn: Pick<AsnListItem, "asn" | "asnOrg">,
+): string {
   if (asn.asnOrg) {
     return asn.asnOrg;
   }
@@ -88,7 +87,9 @@ export function getAsn(asn: string, asnOrg = "") {
     params.set("asnOrg", asnOrg);
   }
   const query = params.toString();
-  const path = query ? `/asns/${encodeURIComponent(asn)}?${query}` : `/asns/${encodeURIComponent(asn)}`;
+  const path = query
+    ? `/asns/${encodeURIComponent(asn)}?${query}`
+    : `/asns/${encodeURIComponent(asn)}`;
   return apiFetch<AsnDetailResponse>(path, { credentials: "omit" });
 }
 

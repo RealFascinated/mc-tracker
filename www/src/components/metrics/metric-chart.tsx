@@ -8,12 +8,19 @@ import type {
   TooltipSortEntry,
 } from "@/lib/metrics/charts/types";
 import type { ChartSeriesRender } from "@/lib/metrics/series";
-import type { ChartXRange } from "@/lib/metrics/uplot-theme";
 import { stackAlignedData } from "@/lib/metrics/series";
 import {
   chartLayoutForDensity,
+  applyChartAxisScales,
   readAxisUnitInsets,
 } from "@/lib/metrics/uplot-theme";
+import type { MetricsDataWindow } from "@/lib/metrics/chart-zoom";
+import {
+  applyChartXWindow,
+  resolveChartXWindow,
+} from "@/lib/metrics/chart-zoom";
+import { metricTimeWindowQueryKey } from "@/lib/metrics/time-window";
+import { useMetricsChartZoom } from "@/hooks/use-metrics-chart-zoom";
 import { cn } from "cnfast";
 import { useTheme } from "@/hooks/use-theme";
 import { useMetricChartInstance } from "@/hooks/use-metric-chart-instance";
@@ -33,7 +40,8 @@ type MetricChartProps = {
   seriesFormatters?: Array<(value: number) => string>;
   height?: number;
   sizeRef?: RefObject<HTMLElement | null>;
-  xRange?: ChartXRange;
+  /** API query bounds; chart x-axis uses the URL time window instead. */
+  queryWindow?: MetricsDataWindow;
   mode?: MetricChartMode;
   tooltipColumnSize?: number;
   tooltipSort?: (a: TooltipSortEntry, b: TooltipSortEntry) => number;
@@ -60,7 +68,7 @@ function MetricChart({
   seriesFormatters,
   height = 260,
   sizeRef,
-  xRange,
+  queryWindow: _queryWindow,
   mode = "line",
   tooltipColumnSize,
   tooltipSort,
@@ -79,30 +87,64 @@ function MetricChart({
   const dataRef = useRef(data);
   const hiddenSeriesRef = useRef(hiddenSeries);
   const sourceIndicesRef = useRef(sourceIndices);
+  const chartZoom = useMetricsChartZoom();
   const { resolvedTheme } = useTheme();
+  const applySeriesVisibilityRef = useRef<(chart: uPlot) => void>(() => {});
+  const syncUnitInsetsRef = useRef<(chart: uPlot) => void>(() => {});
+  const getXWindowRef = useRef<() => MetricsDataWindow | undefined>(
+    () => undefined,
+  );
   const [unitInsets, setUnitInsets] = useState({ left: 10, right: 14 });
   const [layoutDensity, setLayoutDensity] = useState<"normal" | "compact">(
     "normal",
   );
   const layoutDensityRef = useRef(layoutDensity);
+  const yMaxFloorRef = useRef(new Map<string, number>());
   const activeLayout = chartLayoutForDensity(layoutDensity);
   const labelsKey = labels.join("\0");
   const negatedKey = negated.map(String).join("\0");
   const seriesAxisIdsKey = seriesAxisIds.join("\0");
   const seriesRendersKey = seriesRenders.join("\0");
-  const seriesColorsKey = seriesColors?.join("\0") ?? "";
   const seriesFillsKey =
     seriesFills?.map((fill) => String(fill)).join("\0") ?? "";
   const chartAxesKey = chartAxes
-    .map((axis) => `${axis.id}:${axis.visible}:${axis.yRange.max}:${axis.side}`)
+    .map(
+      (axis) =>
+        `${axis.id}:${axis.visible}:${axis.side}:${axis.yRange.min ?? ""}:${axis.yRange.autoMin ?? false}`,
+    )
     .join("|");
+  const displayAxes = useMemo(
+    () =>
+      chartAxes.map((axis) => {
+        if (axis.yRange.max == null) return axis;
+        const computed = axis.yRange.max;
+        const prev = yMaxFloorRef.current.get(axis.id) ?? 0;
+        const max =
+          computed < prev * 0.85 ? computed : Math.max(prev, computed);
+        yMaxFloorRef.current.set(axis.id, max);
+        if (max === axis.yRange.max) return axis;
+        return { ...axis, yRange: { ...axis.yRange, max } };
+      }),
+    [chartAxes],
+  );
   const stacked = mode === "stack";
   const bidirectional = negated.some(Boolean);
   const reserveUnitLabels = !compact && chartAxes.some((axis) => axis.visible);
 
+  const timeWindow = chartZoom?.window ?? null;
+  const timeWindowKey = timeWindow
+    ? JSON.stringify(metricTimeWindowQueryKey(timeWindow))
+    : null;
+  const xWindow = useMemo(() => {
+    if (!timeWindow) {
+      return undefined;
+    }
+    return resolveChartXWindow(timeWindow);
+  }, [timeWindow, timeWindowKey]);
+
   const unitLabels = useMemo(() => {
     const axisLabels: Array<{ id: string; side: string; label: string }> = [];
-    for (const axis of chartAxes) {
+    for (const axis of displayAxes) {
       if (!axis.visible) {
         continue;
       }
@@ -112,7 +154,7 @@ function MetricChart({
       }
     }
     return axisLabels;
-  }, [chartAxes]);
+  }, [displayAxes]);
 
   const prepared = useMemo(() => {
     if (!stacked) return { data, bands: undefined };
@@ -146,15 +188,19 @@ function MetricChart({
 
   const syncUnitInsets = useCallback(
     (chart: uPlot) => {
-      const next = readAxisUnitInsets(chart, chartAxes);
+      const next = readAxisUnitInsets(chart, displayAxes);
       setUnitInsets((current) =>
         current.left === next.left && current.right === next.right
           ? current
           : next,
       );
     },
-    [chartAxes],
+    [displayAxes],
   );
+
+  applySeriesVisibilityRef.current = applySeriesVisibility;
+  syncUnitInsetsRef.current = syncUnitInsets;
+  getXWindowRef.current = () => xWindow;
 
   useMetricChartInstance({
     containerRef,
@@ -164,12 +210,13 @@ function MetricChart({
     hiddenSeriesRef,
     sourceIndicesRef,
     layoutDensityRef,
-    applySeriesVisibility,
-    syncUnitInsets,
+    applySeriesVisibilityRef,
+    syncUnitInsetsRef,
+    getXWindowRef,
     resolvedTheme,
     labels,
     labelsKey,
-    chartAxes,
+    chartAxes: displayAxes,
     chartAxesKey,
     seriesAxisIds,
     seriesAxisIdsKey,
@@ -178,13 +225,10 @@ function MetricChart({
     seriesRenders,
     seriesRendersKey,
     seriesColors,
-    seriesColorsKey,
     seriesFills,
     seriesFillsKey,
-    seriesFormatters,
     height,
     sizeRef,
-    xRange,
     stacked,
     preparedDataRef,
     preparedBandsRef,
@@ -204,11 +248,19 @@ function MetricChart({
     const chart = chartRef.current;
     if (!chart) return;
     chart.setData(prepared.data);
-    if (xRange) {
-      chart.setScale("x", { min: xRange.min, max: xRange.max });
+    applyChartAxisScales(chart, displayAxes, bidirectional);
+    if (xWindow) {
+      applyChartXWindow(chart, xWindow);
     }
     syncUnitInsets(chart);
-  }, [chartAxes, prepared.data, syncUnitInsets, xRange]);
+  }, [
+    bidirectional,
+    displayAxes,
+    prepared.data,
+    resolvedTheme,
+    syncUnitInsets,
+    xWindow,
+  ]);
 
   useLayoutEffect(() => {
     const chart = chartRef.current;

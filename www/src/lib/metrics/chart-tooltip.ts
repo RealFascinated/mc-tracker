@@ -2,6 +2,7 @@ import type uPlot from "uplot";
 
 import type { ResolvedTheme } from "@/lib/theme/theme-context";
 import type { TooltipSortEntry } from "@/lib/metrics/charts/types";
+import type { ChartSeriesRender } from "@/lib/metrics/series";
 import { formatPercentValue, formatTooltipTimestamp } from "@/lib/formatter";
 
 const TOOLTIP_PADDING = 8;
@@ -11,6 +12,7 @@ const TOOLTIP_MAX_WIDTH = 320;
 const TOOLTIP_COLUMN_WIDTH = 132;
 const MOBILE_BREAKPOINT = 768;
 const HIDDEN_CURSOR_POS = -10;
+const POINTS_SERIES_TOOLTIP_SNAP_PX = 22;
 
 function getViewportBounds() {
   const visualViewport = window.visualViewport;
@@ -230,17 +232,50 @@ function getUsedTotalFooter(
   return `${formatValue(used.value, usedIndex)} of ${formatValue(total.value, totalIndex)} (${formatPercentValue(percent)})`;
 }
 
+function resolveTooltipSeriesValue(
+  u: uPlot,
+  values: Array<number | null>,
+  timestamps: Array<number>,
+  idx: number,
+  render: ChartSeriesRender | undefined,
+): number | null {
+  if (render !== "points") {
+    return values[idx] ?? null;
+  }
+
+  const cursorX = u.cursor.left;
+  if (cursorX == null) return null;
+
+  let bestValue: number | null = null;
+  let bestDistance = POINTS_SERIES_TOOLTIP_SNAP_PX + 1;
+
+  for (let i = 0; i < values.length; i++) {
+    const candidate = values[i];
+    if (candidate == null) continue;
+    const pointX = u.valToPos(timestamps[i], "x");
+    const distance = Math.abs(cursorX - pointX);
+    if (distance > POINTS_SERIES_TOOLTIP_SNAP_PX || distance >= bestDistance) {
+      continue;
+    }
+    bestDistance = distance;
+    bestValue = candidate;
+  }
+
+  return bestValue;
+}
+
 type CreateCursorTooltipHandlerParams = {
   tooltip: HTMLDivElement;
   labels: Array<string>;
   colors: Array<string>;
   getData: () => uPlot.AlignedData;
   formatValue: (value: number, seriesIndex: number) => string;
-  theme: ResolvedTheme;
+  getTheme: () => ResolvedTheme;
   stacked?: boolean;
   tooltipColumnSize?: number;
   tooltipSort?: (a: TooltipSortEntry, b: TooltipSortEntry) => number;
   isSeriesHidden?: (seriesIndex: number) => boolean;
+  seriesRenders?: Array<ChartSeriesRender>;
 };
 
 export function createCursorTooltipHandler({
@@ -249,26 +284,18 @@ export function createCursorTooltipHandler({
   colors,
   getData,
   formatValue,
-  theme,
+  getTheme,
   stacked = false,
   tooltipColumnSize,
   tooltipSort,
   isSeriesHidden,
+  seriesRenders,
 }: CreateCursorTooltipHandlerParams) {
-  const isDark = theme === "dark";
   const useColumnLayout =
     tooltipColumnSize != null && labels.length > tooltipColumnSize;
-  tooltip.className = [
-    "pointer-events-none fixed z-50 rounded-snug border px-2.5 py-2 text-xs shadow-md",
-    useColumnLayout ? "" : "max-w-xs",
-    isDark
-      ? "border-border bg-popover text-popover-foreground"
-      : "border-border bg-card text-foreground",
-  ]
-    .filter(Boolean)
-    .join(" ");
 
   return (u: uPlot) => {
+    applyChartTooltipTheme(tooltip, getTheme(), useColumnLayout);
     const { idx, left } = u.cursor;
     if (idx == null || left == null) {
       tooltip.style.display = "none";
@@ -286,7 +313,13 @@ export function createCursorTooltipHandler({
     const entries: Array<TooltipEntry> = [];
     for (let si = 0; si < labels.length; si++) {
       if (isSeriesHidden?.(si)) continue;
-      const value = (data[si + 1] as Array<number | null>)[idx];
+      const value = resolveTooltipSeriesValue(
+        u,
+        data[si + 1] as Array<number | null>,
+        timestamps,
+        idx,
+        seriesRenders?.[si],
+      );
       if (value == null) continue;
       entries.push({
         value,
@@ -369,17 +402,28 @@ export function createCursorTooltipHandler({
   };
 }
 
+export function applyChartTooltipTheme(
+  tooltip: HTMLDivElement,
+  theme: ResolvedTheme,
+  useColumnLayout = false,
+): void {
+  const isDark = theme === "dark";
+  tooltip.className = [
+    "pointer-events-none fixed z-50 rounded-snug border px-2.5 py-2 text-xs shadow-md",
+    useColumnLayout ? "" : "max-w-xs",
+    isDark
+      ? "border-border bg-popover text-popover-foreground"
+      : "border-border bg-card text-foreground",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export function createChartTooltipElement(
   theme: ResolvedTheme,
 ): HTMLDivElement {
   const tooltip = document.createElement("div");
-  const isDark = theme === "dark";
-  tooltip.className = [
-    "pointer-events-none fixed z-50 max-w-xs rounded-snug border px-2.5 py-2 text-xs shadow-md",
-    isDark
-      ? "border-border bg-popover text-popover-foreground"
-      : "border-border bg-card text-foreground",
-  ].join(" ");
+  applyChartTooltipTheme(tooltip, theme);
   tooltip.style.display = "none";
   document.body.appendChild(tooltip);
   return tooltip;
@@ -420,7 +464,11 @@ function attachGlobalScrollDismissListener() {
     return;
   }
   globalScrollListenerAttached = true;
-  window.addEventListener("scroll", onGlobalScrollDismiss, scrollListenerOptions);
+  window.addEventListener(
+    "scroll",
+    onGlobalScrollDismiss,
+    scrollListenerOptions,
+  );
   document.addEventListener(
     "scroll",
     onGlobalScrollDismiss,

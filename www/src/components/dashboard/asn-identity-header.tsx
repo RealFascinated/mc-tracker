@@ -19,9 +19,7 @@ export function AsnIdentityHeader({
 }: AsnIdentityHeaderProps) {
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const displayName = asnDisplayName(asn);
-  const nameContent = (
-    <div className="entity-metrics-name">{displayName}</div>
-  );
+  const nameContent = <div className="entity-metrics-name">{displayName}</div>;
 
   return (
     <div
@@ -53,10 +51,7 @@ export function AsnIdentityHeader({
         </div>
       </div>
 
-      <EntityCardStats
-        playersOnline={asn.playersOnline}
-        peaks={asn.peaks}
-      />
+      <EntityCardStats playersOnline={asn.playersOnline} peaks={asn.peaks} />
     </div>
   );
 }

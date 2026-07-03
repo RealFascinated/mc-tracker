@@ -27,7 +27,9 @@ function DialogOverlay({
 }
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
-type DialogContentProps = React.ComponentProps<typeof DialogPrimitive.Content> & {
+type DialogContentProps = React.ComponentProps<
+  typeof DialogPrimitive.Content
+> & {
   showCloseButton?: boolean;
 };
 

@@ -2,7 +2,7 @@ import { cn } from "cnfast";
 
 import { AppSidebarMobileNav } from "./app-sidebar-mobile-nav";
 import { AppSidebarNav } from "./app-sidebar-nav";
-import type {AppSidebarNavItem} from "./app-sidebar-nav";
+import type { AppSidebarNavItem } from "./app-sidebar-nav";
 
 type AppShellProps = {
   section: string;
@@ -27,7 +27,13 @@ function AppShell({
   children,
 }: AppShellProps) {
   return (
-    <div className={cn("app-shell", fullWidth && "app-shell--full-width", className)}>
+    <div
+      className={cn(
+        "app-shell",
+        fullWidth && "app-shell--full-width",
+        className,
+      )}
+    >
       <AppSidebarNav
         section={section}
         items={nav}

@@ -82,9 +82,6 @@ export function defaultSiteHead() {
 
 export function privatePageHead(title: string) {
   return asRouteHead({
-    meta: [
-      { title },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title }, { name: "robots", content: "noindex, nofollow" }],
   });
 }

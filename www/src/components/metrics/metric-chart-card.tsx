@@ -11,6 +11,7 @@ import {
   sortSeriesForStack,
 } from "@/lib/metrics/series";
 import { resolveChartSeriesColor } from "@/lib/metrics/chart-colors";
+import type { MetricsDataWindow } from "@/lib/metrics/chart-zoom";
 import { useChartHydration } from "@/hooks/use-chart-hydration";
 import { useChartSeriesVisibility } from "@/hooks/use-chart-series-visibility";
 import { MetricChart } from "@/components/metrics/metric-chart";
@@ -36,11 +37,13 @@ type MetricChartCardProps = {
   description?: string;
   showCurrentValues?: boolean;
   hideHeader?: boolean;
+  hideLegend?: boolean;
   flush?: boolean;
   hydrateWhen?: boolean;
   mode?: MetricChartMode;
   tooltipColumnSize?: number;
   tooltipSort?: (a: TooltipSortEntry, b: TooltipSortEntry) => number;
+  queryWindow?: MetricsDataWindow;
 };
 
 const FULLSCREEN_CHART_MIN_HEIGHT = 480;
@@ -156,6 +159,7 @@ type MetricChartPanelProps = {
   chartId?: string;
   seriesColors?: Array<string>;
   seriesFills?: Array<boolean | undefined>;
+  queryWindow?: MetricsDataWindow;
 };
 
 function MetricChartPanel({
@@ -172,6 +176,7 @@ function MetricChartPanel({
   chartId,
   seriesColors,
   seriesFills,
+  queryWindow,
 }: MetricChartPanelProps) {
   const seriesAxisIds = built
     ? built.sourceIndices.map((index) => config.series[index]?.axis ?? "left")
@@ -203,6 +208,7 @@ function MetricChartPanel({
             sourceIndices={built.sourceIndices}
             seriesColors={seriesColors}
             seriesFills={seriesFills}
+            queryWindow={queryWindow}
           />
         ) : null}
       </div>
@@ -216,11 +222,13 @@ function MetricChartCard({
   description,
   showCurrentValues,
   hideHeader,
+  hideLegend = false,
   flush = false,
   hydrateWhen,
   mode,
   tooltipColumnSize,
   tooltipSort,
+  queryWindow,
 }: MetricChartCardProps) {
   const chartHeight = height ?? 260;
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
@@ -334,6 +342,7 @@ function MetricChartCard({
       })}
     </div>
   ) : null;
+  const inlineLegendNode = hideLegend ? null : seriesLegendNode;
 
   return (
     <div
@@ -345,9 +354,9 @@ function MetricChartCard({
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
             <ChartTitleLabel title={config.title} description={description} />
             {canToggleSeries ? (
-              <div id={`${config.id}-legend`}>{seriesLegendNode}</div>
+              <div id={`${config.id}-legend`}>{inlineLegendNode}</div>
             ) : (
-              seriesLegendNode
+              inlineLegendNode
             )}
             <Button
               type="button"
@@ -362,9 +371,9 @@ function MetricChartCard({
           </div>
         </div>
       )}
-      {hideHeader && canToggleSeries ? (
+      {hideHeader && inlineLegendNode ? (
         <div id={`${config.id}-legend`} className="shrink-0 px-3 py-1.5">
-          {seriesLegendNode}
+          {inlineLegendNode}
         </div>
       ) : null}
       <div className={cn("overflow-visible", flush ? "p-0" : "px-3 pt-2 pb-3")}>
@@ -380,6 +389,7 @@ function MetricChartCard({
           chartId={`${config.id}-plot`}
           seriesColors={builtSeriesColors}
           seriesFills={builtSeriesFills}
+          queryWindow={queryWindow}
         />
       </div>
 
@@ -412,6 +422,7 @@ function MetricChartCard({
               chartId={`${config.id}-plot-fullscreen`}
               seriesColors={builtSeriesColors}
               seriesFills={builtSeriesFills}
+              queryWindow={queryWindow}
             />
           </div>
         </DialogContent>

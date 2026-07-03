@@ -218,12 +218,11 @@ async fn patch_admin_server_pause_and_resume() {
     .unwrap();
     assert_eq!(paused["paused"], true);
     assert_eq!(manager.summary().await.tracked_servers, 0);
-    assert_eq!(
+    assert!(
         mc_db::db::repos::servers::get(&pool, uuid::Uuid::parse_str(id).unwrap())
             .await
             .unwrap()
-            .paused,
-        true
+            .paused
     );
 
     let resume = app

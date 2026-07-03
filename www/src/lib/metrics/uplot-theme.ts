@@ -299,6 +299,13 @@ export function readAxisUnitInsets(
   };
 }
 
+function chartThemeColors(): { axisColor: string; gridColor: string } {
+  return {
+    axisColor: readCssVar("--muted-foreground"),
+    gridColor: readCssVar("--border"),
+  };
+}
+
 function buildAxisConfig({
   axisColor,
   gridColor,
@@ -345,8 +352,7 @@ export function buildUPlotOptions({
   xDrag = false,
 }: BuildUPlotOptionsParams): uPlot.Options {
   const colors = getChartColors();
-  const gridColor = readCssVar("--border");
-  const axisColor = readCssVar("--muted-foreground");
+  const { gridColor, axisColor } = chartThemeColors();
   const scales = axisScaleMap(chartAxes);
   const axisById = new Map(chartAxes.map((axis) => [axis.id, axis]));
   const hasVisibleRight = chartAxes.some(
@@ -360,7 +366,7 @@ export function buildUPlotOptions({
 
   const yScales: uPlot.Scales = {
     x: xRange
-      ? { time: xTime, auto: false, range: [xRange.min, xRange.max] }
+      ? { time: xTime, auto: false, min: xRange.min, max: xRange.max }
       : { time: xTime },
   };
 
@@ -405,9 +411,12 @@ export function buildUPlotOptions({
         const color = seriesColors?.[index] ?? colors[index % colors.length];
         const render = seriesRenders[index] ?? "line";
         const isBar = render === "bar";
+        const isPoints = render === "points";
         const axisId = seriesAxisIds[index];
         const axis = axisId ? axisById.get(axisId) : undefined;
-        const strokeOnly = !isBar && seriesFills?.[index] === false;
+        const strokeOnly =
+          !isBar && !isPoints && seriesFills?.[index] === false;
+        const pointSize = layout.density === "compact" ? 9 : 12;
 
         const drawBars = uPlot.paths.bars;
 
@@ -420,17 +429,30 @@ export function buildUPlotOptions({
                 paths: drawBars?.({ size: [1, Infinity], radius: 0.12 }),
                 fill: withAlpha(color, 0.12),
                 width: 0,
+                points: { show: false },
               }
-            : {
-                fill: strokeOnly
-                  ? "transparent"
-                  : stacked
-                    ? withAlpha(color, 0.35)
-                    : buildGradientFill(color),
-                width: strokeOnly ? 2 : stacked ? 1 : 1.5,
-              }),
+            : isPoints
+              ? {
+                  width: 0,
+                  fill: "transparent",
+                  points: {
+                    show: true,
+                    size: pointSize,
+                    stroke: color,
+                    fill: color,
+                    width: 2,
+                  },
+                }
+              : {
+                  fill: strokeOnly
+                    ? "transparent"
+                    : stacked
+                      ? withAlpha(color, 0.35)
+                      : buildGradientFill(color),
+                  width: strokeOnly ? 2 : stacked ? 1 : 1.5,
+                  points: { show: false },
+                }),
           spanGaps: false,
-          points: { show: false },
           value: (
             _self: uPlot,
             rawValue: number | null,
@@ -484,8 +506,10 @@ export function buildUPlotOptions({
     bands,
     cursor: {
       show: !compact,
-      drag: { x: xDrag, y: false },
-      focus: { prox: 24 },
+      drag: { x: xDrag, y: false, setScale: !xDrag },
+      focus: {
+        prox: seriesRenders.some((render) => render === "points") ? 40 : 24,
+      },
     },
     scales: yScales,
     padding: compact
@@ -497,4 +521,41 @@ export function buildUPlotOptions({
           layout.paddingLeft,
         ],
   };
+}
+
+export function applyChartAxisScales(
+  chart: uPlot,
+  chartAxes: Array<AxisRenderConfig>,
+  bidirectional = false,
+): void {
+  const scales = axisScaleMap(chartAxes);
+
+  for (const axis of chartAxes) {
+    const scaleKey = scales.get(axis.id)!;
+    const yRange = axis.yRange;
+
+    if (bidirectional) {
+      if (yRange.max != null) {
+        chart.setScale(scaleKey, { min: -yRange.max, max: yRange.max });
+      }
+      continue;
+    }
+
+    const autoMin = yRange.autoMin ?? false;
+    const yMin = yRange.min ?? (autoMin ? undefined : 0);
+
+    if (yRange.max != null) {
+      if (yMin != null) {
+        chart.setScale(scaleKey, { min: yMin, max: yRange.max });
+      } else {
+        const currentMin = chart.scales[scaleKey].min ?? 0;
+        chart.setScale(scaleKey, { min: currentMin, max: yRange.max });
+      }
+      continue;
+    }
+
+    if (autoMin) {
+      continue;
+    }
+  }
 }

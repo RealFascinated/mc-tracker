@@ -24,6 +24,10 @@ pub fn min_step() -> Duration {
     MIN_STEP
 }
 
+pub fn daily_step() -> Duration {
+    Duration::from_secs(86_400)
+}
+
 pub fn step_for(span: Duration) -> Duration {
     let target_step = span.as_secs().max(MIN_STEP.as_secs()) / MAX_POINTS;
     for &nice in &NICE_STEP_SECONDS {

@@ -2,10 +2,7 @@ import type { VisibleTimeseriesQueryOptions } from "@/lib/api/visible-timeseries
 import { useMemo } from "react";
 import type { ReactNode } from "react";
 
-import type {
-  EntityPeakStats,
-  PlayersTimeseriesPayload,
-} from "@/lib/api/types";
+import type { EntityPeakStats, TimeseriesResponse } from "@/lib/api/types";
 
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { LazyMetricChartBody } from "@/components/dashboard/charts/lazy-metric-chart-body";
@@ -16,7 +13,7 @@ import { useGridItemVisible } from "@/hooks/use-intersection-visible";
 import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
 import {
   EMPTY_METRIC_TIME_SERIES,
-  playersTimeseriesToMetric,
+  timeseriesToMetric,
 } from "@/lib/api/metric-timeseries";
 import type { ChartDefinition } from "@/lib/metrics/charts/types";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
@@ -33,7 +30,7 @@ export type EntityMetricsSectionCopy = {
 
 export type EntityMetricsGridConfig<
   T,
-  TTimeseries extends PlayersTimeseriesPayload = PlayersTimeseriesPayload,
+  TTimeseries extends TimeseriesResponse = TimeseriesResponse,
 > = {
   items: T[];
   window: MetricTimeWindow;
@@ -51,10 +48,7 @@ export type EntityMetricsGridConfig<
   section: EntityMetricsSectionCopy;
 };
 
-type EntityMetricsChartProps<
-  T,
-  TTimeseries extends PlayersTimeseriesPayload,
-> = {
+type EntityMetricsChartProps<T, TTimeseries extends TimeseriesResponse> = {
   visibilityKey: string;
   item: T;
   window: MetricTimeWindow;
@@ -66,7 +60,7 @@ type EntityMetricsChartProps<
   timeseriesEnabled?: (item: T) => boolean;
 };
 
-function EntityMetricsChart<T, TTimeseries extends PlayersTimeseriesPayload>({
+function EntityMetricsChart<T, TTimeseries extends TimeseriesResponse>({
   visibilityKey,
   item,
   window,
@@ -89,7 +83,7 @@ function EntityMetricsChart<T, TTimeseries extends PlayersTimeseriesPayload>({
   );
 
   const chartData = useMemo(
-    () => (data ? playersTimeseriesToMetric(data) : EMPTY_METRIC_TIME_SERIES),
+    () => (data ? timeseriesToMetric(data) : EMPTY_METRIC_TIME_SERIES),
     [data],
   );
   const chartState = useMemo(
@@ -116,7 +110,7 @@ function EntityMetricsChart<T, TTimeseries extends PlayersTimeseriesPayload>({
   );
 }
 
-type EntityMetricsCardProps<T, TTimeseries extends PlayersTimeseriesPayload> = {
+type EntityMetricsCardProps<T, TTimeseries extends TimeseriesResponse> = {
   visibilityKey: string;
   item: T;
   window: MetricTimeWindow;
@@ -141,7 +135,7 @@ function EntityMetricsCardHeader<T>({
   return renderHeader(item);
 }
 
-function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
+function EntityMetricsCard<T, TTimeseries extends TimeseriesResponse>({
   visibilityKey,
   item,
   window,
@@ -167,7 +161,7 @@ function EntityMetricsCard<T, TTimeseries extends PlayersTimeseriesPayload>({
 
 export function EntityMetricsGrid<
   T,
-  TTimeseries extends PlayersTimeseriesPayload = PlayersTimeseriesPayload,
+  TTimeseries extends TimeseriesResponse = TimeseriesResponse,
 >({
   items,
   window,

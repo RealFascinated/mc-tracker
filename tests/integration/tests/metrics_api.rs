@@ -5,7 +5,10 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use chrono::Utc;
 use mc_db::model::{Platform, Server};
-use mc_metrics::{max_points, min_span, peak_players_24h, peak_players_7d, player_count_series};
+use mc_metrics::{
+    min_span, peak_players_24h, peak_players_7d, player_count_daily_average_series,
+    player_count_series,
+};
 use tower::ServiceExt;
 use uuid::Uuid;
 use wiremock::matchers::{method, query_param};
@@ -35,7 +38,8 @@ async fn mount_vm_mocks(vm: &MockServer, server_id: Uuid) {
     let peak_24h = peak_players_24h("production");
     let peak_7d = peak_players_7d("production");
     let peak_24h_by_server = mc_metrics::peak_players_24h_by_server("production");
-    let series = player_count_series("production", &server_id.to_string());
+    let fine_series = player_count_series("production", &server_id.to_string());
+    let daily_series = player_count_daily_average_series("production", &server_id.to_string());
 
     Mock::given(method("GET"))
         .and(query_param("query", peak_24h.as_str()))
@@ -74,16 +78,32 @@ async fn mount_vm_mocks(vm: &MockServer, server_id: Uuid) {
         .await;
 
     Mock::given(method("GET"))
-        .and(query_param("query", series.as_str()))
+        .and(query_param("query", fine_series.as_str()))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "status": "success",
             "data": {
                 "resultType": "matrix",
                 "result": [{
                     "values": [
-                        [1710000000.0, "10"],
-                        [1710000015.0, "12"],
-                        [1710000030.0, "null"]
+                        [1709913600.0, "10"],
+                        [1709913900.0, "12"]
+                    ]
+                }]
+            }
+        })))
+        .mount(vm)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(query_param("query", daily_series.as_str()))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "status": "success",
+            "data": {
+                "resultType": "matrix",
+                "result": [{
+                    "values": [
+                        [1709856000.0, "10"],
+                        [1709942400.0, "12"]
                     ]
                 }]
             }
@@ -316,8 +336,8 @@ async fn get_servers_timeseries_returns_aligned_series() {
     manager.append_server(server).await;
     let app = build_app_with_env(pool, manager, "development").await;
 
-    let from = 1710000000i64;
-    let to = 1710003600i64;
+    let from = 1709913600i64;
+    let to = 1710086399i64;
     let uri = format!("/servers/{server_id}/timeseries?from={from}&to={to}");
 
     let response = app
@@ -335,15 +355,63 @@ async fn get_servers_timeseries_returns_aligned_series() {
 
     let fixture = load_api_fixture("servers-timeseries-sample.json");
     assert_eq!(body["id"], fixture["id"]);
-    assert_eq!(body["step"], fixture["step"]);
-    assert!(body["timestamps"].as_array().unwrap().len() <= max_points() as usize);
+    assert_eq!(body["from"], fixture["from"]);
+    assert_eq!(body["to"], fixture["to"]);
+
+    let players_online = &body["series"]["playersOnline"];
+    assert_eq!(players_online["step"], 300);
     assert_eq!(
-        body["timestamps"].as_array().unwrap().len(),
-        body["playersOnline"].as_array().unwrap().len()
+        players_online["timestamps"].as_array().unwrap().len(),
+        players_online["values"].as_array().unwrap().len()
     );
-    assert_eq!(body["playersOnline"][0], 10.0);
-    assert_eq!(body["playersOnline"][1], 12.0);
-    assert!(body["playersOnline"][2].is_null());
+    assert_eq!(players_online["values"][0], 10.0);
+    assert_eq!(players_online["values"][1], 12.0);
+
+    let players_daily_avg = &body["series"]["playersDailyAvg"];
+    assert_eq!(
+        players_daily_avg["step"],
+        fixture["series"]["playersDailyAvg"]["step"]
+    );
+    assert_eq!(players_daily_avg["values"][0], 10.0);
+    assert_eq!(players_daily_avg["values"][1], 12.0);
+    assert!(players_daily_avg["values"][2].is_null());
+}
+
+#[tokio::test]
+async fn get_servers_timeseries_daily_avg_survives_mid_day_zoom() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+    bootstrap_admin(&pool).await;
+
+    let server_id = Uuid::new_v4();
+    let server = sample_server(server_id);
+    let vm = MockServer::start().await;
+    mount_vm_mocks(&vm, server_id).await;
+
+    let manager = manager_with_vm_url(&pool, &vm.uri()).await;
+    manager.append_server(server).await;
+    let app = build_app_with_env(pool, manager, "development").await;
+
+    let from = 1709913600i64 + 3_600;
+    let to = 1710086399i64;
+    let uri = format!("/servers/{server_id}/timeseries?from={from}&to={to}");
+
+    let response = app
+        .oneshot(Request::builder().uri(&uri).body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+
+    let players_daily_avg = &body["series"]["playersDailyAvg"];
+    assert_eq!(players_daily_avg["values"][0], 10.0);
+    assert_eq!(players_daily_avg["values"][1], 12.0);
 }
 
 #[tokio::test]
