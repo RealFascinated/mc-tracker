@@ -1,3 +1,4 @@
+pub mod chat_messages;
 pub mod servers;
 pub mod settings;
 pub mod users;

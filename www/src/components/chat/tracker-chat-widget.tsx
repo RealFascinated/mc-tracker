@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 import {
@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/message-scroller";
 import type { ChatContextServer, ChatTokenUsage } from "@/lib/api/chat";
 import { ChatStreamError, streamChat } from "@/lib/api/chat";
+import { useAuth } from "@/lib/auth/context";
+import type { ChatQuota } from "@/lib/auth/types";
 import { serverQueryOptions } from "@/lib/api/servers.queries";
 import { cn } from "cnfast";
 
@@ -94,6 +96,33 @@ function ContextUsage({ usage }: { usage: ChatTokenUsage }) {
     >
       Context {formatTokenCount(usage.promptTokens)} /{" "}
       {formatTokenCount(usage.contextMax)}
+    </p>
+  );
+}
+
+function QuotaUsage({ quota }: { quota: ChatQuota }) {
+  const remaining = Math.max(0, quota.limit - quota.used);
+  const exhausted = remaining === 0;
+  const resetLabel = new Date(quota.resetsAt).toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+
+  return (
+    <p
+      className={cn(
+        "text-xs tabular-nums",
+        exhausted ? "text-destructive" : "text-muted-foreground",
+      )}
+      title={exhausted ? `Resets ${resetLabel}` : undefined}
+    >
+      {exhausted
+        ? `Weekly limit reached — resets ${resetLabel}`
+        : `${remaining} of ${quota.limit} messages left this week`}
     </p>
   );
 }
@@ -236,6 +265,7 @@ function ChatBubble({
 }
 
 export function TrackerChatWidget() {
+  const { user, isLoading, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -243,11 +273,35 @@ export function TrackerChatWidget() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [toolStatus, setToolStatus] = useState<string | null>(null);
   const [tokenUsage, setTokenUsage] = useState<ChatTokenUsage | null>(null);
+  const [quotaUsed, setQuotaUsed] = useState<number | null>(null);
   // Opaque LLM message list echoed back next turn for llama.cpp cache reuse.
   const [rawHistory, setRawHistory] = useState<unknown[] | null>(null);
   const serverContext = useServerPageContext();
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const chatQuota = useMemo(() => {
+    if (user?.role === "admin" || !user?.chatQuota) {
+      return null;
+    }
+    return { ...user.chatQuota, used: quotaUsed ?? user.chatQuota.used };
+  }, [user, quotaUsed]);
+
+  const quotaExceeded = chatQuota !== null && chatQuota.used >= chatQuota.limit;
+
+  useEffect(() => {
+    if (user?.chatQuota) {
+      setQuotaUsed(user.chatQuota.used);
+    } else {
+      setQuotaUsed(null);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setOpen(false);
+    }
+  }, [isAuthenticated]);
 
   const pickSuggestion = useCallback((text: string) => {
     setInput(text);
@@ -267,7 +321,7 @@ export function TrackerChatWidget() {
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
-    if (!text || isStreaming) {
+    if (!text || isStreaming || quotaExceeded) {
       return;
     }
 
@@ -363,6 +417,9 @@ export function TrackerChatWidget() {
         },
         controller.signal,
       );
+      if (chatQuota) {
+        setQuotaUsed((current) => (current ?? chatQuota.used) + 1);
+      }
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         setMessages((current) =>
@@ -374,6 +431,13 @@ export function TrackerChatWidget() {
         error instanceof ChatStreamError
           ? error.message
           : "Chat request failed";
+      if (
+        error instanceof ChatStreamError &&
+        error.status === 429 &&
+        chatQuota
+      ) {
+        setQuotaUsed(chatQuota.limit);
+      }
       toast.error(errorMessage);
       setMessages((current) =>
         current.filter((msg) => msg.id !== STREAMING_ID),
@@ -391,7 +455,13 @@ export function TrackerChatWidget() {
     rawHistory,
     serverContext,
     sessionId,
+    quotaExceeded,
+    chatQuota,
   ]);
+
+  if (isLoading || !isAuthenticated) {
+    return null;
+  }
 
   return (
     <>
@@ -431,7 +501,7 @@ export function TrackerChatWidget() {
                   >
                     {messages.length === 0 ? (
                       <ChatSuggestions
-                        disabled={isStreaming}
+                        disabled={isStreaming || quotaExceeded}
                         onPick={pickSuggestion}
                         serverName={serverContext?.serverName}
                       />
@@ -458,6 +528,11 @@ export function TrackerChatWidget() {
                 <ContextUsage usage={tokenUsage} />
               </div>
             ) : null}
+            {chatQuota ? (
+              <div className={cn("px-3", tokenUsage ? "pt-1" : "pt-2")}>
+                <QuotaUsage quota={chatQuota} />
+              </div>
+            ) : null}
             <form
               className="flex items-center gap-2 p-3"
               onSubmit={(event) => {
@@ -468,6 +543,7 @@ export function TrackerChatWidget() {
               <textarea
                 ref={inputRef}
                 value={input}
+                aria-label="Chat message"
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && !event.shiftKey) {
@@ -476,8 +552,10 @@ export function TrackerChatWidget() {
                   }
                 }}
                 rows={1}
-                placeholder="Message…"
-                disabled={isStreaming}
+                placeholder={
+                  quotaExceeded ? "Weekly limit reached" : "Message…"
+                }
+                disabled={isStreaming || quotaExceeded}
                 className="monitor-input h-10! min-h-10 max-h-24 flex-1 resize-none overflow-y-auto px-3 py-0 text-sm leading-10"
               />
               <Button
@@ -485,7 +563,7 @@ export function TrackerChatWidget() {
                 variant="brand"
                 size="icon"
                 className="size-10 shrink-0"
-                disabled={isStreaming || !input.trim()}
+                disabled={isStreaming || quotaExceeded || !input.trim()}
                 aria-label="Send message"
               >
                 <SendIcon />

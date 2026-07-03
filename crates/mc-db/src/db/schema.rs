@@ -32,4 +32,14 @@ diesel::table! {
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(servers, settings, users,);
+diesel::table! {
+    chat_messages (id) {
+        id -> Uuid,
+        user_id -> Uuid,
+        created_at -> Timestamptz,
+    }
+}
+
+diesel::joinable!(chat_messages -> users (user_id));
+
+diesel::allow_tables_to_appear_in_same_query!(servers, settings, users, chat_messages,);

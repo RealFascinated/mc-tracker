@@ -13,8 +13,12 @@ use axum::{Json, Router};
 use futures::stream::{self, StreamExt};
 use mc_api_types::{ChatRequest, ChatStreamEvent, ErrorResponse};
 use mc_chat::{AgentChatRequest, ChatMessage};
+use mc_db::db::repos::chat_messages;
+use mc_db::model::UserRole;
 
 use crate::api::AppState;
+use crate::auth::AuthUser;
+use crate::chat_quota::{calendar_week_start_utc, WEEKLY_MESSAGE_LIMIT};
 
 const RATE_LIMIT_PER_MINUTE: u32 = 10;
 
@@ -47,6 +51,7 @@ impl ChatRateLimiter {
 
 async fn post_chat(
     State(state): State<AppState>,
+    user: AuthUser,
     axum::extract::ConnectInfo(addr): axum::extract::ConnectInfo<SocketAddr>,
     Json(body): Json<ChatRequest>,
 ) -> Response {
@@ -60,6 +65,33 @@ async fn post_chat(
 
     if !state.chat_rate_limiter.check(&addr.ip().to_string()) {
         return sse_error(StatusCode::TOO_MANY_REQUESTS, "rate limit exceeded");
+    }
+
+    if user.role != UserRole::Admin {
+        let since = calendar_week_start_utc(chrono::Utc::now());
+        let used = match chat_messages::count_since(&state.pool, user.id, since).await {
+            Ok(count) => count as u32,
+            Err(_) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ErrorResponse::new("failed to check chat quota")),
+                )
+                    .into_response();
+            }
+        };
+        if used >= WEEKLY_MESSAGE_LIMIT {
+            return sse_error(
+                StatusCode::TOO_MANY_REQUESTS,
+                "weekly message limit reached",
+            );
+        }
+        if chat_messages::record(&state.pool, user.id).await.is_err() {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse::new("failed to record chat usage")),
+            )
+                .into_response();
+        }
     }
 
     let raw_history = body.raw_history.and_then(|values| {

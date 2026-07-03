@@ -2,6 +2,7 @@ pub mod admin;
 pub mod api;
 pub mod auth;
 pub mod chat;
+pub mod chat_quota;
 #[cfg(feature = "embedded-ui")]
 pub mod embedded;
 pub mod insights;

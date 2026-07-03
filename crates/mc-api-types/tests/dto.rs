@@ -39,6 +39,7 @@ fn me_response_serializes_camel_case() {
     let json = serde_json::to_string(&MeResponse {
         username: "admin".into(),
         role: "admin".into(),
+        chat_quota: None,
     })
     .unwrap();
     assert_eq!(json, r#"{"username":"admin","role":"admin"}"#);

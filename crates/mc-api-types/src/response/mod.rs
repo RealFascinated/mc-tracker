@@ -17,7 +17,7 @@ pub use self::asns::{
     AsnDetailResponse, AsnListItemResponse, AsnSearchResponse, AsnTimeseriesResponse,
     AsnsListResponse, AsnsSummaryResponse,
 };
-pub use self::auth::{LoginResponse, MeResponse};
+pub use self::auth::{ChatQuota, LoginResponse, MeResponse};
 pub use self::auth_config::SignupEnabledResponse;
 pub use self::chat_stream::{ChatStreamEvent, ChatTokenUsage, ChatToolCallRecord};
 pub use self::error::ErrorResponse;

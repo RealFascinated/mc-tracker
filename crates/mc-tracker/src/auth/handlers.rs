@@ -14,6 +14,7 @@ use super::middleware::{parse_cookie_value, AuthUser};
 use super::rate_limit::client_ip_from_headers;
 use super::session::COOKIE_NAME;
 use crate::api::AppState;
+use crate::chat_quota::quota_for_user;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -74,11 +75,29 @@ async fn logout(State(state): State<AppState>, headers: axum::http::HeaderMap) -
         .into_response()
 }
 
-async fn me(AuthUser { username, role, .. }: AuthUser) -> Json<MeResponse> {
-    Json(MeResponse {
+async fn me(
+    State(state): State<AppState>,
+    AuthUser {
+        id, username, role, ..
+    }: AuthUser,
+) -> Result<Json<MeResponse>, Response> {
+    let chat_quota = if role == UserRole::Admin {
+        None
+    } else {
+        Some(quota_for_user(&state.pool, id).await.map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse::new("failed to load chat quota")),
+            )
+                .into_response()
+        })?)
+    };
+
+    Ok(Json(MeResponse {
         username,
         role: role.as_str().to_string(),
-    })
+        chat_quota,
+    }))
 }
 
 async fn signup_enabled(State(state): State<AppState>) -> Json<SignupEnabledResponse> {

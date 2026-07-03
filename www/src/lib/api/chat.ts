@@ -44,6 +44,43 @@ export class ChatStreamError extends Error {
   }
 }
 
+async function errorMessageFromResponse(response: Response): Promise<string> {
+  const contentType = response.headers.get("content-type") ?? "";
+  if (contentType.includes("text/event-stream")) {
+    const text = await response.text();
+    const dataLine = text.split("\n").find((line) => line.startsWith("data: "));
+    if (dataLine) {
+      try {
+        const payload = JSON.parse(
+          dataLine.slice("data: ".length),
+        ) as ChatStreamEvent;
+        if (payload.type === "error" && payload.message) {
+          return payload.message;
+        }
+      } catch {
+        // Fall through to status text.
+      }
+    }
+  }
+
+  if (contentType.includes("application/json")) {
+    try {
+      const error = (await response.json()) as { error?: string };
+      if (error.error) {
+        return error.error;
+      }
+    } catch {
+      // Response may have no JSON body.
+    }
+  }
+
+  if (response.status === 401) {
+    return "Log in to use chat";
+  }
+
+  return response.statusText || "Chat request failed";
+}
+
 export async function streamChat(
   body: ChatRequest,
   onEvent: (event: ChatStreamEvent) => void,
@@ -61,20 +98,12 @@ export async function streamChat(
       rawHistory: body.rawHistory,
       contextServer: body.contextServer,
     }),
-    credentials: "omit",
+    credentials: "include",
     signal,
   });
 
   if (!response.ok) {
-    let message = response.statusText;
-    try {
-      const error = (await response.json()) as { error?: string };
-      if (error.error) {
-        message = error.error;
-      }
-    } catch {
-      // Response may have no JSON body.
-    }
+    const message = await errorMessageFromResponse(response);
     throw new ChatStreamError(message, response.status);
   }
 

@@ -1,8 +1,15 @@
 export type UserRole = "admin" | "user";
 
+export type ChatQuota = {
+  used: number;
+  limit: number;
+  resetsAt: string;
+};
+
 export type User = {
   username: string;
   role: UserRole;
+  chatQuota?: ChatQuota | null;
 };
 
 export type Credentials = {
