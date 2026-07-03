@@ -49,6 +49,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script
+          defer
+          src="https://analytics.fascinated.cc/script.js"
+          data-website-id="e25c7904-cda4-409b-8a4f-4baf1d5f5128"
+        />
       </head>
       <body>
         <ThemeProvider>
