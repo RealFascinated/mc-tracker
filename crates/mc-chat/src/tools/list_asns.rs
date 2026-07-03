@@ -4,7 +4,7 @@ use serde_json::json;
 use crate::error::ChatError;
 use crate::tools::compact::compact_asns_list;
 use crate::tools::constants::LIST_CAP;
-use crate::tools::helpers::{tool_def, truncate};
+use crate::tools::helpers::{optional_search, tool_def, truncate};
 use crate::traits::{ChatTool, ChatToolDeps};
 
 pub struct ListAsnsTool;
@@ -18,10 +18,15 @@ impl ChatTool for ListAsnsTool {
     fn definition(&self) -> serde_json::Value {
         tool_def(
             "list_asns",
-            "List hosting ASN networks sorted by players online.",
+            "List hosting ASN networks sorted by players online. Optional search filters by asn number or asnOrg label.",
             json!({
                 "type": "object",
-                "properties": {}
+                "properties": {
+                    "search": {
+                        "type": "string",
+                        "description": "Filter by ASN number or asnOrg label substring"
+                    }
+                }
             }),
         )
     }
@@ -29,9 +34,9 @@ impl ChatTool for ListAsnsTool {
     async fn execute(
         &self,
         deps: &ChatToolDeps,
-        _args: serde_json::Value,
+        args: serde_json::Value,
     ) -> Result<serde_json::Value, ChatError> {
-        let mut response = deps.tracker.list_asns().await;
+        let mut response = deps.tracker.list_asns(optional_search(&args)).await;
         let truncated = truncate(&mut response.asns, LIST_CAP);
         Ok(compact_asns_list(response, truncated))
     }

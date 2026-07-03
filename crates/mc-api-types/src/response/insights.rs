@@ -102,3 +102,32 @@ pub struct ServerGrowthRankError {
     pub id: String,
     pub error: String,
 }
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AsnGrowthRankItem {
+    pub asn: String,
+    pub asn_org: String,
+    pub start: Option<f64>,
+    pub end: Option<f64>,
+    pub change_pct: Option<f64>,
+    pub trend: TrendDirection,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AsnsGrowthRankResponse {
+    pub from: i64,
+    pub to: i64,
+    pub order: GrowthRankOrder,
+    pub asns: Vec<AsnGrowthRankItem>,
+    pub errors: Vec<AsnGrowthRankError>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AsnGrowthRankError {
+    pub asn: String,
+    pub asn_org: String,
+    pub error: String,
+}

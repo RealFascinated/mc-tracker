@@ -4,10 +4,10 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use futures::Stream;
 use mc_api_types::{
-    AsnDetailResponse, AsnSearchResponse, AsnTimeseriesSummaryResponse, AsnsListResponse,
-    GrowthRankOrder, IpLookupResponse, ServerListItemResponse, ServerTimeseriesSummaryResponse,
-    ServersGrowthRankResponse, ServersListResponse, ServersSearchResponse,
-    TimeseriesSummaryResponse,
+    AsnDetailResponse, AsnSearchResponse, AsnTimeseriesSummaryResponse, AsnsGrowthRankResponse,
+    AsnsListResponse, GrowthRankOrder, IpLookupResponse, ServerListItemResponse,
+    ServerTimeseriesSummaryResponse, ServersGrowthRankResponse, ServersListResponse,
+    ServersSearchResponse, ServersSummaryResponse, TimeseriesSummaryResponse,
 };
 use uuid::Uuid;
 
@@ -21,11 +21,12 @@ pub struct ChatToolDeps {
 
 #[async_trait]
 pub trait TrackerRead: Send + Sync {
-    async fn list_servers(&self) -> ServersListResponse;
+    async fn tracker_summary(&self) -> ServersSummaryResponse;
+    async fn list_servers(&self, search: Option<&str>) -> ServersListResponse;
     async fn search_servers(&self, search: Option<&str>, limit: u32) -> ServersSearchResponse;
     async fn server_detail(&self, id: Uuid) -> Option<ServerListItemResponse>;
     async fn asn_detail(&self, asn: &str, asn_org: &str) -> Option<AsnDetailResponse>;
-    async fn list_asns(&self) -> AsnsListResponse;
+    async fn list_asns(&self, search: Option<&str>) -> AsnsListResponse;
     async fn search_asns(&self, query: &str, limit: u32) -> AsnSearchResponse;
     async fn lookup_ip(&self, query: &str) -> Result<IpLookupResponse, ChatError>;
 }
@@ -67,6 +68,14 @@ pub trait InsightsRead: Send + Sync {
         to: &str,
         limit: u32,
     ) -> Result<mc_api_types::ServersPeriodPeakRankResponse, mc_insights::InsightsError>;
+
+    async fn rank_asns_by_growth(
+        &self,
+        from: &str,
+        to: &str,
+        limit: u32,
+        order: GrowthRankOrder,
+    ) -> Result<AsnsGrowthRankResponse, mc_insights::InsightsError>;
 }
 
 #[async_trait]

@@ -3,9 +3,10 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use futures::future::join_all;
 use mc_api_types::{
-    AsnTimeseriesSummaryResponse, GrowthRankOrder, ServerGrowthRankError, ServerGrowthRankItem,
-    ServerPeriodPeakRankItem, ServerTimeseriesSummaryResponse, ServersGrowthRankResponse,
-    ServersPeriodPeakRankResponse, TimeseriesSummaryResponse,
+    AsnGrowthRankError, AsnGrowthRankItem, AsnTimeseriesSummaryResponse, AsnsGrowthRankResponse,
+    GrowthRankOrder, ServerGrowthRankError, ServerGrowthRankItem, ServerPeriodPeakRankItem,
+    ServerTimeseriesSummaryResponse, ServersGrowthRankResponse, ServersPeriodPeakRankResponse,
+    TimeseriesSummaryResponse,
 };
 use mc_common::constants::limits::DEFAULT_LIST_LIMIT;
 use mc_insights::{
@@ -225,6 +226,63 @@ impl InsightsService {
         })
     }
 
+    pub async fn rank_asns_by_growth(
+        &self,
+        from: &str,
+        to: &str,
+        limit: u32,
+        order: GrowthRankOrder,
+    ) -> Result<AsnsGrowthRankResponse, InsightsError> {
+        let range = self.parse_range(from, to)?;
+        let limit = limit.clamp(1, DEFAULT_LIST_LIMIT) as usize;
+        let list = self.manager.asns_list_response(None).await;
+        let keys: Vec<(String, String)> = list
+            .asns
+            .iter()
+            .map(|asn| (asn.asn.clone(), asn.asn_org.clone()))
+            .collect();
+
+        let futures: Vec<_> = keys
+            .iter()
+            .map(|(asn, asn_org)| self.asn_timeseries_summary(asn, asn_org, from, to))
+            .collect();
+        let results = join_all(futures).await;
+
+        let mut ranked = Vec::with_capacity(results.len());
+        let mut errors = Vec::new();
+        for ((asn, asn_org), result) in keys.into_iter().zip(results) {
+            match result {
+                Ok(summary) => ranked.push(AsnGrowthRankItem {
+                    asn: summary.asn,
+                    asn_org: summary.asn_org,
+                    start: summary.summary.start,
+                    end: summary.summary.end,
+                    change_pct: summary.summary.change_pct,
+                    trend: summary.summary.trend,
+                }),
+                Err(err) => errors.push(AsnGrowthRankError {
+                    asn,
+                    asn_org,
+                    error: err.to_string(),
+                }),
+            }
+        }
+
+        ranked.sort_by(|left, right| compare_change_pct(left.change_pct, right.change_pct));
+        if order == GrowthRankOrder::Gainers {
+            ranked.reverse();
+        }
+        ranked.truncate(limit);
+
+        Ok(AsnsGrowthRankResponse {
+            from: range.from,
+            to: range.to,
+            order,
+            asns: ranked,
+            errors,
+        })
+    }
+
     fn parse_range(&self, from: &str, to: &str) -> Result<ResolvedTimeRange, InsightsError> {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -294,6 +352,16 @@ impl mc_chat::InsightsRead for InsightsService {
         limit: u32,
     ) -> Result<ServersPeriodPeakRankResponse, InsightsError> {
         self.rank_servers_by_period_peak(from, to, limit).await
+    }
+
+    async fn rank_asns_by_growth(
+        &self,
+        from: &str,
+        to: &str,
+        limit: u32,
+        order: GrowthRankOrder,
+    ) -> Result<AsnsGrowthRankResponse, InsightsError> {
+        self.rank_asns_by_growth(from, to, limit, order).await
     }
 }
 

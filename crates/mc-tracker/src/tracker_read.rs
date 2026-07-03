@@ -6,9 +6,13 @@ use crate::manager::ServerManager;
 
 #[async_trait]
 impl TrackerRead for ServerManager {
-    async fn list_servers(&self) -> mc_api_types::ServersListResponse {
+    async fn tracker_summary(&self) -> mc_api_types::ServersSummaryResponse {
+        self.servers_summary_response().await
+    }
+
+    async fn list_servers(&self, search: Option<&str>) -> mc_api_types::ServersListResponse {
         self.servers_list_response(
-            None,
+            search,
             mc_api_types::ServersListSortField::Players,
             mc_api_types::SortOrder::Desc,
         )
@@ -35,8 +39,8 @@ impl TrackerRead for ServerManager {
         self.asn_detail_response(asn, asn_org).await
     }
 
-    async fn list_asns(&self) -> mc_api_types::AsnsListResponse {
-        self.asns_list_response(None).await
+    async fn list_asns(&self, search: Option<&str>) -> mc_api_types::AsnsListResponse {
+        self.asns_list_response(search).await
     }
 
     async fn search_asns(&self, query: &str, limit: u32) -> mc_api_types::AsnSearchResponse {

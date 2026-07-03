@@ -2,22 +2,22 @@ use async_trait::async_trait;
 use serde_json::json;
 
 use crate::error::ChatError;
-use crate::tools::compact::compact_servers_all_time_peak;
+use crate::tools::compact::compact_tracker_summary;
 use crate::tools::helpers::tool_def;
 use crate::traits::{ChatTool, ChatToolDeps};
 
-pub struct RankServersByAllTimePeakTool;
+pub struct GetTrackerSummaryTool;
 
 #[async_trait]
-impl ChatTool for RankServersByAllTimePeakTool {
+impl ChatTool for GetTrackerSummaryTool {
     fn name(&self) -> &'static str {
-        "rank_servers_by_all_time_peak"
+        "get_tracker_summary"
     }
 
     fn definition(&self) -> serde_json::Value {
         tool_def(
-            "rank_servers_by_all_time_peak",
-            "Find which tracked server(s) have the highest all-time player peak. Returns every server tied at the top.",
+            "get_tracker_summary",
+            "Current network snapshot: total players online, Java/Bedrock split, tracked server count, and network peaks. Use for how many players are tracked right now — not list_servers.",
             json!({
                 "type": "object",
                 "properties": {}
@@ -30,7 +30,7 @@ impl ChatTool for RankServersByAllTimePeakTool {
         deps: &ChatToolDeps,
         _args: serde_json::Value,
     ) -> Result<serde_json::Value, ChatError> {
-        let response = deps.tracker.list_servers(None).await;
-        Ok(compact_servers_all_time_peak(&response.servers))
+        let summary = deps.tracker.tracker_summary().await;
+        Ok(compact_tracker_summary(&summary))
     }
 }

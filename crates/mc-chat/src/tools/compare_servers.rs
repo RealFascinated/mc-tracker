@@ -60,7 +60,7 @@ impl ChatTool for CompareServersTool {
         } else {
             let base_id = resolve_server_id(deps, &args).await?;
             let peer_count = args.get("peer_count").and_then(|v| v.as_u64()).unwrap_or(4) as usize;
-            let list = deps.tracker.list_servers().await;
+            let list = deps.tracker.list_servers(None).await;
             compare_peer_ids(base_id, &list.servers, peer_count)
         };
 

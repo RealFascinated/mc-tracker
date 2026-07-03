@@ -162,13 +162,31 @@ impl ServerManager {
         accumulate_summary(servers.iter().filter(|server| server.is_tracking()))
     }
 
+    pub async fn servers_summary_response(&self) -> ServersSummaryResponse {
+        let summary = self.summary().await;
+        let (peak_players24h, peak_players_7d) = tokio::join!(
+            self.query_scalar(peak_players_24h),
+            self.query_scalar(peak_players_7d),
+        );
+        ServersSummaryResponse {
+            total_players: summary.total_players,
+            players_pc: summary.players_pc,
+            players_pe: summary.players_pe,
+            tracked_servers: summary.tracked_servers,
+            peaks: PlayersPeakSummary {
+                players_24h: peak_players24h,
+                players_7d: peak_players_7d,
+            },
+        }
+    }
+
     pub async fn servers_list_response(
         &self,
         search: Option<&str>,
         sort: ServersListSortField,
         order: SortOrder,
     ) -> ServersListResponse {
-        let summary = self.summary().await;
+        let summary = self.servers_summary_response().await;
         let all_tracked = self.servers.read().await.clone();
         let tracked = all_tracked
             .iter()
@@ -178,11 +196,7 @@ impl ServerManager {
             .collect::<Vec<_>>();
 
         let environment = self.environment();
-        let (peak_players24h, peak_players_7d, peaks_24h) = tokio::join!(
-            self.query_scalar(peak_players_24h),
-            self.query_scalar(peak_players_7d),
-            self.peaks_24h_by_server_id(environment),
-        );
+        let peaks_24h = self.peaks_24h_by_server_id(environment).await;
 
         let mut servers = Vec::with_capacity(tracked.len());
         for server in tracked {
@@ -192,19 +206,7 @@ impl ServerManager {
 
         sort_server_list_items(&mut servers, sort, order);
 
-        ServersListResponse {
-            summary: ServersSummaryResponse {
-                total_players: summary.total_players,
-                players_pc: summary.players_pc,
-                players_pe: summary.players_pe,
-                tracked_servers: summary.tracked_servers,
-                peaks: PlayersPeakSummary {
-                    players_24h: peak_players24h,
-                    players_7d: peak_players_7d,
-                },
-            },
-            servers,
-        }
+        ServersListResponse { summary, servers }
     }
 
     async fn servers_by_asn_org(&self, query: &str, limit: u32) -> (ServersListResponse, bool) {

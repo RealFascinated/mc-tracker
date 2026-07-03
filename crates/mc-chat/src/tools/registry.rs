@@ -7,9 +7,11 @@ use super::asn_timeseries_summary::AsnTimeseriesSummaryTool;
 use super::compare_servers::CompareServersTool;
 use super::get_asn::GetAsnTool;
 use super::get_server::GetServerTool;
+use super::get_tracker_summary::GetTrackerSummaryTool;
 use super::list_asns::ListAsnsTool;
 use super::list_servers::ListServersTool;
 use super::lookup_ip::LookupIpTool;
+use super::rank_asns_by_growth::RankAsnsByGrowthTool;
 use super::rank_servers_by_all_time_peak::RankServersByAllTimePeakTool;
 use super::rank_servers_by_growth::RankServersByGrowthTool;
 use super::rank_servers_by_period_peak::RankServersByPeriodPeakTool;
@@ -29,10 +31,12 @@ impl ToolRegistry {
             Arc::new(ListServersTool),
             Arc::new(SearchServersTool),
             Arc::new(GetServerTool),
+            Arc::new(GetTrackerSummaryTool),
             Arc::new(GetAsnTool),
             Arc::new(LookupIpTool),
             Arc::new(ServerTimeseriesSummaryTool),
             Arc::new(RankServersByGrowthTool),
+            Arc::new(RankAsnsByGrowthTool),
             Arc::new(RankServersByAllTimePeakTool),
             Arc::new(RankServersNearPeakTool),
             Arc::new(RankServersByPeriodPeakTool),

@@ -242,6 +242,10 @@ pub fn compact_servers_near_peak(
     })
 }
 
+pub fn compact_tracker_summary(summary: &mc_api_types::ServersSummaryResponse) -> Value {
+    compact_players_summary(summary)
+}
+
 pub fn compact_servers_growth_rank(response: mc_api_types::ServersGrowthRankResponse) -> Value {
     let order = match response.order {
         mc_api_types::GrowthRankOrder::Gainers => "gainers",
@@ -263,6 +267,31 @@ pub fn compact_servers_growth_rank(response: mc_api_types::ServersGrowthRankResp
         }).collect::<Vec<_>>(),
         "errors": response.errors.iter().map(|entry| {
             json!({ "id": entry.id, "error": entry.error })
+        }).collect::<Vec<_>>(),
+    })
+}
+
+pub fn compact_asns_growth_rank(response: mc_api_types::AsnsGrowthRankResponse) -> Value {
+    let order = match response.order {
+        mc_api_types::GrowthRankOrder::Gainers => "gainers",
+        mc_api_types::GrowthRankOrder::Losers => "losers",
+    };
+    json!({
+        "from": response.from,
+        "to": response.to,
+        "order": order,
+        "asns": response.asns.iter().map(|asn| {
+            json!({
+                "asn": asn.asn,
+                "asnOrg": asn.asn_org,
+                "start": asn.start,
+                "end": asn.end,
+                "changePct": asn.change_pct,
+                "trend": asn.trend,
+            })
+        }).collect::<Vec<_>>(),
+        "errors": response.errors.iter().map(|entry| {
+            json!({ "asn": entry.asn, "asnOrg": entry.asn_org, "error": entry.error })
         }).collect::<Vec<_>>(),
     })
 }

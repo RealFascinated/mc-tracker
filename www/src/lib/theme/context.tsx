@@ -6,10 +6,7 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 
-import {
-  localStorageStringOptions,
-  useLocalStorage,
-} from "@/hooks/use-local-storage";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { startThemeViewTransition } from "@/lib/theme/transition";
 import { THEME_STORAGE_KEY, ThemeContext } from "@/lib/theme/theme-context";
 import type {
@@ -43,11 +40,14 @@ function applyTheme(theme: ResolvedTheme) {
 }
 
 function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useLocalStorage(THEME_STORAGE_KEY, {
-    defaultValue: "system",
-    ...localStorageStringOptions,
-    deserialize: (raw) => (isThemePreference(raw) ? raw : null),
-  });
+  const [theme, setThemeState] = useLocalStorage<ThemePreference>(
+    THEME_STORAGE_KEY,
+    {
+      defaultValue: "system",
+      serialize: (value) => value,
+      deserialize: (raw) => (isThemePreference(raw) ? raw : null),
+    },
+  );
   const systemTheme = useSyncExternalStore(
     subscribeToSystemTheme,
     getSystemThemeSnapshot,

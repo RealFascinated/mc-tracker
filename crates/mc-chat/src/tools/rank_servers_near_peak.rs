@@ -52,7 +52,7 @@ impl ChatTool for RankServersNearPeakTool {
             .and_then(|v| v.as_f64())
             .unwrap_or(DEFAULT_NEAR_PEAK_MIN_UTILIZATION)
             .clamp(1.0, 100.0);
-        let response = deps.tracker.list_servers().await;
+        let response = deps.tracker.list_servers(None).await;
         Ok(compact_servers_near_peak(
             &response.servers,
             limit,

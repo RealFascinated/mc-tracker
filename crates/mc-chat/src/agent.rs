@@ -526,7 +526,20 @@ mod tests {
 
     #[async_trait]
     impl TrackerRead for MockTracker {
-        async fn list_servers(&self) -> ServersListResponse {
+        async fn tracker_summary(&self) -> ServersSummaryResponse {
+            ServersSummaryResponse {
+                total_players: 0,
+                players_pc: 0,
+                players_pe: 0,
+                tracked_servers: 0,
+                peaks: PlayersPeakSummary {
+                    players_24h: None,
+                    players_7d: None,
+                },
+            }
+        }
+
+        async fn list_servers(&self, _: Option<&str>) -> ServersListResponse {
             ServersListResponse {
                 summary: ServersSummaryResponse {
                     total_players: 0,
@@ -554,7 +567,7 @@ mod tests {
             None
         }
 
-        async fn list_asns(&self) -> mc_api_types::AsnsListResponse {
+        async fn list_asns(&self, _: Option<&str>) -> mc_api_types::AsnsListResponse {
             mc_api_types::AsnsListResponse {
                 summary: mc_api_types::AsnsSummaryResponse {
                     total_players: 0,
@@ -661,6 +674,16 @@ mod tests {
             _: u32,
         ) -> Result<mc_api_types::ServersPeriodPeakRankResponse, mc_insights::InsightsError>
         {
+            Err(mc_insights::InsightsError::NoData)
+        }
+
+        async fn rank_asns_by_growth(
+            &self,
+            _: &str,
+            _: &str,
+            _: u32,
+            _: mc_api_types::GrowthRankOrder,
+        ) -> Result<mc_api_types::AsnsGrowthRankResponse, mc_insights::InsightsError> {
             Err(mc_insights::InsightsError::NoData)
         }
     }

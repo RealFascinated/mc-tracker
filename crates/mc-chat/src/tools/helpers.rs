@@ -108,3 +108,34 @@ pub fn require_str<'a>(args: &'a serde_json::Value, key: &str) -> Result<&'a str
         .and_then(|v| v.as_str())
         .ok_or_else(|| ChatError::Tool(format!("{key} required")))
 }
+
+pub fn optional_search(args: &serde_json::Value) -> Option<&str> {
+    args.get("search")
+        .or_else(|| args.get("query"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+}
+
+pub async fn resolve_asn(
+    deps: &ChatToolDeps,
+    args: &serde_json::Value,
+) -> Result<(String, String), ChatError> {
+    if let Some(asn) = args.get("asn").and_then(|v| v.as_str()) {
+        let asn_org = args.get("asn_org").and_then(|v| v.as_str()).unwrap_or("");
+        return Ok((asn.to_string(), asn_org.to_string()));
+    }
+    let query = args
+        .get("query")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| ChatError::Tool("asn or query required".into()))?;
+    let response = deps.tracker.search_asns(query, 1).await;
+    let item = response
+        .matching_networks
+        .asns
+        .first()
+        .ok_or_else(|| ChatError::Tool("asn not found".into()))?;
+    Ok((item.asn.clone(), item.asn_org.clone()))
+}
