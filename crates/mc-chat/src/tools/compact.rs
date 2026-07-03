@@ -71,6 +71,10 @@ pub fn compact_timeseries_summary(summary: &TimeseriesSummaryResponse) -> Value 
         "avg": summary.avg,
         "changePct": summary.change_pct,
         "trend": summary.trend,
+        "seriesKey": summary.series_key,
+        "points": summary.points.iter().map(|point| {
+            json!([point.timestamp, point.value])
+        }).collect::<Vec<_>>(),
     })
 }
 
@@ -325,7 +329,10 @@ fn compact_asns_summary(summary: &mc_api_types::AsnsSummaryResponse) -> Value {
 
 #[cfg(test)]
 mod tests {
-    use mc_api_types::{EntityPeakStats, PeakPlayersRecord, ServerListItemResponse};
+    use mc_api_types::{
+        EntityPeakStats, PeakPlayersRecord, ServerListItemResponse, SummaryPoint,
+        TimeseriesSummaryResponse, TrendDirection,
+    };
 
     use super::*;
 
@@ -348,6 +355,36 @@ mod tests {
                 }),
             },
         }
+    }
+
+    #[test]
+    fn compact_timeseries_summary_includes_points() {
+        let summary = TimeseriesSummaryResponse {
+            from: 1,
+            to: 2,
+            series_key: "playersOnline".into(),
+            start: Some(10.0),
+            end: Some(12.0),
+            avg: Some(11.0),
+            min: Some(10.0),
+            max: Some(12.0),
+            change_pct: Some(20.0),
+            trend: TrendDirection::Growing,
+            points: vec![
+                SummaryPoint {
+                    timestamp: 1,
+                    value: 10.0,
+                },
+                SummaryPoint {
+                    timestamp: 2,
+                    value: 12.0,
+                },
+            ],
+        };
+        let value = compact_timeseries_summary(&summary);
+        assert_eq!(value["seriesKey"], "playersOnline");
+        assert_eq!(value["points"][0], json!([1, 10.0]));
+        assert_eq!(value["points"][1], json!([2, 12.0]));
     }
 
     #[test]

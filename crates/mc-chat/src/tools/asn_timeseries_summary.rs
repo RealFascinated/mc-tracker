@@ -17,7 +17,7 @@ impl ChatTool for AsnTimeseriesSummaryTool {
     fn definition(&self) -> serde_json::Value {
         tool_def(
             "get_asn_timeseries_summary",
-            "Player count trend summary for an ASN. Use relative from/to like 7d and now.",
+            "Player count trend summary for an ASN, including downsampled points over the range. Use relative from/to like 7d and now.",
             json!({
                 "type": "object",
                 "properties": {

@@ -1,5 +1,6 @@
 use mc_api_types::TimeseriesSummaryResponse;
 
+use crate::constants::DEFAULT_MAX_SUMMARY_POINTS;
 use crate::error::InsightsError;
 
 pub trait TimeRangeParser: Send + Sync {
@@ -30,7 +31,7 @@ impl Default for AnalyzeOptions {
     fn default() -> Self {
         Self {
             span_seconds: 0,
-            max_points: 30,
+            max_points: DEFAULT_MAX_SUMMARY_POINTS,
         }
     }
 }

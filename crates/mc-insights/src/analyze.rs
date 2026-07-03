@@ -108,7 +108,7 @@ mod tests {
                 &lanes,
                 AnalyzeOptions {
                     span_seconds: 3600,
-                    max_points: 30,
+                    max_points: crate::constants::DEFAULT_MAX_SUMMARY_POINTS,
                 },
             )
             .unwrap();

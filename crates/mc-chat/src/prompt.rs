@@ -20,5 +20,5 @@ Use get_asn with query to find or get detail on an ASN network; use asn+asn_org 
 Use list_asns only when the user wants a full provider overview. \
 Use get_total_timeseries_summary for the combined network-wide trend. \
 \n\
-Time ranges are relative strings like 7d, 30d, now. Trend fields: min, max, avg, changePct, trend. \
+Time ranges are relative strings like 7d, 30d, now. Trend fields: min, max, avg, changePct, trend, plus points as [timestamp, value] pairs for the shape over time. \
 Answer only what was asked — do not volunteer ASN/network lists, peer servers, or say an ASN was not found. Be concise.";

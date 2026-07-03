@@ -20,7 +20,7 @@ impl ChatTool for CompareServersTool {
     fn definition(&self) -> serde_json::Value {
         tool_def(
             "compare_servers",
-            "Compare player count trends for 2–5 servers. Pass server_ids for a specific set, or server_id/query + peer_count to compare one server against the current top peers.",
+            "Compare player count trends for 2–5 servers; each result includes downsampled points. Pass server_ids for a specific set, or server_id/query + peer_count to compare one server against the current top peers.",
             json!({
                 "type": "object",
                 "properties": {

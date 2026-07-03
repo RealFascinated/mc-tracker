@@ -10,7 +10,7 @@ use mc_api_types::{
 use mc_common::constants::limits::DEFAULT_LIST_LIMIT;
 use mc_insights::{
     AnalyzeOptions, DefaultTimeRangeParser, DefaultTimeseriesAnalyzer, InsightsError,
-    ResolvedTimeRange, TimeRangeParser, TimeseriesAnalyzer,
+    ResolvedTimeRange, TimeRangeParser, TimeseriesAnalyzer, DEFAULT_MAX_SUMMARY_POINTS,
 };
 use mc_metrics::MetricsError;
 use uuid::Uuid;
@@ -242,7 +242,7 @@ impl InsightsService {
             lanes,
             AnalyzeOptions {
                 span_seconds: range.to - range.from,
-                max_points: 30,
+                max_points: DEFAULT_MAX_SUMMARY_POINTS,
             },
         )
     }

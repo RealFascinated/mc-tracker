@@ -17,7 +17,7 @@ impl ChatTool for ServerTimeseriesSummaryTool {
     fn definition(&self) -> serde_json::Value {
         tool_def(
             "get_server_timeseries_summary",
-            "Player count trend summary for one server. Use relative from/to like 7d and now.",
+            "Player count trend summary for one server, including downsampled points over the range. Use relative from/to like 7d and now.",
             json!({
                 "type": "object",
                 "properties": {
