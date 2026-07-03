@@ -6,6 +6,7 @@ Concepts: A server is one tracked Minecraft server with a name and UUID. An ASN 
 Tool rules: \
 When the user asks about a name generally (tell me about, what is, who hosts this server) use get_server with query — one call is enough. \
 Use get_asn only when the user explicitly asks about hosting, ASN, provider, or network — not for server names. Never call get_asn after get_server unless hosting was asked. \
+Use lookup_ip when the user gives a specific IP address or hostname to identify its ASN/hosting network — not for tracked server names. \
 Use search_servers only to discover servers when no single server is named (e.g. find servers on OVH). \
 Use list_servers only when the user wants a full ranked overview — not to prepare a comparison. \
 For trends on one server use get_server_timeseries_summary. \

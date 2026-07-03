@@ -37,14 +37,10 @@ export function dashboardRefreshIntervalToMs(
   return getDashboardRefreshIntervalOption(value).ms;
 }
 
-export function getStoredDashboardRefreshInterval(): DashboardRefreshInterval | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const stored = localStorage.getItem(DASHBOARD_REFRESH_STORAGE_KEY);
-  return stored &&
-    DASHBOARD_REFRESH_INTERVAL_OPTIONS.some((option) => option.value === stored)
-    ? (stored as DashboardRefreshInterval)
-    : null;
+export function isDashboardRefreshInterval(
+  value: string,
+): value is DashboardRefreshInterval {
+  return DASHBOARD_REFRESH_INTERVAL_OPTIONS.some(
+    (option) => option.value === value,
+  );
 }

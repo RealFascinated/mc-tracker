@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 
+import { ServerSortToggle } from "@/components/dashboard/server-sort-toggle";
 import { DashboardRangeToggle } from "@/components/dashboard/dashboard-range-toggle";
 import type { DashboardRangeOption } from "@/components/dashboard/dashboard-range-toggle";
 import { EntityMetricsGrid } from "@/components/dashboard/grids/entity-metrics-grid";
@@ -7,6 +8,7 @@ import type { EntityMetricsSectionCopy } from "@/components/dashboard/grids/enti
 import { ServerIdentityHeader } from "@/components/dashboard/server-identity-header";
 import { SERVER_PLATFORM_FILTER_OPTIONS } from "@/lib/api/platform";
 import type { ServerPlatformFilter } from "@/lib/api/platform";
+import type { ServerSort } from "@/lib/api/server-sort";
 import type {
   ServerListItem,
   ServerTimeseriesResponse,
@@ -29,6 +31,8 @@ type ServerMetricsGridProps = {
   window: MetricTimeWindow;
   platformFilter: ServerPlatformFilter;
   onPlatformFilterChange: (platform: ServerPlatformFilter) => void;
+  sort: ServerSort;
+  onSortChange: (sort: ServerSort) => void;
   trackedServers: number;
   section?: EntityMetricsSectionCopy;
 };
@@ -62,6 +66,8 @@ export function ServerMetricsGrid({
   window,
   platformFilter,
   onPlatformFilterChange,
+  sort,
+  onSortChange,
   trackedServers,
   section,
 }: ServerMetricsGridProps) {
@@ -69,14 +75,17 @@ export function ServerMetricsGrid({
   const emptyCopy = serverGridEmptyCopy(platformFilter);
   const headerTrailing = useMemo(
     () => (
-      <DashboardRangeToggle
-        value={platformFilter}
-        options={SERVER_PLATFORM_FILTER_TOGGLE_OPTIONS}
-        onValueChange={onPlatformFilterChange}
-        aria-label="Server platform"
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <ServerSortToggle value={sort} onValueChange={onSortChange} />
+        <DashboardRangeToggle
+          value={platformFilter}
+          options={SERVER_PLATFORM_FILTER_TOGGLE_OPTIONS}
+          onValueChange={onPlatformFilterChange}
+          aria-label="Server platform"
+        />
+      </div>
     ),
-    [onPlatformFilterChange, platformFilter],
+    [onPlatformFilterChange, onSortChange, platformFilter, sort],
   );
 
   return (
@@ -101,7 +110,7 @@ export function ServerMetricsGrid({
       timeseriesEnabled={(server) => server.id.length > 0}
       section={
         section ?? {
-          title: "Per server",
+          title: "Servers",
           subtitleDefault: "Player history for each tracked server",
           subtitleFiltered: (shown, total) =>
             `Showing ${shown} of ${total} servers`,

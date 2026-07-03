@@ -1,7 +1,7 @@
 use mc_api_types::{
-    AsnDetailResponse, AsnListItemResponse, AsnTimeseriesSummaryResponse, ServerListItemResponse,
-    ServerSearchItemResponse, ServerTimeseriesSummaryResponse, ServersListResponse,
-    ServersSearchResponse, TimeseriesSummaryResponse,
+    AsnDetailResponse, AsnListItemResponse, AsnTimeseriesSummaryResponse, IpLookupResponse,
+    ServerListItemResponse, ServerSearchItemResponse, ServerTimeseriesSummaryResponse,
+    ServersListResponse, ServersSearchResponse, TimeseriesSummaryResponse,
 };
 use serde_json::{json, Value};
 
@@ -31,6 +31,16 @@ pub fn compact_asn_detail(detail: AsnDetailResponse) -> Value {
         "serverCount": detail.server_count,
         "summary": compact_players_summary(&detail.summary),
         "servers": detail.servers.iter().map(compact_server).collect::<Vec<_>>(),
+    })
+}
+
+pub fn compact_ip_lookup(response: IpLookupResponse) -> Value {
+    json!({
+        "query": response.query,
+        "ip": response.ip,
+        "asn": response.asn,
+        "asnOrg": response.asn_org,
+        "cidr": response.cidr,
     })
 }
 

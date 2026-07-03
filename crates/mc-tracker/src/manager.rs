@@ -10,9 +10,11 @@ use futures::future::join_all;
 use mc_api_types::{
     timeseries_keys, AdminServerResponse, AdminServersListResponse, AsnDetailResponse,
     AsnListItemResponse, AsnSearchResponse, AsnTimeseriesResponse, AsnsListResponse,
-    AsnsSummaryResponse, EntityPeakStats, PeakPlayersRecord, PlayersPeakSummary,
-    ServerListItemResponse, ServerSearchItemResponse, ServerTimeseriesResponse,
-    ServersListResponse, ServersSearchResponse, ServersSummaryResponse, TimeseriesLane,
+    AsnsSummaryResponse, EntityPeakStats, IpLookupResponse, PeakPlayersRecord,
+    PlayersPeakSummary, ServerListItemResponse, ServerSearchItemResponse, ServerTimeseriesResponse,
+    ServersListResponse, ServersListSortField, ServersSearchResponse, ServersSummaryResponse,
+    SortOrder,
+    TimeseriesLane,
     TimeseriesLanes,
 };
 use mc_db::db::repos::servers;
@@ -28,7 +30,7 @@ use mc_metrics::{
     VmPushClient, VmQueryBuilder, VmQueryClient,
 };
 use mc_ping::{
-    ping_bedrock, ping_java, resolve_bedrock, resolve_java, with_retry, DnsError,
+    ping_bedrock, ping_java, resolve_bedrock, resolve_java, with_retry, DnsError, DnsResolver,
     HickoryDnsResolver, Ping, PingError,
 };
 use mc_search::{matches, score_str, SearchField};
@@ -333,7 +335,12 @@ impl ServerManager {
         summary
     }
 
-    pub async fn servers_list_response(&self, search: Option<&str>) -> ServersListResponse {
+    pub async fn servers_list_response(
+        &self,
+        search: Option<&str>,
+        sort: ServersListSortField,
+        order: SortOrder,
+    ) -> ServersListResponse {
         let summary = self.summary().await;
         let all_tracked = self.servers.read().await.clone();
         let tracked = all_tracked
@@ -356,11 +363,7 @@ impl ServerManager {
             servers.push(server_list_item(&server, peaks_24h.get(&id).copied()));
         }
 
-        servers.sort_by(|left, right| {
-            let left_players = left.players_online.map(i64::from).unwrap_or(-1);
-            let right_players = right.players_online.map(i64::from).unwrap_or(-1);
-            right_players.cmp(&left_players)
-        });
+        sort_server_list_items(&mut servers, sort, order);
 
         ServersListResponse {
             summary: ServersSummaryResponse {
@@ -659,6 +662,37 @@ impl ServerManager {
                 },
             },
             servers,
+        })
+    }
+
+    pub async fn ip_lookup_response(&self, query: &str) -> Result<IpLookupResponse, String> {
+        let query = query.trim();
+        if query.is_empty() {
+            return Err("query must not be empty".into());
+        }
+
+        let ip = if query.parse::<std::net::IpAddr>().is_ok() {
+            query.to_string()
+        } else {
+            let dns = self.dns.read().await;
+            dns.resolve_a(query)
+                .await
+                .map_err(|err| err.to_string())?
+                .ok_or_else(|| format!("could not resolve hostname: {query}"))?
+        };
+
+        let lookup = self
+            .geo
+            .lookup_asn(&ip)
+            .await
+            .map_err(|err| err.to_string())?;
+
+        Ok(IpLookupResponse {
+            query: query.to_string(),
+            ip,
+            asn: lookup.asn,
+            asn_org: lookup.asn_org,
+            cidr: lookup.cidr,
         })
     }
 
@@ -1134,6 +1168,38 @@ fn server_list_item(server: &TrackedServer, peak_24h: Option<f64>) -> ServerList
     }
 }
 
+fn sort_server_list_items(
+    servers: &mut [ServerListItemResponse],
+    sort: ServersListSortField,
+    order: SortOrder,
+) {
+    match sort {
+        ServersListSortField::Players => {
+            servers.sort_by(|left, right| {
+                let left_players = left.players_online.map(i64::from).unwrap_or(-1);
+                let right_players = right.players_online.map(i64::from).unwrap_or(-1);
+                match order {
+                    SortOrder::Desc => right_players.cmp(&left_players),
+                    SortOrder::Asc => left_players.cmp(&right_players),
+                }
+            });
+        }
+        ServersListSortField::Name => {
+            servers.sort_by(|left, right| {
+                let cmp = left
+                    .name
+                    .to_lowercase()
+                    .cmp(&right.name.to_lowercase())
+                    .then_with(|| left.id.cmp(&right.id));
+                match order {
+                    SortOrder::Asc => cmp,
+                    SortOrder::Desc => cmp.reverse(),
+                }
+            });
+        }
+    }
+}
+
 fn entity_peak_stats(players_24h: Option<f64>, server: &TrackedServer) -> EntityPeakStats {
     entity_peak_stats_with_all_time(
         players_24h,
@@ -1434,7 +1500,9 @@ mod tests {
         );
 
         assert_eq!(manager.summary().await.tracked_servers, 1);
-        let response = manager.servers_list_response(None).await;
+        let response = manager
+            .servers_list_response(None, ServersListSortField::Players, SortOrder::Desc)
+            .await;
         assert_eq!(response.servers.len(), 1);
         let admin = manager.admin_servers_list().await;
         assert_eq!(admin.servers.len(), 2);
@@ -1620,13 +1688,60 @@ mod tests {
             servers[3].players_online = Some(42);
         }
 
-        let response = manager.servers_list_response(None).await;
+        let response = manager
+            .servers_list_response(None, ServersListSortField::Players, SortOrder::Desc)
+            .await;
         let ids: Vec<_> = response
             .servers
             .iter()
             .map(|server| server.id.parse::<Uuid>().unwrap())
             .collect();
         assert_eq!(ids, vec![id_high, id_mid, id_low, id_offline]);
+    }
+
+    #[tokio::test]
+    async fn servers_list_response_sorts_by_name_asc() {
+        let id_charlie = Uuid::new_v4();
+        let id_alpha = Uuid::new_v4();
+        let id_bravo = Uuid::new_v4();
+
+        let settings = Arc::new(RwLock::new(AppSettings::default()));
+        let bootstrap = settings.read().await.clone();
+        let manager = ServerManager::new(
+            vec![
+                Server {
+                    id: id_charlie,
+                    name: "Charlie".into(),
+                    ..sample_server()
+                },
+                Server {
+                    id: id_alpha,
+                    name: "Alpha".into(),
+                    ..sample_server()
+                },
+                Server {
+                    id: id_bravo,
+                    name: "Bravo".into(),
+                    ..sample_server()
+                },
+            ],
+            None,
+            settings,
+            fixture_geo(),
+            None,
+            &bootstrap,
+            "development",
+        );
+
+        let response = manager
+            .servers_list_response(None, ServersListSortField::Name, SortOrder::Asc)
+            .await;
+        let ids: Vec<_> = response
+            .servers
+            .iter()
+            .map(|server| server.id.parse::<Uuid>().unwrap())
+            .collect();
+        assert_eq!(ids, vec![id_alpha, id_bravo, id_charlie]);
     }
 
     #[tokio::test]

@@ -15,7 +15,7 @@ pub use self::timeseries::{keys as timeseries_keys, TimeseriesLane, TimeseriesLa
 pub use self::admin_servers::{AdminServerResponse, AdminServersListResponse};
 pub use self::asns::{
     AsnDetailResponse, AsnListItemResponse, AsnSearchResponse, AsnTimeseriesResponse,
-    AsnsListResponse, AsnsSummaryResponse,
+    AsnsListResponse, AsnsSummaryResponse, IpLookupResponse,
 };
 pub use self::auth::{ChatQuota, LoginResponse, MeResponse};
 pub use self::auth_config::SignupEnabledResponse;

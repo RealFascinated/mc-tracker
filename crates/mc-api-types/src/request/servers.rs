@@ -21,11 +21,29 @@ pub struct UpdateServerRequest {
     pub paused: Option<bool>,
 }
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum ServersListSortField {
+    #[default]
+    Players,
+    Name,
+}
+
+#[derive(Debug, Clone, Copy, Default, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum SortOrder {
+    #[default]
+    Desc,
+    Asc,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServersListQuery {
     #[serde(default)]
     pub search: Option<String>,
+    pub sort: ServersListSortField,
+    pub order: SortOrder,
 }
 
 fn default_servers_search_limit() -> u32 {

@@ -18,6 +18,7 @@ import {
 } from "@/components/site-header-toolbar";
 import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
+import { usePersistedServerSort } from "@/hooks/use-persisted-server-sort";
 import { useSearchParamNavigation } from "@/hooks/use-search-param-navigation";
 import { asnDisplayName, parseAsnOrgSearchParam } from "@/lib/api/asns";
 import { ensureQueryOrNotFound } from "@/lib/api/ensure-query-or-not-found";
@@ -27,6 +28,12 @@ import {
   parseServerPlatformFilterParam,
 } from "@/lib/api/platform";
 import type { ServerPlatformFilter } from "@/lib/api/platform";
+import {
+  parseServerSortFieldParam,
+  parseSortOrderParam,
+  sortServersBy,
+} from "@/lib/api/server-sort";
+import type { ServerSortField, SortOrder } from "@/lib/api/server-sort";
 import { withDashboardEntityQuery } from "@/lib/dashboard/entity-query";
 import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
 import { pageTitle } from "@/lib/page-title";
@@ -39,6 +46,8 @@ type AsnDetailSearch = {
   to?: number;
   asnOrg?: string;
   platform?: ServerPlatformFilter;
+  sort?: ServerSortField;
+  order?: SortOrder;
 };
 
 export const Route = createFileRoute("/asns/$asn")({
@@ -46,6 +55,8 @@ export const Route = createFileRoute("/asns/$asn")({
     ...parseMetricTimeWindowSearch(search),
     asnOrg: parseAsnOrgSearchParam(search.asnOrg),
     platform: parseServerPlatformFilterParam(search.platform),
+    sort: parseServerSortFieldParam(search.sort),
+    order: parseSortOrderParam(search.order),
   }),
   loaderDeps: ({ search }) => ({
     asnOrg: parseAsnOrgSearchParam(search.asnOrg) ?? "",
@@ -72,6 +83,8 @@ function AsnDetailPage() {
     to: searchTo,
     asnOrg: searchAsnOrg,
     platform: urlPlatform,
+    sort: urlSortField,
+    order: urlOrder,
   } = Route.useSearch();
   const navigate = Route.useNavigate();
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
@@ -80,6 +93,10 @@ function AsnDetailPage() {
   const [searchInput, setSearchInput] = useState("");
   const asnOrg = searchAsnOrg ?? "";
   const platformFilter: ServerPlatformFilter = urlPlatform ?? "all";
+  const { serverSort, setServerSort } = usePersistedServerSort(navigate, {
+    sort: urlSortField,
+    order: urlOrder,
+  });
 
   const { data: asnDetail = initialAsn } = useQuery(
     withDashboardEntityQuery(
@@ -104,10 +121,10 @@ function AsnDetailPage() {
     "all",
   );
 
-  const filteredServers = useMemo(
-    () => filterServersByPlatform(asnDetail.servers, platformFilter),
-    [asnDetail.servers, platformFilter],
-  );
+  const filteredServers = useMemo(() => {
+    const filtered = filterServersByPlatform(asnDetail.servers, platformFilter);
+    return sortServersBy(filtered, serverSort);
+  }, [asnDetail.servers, platformFilter, serverSort]);
 
   return (
     <>
@@ -161,6 +178,8 @@ function AsnDetailPage() {
             window={timeWindow}
             platformFilter={platformFilter}
             onPlatformFilterChange={setPlatformFilter}
+            sort={serverSort}
+            onSortChange={setServerSort}
             trackedServers={asnDetail.summary.trackedServers}
             section={{
               title: "Servers on this network",

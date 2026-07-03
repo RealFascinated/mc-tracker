@@ -2,11 +2,14 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useState,
   useSyncExternalStore,
 } from "react";
 import { flushSync } from "react-dom";
 
+import {
+  localStorageStringOptions,
+  useLocalStorage,
+} from "@/hooks/use-local-storage";
 import { startThemeViewTransition } from "@/lib/theme/transition";
 import { THEME_STORAGE_KEY, ThemeContext } from "@/lib/theme/theme-context";
 import type {
@@ -14,6 +17,10 @@ import type {
   SetThemeOptions,
   ThemePreference,
 } from "@/lib/theme/theme-context";
+
+function isThemePreference(value: string): value is ThemePreference {
+  return value === "light" || value === "dark" || value === "system";
+}
 
 function subscribeToSystemTheme(onStoreChange: () => void) {
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -31,28 +38,16 @@ function getServerSystemThemeSnapshot(): ResolvedTheme {
   return "dark";
 }
 
-function getStoredTheme(): ThemePreference | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const stored = localStorage.getItem(THEME_STORAGE_KEY);
-  return stored === "light" || stored === "dark" || stored === "system"
-    ? stored
-    : null;
-}
-
 function applyTheme(theme: ResolvedTheme) {
   document.documentElement.classList.toggle("dark", theme === "dark");
 }
 
-function getInitialPreference(): ThemePreference {
-  return getStoredTheme() ?? "system";
-}
-
 function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] =
-    useState<ThemePreference>(getInitialPreference);
+  const [theme, setThemeState] = useLocalStorage(THEME_STORAGE_KEY, {
+    defaultValue: "system" as ThemePreference,
+    ...localStorageStringOptions,
+    deserialize: (raw) => (isThemePreference(raw) ? raw : null),
+  });
   const systemTheme = useSyncExternalStore(
     subscribeToSystemTheme,
     getSystemThemeSnapshot,
@@ -76,7 +71,6 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
       const resolvedChanges = nextResolved !== resolvedTheme;
 
       const apply = () => {
-        localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
         applyTheme(nextResolved);
         flushSync(() => {
           setThemeState(nextTheme);
@@ -90,7 +84,7 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
 
       apply();
     },
-    [resolvedTheme, systemTheme, theme],
+    [resolvedTheme, setThemeState, systemTheme, theme],
   );
 
   const value = useMemo(

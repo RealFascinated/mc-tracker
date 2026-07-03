@@ -134,7 +134,7 @@ async fn public_servers_stay_public() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/servers")
+                .uri("/servers?sort=players&order=desc")
                 .body(Body::empty())
                 .unwrap(),
         )

@@ -131,7 +131,11 @@ async fn list_servers(
     Json(
         state
             .manager
-            .servers_list_response(trim_search(query.search.as_deref()))
+            .servers_list_response(
+                trim_search(query.search.as_deref()),
+                query.sort,
+                query.order,
+            )
             .await,
     )
 }

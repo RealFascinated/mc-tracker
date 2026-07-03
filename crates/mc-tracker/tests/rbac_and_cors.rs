@@ -110,7 +110,7 @@ async fn cors_allows_vite_origin_in_development() {
         .oneshot(
             Request::builder()
                 .method("OPTIONS")
-                .uri("/servers")
+                .uri("/servers?sort=players&order=desc")
                 .header("origin", "http://localhost:5173")
                 .header("access-control-request-method", "GET")
                 .body(Body::empty())
@@ -143,7 +143,7 @@ async fn cors_blocks_unknown_origin() {
         .oneshot(
             Request::builder()
                 .method("OPTIONS")
-                .uri("/servers")
+                .uri("/servers?sort=players&order=desc")
                 .header("origin", "http://evil.example")
                 .header("access-control-request-method", "GET")
                 .body(Body::empty())

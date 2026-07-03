@@ -1048,7 +1048,7 @@
   }
 
   .entity-metrics-section-header {
-    @apply flex flex-wrap items-baseline justify-between gap-2 px-0.5;
+    @apply flex flex-wrap items-center justify-between gap-2 px-0.5;
   }
 
   .entity-metrics-section-title {

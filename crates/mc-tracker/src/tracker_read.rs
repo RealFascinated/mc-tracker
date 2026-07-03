@@ -7,7 +7,12 @@ use crate::manager::ServerManager;
 #[async_trait]
 impl TrackerRead for ServerManager {
     async fn list_servers(&self) -> mc_api_types::ServersListResponse {
-        self.servers_list_response(None).await
+        self.servers_list_response(
+            None,
+            mc_api_types::ServersListSortField::Players,
+            mc_api_types::SortOrder::Desc,
+        )
+        .await
     }
 
     async fn search_servers(
@@ -36,5 +41,14 @@ impl TrackerRead for ServerManager {
 
     async fn search_asns(&self, query: &str, limit: u32) -> mc_api_types::AsnSearchResponse {
         self.search_asns_response(query, limit).await
+    }
+
+    async fn lookup_ip(
+        &self,
+        query: &str,
+    ) -> Result<mc_api_types::IpLookupResponse, mc_chat::ChatError> {
+        self.ip_lookup_response(query)
+            .await
+            .map_err(mc_chat::ChatError::Tool)
     }
 }

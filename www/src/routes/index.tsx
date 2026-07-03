@@ -17,6 +17,7 @@ import {
   SiteHeaderToolbar,
 } from "@/components/site-header-toolbar";
 import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
+import { usePersistedServerSort } from "@/hooks/use-persisted-server-sort";
 import { useSearchParamNavigation } from "@/hooks/use-search-param-navigation";
 import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
 import { parseDashboardViewParam } from "@/lib/dashboard/dashboard-search";
@@ -27,6 +28,12 @@ import {
   parseServerPlatformFilterParam,
 } from "@/lib/api/platform";
 import type { ServerPlatformFilter } from "@/lib/api/platform";
+import {
+  parseServerSortFieldParam,
+  parseSortOrderParam,
+  resolveServerSort,
+} from "@/lib/api/server-sort";
+import type { ServerSortField, SortOrder } from "@/lib/api/server-sort";
 import { serversQueryOptions } from "@/lib/api/servers.queries";
 import { pageTitle } from "@/lib/page-title";
 import type { MetricTimeRange } from "@/lib/metrics/range";
@@ -43,6 +50,8 @@ type DashboardSearch = {
   to?: number;
   view?: DashboardView;
   platform?: ServerPlatformFilter;
+  sort?: ServerSortField;
+  order?: SortOrder;
 };
 
 export const Route = createFileRoute("/")({
@@ -50,14 +59,17 @@ export const Route = createFileRoute("/")({
     ...parseMetricTimeWindowSearch(search),
     view: parseDashboardViewParam(search.view),
     platform: parseServerPlatformFilterParam(search.platform),
+    sort: parseServerSortFieldParam(search.sort),
+    order: parseSortOrderParam(search.order),
   }),
   loaderDeps: ({ search }) => ({
     view: search.view ?? "server",
+    serverSort: resolveServerSort(search),
   }),
-  loader: ({ context: { queryClient }, deps: { view } }) =>
+  loader: ({ context: { queryClient }, deps: { view, serverSort } }) =>
     view === "asn"
       ? queryClient.ensureQueryData(asnsQueryOptions())
-      : queryClient.ensureQueryData(serversQueryOptions()),
+      : queryClient.ensureQueryData(serversQueryOptions(serverSort)),
   head: () => ({
     meta: [{ title: pageTitle("Dashboard") }],
   }),
@@ -72,14 +84,20 @@ function DashboardPage() {
     to: searchTo,
     view: urlView,
     platform: urlPlatform,
+    sort: urlSortField,
+    order: urlOrder,
   } = Route.useSearch();
   const navigate = Route.useNavigate();
   const dashboardView = urlView ?? "server";
   const [searchInput, setSearchInput] = useState("");
   const platformFilter: ServerPlatformFilter = urlPlatform ?? "all";
+  const { serverSort, setServerSort } = usePersistedServerSort(navigate, {
+    sort: urlSortField,
+    order: urlOrder,
+  });
 
   const { data: serversData, isPending: serversPending } = useQuery({
-    ...serversQueryOptions(),
+    ...serversQueryOptions(serverSort),
     enabled: dashboardView === "server",
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
@@ -176,6 +194,8 @@ function DashboardPage() {
                 window={timeWindow}
                 platformFilter={platformFilter}
                 onPlatformFilterChange={setPlatformFilter}
+                sort={serverSort}
+                onSortChange={setServerSort}
                 trackedServers={serversData?.summary.trackedServers ?? 0}
               />
             )}

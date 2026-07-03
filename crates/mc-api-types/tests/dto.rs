@@ -1,5 +1,7 @@
 use mc_api_types::request::auth::{ChangePasswordRequest, LoginRequest};
-use mc_api_types::request::servers::{CreateServerRequest, UpdateServerRequest};
+use mc_api_types::request::servers::{
+    CreateServerRequest, ServersListQuery, ServersListSortField, SortOrder, UpdateServerRequest,
+};
 use mc_api_types::request::settings::PatchSettingsRequest;
 use mc_api_types::response::admin_servers::AdminServerResponse;
 use mc_api_types::response::auth::{LoginResponse, MeResponse};
@@ -130,4 +132,18 @@ fn patch_settings_request_deserializes_partial_fields() {
     assert_eq!(req.metrics_push_cron, Some("*/30 * * * * *".into()));
     assert_eq!(req.dns_cache_enabled, Some(false));
     assert!(req.pinger_timeout_ms.is_none());
+}
+
+#[test]
+fn servers_list_query_deserializes_sort_and_order() {
+    let query: ServersListQuery =
+        serde_json::from_str(r#"{"sort":"name","order":"asc"}"#).unwrap();
+    assert_eq!(query.sort, ServersListSortField::Name);
+    assert_eq!(query.order, SortOrder::Asc);
+}
+
+#[test]
+fn servers_list_query_requires_sort_and_order() {
+    assert!(serde_json::from_str::<ServersListQuery>(r#"{}"#).is_err());
+    assert!(serde_json::from_str::<ServersListQuery>(r#"{"sort":"name"}"#).is_err());
 }

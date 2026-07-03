@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use futures::Stream;
 use mc_api_types::{
     AsnDetailResponse, AsnSearchResponse, AsnTimeseriesSummaryResponse, AsnsListResponse,
-    GrowthRankOrder, ServerListItemResponse, ServerTimeseriesSummaryResponse,
+    GrowthRankOrder, IpLookupResponse, ServerListItemResponse, ServerTimeseriesSummaryResponse,
     ServersGrowthRankResponse, ServersListResponse, ServersSearchResponse,
     TimeseriesSummaryResponse,
 };
@@ -27,6 +27,7 @@ pub trait TrackerRead: Send + Sync {
     async fn asn_detail(&self, asn: &str, asn_org: &str) -> Option<AsnDetailResponse>;
     async fn list_asns(&self) -> AsnsListResponse;
     async fn search_asns(&self, query: &str, limit: u32) -> AsnSearchResponse;
+    async fn lookup_ip(&self, query: &str) -> Result<IpLookupResponse, ChatError>;
 }
 
 #[async_trait]

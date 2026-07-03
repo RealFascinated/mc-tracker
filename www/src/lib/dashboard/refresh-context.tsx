@@ -3,6 +3,10 @@ import { useCallback, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import {
+  localStorageStringOptions,
+  useLocalStorage,
+} from "@/hooks/use-local-storage";
+import {
   asnsQueryKey,
   asnsTimeseriesQueryKey,
   asnQueryKey,
@@ -17,29 +21,23 @@ import {
   DASHBOARD_REFRESH_STORAGE_KEY,
   DEFAULT_DASHBOARD_REFRESH_INTERVAL,
   dashboardRefreshIntervalToMs,
-  getStoredDashboardRefreshInterval,
+  isDashboardRefreshInterval,
 } from "@/lib/dashboard/refresh-interval";
-import type { DashboardRefreshInterval } from "@/lib/dashboard/refresh-interval";
 
 function DashboardRefreshProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const [refreshInterval, setRefreshIntervalState] =
-    useState<DashboardRefreshInterval>(
-      () =>
-        getStoredDashboardRefreshInterval() ??
-        DEFAULT_DASHBOARD_REFRESH_INTERVAL,
-    );
+  const [refreshInterval, setRefreshInterval] = useLocalStorage(
+    DASHBOARD_REFRESH_STORAGE_KEY,
+    {
+      defaultValue: DEFAULT_DASHBOARD_REFRESH_INTERVAL,
+      ...localStorageStringOptions,
+      deserialize: (raw) =>
+        isDashboardRefreshInterval(raw) ? raw : null,
+    },
+  );
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
   const refreshIntervalMs = dashboardRefreshIntervalToMs(refreshInterval);
-
-  const setRefreshInterval = useCallback(
-    (nextInterval: DashboardRefreshInterval) => {
-      localStorage.setItem(DASHBOARD_REFRESH_STORAGE_KEY, nextInterval);
-      setRefreshIntervalState(nextInterval);
-    },
-    [],
-  );
 
   const refreshAll = useCallback(async () => {
     setIsManualRefreshing(true);

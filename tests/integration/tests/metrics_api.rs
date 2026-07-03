@@ -127,7 +127,7 @@ async fn get_servers_matches_empty_fixture_and_vm_peaks() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/servers")
+                .uri("/servers?sort=players&order=desc")
                 .body(Body::empty())
                 .unwrap(),
         )

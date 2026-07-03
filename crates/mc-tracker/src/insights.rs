@@ -114,7 +114,14 @@ impl InsightsService {
     ) -> Result<ServersGrowthRankResponse, InsightsError> {
         let range = self.parse_range(from, to)?;
         let limit = limit.clamp(1, 25) as usize;
-        let list = self.manager.servers_list_response(None).await;
+        let list = self
+            .manager
+            .servers_list_response(
+                None,
+                mc_api_types::ServersListSortField::Players,
+                mc_api_types::SortOrder::Desc,
+            )
+            .await;
         let ids: Vec<Uuid> = list
             .servers
             .iter()
@@ -169,7 +176,14 @@ impl InsightsService {
     ) -> Result<ServersPeriodPeakRankResponse, InsightsError> {
         let range = self.parse_range(from, to)?;
         let limit = limit.clamp(1, 25) as usize;
-        let list = self.manager.servers_list_response(None).await;
+        let list = self
+            .manager
+            .servers_list_response(
+                None,
+                mc_api_types::ServersListSortField::Players,
+                mc_api_types::SortOrder::Desc,
+            )
+            .await;
         let ids: Vec<Uuid> = list
             .servers
             .iter()

@@ -64,3 +64,14 @@ pub struct AsnTimeseriesResponse {
     #[serde(flatten)]
     pub timeseries: TimeseriesLanes,
 }
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IpLookupResponse {
+    pub query: String,
+    pub ip: String,
+    pub asn: String,
+    pub asn_org: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cidr: Option<String>,
+}

@@ -6,7 +6,7 @@ use crate::error::ChatError;
 use crate::llm::types::{ToolDefinition, ToolFunctionSchema};
 use crate::tools::compact::{
     compact_asn_detail, compact_asn_search, compact_asn_timeseries_summary, compact_asns_list,
-    compact_compare_servers, compact_search, compact_server_detail,
+    compact_compare_servers, compact_ip_lookup, compact_search, compact_server_detail,
     compact_server_timeseries_summary, compact_servers_all_time_peak, compact_servers_growth_rank,
     compact_servers_list, compact_servers_near_peak, compact_servers_period_peak_rank,
     compact_timeseries_summary,
@@ -179,6 +179,42 @@ impl ChatTool for GetAsnTool {
             .await
             .ok_or_else(|| ChatError::Tool("asn not found".into()))?;
         Ok(compact_asn_detail(detail))
+    }
+}
+
+pub struct LookupIpTool;
+
+#[async_trait]
+impl ChatTool for LookupIpTool {
+    fn name(&self) -> &'static str {
+        "lookup_ip"
+    }
+
+    fn definition(&self) -> serde_json::Value {
+        tool_def(
+            "lookup_ip",
+            "Resolve an IP address or hostname and look up its ASN/hosting network via MaxMind. Use when the user asks about a specific IP — not tracked server names (get_server) or ASN labels (get_asn).",
+            json!({
+                "type": "object",
+                "properties": {
+                    "query": { "type": "string", "description": "IPv4/IPv6 address or hostname" }
+                },
+                "required": ["query"]
+            }),
+        )
+    }
+
+    async fn execute(
+        &self,
+        deps: &ChatToolDeps,
+        args: serde_json::Value,
+    ) -> Result<serde_json::Value, ChatError> {
+        let query = require_str(&args, "query")?.trim();
+        if query.is_empty() {
+            return Err(ChatError::Tool("query must not be empty".into()));
+        }
+        let response = deps.tracker.lookup_ip(query).await?;
+        Ok(compact_ip_lookup(response))
     }
 }
 

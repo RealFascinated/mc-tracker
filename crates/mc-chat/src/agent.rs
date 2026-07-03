@@ -609,6 +609,13 @@ mod tests {
                 org_servers_truncated: false,
             }
         }
+
+        async fn lookup_ip(
+            &self,
+            _: &str,
+        ) -> Result<mc_api_types::IpLookupResponse, ChatError> {
+            Err(ChatError::Tool("not implemented".into()))
+        }
     }
 
     struct MockInsights;

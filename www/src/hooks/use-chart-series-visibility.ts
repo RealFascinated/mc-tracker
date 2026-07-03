@@ -1,10 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
 
 import {
+  localStorageJsonOptions,
+  useLocalStorage,
+} from "@/hooks/use-local-storage";
+import {
+  chartHiddenSeriesStorageKey,
   hiddenIndicesToLabels,
-  readHiddenSeriesLabels,
+  parseChartHiddenSeriesLabels,
   resolveHiddenSeriesIndices,
-  writeHiddenSeriesLabels,
 } from "@/lib/metrics/chart-series-visibility";
 
 export function useChartSeriesVisibility(
@@ -13,11 +17,18 @@ export function useChartSeriesVisibility(
 ) {
   const seriesLabelsKey = seriesLabels.join("\0");
   const derivedKey = `${chartId}\0${seriesLabelsKey}`;
+  const [hiddenLabels, setHiddenLabels] = useLocalStorage(
+    chartHiddenSeriesStorageKey(chartId),
+    {
+      defaultValue: [] as string[],
+      ...localStorageJsonOptions(parseChartHiddenSeriesLabels),
+      clearWhen: (labels) => labels.length === 0,
+    },
+  );
 
   const storageHidden = useMemo(
-    () =>
-      resolveHiddenSeriesIndices(seriesLabels, readHiddenSeriesLabels(chartId)),
-    [chartId, seriesLabels],
+    () => resolveHiddenSeriesIndices(seriesLabels, hiddenLabels),
+    [hiddenLabels, seriesLabels],
   );
 
   const [override, setOverride] = useState<{
@@ -44,14 +55,11 @@ export function useChartSeriesVisibility(
           next.add(index);
         }
 
-        writeHiddenSeriesLabels(
-          chartId,
-          hiddenIndicesToLabels(seriesLabels, next),
-        );
+        setHiddenLabels(hiddenIndicesToLabels(seriesLabels, next));
         return { key: derivedKey, hidden: next };
       });
     },
-    [chartId, derivedKey, seriesLabels, storageHidden],
+    [derivedKey, seriesLabels, setHiddenLabels, storageHidden],
   );
 
   return { hiddenSeries, toggleSeries };

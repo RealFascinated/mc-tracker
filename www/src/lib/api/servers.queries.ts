@@ -1,6 +1,5 @@
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 
-import { createListQueryOptions } from "@/lib/api/list-query";
 import {
   getServer,
   getServerTimeseries,
@@ -8,6 +7,8 @@ import {
   getTotalTimeseries,
   searchServers,
 } from "@/lib/api/servers";
+import type { ServerSort } from "@/lib/api/server-sort";
+import { DEFAULT_SERVER_SORT } from "@/lib/api/server-sort";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 import {
   metricTimeWindowQueryKey,
@@ -20,10 +21,12 @@ export const serverQueryKey = ["servers", "detail"] as const;
 
 export const serversTimeseriesQueryKey = ["servers", "timeseries"] as const;
 
-export const serversQueryOptions = createListQueryOptions({
-  queryKey: serversQueryKey,
-  fetch: getServers,
-});
+export function serversQueryOptions(sort: ServerSort = DEFAULT_SERVER_SORT) {
+  return queryOptions({
+    queryKey: [...serversQueryKey, { sort }] as const,
+    queryFn: () => getServers(sort),
+  });
+}
 
 export function serverQueryOptions(id: string) {
   return queryOptions({

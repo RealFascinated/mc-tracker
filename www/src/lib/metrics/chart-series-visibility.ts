@@ -1,38 +1,40 @@
+import {
+  readLocalStorageJson,
+  removeLocalStorage,
+  writeLocalStorageJson,
+} from "@/lib/local-storage";
+
 const STORAGE_KEY_PREFIX = "mc-tracker:chart-hidden-series:";
 
 function storageKey(chartId: string) {
   return `${STORAGE_KEY_PREFIX}${chartId}`;
 }
 
-export function readHiddenSeriesLabels(chartId: string): Array<string> {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const raw = localStorage.getItem(storageKey(chartId));
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((entry): entry is string => typeof entry === "string");
-  } catch {
-    return [];
+function parseHiddenSeriesLabels(raw: unknown): Array<string> | null {
+  if (!Array.isArray(raw)) {
+    return null;
   }
+
+  return raw.filter((entry): entry is string => typeof entry === "string");
+}
+
+export function readHiddenSeriesLabels(chartId: string): Array<string> {
+  return (
+    readLocalStorageJson(storageKey(chartId), parseHiddenSeriesLabels) ?? []
+  );
 }
 
 export function writeHiddenSeriesLabels(
   chartId: string,
   labels: Array<string>,
 ) {
-  if (typeof window === "undefined") return;
-
-  try {
-    if (labels.length === 0) {
-      localStorage.removeItem(storageKey(chartId));
-      return;
-    }
-    localStorage.setItem(storageKey(chartId), JSON.stringify(labels));
-  } catch {
-    // ignore quota / privacy mode errors
+  const key = storageKey(chartId);
+  if (labels.length === 0) {
+    removeLocalStorage(key);
+    return;
   }
+
+  writeLocalStorageJson(key, labels);
 }
 
 export function hiddenIndicesToLabels(
@@ -62,4 +64,12 @@ export function resolveHiddenSeriesIndices(
   }
 
   return hidden;
+}
+
+export function chartHiddenSeriesStorageKey(chartId: string) {
+  return storageKey(chartId);
+}
+
+export function parseChartHiddenSeriesLabels(raw: unknown): Array<string> | null {
+  return parseHiddenSeriesLabels(raw);
 }
