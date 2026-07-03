@@ -34,7 +34,6 @@ export type TimeseriesResponse = {
 
 export const TIMESERIES_SERIES_KEYS = {
   playersOnline: "playersOnline",
-  playersDailyAvg: "playersDailyAvg",
 } as const;
 
 export type TrendDirection = "growing" | "stable" | "declining" | "unknown";

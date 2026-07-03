@@ -23,14 +23,12 @@ pub struct ResolvedTimeRange {
 
 #[derive(Debug, Clone, Copy)]
 pub struct AnalyzeOptions {
-    pub span_seconds: i64,
     pub max_points: usize,
 }
 
 impl Default for AnalyzeOptions {
     fn default() -> Self {
         Self {
-            span_seconds: 0,
             max_points: DEFAULT_MAX_SUMMARY_POINTS,
         }
     }

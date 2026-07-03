@@ -47,5 +47,4 @@ impl TimeseriesLanes {
 
 pub mod keys {
     pub const PLAYERS_ONLINE: &str = "playersOnline";
-    pub const PLAYERS_DAILY_AVG: &str = "playersDailyAvg";
 }

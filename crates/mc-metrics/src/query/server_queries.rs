@@ -29,14 +29,6 @@ pub fn player_count_series(environment: &str, server_id: &str) -> String {
     )
 }
 
-/// One daily average sample per UTC day for a single tracked server.
-pub fn player_count_daily_average_series(environment: &str, server_id: &str) -> String {
-    format!(
-        r#"avg_over_time({}[1d:])"#,
-        player_count_series(environment, server_id)
-    )
-}
-
 fn total_players_aggregate(environment: &str) -> String {
     format!(r#"sum({})"#, player_count_by_server(environment))
 }
@@ -96,16 +88,6 @@ mod tests {
         assert_eq!(
             query,
             r#"max by (id, type) (minecraft_server_player_count{environment="production",id="550e8400-e29b-41d4-a716-446655440000"})"#
-        );
-    }
-
-    #[test]
-    fn player_count_daily_average_series_matches_expected_shape() {
-        let query =
-            player_count_daily_average_series("production", "550e8400-e29b-41d4-a716-446655440000");
-        assert_eq!(
-            query,
-            r#"avg_over_time(max by (id, type) (minecraft_server_player_count{environment="production",id="550e8400-e29b-41d4-a716-446655440000"})[1d:])"#
         );
     }
 

@@ -7,11 +7,6 @@
       "step": 300,
       "timestamps": [1709913600, 1709913900],
       "values": [10, 12]
-    },
-    "playersDailyAvg": {
-      "step": 86400,
-      "timestamps": [1709856000, 1709942400, 1710028800],
-      "values": [10, 12, null]
     }
   }
 }

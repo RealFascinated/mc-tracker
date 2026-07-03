@@ -3,24 +3,15 @@ use mc_api_types::{
     TimeseriesLanes,
 };
 use mc_metrics::{
-    align_samples_to_window, align_samples_to_window_avg, player_count_daily_average_series,
-    player_count_series, players_for_asn_series, total_players_series, MetricQueryWindow,
-    MetricsError, VmQueryBuilder, VmQueryClient,
+    align_samples_to_window, player_count_series, players_for_asn_series, total_players_series,
+    MetricQueryWindow, MetricsError, VmQueryBuilder, VmQueryClient,
 };
 use uuid::Uuid;
 
 use super::ServerManager;
 
-fn timeseries_lane(
-    window: &MetricQueryWindow,
-    samples: &[(i64, Option<f64>)],
-    average: bool,
-) -> TimeseriesLane {
-    let (timestamps, values) = if average {
-        align_samples_to_window_avg(window, samples)
-    } else {
-        align_samples_to_window(window, samples)
-    };
+fn timeseries_lane(window: &MetricQueryWindow, samples: &[(i64, Option<f64>)]) -> TimeseriesLane {
+    let (timestamps, values) = align_samples_to_window(window, samples);
 
     TimeseriesLane {
         step: window.step_seconds(),
@@ -44,7 +35,7 @@ impl ServerManager {
         let window = MetricQueryWindow::parse(from_epoch, to_epoch)?;
         let promql = players_for_asn_series(self.environment(), asn, asn_org);
         let samples = self.query_player_count_series(&window, &promql).await?;
-        let lane = timeseries_lane(&window, &samples, false);
+        let lane = timeseries_lane(&window, &samples);
 
         let mut timeseries = TimeseriesLanes::new(window.from_epoch(), window.to_epoch());
         timeseries.insert_lane(
@@ -75,32 +66,18 @@ impl ServerManager {
             return Err(MetricsError::InvalidWindow("server not found".into()));
         }
 
-        let fine_window = MetricQueryWindow::parse(from_epoch, to_epoch)?;
-        let daily_window = MetricQueryWindow::parse_daily(from_epoch, to_epoch)?;
+        let window = MetricQueryWindow::parse(from_epoch, to_epoch)?;
         let server_id = id.to_string();
-        let fine_promql = player_count_series(self.environment(), &server_id);
-        let daily_promql = player_count_daily_average_series(self.environment(), &server_id);
+        let promql = player_count_series(self.environment(), &server_id);
+        let samples = self.query_player_count_series(&window, &promql).await?;
+        let lane = timeseries_lane(&window, &samples);
 
-        let (fine_samples, daily_samples) = tokio::try_join!(
-            self.query_player_count_series(&fine_window, &fine_promql),
-            self.query_player_count_series(&daily_window, &daily_promql),
-        )?;
-
-        let fine_lane = timeseries_lane(&fine_window, &fine_samples, false);
-        let daily_lane = timeseries_lane(&daily_window, &daily_samples, true);
-
-        let mut timeseries = TimeseriesLanes::new(fine_window.from_epoch(), fine_window.to_epoch());
+        let mut timeseries = TimeseriesLanes::new(window.from_epoch(), window.to_epoch());
         timeseries.insert_lane(
             timeseries_keys::PLAYERS_ONLINE,
-            fine_lane.step,
-            fine_lane.timestamps,
-            fine_lane.values,
-        );
-        timeseries.insert_lane(
-            timeseries_keys::PLAYERS_DAILY_AVG,
-            daily_lane.step,
-            daily_lane.timestamps,
-            daily_lane.values,
+            lane.step,
+            lane.timestamps,
+            lane.values,
         );
 
         Ok(ServerTimeseriesResponse {
@@ -117,7 +94,7 @@ impl ServerManager {
         let window = MetricQueryWindow::parse(from_epoch, to_epoch)?;
         let promql = total_players_series(self.environment());
         let samples = self.query_player_count_series(&window, &promql).await?;
-        let lane = timeseries_lane(&window, &samples, false);
+        let lane = timeseries_lane(&window, &samples);
 
         let mut timeseries = TimeseriesLanes::new(window.from_epoch(), window.to_epoch());
         timeseries.insert_lane(

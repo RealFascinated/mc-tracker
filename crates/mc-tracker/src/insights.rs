@@ -294,12 +294,11 @@ impl InsightsService {
     fn summarize(
         &self,
         lanes: &mc_api_types::TimeseriesLanes,
-        range: ResolvedTimeRange,
+        _range: ResolvedTimeRange,
     ) -> Result<TimeseriesSummaryResponse, InsightsError> {
         self.analyzer.summarize(
             lanes,
             AnalyzeOptions {
-                span_seconds: range.to - range.from,
                 max_points: DEFAULT_MAX_SUMMARY_POINTS,
             },
         )

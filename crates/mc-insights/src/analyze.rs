@@ -1,11 +1,8 @@
 use mc_api_types::{timeseries_keys, SummaryPoint, TimeseriesLane, TimeseriesSummaryResponse};
-use mc_common::constants::time::SECONDS_PER_DAY;
 
 use crate::error::InsightsError;
 use crate::traits::{AnalyzeOptions, TimeseriesAnalyzer};
 use crate::trend::{change_pct_start_to_end, classify_trend};
-
-const THREE_DAYS_SECONDS: i64 = 3 * SECONDS_PER_DAY;
 
 pub struct DefaultTimeseriesAnalyzer;
 
@@ -15,11 +12,7 @@ impl TimeseriesAnalyzer for DefaultTimeseriesAnalyzer {
         lanes: &mc_api_types::TimeseriesLanes,
         options: AnalyzeOptions,
     ) -> Result<TimeseriesSummaryResponse, InsightsError> {
-        let series_key = if options.span_seconds >= THREE_DAYS_SECONDS {
-            timeseries_keys::PLAYERS_DAILY_AVG
-        } else {
-            timeseries_keys::PLAYERS_ONLINE
-        };
+        let series_key = timeseries_keys::PLAYERS_ONLINE;
         let lane = lanes.series.get(series_key).ok_or(InsightsError::NoData)?;
         summarize_lane(lanes.from, lanes.to, series_key, lane, options.max_points)
     }
@@ -107,7 +100,6 @@ mod tests {
             .summarize(
                 &lanes,
                 AnalyzeOptions {
-                    span_seconds: 3600,
                     max_points: crate::constants::DEFAULT_MAX_SUMMARY_POINTS,
                 },
             )

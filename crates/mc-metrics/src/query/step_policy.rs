@@ -1,7 +1,5 @@
 use std::time::Duration;
 
-use mc_common::constants::time::SECONDS_PER_DAY_U64;
-
 const MAX_POINTS: u64 = 800;
 const MIN_STEP: Duration = Duration::from_secs(15);
 const MIN_SPAN: Duration = Duration::from_secs(5 * 60);
@@ -26,10 +24,6 @@ pub fn min_step() -> Duration {
     MIN_STEP
 }
 
-pub fn daily_step() -> Duration {
-    Duration::from_secs(SECONDS_PER_DAY_U64)
-}
-
 pub fn step_for(span: Duration) -> Duration {
     let target_step = span.as_secs().max(MIN_STEP.as_secs()) / MAX_POINTS;
     for &nice in &NICE_STEP_SECONDS {
@@ -42,6 +36,10 @@ pub fn step_for(span: Duration) -> Duration {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
+    use mc_common::constants::time::SECONDS_PER_DAY_U64;
+
     use super::*;
 
     #[test]

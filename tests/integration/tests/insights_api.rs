@@ -29,8 +29,6 @@ fn sample_server(id: Uuid) -> Server {
 
 async fn mount_series_mocks(vm: &MockServer, server_id: Uuid) {
     let fine_series = mc_metrics::player_count_series("production", &server_id.to_string());
-    let daily_series =
-        mc_metrics::player_count_daily_average_series("production", &server_id.to_string());
 
     Mock::given(method("GET"))
         .and(query_param("query", fine_series.as_str()))
@@ -42,23 +40,6 @@ async fn mount_series_mocks(vm: &MockServer, server_id: Uuid) {
                     "values": [
                         [1709913600.0, "10"],
                         [1709913900.0, "12"]
-                    ]
-                }]
-            }
-        })))
-        .mount(vm)
-        .await;
-
-    Mock::given(method("GET"))
-        .and(query_param("query", daily_series.as_str()))
-        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "status": "success",
-            "data": {
-                "resultType": "matrix",
-                "result": [{
-                    "values": [
-                        [1709856000.0, "10"],
-                        [1709942400.0, "12"]
                     ]
                 }]
             }

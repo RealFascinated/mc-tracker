@@ -1,7 +1,5 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use mc_common::constants::time::SECONDS_PER_DAY;
-
 use crate::error::MetricsError;
 use crate::query::step_policy;
 
@@ -45,13 +43,6 @@ impl MetricQueryWindow {
         })
     }
 
-    /// Fixed one-day step for per-server daily average charts.
-    pub fn parse_daily(from_epoch: i64, to_epoch: i64) -> Result<Self, MetricsError> {
-        let mut window = Self::parse(from_epoch, to_epoch)?;
-        window.step = step_policy::daily_step();
-        Ok(window)
-    }
-
     pub fn from(&self) -> SystemTime {
         self.from
     }
@@ -82,18 +73,9 @@ impl MetricQueryWindow {
         self.step.as_secs() as i64
     }
 
-    /// Range-query start for VictoriaMetrics. Daily lanes snap `from` to UTC midnight so
-    /// `avg_over_time(...[1d:])` is evaluated on day boundaries even when the UI zooms
-    /// mid-day.
+    /// Range-query start for VictoriaMetrics.
     pub fn vm_query_from(&self) -> SystemTime {
-        let from_epoch = self.from_epoch();
-        let epoch = if self.step_seconds() == SECONDS_PER_DAY {
-            let step = self.step_seconds();
-            (from_epoch / step) * step
-        } else {
-            from_epoch
-        };
-        UNIX_EPOCH + Duration::from_secs(epoch as u64)
+        self.from
     }
 
     pub fn vm_query_to(&self) -> SystemTime {
@@ -121,6 +103,8 @@ fn unix_epoch(seconds: i64) -> Result<SystemTime, MetricsError> {
 
 #[cfg(test)]
 mod tests {
+    use mc_common::constants::time::SECONDS_PER_DAY;
+
     use super::*;
 
     #[test]
@@ -179,22 +163,6 @@ mod tests {
             .as_secs() as i64;
         assert!(MetricQueryWindow::parse(to, to).is_err());
         assert!(MetricQueryWindow::parse(to + 60, to).is_err());
-    }
-
-    #[test]
-    fn vm_query_from_snaps_daily_lane_to_utc_midnight() {
-        let step = step_policy::daily_step().as_secs() as i64;
-        let from = 1709913600 + 3_600;
-        let to = from + 3 * step;
-        let window = MetricQueryWindow::parse_daily(from, to).unwrap();
-
-        let aligned_from = window
-            .vm_query_from()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs() as i64;
-        assert_eq!(aligned_from, (from / step) * step);
-        assert_eq!(window.vm_query_to(), window.to());
     }
 
     #[test]
