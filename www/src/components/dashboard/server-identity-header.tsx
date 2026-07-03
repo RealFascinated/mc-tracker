@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 
 import { EntityCardStats } from "@/components/dashboard/grids/entity-metrics-grid";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
@@ -28,12 +29,14 @@ type ServerIdentityHeaderProps = {
   server: ServerListItem;
   linkToDetail?: boolean;
   layout?: "card" | "page";
+  trailing?: ReactNode;
 };
 
 export function ServerIdentityHeader({
   server,
   linkToDetail = false,
   layout = "card",
+  trailing,
 }: ServerIdentityHeaderProps) {
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const asnName = serverAsnName(server);
@@ -49,52 +52,55 @@ export function ServerIdentityHeader({
           : "entity-metrics-card-header",
       )}
     >
-      <div className="entity-metrics-identity">
-        <ServerFavicon name={server.name} favicon={server.favicon} size="md" />
-        <div className="min-w-0">
-          <div className="entity-metrics-title-row">
-            {linkToDetail ? (
-              <Link
-                to="/servers/$serverId"
-                params={{ serverId: server.id }}
-                search={timeWindowSearch}
-                className="min-w-0 hover:text-monitor focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:hover:text-warning dark:focus-visible:ring-warning"
-              >
-                {nameContent}
-              </Link>
-            ) : (
-              nameContent
-            )}
-            <span
-              className={cn(
-                "server-platform-badge",
-                server.type === "PE" && "server-platform-badge-pe",
+      <div className="flex items-start gap-2">
+        <div className="entity-metrics-identity min-w-0 flex-1">
+          <ServerFavicon name={server.name} favicon={server.favicon} size="md" />
+          <div className="min-w-0">
+            <div className="entity-metrics-title-row">
+              {linkToDetail ? (
+                <Link
+                  to="/servers/$serverId"
+                  params={{ serverId: server.id }}
+                  search={timeWindowSearch}
+                  className="min-w-0 hover:text-monitor focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:hover:text-warning dark:focus-visible:ring-warning"
+                >
+                  {nameContent}
+                </Link>
+              ) : (
+                nameContent
               )}
-            >
-              {server.type}
-            </span>
-          </div>
-          <div className="entity-metrics-subtitle">
-            {address}
-            {asnName ? (
-              <>
-                {" · "}
-                {server.asn ? (
-                  <Link
-                    to="/asns/$asn"
-                    params={{ asn: server.asn }}
-                    search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
-                    className="hover:text-foreground hover:underline underline-offset-4"
-                  >
-                    {asnName}
-                  </Link>
-                ) : (
-                  asnName
+              <span
+                className={cn(
+                  "server-platform-badge",
+                  server.type === "PE" && "server-platform-badge-pe",
                 )}
-              </>
-            ) : null}
+              >
+                {server.type}
+              </span>
+            </div>
+            <div className="entity-metrics-subtitle">
+              {address}
+              {asnName ? (
+                <>
+                  {" · "}
+                  {server.asn ? (
+                    <Link
+                      to="/asns/$asn"
+                      params={{ asn: server.asn }}
+                      search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
+                      className="hover:text-foreground hover:underline underline-offset-4"
+                    >
+                      {asnName}
+                    </Link>
+                  ) : (
+                    asnName
+                  )}
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
+        {trailing ? <div className="shrink-0">{trailing}</div> : null}
       </div>
 
       <EntityCardStats

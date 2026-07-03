@@ -41,6 +41,23 @@ diesel::table! {
     }
 }
 
-diesel::joinable!(chat_messages -> users (user_id));
+diesel::table! {
+    pinned_servers (id) {
+        id -> Uuid,
+        user_id -> Uuid,
+        server_id -> Uuid,
+        position -> Integer,
+    }
+}
 
-diesel::allow_tables_to_appear_in_same_query!(servers, settings, users, chat_messages,);
+diesel::joinable!(chat_messages -> users (user_id));
+diesel::joinable!(pinned_servers -> users (user_id));
+diesel::joinable!(pinned_servers -> servers (server_id));
+
+diesel::allow_tables_to_appear_in_same_query!(
+    servers,
+    settings,
+    users,
+    chat_messages,
+    pinned_servers,
+);

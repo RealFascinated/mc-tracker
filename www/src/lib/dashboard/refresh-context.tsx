@@ -16,6 +16,7 @@ import {
   serverQueryKey,
   serversTimeseriesQueryKey,
 } from "@/lib/api/servers.queries";
+import { pinnedServersQueryKey } from "@/lib/api/pinned-servers.queries";
 import { DashboardRefreshContext } from "@/lib/dashboard/dashboard-refresh-context";
 import {
   DASHBOARD_REFRESH_STORAGE_KEY,
@@ -49,6 +50,7 @@ function DashboardRefreshProvider({ children }: { children: ReactNode }) {
         queryClient.invalidateQueries({ queryKey: asnQueryKey }),
         queryClient.invalidateQueries({ queryKey: serversTimeseriesQueryKey }),
         queryClient.invalidateQueries({ queryKey: asnsTimeseriesQueryKey }),
+        queryClient.invalidateQueries({ queryKey: pinnedServersQueryKey }),
         queryClient.refetchQueries({
           queryKey: serversTimeseriesQueryKey,
           type: "active",
@@ -67,7 +69,7 @@ function DashboardRefreshProvider({ children }: { children: ReactNode }) {
     useIsFetching({
       predicate: (query) => {
         const key = query.queryKey[0];
-        return key === "servers" || key === "asns";
+        return key === "servers" || key === "asns" || key === "pinned-servers";
       },
     }) > 0;
 

@@ -6,6 +6,7 @@ pub mod chat_stream;
 pub mod error;
 pub mod health;
 pub mod insights;
+pub mod pinned_servers;
 pub mod servers;
 pub mod settings;
 pub mod timeseries;
@@ -29,6 +30,7 @@ pub use self::insights::{
     ServersPeriodPeakRankResponse, SummaryPoint,
     TimeseriesSummaryResponse, TrendDirection,
 };
+pub use self::pinned_servers::PinnedServersListResponse;
 pub use self::servers::{
     EntityPeakStats, PeakPlayersRecord, PlayersPeakSummary, ServerListItemResponse,
     ServerSearchItemResponse, ServerTimeseriesResponse, ServersListResponse, ServersSearchResponse,

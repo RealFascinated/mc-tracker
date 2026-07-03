@@ -95,6 +95,7 @@ pub fn router(
         .route("/asns/timeseries/summary", get(asn_timeseries_summary))
         .route("/asns/{asn}", get(get_asn))
         .merge(crate::chat::router())
+        .merge(crate::pinned_servers::router())
         .nest("/auth", crate::auth::router())
         .nest(
             "/admin",

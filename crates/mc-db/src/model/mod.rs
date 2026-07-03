@@ -1,6 +1,8 @@
+pub mod pinned_server;
 pub mod settings;
 pub mod user_flags;
 
+pub use pinned_server::PinnedServer;
 pub use settings::AppSettings;
 pub use user_flags::{chat_quota_exempt, UserFlags};
 

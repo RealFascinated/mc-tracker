@@ -46,6 +46,11 @@ export type EntityMetricsGridConfig<
   ) => VisibleTimeseriesQueryOptions<TTimeseries>;
   timeseriesEnabled?: (item: T) => boolean;
   section: EntityMetricsSectionCopy;
+  wrapItem?: (props: {
+    item: T;
+    visibilityKey: string;
+    children: ReactNode;
+  }) => ReactNode;
 };
 
 type EntityMetricsChartProps<T, TTimeseries extends TimeseriesResponse> = {
@@ -174,6 +179,7 @@ export function EntityMetricsGrid<
   timeseriesOptions,
   timeseriesEnabled,
   section,
+  wrapItem,
 }: EntityMetricsGridConfig<T, TTimeseries>) {
   if (trackedCount === 0) {
     return (
@@ -221,17 +227,23 @@ export function EntityMetricsGrid<
         <div className="entity-metrics-grid">
           {items.map((item) => {
             const visibilityKey = getKey(item);
+            const card = (
+              <EntityMetricsCard
+                visibilityKey={visibilityKey}
+                item={item}
+                window={window}
+                renderHeader={renderHeader}
+                chartDef={chartDef}
+                timeseriesOptions={timeseriesOptions}
+                timeseriesEnabled={timeseriesEnabled}
+              />
+            );
+            if (wrapItem) {
+              return wrapItem({ item, visibilityKey, children: card });
+            }
             return (
               <FadeInAnimation key={visibilityKey} className="min-w-0">
-                <EntityMetricsCard
-                  visibilityKey={visibilityKey}
-                  item={item}
-                  window={window}
-                  renderHeader={renderHeader}
-                  chartDef={chartDef}
-                  timeseriesOptions={timeseriesOptions}
-                  timeseriesEnabled={timeseriesEnabled}
-                />
+                {card}
               </FadeInAnimation>
             );
           })}

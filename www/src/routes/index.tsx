@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
 import { AsnMetricsGrid } from "@/components/dashboard/grids/asn-metrics-grid";
+import { PinnedServersGrid } from "@/components/dashboard/grids/pinned-servers-grid";
 import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
 import { DashboardRangeToggle } from "@/components/dashboard/dashboard-range-toggle";
 import type { DashboardRangeOption } from "@/components/dashboard/dashboard-range-toggle";
@@ -35,6 +36,8 @@ import {
 } from "@/lib/api/server-sort";
 import type { ServerSortField, SortOrder } from "@/lib/api/server-sort";
 import { serversQueryOptions } from "@/lib/api/servers.queries";
+import { pinnedServersQueryOptions } from "@/lib/api/pinned-servers.queries";
+import { useAuth } from "@/lib/auth/context";
 import { pageTitle } from "@/lib/page-title";
 import type { MetricTimeRange } from "@/lib/metrics/range";
 import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
@@ -78,6 +81,7 @@ export const Route = createFileRoute("/")({
 
 function DashboardPage() {
   const { refreshIntervalMs } = useDashboardRefresh();
+  const { isAuthenticated } = useAuth();
   const {
     range: searchRange,
     from: searchFrom,
@@ -99,6 +103,11 @@ function DashboardPage() {
   const { data: serversData, isPending: serversPending } = useQuery({
     ...serversQueryOptions(serverSort),
     enabled: dashboardView === "server",
+    refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
+  });
+  const { data: pinnedServersData } = useQuery({
+    ...pinnedServersQueryOptions(),
+    enabled: isAuthenticated && dashboardView === "server",
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
   const { data: asnsData, isPending: asnsPending } = useQuery({
@@ -129,6 +138,11 @@ function DashboardPage() {
   const filteredServers = useMemo(
     () => filterServersByPlatform(serversData?.servers ?? [], platformFilter),
     [platformFilter, serversData?.servers],
+  );
+  const pinnedServers = pinnedServersData?.servers ?? [];
+  const pinnedServerIds = useMemo(
+    () => new Set(pinnedServers.map((server) => server.id)),
+    [pinnedServers],
   );
   const activeData = dashboardView === "asn" ? asnsData : serversData;
   const activePending = dashboardView === "asn" ? asnsPending : serversPending;
@@ -189,15 +203,25 @@ function DashboardPage() {
                 trackedAsns={asnsData?.summary.trackedAsns ?? 0}
               />
             ) : (
-              <ServerMetricsGrid
-                servers={filteredServers}
-                window={timeWindow}
-                platformFilter={platformFilter}
-                onPlatformFilterChange={setPlatformFilter}
-                sort={serverSort}
-                onSortChange={setServerSort}
-                trackedServers={serversData?.summary.trackedServers ?? 0}
-              />
+              <>
+                {pinnedServers.length > 0 ? (
+                  <PinnedServersGrid
+                    servers={pinnedServers}
+                    window={timeWindow}
+                  />
+                ) : null}
+                <ServerMetricsGrid
+                  servers={filteredServers}
+                  window={timeWindow}
+                  platformFilter={platformFilter}
+                  onPlatformFilterChange={setPlatformFilter}
+                  sort={serverSort}
+                  onSortChange={setServerSort}
+                  trackedServers={serversData?.summary.trackedServers ?? 0}
+                  pinnedServerIds={pinnedServerIds}
+                  showPinButtons={isAuthenticated}
+                />
+              </>
             )}
           </MetricChartsScope>
         </main>

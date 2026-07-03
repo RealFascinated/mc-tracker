@@ -6,6 +6,7 @@ import type { DashboardRangeOption } from "@/components/dashboard/dashboard-rang
 import { EntityMetricsGrid } from "@/components/dashboard/grids/entity-metrics-grid";
 import type { EntityMetricsSectionCopy } from "@/components/dashboard/grids/entity-metrics-grid";
 import { ServerIdentityHeader } from "@/components/dashboard/server-identity-header";
+import { ServerPinButton } from "@/components/dashboard/server-pin-button";
 import { SERVER_PLATFORM_FILTER_OPTIONS } from "@/lib/api/platform";
 import type { ServerPlatformFilter } from "@/lib/api/platform";
 import type { ServerSort } from "@/lib/api/server-sort";
@@ -35,6 +36,8 @@ type ServerMetricsGridProps = {
   onSortChange: (sort: ServerSort) => void;
   trackedServers: number;
   section?: EntityMetricsSectionCopy;
+  pinnedServerIds?: ReadonlySet<string>;
+  showPinButtons?: boolean;
 };
 
 function serverGridEmptyCopy(platformFilter: ServerPlatformFilter): {
@@ -70,6 +73,8 @@ export function ServerMetricsGrid({
   onSortChange,
   trackedServers,
   section,
+  pinnedServerIds,
+  showPinButtons = false,
 }: ServerMetricsGridProps) {
   const hasActivePlatformFilter = platformFilter !== "all";
   const emptyCopy = serverGridEmptyCopy(platformFilter);
@@ -97,7 +102,18 @@ export function ServerMetricsGrid({
       headerTrailing={headerTrailing}
       getKey={(server) => server.id}
       renderHeader={(server) => (
-        <ServerIdentityHeader server={server} linkToDetail />
+        <ServerIdentityHeader
+          server={server}
+          linkToDetail
+          trailing={
+            showPinButtons ? (
+              <ServerPinButton
+                serverId={server.id}
+                isPinned={pinnedServerIds?.has(server.id) ?? false}
+              />
+            ) : undefined
+          }
+        />
       )}
       chartDef={(server) =>
         createServerPlayersChart(`server-players-${server.id}`)

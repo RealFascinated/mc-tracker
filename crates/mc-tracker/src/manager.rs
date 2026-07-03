@@ -476,6 +476,32 @@ impl ServerManager {
         Some(server_list_item(&server, peaks_24h.get(&id_str).copied()))
     }
 
+    pub async fn server_list_items_by_ids(&self, ids: &[Uuid]) -> Vec<ServerListItemResponse> {
+        if ids.is_empty() {
+            return Vec::new();
+        }
+
+        let environment = self.environment();
+        let peaks_24h = self.peaks_24h_by_server_id(environment).await;
+        let servers = self.servers.read().await;
+
+        ids.iter()
+            .filter_map(|id| {
+                let server = servers
+                    .iter()
+                    .find(|server| server.config.id == *id && server.is_tracking())?;
+                let id_str = id.to_string();
+                Some(server_list_item(server, peaks_24h.get(&id_str).copied()))
+            })
+            .collect()
+    }
+
+    pub async fn is_server_tracked(&self, id: Uuid) -> bool {
+        self.get_tracked(id)
+            .await
+            .is_some_and(|server| server.is_tracking())
+    }
+
     pub async fn servers_search_response(
         &self,
         search: Option<&str>,

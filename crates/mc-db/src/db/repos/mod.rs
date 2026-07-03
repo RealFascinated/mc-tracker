@@ -1,4 +1,5 @@
 pub mod chat_messages;
+pub mod pinned_servers;
 pub mod servers;
 pub mod settings;
 pub mod users;
