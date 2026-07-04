@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-router";
 
 import { SiteHeader } from "@/components/site-header";
-import { TrackerChatWidget } from "@/components/chat/tracker-chat-widget";
+import { DeferredChatWidget } from "@/components/chat/deferred-chat-widget";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth/context";
@@ -15,6 +15,7 @@ import { defaultSiteHead } from "@/lib/embed-meta";
 import { ThemeProvider } from "@/lib/theme/context";
 import { themeInitScript } from "@/lib/theme/script";
 import appCss from "../styles.css?url";
+import geistLatinWoff2 from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -33,6 +34,13 @@ export const Route = createRootRouteWithContext<{
           rel: "icon",
           href: `${import.meta.env.BASE_URL}favicon.svg`,
           type: "image/svg+xml",
+        },
+        {
+          rel: "preload",
+          href: geistLatinWoff2,
+          as: "font",
+          type: "font/woff2",
+          crossOrigin: "anonymous",
         },
         { rel: "stylesheet", href: appCss },
         ...siteHead.links,
@@ -65,7 +73,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                 </div>
               </DashboardRefreshProvider>
               <Toaster richColors closeButton />
-              <TrackerChatWidget />
+              <DeferredChatWidget />
             </AuthProvider>
           </TooltipProvider>
         </ThemeProvider>
