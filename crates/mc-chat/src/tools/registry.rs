@@ -1,3 +1,4 @@
+use crate::llm::types::ToolDefinition;
 use std::sync::Arc;
 
 use crate::error::ChatError;
@@ -50,20 +51,9 @@ impl ToolRegistry {
         Self { tools }
     }
 
-    pub fn definitions(&self) -> Vec<serde_json::Value> {
+    pub fn definitions(&self) -> Vec<ToolDefinition> {
         let mut defs: Vec<_> = self.tools.iter().map(|t| t.definition()).collect();
-        defs.sort_by(|a, b| {
-            a.get("function")
-                .and_then(|f| f.get("name"))
-                .and_then(|n| n.as_str())
-                .unwrap_or("")
-                .cmp(
-                    b.get("function")
-                        .and_then(|f| f.get("name"))
-                        .and_then(|n| n.as_str())
-                        .unwrap_or(""),
-                )
-        });
+        defs.sort_by(|a, b| a.function.name.cmp(&b.function.name));
         defs
     }
 

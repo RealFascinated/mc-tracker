@@ -1,8 +1,10 @@
+pub mod chat_session;
 pub mod pinned_server;
 pub mod settings;
 pub mod settings_constants;
 pub mod user_flags;
 
+pub use chat_session::{ChatSessionSummary, ChatTurnRow};
 pub use pinned_server::PinnedServer;
 pub use settings::AppSettings;
 pub use user_flags::{chat_quota_exempt, UserFlags};

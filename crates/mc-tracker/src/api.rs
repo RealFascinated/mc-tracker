@@ -12,10 +12,10 @@ use mc_api_types::{
     ServersListResponse, ServersSearchQuery, ServersSearchResponse, TimeseriesQuery,
     TimeseriesSummaryQuery,
 };
+use mc_common::constants::limits::MAX_COMPARE_SERVERS;
 use mc_db::AppSettings;
 use mc_db::DbPool;
 use mc_geo::GeoService;
-use mc_common::constants::limits::MAX_COMPARE_SERVERS;
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use uuid::Uuid;
 
@@ -334,9 +334,8 @@ fn parse_compare_ids(ids: &str) -> Result<Vec<Uuid>, ApiError> {
         .filter(|part| !part.is_empty())
         .map(Uuid::parse_str)
         .collect();
-    let ids = ids.map_err(|_| {
-        ApiError::new(ApiErrorCode::BadRequest, "invalid server id in ids")
-    })?;
+    let ids =
+        ids.map_err(|_| ApiError::new(ApiErrorCode::BadRequest, "invalid server id in ids"))?;
     if ids.len() < 2 || ids.len() > MAX_COMPARE_SERVERS {
         return Err(ApiError::new(
             ApiErrorCode::BadRequest,

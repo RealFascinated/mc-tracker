@@ -15,7 +15,7 @@ impl ChatTool for ListServersTool {
         "list_servers"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "list_servers",
             "List tracked servers sorted by players online. Optional search filters by name or host.",

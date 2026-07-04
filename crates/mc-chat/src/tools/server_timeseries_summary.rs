@@ -14,7 +14,7 @@ impl ChatTool for ServerTimeseriesSummaryTool {
         "get_server_timeseries_summary"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "get_server_timeseries_summary",
             "Player count trend summary for one server over a single range, including downsampled points. For stats/overview with both 7d and 30d, use get_server_stats instead.",

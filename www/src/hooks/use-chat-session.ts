@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import type { ChatTokenUsage } from "@/lib/api/chat";
+import type { ChatSessionTurn, ChatTokenUsage } from "@/lib/api/chat";
 import { ChatStreamError, streamChat } from "@/lib/api/chat";
 import { useAuth } from "@/lib/auth/context";
 import type { ChatQuota } from "@/lib/auth/types";
@@ -13,19 +13,15 @@ import { toolStatusLabel } from "@/components/chat/chat-utils";
 import { useChatServerContext } from "@/hooks/use-chat-server-context";
 
 export function useChatSession() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
+  const [sessionId, setSessionId] = useState<string>(() => crypto.randomUUID());
   const [isStreaming, setIsStreaming] = useState(false);
   const [toolStatus, setToolStatus] = useState<string | null>(null);
   const [tokenUsage, setTokenUsage] = useState<ChatTokenUsage | null>(null);
   const [quotaUsed, setQuotaUsed] = useState<number | null>(null);
-  // Opaque LLM message list echoed back each turn to maintain conversation context.
-  const [rawHistory, setRawHistory] = useState<unknown[] | null>(null);
-  // Ref keeps sendMessage reading the latest value without closure staleness.
-  const rawHistoryRef = useRef<unknown[] | null>(null);
-  rawHistoryRef.current = rawHistory;
+  const [truncatedNotice, setTruncatedNotice] = useState(false);
   const serverContext = useChatServerContext();
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -85,18 +81,40 @@ export function useChatSession() {
   const startNewChat = useCallback(() => {
     cancelStream();
     setMessages([]);
-    setRawHistory(null);
-    rawHistoryRef.current = null;
     setTokenUsage(null);
     setToolStatus(null);
     setInput("");
     setIsStreaming(false);
+    setTruncatedNotice(false);
     setSessionId(crypto.randomUUID());
     inputRef.current?.focus();
   }, [cancelStream]);
 
-  const canStartNewChat =
-    messages.length > 0 || isStreaming || rawHistory != null;
+  const loadSession = useCallback(
+    (id: string, turns: ChatSessionTurn[]) => {
+      cancelStream();
+      setSessionId(id);
+      setTruncatedNotice(false);
+      setMessages(
+        turns.map((turn) => ({
+          id: crypto.randomUUID(),
+          role: turn.role,
+          content: turn.content,
+          toolCalls:
+            turn.toolNames && turn.toolNames.length > 0
+              ? turn.toolNames
+              : undefined,
+        })),
+      );
+      setTokenUsage(null);
+      setToolStatus(null);
+      setInput("");
+      setIsStreaming(false);
+    },
+    [cancelStream],
+  );
+
+  const canStartNewChat = messages.length > 0 || isStreaming;
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
@@ -119,16 +137,15 @@ export function useChatSession() {
     setInput("");
     setIsStreaming(true);
     setToolStatus(null);
+    setTruncatedNotice(false);
 
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const currentRawHistory = rawHistoryRef.current;
     try {
       await streamChat(
         {
           message: text,
-          rawHistory: currentRawHistory ?? undefined,
           contextServer: serverContext,
           sessionId,
         },
@@ -163,12 +180,18 @@ export function useChatSession() {
             case "error":
               throw new ChatStreamError(event.message, 0);
             case "done":
-              if (event.rawHistory) {
-                setRawHistory(event.rawHistory);
-                rawHistoryRef.current = event.rawHistory;
+              if (event.truncated) {
+                setTruncatedNotice(true);
               }
               if (event.usage) {
                 setTokenUsage(event.usage);
+              }
+              if (event.quotaUsed !== undefined && chatQuota) {
+                setQuotaUsed((current) =>
+                  current !== null ? current + event.quotaUsed! : chatQuota.used + event.quotaUsed!,
+                );
+              } else if (chatQuota) {
+                void refreshUser();
               }
               setMessages((current) =>
                 current.map((msg) =>
@@ -188,9 +211,6 @@ export function useChatSession() {
         },
         controller.signal,
       );
-      if (chatQuota) {
-        setQuotaUsed((current) => (current ?? chatQuota.used) + 1);
-      }
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         return;
@@ -224,6 +244,7 @@ export function useChatSession() {
     sessionId,
     quotaExceeded,
     chatQuota,
+    refreshUser,
   ]);
 
   return {
@@ -237,10 +258,12 @@ export function useChatSession() {
     quotaExceeded,
     serverContext,
     sessionId,
+    truncatedNotice,
     inputRef,
     pickSuggestion,
     cancelStream,
     startNewChat,
+    loadSession,
     canStartNewChat,
     sendMessage,
   };

@@ -6,16 +6,15 @@ use crate::tools::compact::{compact_asn_detail, compact_asn_search};
 use crate::tools::constants::{MAX_COMPARE_SERVERS, SEARCH_CAP};
 use crate::traits::ChatToolDeps;
 
-pub fn tool_def(name: &str, description: &str, parameters: serde_json::Value) -> serde_json::Value {
-    serde_json::to_value(ToolDefinition {
+pub fn tool_def(name: &str, description: &str, parameters: serde_json::Value) -> ToolDefinition {
+    ToolDefinition {
         tool_type: "function".into(),
         function: ToolFunctionSchema {
             name: name.into(),
             description: description.into(),
             parameters,
         },
-    })
-    .unwrap()
+    }
 }
 
 pub fn truncate<T>(items: &mut Vec<T>, cap: usize) -> bool {

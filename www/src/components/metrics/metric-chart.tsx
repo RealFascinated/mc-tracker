@@ -118,7 +118,7 @@ function MetricChart({
   const seriesAxisIdsKey = seriesAxisIds.join("\0");
   const seriesRendersKey = seriesRenders.join("\0");
   const seriesFillsKey =
-    seriesFills?.map((fill) => String(fill)).join("\0") ?? "";
+    seriesFills?.map((seriesFill) => String(seriesFill)).join("\0") ?? "";
   const chartAxesKey = chartAxes
     .map(
       (axis) =>

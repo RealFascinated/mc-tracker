@@ -17,6 +17,13 @@ import type {
   SettingsResponse,
 } from "@/lib/api/admin/settings";
 import { adminSettingsQueryOptions } from "@/lib/api/admin/settings.queries";
+import {
+  llmBaseUrlPlaceholder,
+  llmModelPlaceholder,
+  llmProviderShowsApiKey,
+  llmProviderShowsParallelSlots,
+  parseLlmProvider,
+} from "@/lib/admin/llm-provider-ui";
 import { errorMessage } from "@/lib/api/error-message";
 import { pageTitle } from "@/lib/page-title";
 import { privatePageHead } from "@/lib/embed-meta";
@@ -32,12 +39,14 @@ function AdminSettingsPage() {
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery(adminSettingsQueryOptions());
   const [draft, setDraft] = useState<SettingsResponse | null>(null);
+  const [apiKeyDraft, setApiKeyDraft] = useState<string | null>(null);
 
   const saveMutation = useMutation({
     mutationFn: (body: PatchSettingsRequest) => patchAdminSettings(body),
     onSuccess: async (saved) => {
       toast.success("Settings saved");
       setDraft(null);
+      setApiKeyDraft(null);
       queryClient.setQueryData(adminSettingsQueryOptions().queryKey, saved);
       await queryClient.invalidateQueries({
         queryKey: adminSettingsQueryOptions().queryKey,
@@ -56,7 +65,10 @@ function AdminSettingsPage() {
 
   const loaded = data;
   const values: SettingsResponse = draft ?? loaded;
-  const isDirty = draft !== null;
+  const isDirty = draft !== null || apiKeyDraft !== null;
+  const llmProvider = parseLlmProvider(values.llmProvider);
+  const showLlmApiKey = llmProviderShowsApiKey(llmProvider);
+  const showLlmParallelSlots = llmProviderShowsParallelSlots(llmProvider);
 
   function currentValues(): SettingsResponse {
     return draft ?? loaded;
@@ -95,7 +107,7 @@ function AdminSettingsPage() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const next = currentValues();
-    saveMutation.mutate({
+    const patch: PatchSettingsRequest = {
       pingerTimeoutMs: next.pingerTimeoutMs,
       pingerRetryAttempts: next.pingerRetryAttempts,
       pingerRetryDelayMs: next.pingerRetryDelayMs,
@@ -105,7 +117,22 @@ function AdminSettingsPage() {
       metricsPushCron: next.metricsPushCron,
       signUpEnabled: next.signUpEnabled,
       wwwOrigin: next.wwwOrigin,
-    });
+      llmBaseUrl: next.llmBaseUrl,
+      llmModel: next.llmModel,
+      llmMaxToolRounds: next.llmMaxToolRounds,
+      llmContextMaxTurns: next.llmContextMaxTurns,
+      llmToolMaxTokens: next.llmToolMaxTokens,
+      llmFinalMaxTokens: next.llmFinalMaxTokens,
+      llmContextMax: next.llmContextMax,
+      llmContextReserve: next.llmContextReserve,
+      llmTimeoutSecs: next.llmTimeoutSecs,
+      llmProvider: next.llmProvider,
+      llmParallelSlots: next.llmParallelSlots,
+    };
+    if (apiKeyDraft !== null) {
+      patch.llmApiKey = apiKeyDraft;
+    }
+    saveMutation.mutate(patch);
   }
 
   return (
@@ -245,6 +272,173 @@ function AdminSettingsPage() {
               disabled={!values.dnsCacheEnabled}
             />
           </SettingsField>
+        </SettingsGroup>
+
+        <SettingsGroup title="Chat / LLM">
+          <SettingsField
+            label="Provider"
+            htmlFor="llm-provider"
+            hint="llama.cpp for local inference; OpenRouter for cloud models."
+          >
+            <select
+              id="llm-provider"
+              className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+              value={values.llmProvider}
+              onChange={(event) =>
+                updateString("llmProvider", event.target.value)
+              }
+            >
+              <option value="llama_cpp">llama.cpp (local)</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="openai_compatible">OpenAI-compatible</option>
+            </select>
+          </SettingsField>
+          <SettingsField
+            label="LLM base URL"
+            htmlFor="llm-base-url"
+            hint="OpenAI-compatible API base. Leave empty to disable chat."
+          >
+            <Input
+              id="llm-base-url"
+              value={values.llmBaseUrl}
+              onChange={(event) =>
+                updateString("llmBaseUrl", event.target.value)
+              }
+              placeholder={llmBaseUrlPlaceholder(llmProvider)}
+              spellCheck={false}
+              className="font-mono"
+            />
+          </SettingsField>
+          <SettingsField
+            label="Model"
+            htmlFor="llm-model"
+            hint="Model name sent to the LLM API."
+          >
+            <Input
+              id="llm-model"
+              value={values.llmModel}
+              onChange={(event) => updateString("llmModel", event.target.value)}
+              placeholder={llmModelPlaceholder(llmProvider)}
+              spellCheck={false}
+            />
+          </SettingsField>
+          {showLlmApiKey ? (
+            <SettingsField
+              label="API key"
+              htmlFor="llm-api-key"
+              hint={
+                llmProvider === "openrouter"
+                  ? "Required for OpenRouter. Set-only — leave blank to keep the current key."
+                  : "Bearer token for the API. Set-only — leave blank to keep the current key."
+              }
+            >
+              <Input
+                id="llm-api-key"
+                type="password"
+                autoComplete="new-password"
+                placeholder={loaded.llmApiKey ? "********" : undefined}
+                value={apiKeyDraft ?? ""}
+                onChange={(event) => setApiKeyDraft(event.target.value)}
+                spellCheck={false}
+              />
+            </SettingsField>
+          ) : null}
+          <SettingsField
+            label="Max tool rounds"
+                htmlFor="llm-max-tool-rounds"
+                hint="Maximum tool-call loops per chat turn."
+              >
+                <Input
+                  id="llm-max-tool-rounds"
+                  type="number"
+                  min={1}
+                  value={values.llmMaxToolRounds}
+                  onChange={(event) =>
+                    updateNumber("llmMaxToolRounds", event.target.value)
+                  }
+                />
+              </SettingsField>
+              <SettingsField
+                label="Max turn pairs in prompt"
+                htmlFor="llm-context-max-turns"
+                hint="Soft cap on user/assistant pairs included in the LLM prompt."
+              >
+                <Input
+                  id="llm-context-max-turns"
+                  type="number"
+                  min={1}
+                  value={values.llmContextMaxTurns}
+                  onChange={(event) =>
+                    updateNumber("llmContextMaxTurns", event.target.value)
+                  }
+                />
+              </SettingsField>
+              <SettingsField
+                label="Context max tokens"
+                htmlFor="llm-context-max"
+                hint={
+                  llmProvider === "llama_cpp"
+                    ? "Match your llama.cpp --ctx-size."
+                    : "Model context window size used for budgeting."
+                }
+              >
+                <Input
+                  id="llm-context-max"
+                  type="number"
+                  min={1}
+                  value={values.llmContextMax}
+                  onChange={(event) =>
+                    updateNumber("llmContextMax", event.target.value)
+                  }
+                />
+              </SettingsField>
+              <SettingsField
+                label="Context reserve tokens"
+                htmlFor="llm-context-reserve"
+                hint="Tokens reserved for the model completion."
+              >
+                <Input
+                  id="llm-context-reserve"
+                  type="number"
+                  min={1}
+                  value={values.llmContextReserve}
+                  onChange={(event) =>
+                    updateNumber("llmContextReserve", event.target.value)
+                  }
+                />
+              </SettingsField>
+              <SettingsField
+                label="Timeout (seconds)"
+                htmlFor="llm-timeout-secs"
+                hint="Maximum time for a single chat turn."
+              >
+                <Input
+                  id="llm-timeout-secs"
+                  type="number"
+                  min={1}
+                  value={values.llmTimeoutSecs}
+                  onChange={(event) =>
+                    updateNumber("llmTimeoutSecs", event.target.value)
+                  }
+              />
+            </SettingsField>
+          {showLlmParallelSlots ? (
+            <SettingsField
+              label="Parallel slots"
+              htmlFor="llm-parallel-slots"
+              hint="llama.cpp slot affinity; match your server --parallel value."
+            >
+              <Input
+                id="llm-parallel-slots"
+                type="number"
+                min={1}
+                value={values.llmParallelSlots}
+                onChange={(event) =>
+                  updateNumber("llmParallelSlots", event.target.value)
+                }
+              />
+            </SettingsField>
+          ) : null}
         </SettingsGroup>
 
         <SettingsGroup title="Access">

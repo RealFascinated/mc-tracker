@@ -14,7 +14,7 @@ impl ChatTool for SearchServersTool {
         "search_servers"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "search_servers",
             "Discover servers by keyword when no single server is named. Not for resolving a server the user already named — use get_server instead.",

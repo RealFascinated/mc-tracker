@@ -15,7 +15,7 @@ impl ChatTool for RankServersByPeriodPeakTool {
         "rank_servers_by_period_peak"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "rank_servers_by_period_peak",
             "Rank tracked servers by highest player count reached during a time range. Use for which server had the most players this week/month — one call, not per-server summaries.",

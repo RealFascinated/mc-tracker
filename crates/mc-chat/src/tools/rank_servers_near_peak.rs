@@ -17,7 +17,7 @@ impl ChatTool for RankServersNearPeakTool {
         "rank_servers_near_peak"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "rank_servers_near_peak",
             "Find servers currently near their recent peak player count. Ranks by utilization (players online vs 24h peak, falling back to all-time peak).",

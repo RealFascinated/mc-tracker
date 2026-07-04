@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState, type PointerEvent } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   localStorageJsonOptions,
@@ -81,7 +82,7 @@ export function useChatWindowSize() {
   }, [setSize]);
 
   const onResizePointerDown = useCallback(
-    (event: PointerEvent<HTMLElement>) => {
+    (event: ReactPointerEvent<HTMLElement>) => {
       event.preventDefault();
 
       const startX = event.clientX;

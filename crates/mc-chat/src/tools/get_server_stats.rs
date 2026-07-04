@@ -17,7 +17,7 @@ impl ChatTool for GetServerStatsTool {
         "get_server_stats"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "get_server_stats",
             "Server snapshot plus player-count trends for 7d and 30d (to now) in one call. Use for stats about / tell me about / overview of a server — not get_server + separate timeseries calls.",

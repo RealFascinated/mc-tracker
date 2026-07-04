@@ -14,7 +14,7 @@ impl ChatTool for AsnTimeseriesSummaryTool {
         "get_asn_timeseries_summary"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "get_asn_timeseries_summary",
             "Player count trend summary for a hosting ASN network, including downsampled points. Use asn+asn_org from get_asn, or query for a loose lookup. Use relative from/to like 7d and now.",

@@ -2,6 +2,7 @@ pub mod admin_servers;
 pub mod asns;
 pub mod auth;
 pub mod auth_config;
+pub mod chat_session;
 pub mod chat_stream;
 pub mod error;
 pub mod health;
@@ -21,13 +22,16 @@ pub use self::asns::{
 };
 pub use self::auth::{ChatQuota, LoginResponse, MeResponse};
 pub use self::auth_config::SignupEnabledResponse;
+pub use self::chat_session::{
+    ChatSessionDetailResponse, ChatSessionListItem, ChatSessionListResponse, ChatSessionTurn,
+};
 pub use self::chat_stream::{ChatStreamEvent, ChatTokenUsage, ChatToolCallRecord};
 pub use self::error::{ApiError, ApiErrorCode, ErrorTarget, PartialError};
 pub use self::health::HealthResponse;
 pub use self::insights::{
     AsnGrowthRankItem, AsnTimeseriesSummaryResponse, AsnsGrowthRankResponse, GrowthRankOrder,
-    ServersCompareItem, ServerGrowthRankItem, ServerPeriodPeakRankItem,
-    ServerTimeseriesSummaryResponse, ServersCompareResponse, ServersGrowthRankResponse,
+    ServerGrowthRankItem, ServerPeriodPeakRankItem, ServerTimeseriesSummaryResponse,
+    ServersCompareItem, ServersCompareResponse, ServersGrowthRankResponse,
     ServersPeriodPeakRankResponse, SummaryPoint, TimeseriesSummaryResponse, TrendDirection,
 };
 pub use self::pinned_servers::PinnedServersListResponse;

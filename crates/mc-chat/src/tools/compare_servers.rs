@@ -18,7 +18,7 @@ impl ChatTool for CompareServersTool {
         "compare_servers"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "compare_servers",
             "Compare player count trends for 2–5 servers; each result includes downsampled points. Pass server_ids for a specific set, or server_id/query + peer_count to compare one server against the current top peers.",

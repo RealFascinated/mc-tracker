@@ -8,7 +8,10 @@ use crate::db::schema::settings;
 use crate::db::DbPool;
 use crate::error::DbError;
 use crate::model::settings_constants::{
-    KEY_DNS_CACHE_ENABLED, KEY_DNS_CACHE_TTL_MINUTES, KEY_METRICS_PUSH_CRON,
+    KEY_DNS_CACHE_ENABLED, KEY_DNS_CACHE_TTL_MINUTES, KEY_LLM_API_KEY, KEY_LLM_BASE_URL,
+    KEY_LLM_CONTEXT_MAX, KEY_LLM_CONTEXT_MAX_TURNS, KEY_LLM_CONTEXT_RESERVE,
+    KEY_LLM_FINAL_MAX_TOKENS, KEY_LLM_MAX_TOOL_ROUNDS, KEY_LLM_MODEL, KEY_LLM_PARALLEL_SLOTS,
+    KEY_LLM_PROVIDER, KEY_LLM_TIMEOUT_SECS, KEY_LLM_TOOL_MAX_TOKENS, KEY_METRICS_PUSH_CRON,
     KEY_PINGER_RETRY_ATTEMPTS, KEY_PINGER_RETRY_DELAY_MS, KEY_PINGER_TIMEOUT_MS,
     KEY_SIGN_UP_ENABLED, KEY_VICTORIAMETRICS_URL, KEY_WWW_ORIGIN,
 };
@@ -117,6 +120,58 @@ pub async fn save(pool: &DbPool, settings: &AppSettings) -> Result<(), DbError> 
         )
         .await?;
         upsert(conn, KEY_WWW_ORIGIN, &settings.www_origin).await?;
+        upsert(conn, KEY_LLM_BASE_URL, &settings.llm_base_url).await?;
+        upsert(conn, KEY_LLM_MODEL, &settings.llm_model).await?;
+        upsert(
+            conn,
+            KEY_LLM_MAX_TOOL_ROUNDS,
+            &settings.llm_max_tool_rounds.to_string(),
+        )
+        .await?;
+        upsert(
+            conn,
+            KEY_LLM_CONTEXT_MAX_TURNS,
+            &settings.llm_context_max_turns.to_string(),
+        )
+        .await?;
+        upsert(
+            conn,
+            KEY_LLM_TOOL_MAX_TOKENS,
+            &settings.llm_tool_max_tokens.to_string(),
+        )
+        .await?;
+        upsert(
+            conn,
+            KEY_LLM_FINAL_MAX_TOKENS,
+            &settings.llm_final_max_tokens.to_string(),
+        )
+        .await?;
+        upsert(
+            conn,
+            KEY_LLM_CONTEXT_MAX,
+            &settings.llm_context_max.to_string(),
+        )
+        .await?;
+        upsert(
+            conn,
+            KEY_LLM_CONTEXT_RESERVE,
+            &settings.llm_context_reserve.to_string(),
+        )
+        .await?;
+        upsert(
+            conn,
+            KEY_LLM_TIMEOUT_SECS,
+            &settings.llm_timeout_secs.to_string(),
+        )
+        .await?;
+        upsert(conn, KEY_LLM_PROVIDER, &settings.llm_provider).await?;
+        upsert(
+            conn,
+            KEY_LLM_PARALLEL_SLOTS,
+            &settings.llm_parallel_slots.to_string(),
+        )
+        .await?;
+        upsert(conn, KEY_LLM_API_KEY, &settings.llm_api_key).await?;
         Ok(())
     })
     .await

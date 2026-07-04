@@ -9,11 +9,13 @@ publish = false
 workspace = true
 
 [dependencies]
+async-trait = "0.1"
 axum = "0.8"
 mc-db = { path = "../mc-db" }
 mc-chat = { path = "../mc-chat" }
 mc-geo = { path = "../mc-geo" }
 mc-tracker = { path = "../mc-tracker" }
+futures = "0.3"
 serde_json = { workspace = true }
 testcontainers = "0.27"
 testcontainers-modules = { version = "0.15", features = ["postgres"] }

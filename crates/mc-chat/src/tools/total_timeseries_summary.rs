@@ -14,7 +14,7 @@ impl ChatTool for TotalTimeseriesSummaryTool {
         "get_total_timeseries_summary"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "get_total_timeseries_summary",
             "Network-wide player count trend summary, including downsampled points over the range. Use relative from/to like 7d and now.",

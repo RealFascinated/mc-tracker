@@ -8,8 +8,8 @@ use mc_api_types::{
     ServerTimeseriesSummaryResponse, ServersCompareItem, ServersCompareResponse,
     ServersGrowthRankResponse, ServersPeriodPeakRankResponse, TimeseriesSummaryResponse,
 };
-use mc_common::constants::limits::MAX_COMPARE_SERVERS;
 use mc_common::constants::limits::DEFAULT_LIST_LIMIT;
+use mc_common::constants::limits::MAX_COMPARE_SERVERS;
 use mc_insights::{
     AnalyzeOptions, DefaultTimeRangeParser, DefaultTimeseriesAnalyzer, InsightsError,
     ResolvedTimeRange, TimeRangeParser, TimeseriesAnalyzer, DEFAULT_MAX_SUMMARY_POINTS,
@@ -310,9 +310,7 @@ impl InsightsService {
             match result {
                 Ok(item) => servers.push(item),
                 Err(err) => {
-                    errors.push(err.to_partial_error(ErrorTarget::Server {
-                        id: id.to_string(),
-                    }))
+                    errors.push(err.to_partial_error(ErrorTarget::Server { id: id.to_string() }))
                 }
             }
         }
@@ -359,10 +357,8 @@ impl InsightsService {
         _range: ResolvedTimeRange,
         max_points: usize,
     ) -> Result<TimeseriesSummaryResponse, InsightsError> {
-        self.analyzer.summarize(
-            lanes,
-            AnalyzeOptions { max_points },
-        )
+        self.analyzer
+            .summarize(lanes, AnalyzeOptions { max_points })
     }
 }
 
@@ -370,7 +366,10 @@ pub fn resolve_compare_max_points(requested: Option<usize>) -> Result<usize, Ins
     resolve_summary_max_points(requested, mc_metrics::max_points() as usize)
 }
 
-fn resolve_summary_max_points(requested: Option<usize>, default: usize) -> Result<usize, InsightsError> {
+fn resolve_summary_max_points(
+    requested: Option<usize>,
+    default: usize,
+) -> Result<usize, InsightsError> {
     let cap = mc_metrics::max_points() as usize;
     let points = requested.unwrap_or(default);
     if points == 0 {

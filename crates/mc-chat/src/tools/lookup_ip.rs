@@ -14,7 +14,7 @@ impl ChatTool for LookupIpTool {
         "lookup_ip"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "lookup_ip",
             "Resolve an IP address or hostname and look up its ASN/hosting network via MaxMind. Use when the user asks about a specific IP — not tracked server names (get_server) or ASN labels (get_asn).",

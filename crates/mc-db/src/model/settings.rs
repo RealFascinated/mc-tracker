@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 
 use super::settings_constants::{
-    self, DNS_CACHE_ENABLED, DNS_CACHE_TTL_MINUTES, METRICS_PUSH_CRON, PINGER_RETRY_ATTEMPTS,
+    self, DNS_CACHE_ENABLED, DNS_CACHE_TTL_MINUTES, LLM_CONTEXT_MAX, LLM_CONTEXT_MAX_TURNS,
+    LLM_CONTEXT_RESERVE, LLM_FINAL_MAX_TOKENS, LLM_MAX_TOOL_ROUNDS, LLM_MODEL, LLM_PARALLEL_SLOTS,
+    LLM_PROVIDER, LLM_TIMEOUT_SECS, LLM_TOOL_MAX_TOKENS, METRICS_PUSH_CRON, PINGER_RETRY_ATTEMPTS,
     PINGER_RETRY_DELAY_MS, PINGER_TIMEOUT_MS, SIGN_UP_ENABLED, VICTORIAMETRICS_URL,
 };
 
@@ -19,6 +21,18 @@ pub struct AppSettings {
     pub sign_up_enabled: bool,
     /// Public www UI origin for CORS (e.g. https://tracker.example.com).
     pub www_origin: String,
+    pub llm_base_url: String,
+    pub llm_model: String,
+    pub llm_max_tool_rounds: u32,
+    pub llm_context_max_turns: u32,
+    pub llm_tool_max_tokens: u32,
+    pub llm_final_max_tokens: u32,
+    pub llm_context_max: u32,
+    pub llm_context_reserve: u32,
+    pub llm_timeout_secs: u64,
+    pub llm_provider: String,
+    pub llm_parallel_slots: u32,
+    pub llm_api_key: String,
 }
 
 impl Default for AppSettings {
@@ -33,11 +47,30 @@ impl Default for AppSettings {
             metrics_push_cron: METRICS_PUSH_CRON.to_string(),
             sign_up_enabled: SIGN_UP_ENABLED,
             www_origin: String::new(),
+            llm_base_url: String::new(),
+            llm_model: LLM_MODEL.to_string(),
+            llm_max_tool_rounds: LLM_MAX_TOOL_ROUNDS,
+            llm_context_max_turns: LLM_CONTEXT_MAX_TURNS,
+            llm_tool_max_tokens: LLM_TOOL_MAX_TOKENS,
+            llm_final_max_tokens: LLM_FINAL_MAX_TOKENS,
+            llm_context_max: LLM_CONTEXT_MAX,
+            llm_context_reserve: LLM_CONTEXT_RESERVE,
+            llm_timeout_secs: LLM_TIMEOUT_SECS,
+            llm_provider: LLM_PROVIDER.to_string(),
+            llm_parallel_slots: LLM_PARALLEL_SLOTS,
+            llm_api_key: String::new(),
         }
     }
 }
 
 impl AppSettings {
+    pub fn chat_enabled(&self) -> bool {
+        !self.llm_base_url.trim().is_empty()
+    }
+
+    pub fn llm_api_key_configured(&self) -> bool {
+        !self.llm_api_key.is_empty()
+    }
     pub fn victoriametrics_base_url(&self) -> &str {
         self.victoriametrics_url.trim_end_matches('/')
     }
@@ -96,6 +129,33 @@ impl AppSettings {
             metrics_push_cron: get("metrics_push_cron")?.to_string(),
             sign_up_enabled: Self::parse_bool(get("sign_up_enabled")?, "sign_up_enabled")?,
             www_origin: get("www_origin")?.to_string(),
+            llm_base_url: get("llm_base_url")?.to_string(),
+            llm_model: get("llm_model")?.to_string(),
+            llm_max_tool_rounds: Self::parse_u32(
+                get("llm_max_tool_rounds")?,
+                "llm_max_tool_rounds",
+            )?,
+            llm_context_max_turns: Self::parse_u32(
+                get("llm_context_max_turns")?,
+                "llm_context_max_turns",
+            )?,
+            llm_tool_max_tokens: Self::parse_u32(
+                get("llm_tool_max_tokens")?,
+                "llm_tool_max_tokens",
+            )?,
+            llm_final_max_tokens: Self::parse_u32(
+                get("llm_final_max_tokens")?,
+                "llm_final_max_tokens",
+            )?,
+            llm_context_max: Self::parse_u32(get("llm_context_max")?, "llm_context_max")?,
+            llm_context_reserve: Self::parse_u32(
+                get("llm_context_reserve")?,
+                "llm_context_reserve",
+            )?,
+            llm_timeout_secs: Self::parse_u64(get("llm_timeout_secs")?, "llm_timeout_secs")?,
+            llm_provider: get("llm_provider")?.to_string(),
+            llm_parallel_slots: Self::parse_u32(get("llm_parallel_slots")?, "llm_parallel_slots")?,
+            llm_api_key: get("llm_api_key")?.to_string(),
         })
     }
 

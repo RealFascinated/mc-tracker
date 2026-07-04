@@ -1,7 +1,7 @@
 import type { MetricTimeSeries } from "@/lib/api/metric-timeseries";
 import { timeseriesToMetric } from "@/lib/api/metric-timeseries";
 import type { SummaryPoint, TimeseriesResponse } from "@/lib/api/types";
-import type { ChartDefinition } from "@/lib/metrics/charts/types";
+import type { ChartDefinition, UnitKind } from "@/lib/metrics/charts/types";
 
 export type CompareSeriesInput = {
   key: string;
@@ -103,7 +103,7 @@ export function appendTotalTimeseries(
     series[key] = remap(data.timestamps, values);
   }
 
-  const totalValues = totalMetric.series.players_online ?? [];
+  const totalValues = totalMetric.series.players_online;
   series.total_players = remap(totalMetric.timestamps, totalValues);
 
   return {
@@ -123,12 +123,12 @@ export function buildCompareChartDefinition(
     includeTotal: boolean;
   },
 ): ChartDefinition {
-  const yUnit = options.indexed ? "percent" : "count";
+  const yUnit: UnitKind = options.indexed ? "percent" : "count";
 
   const chartSeries = series.map((entry) => ({
     key: entry.key,
     label: entry.label,
-    unit: yUnit as "count" | "percent",
+    unit: yUnit,
     axis: "left",
     render: "line" as const,
     fill: false,
@@ -138,7 +138,7 @@ export function buildCompareChartDefinition(
     chartSeries.push({
       key: "total_players",
       label: "All tracked",
-      unit: yUnit as "count" | "percent",
+      unit: yUnit,
       axis: "left",
       render: "line" as const,
       fill: false,

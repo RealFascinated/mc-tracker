@@ -4,6 +4,7 @@ use mc_api_types::{
     AdminServerResponse, EntityPeakStats, PeakPlayersRecord, ServerListItemResponse,
     ServersListSortField, SettingsResponse, SortOrder,
 };
+use mc_db::model::settings_constants::LLM_API_KEY_MASK;
 use mc_db::model::Server;
 use mc_db::AppSettings;
 use mc_dns::DnsCache;
@@ -139,6 +140,20 @@ pub fn settings_response(settings: &AppSettings) -> SettingsResponse {
         metrics_push_cron: settings.metrics_push_cron.clone(),
         sign_up_enabled: settings.sign_up_enabled,
         www_origin: settings.www_origin.clone(),
+        llm_base_url: settings.llm_base_url.clone(),
+        llm_model: settings.llm_model.clone(),
+        llm_max_tool_rounds: settings.llm_max_tool_rounds,
+        llm_context_max_turns: settings.llm_context_max_turns,
+        llm_tool_max_tokens: settings.llm_tool_max_tokens,
+        llm_final_max_tokens: settings.llm_final_max_tokens,
+        llm_context_max: settings.llm_context_max,
+        llm_context_reserve: settings.llm_context_reserve,
+        llm_timeout_secs: settings.llm_timeout_secs,
+        llm_provider: settings.llm_provider.clone(),
+        llm_parallel_slots: settings.llm_parallel_slots,
+        llm_api_key: settings
+            .llm_api_key_configured()
+            .then(|| LLM_API_KEY_MASK.to_string()),
     }
 }
 

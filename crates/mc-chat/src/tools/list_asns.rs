@@ -15,7 +15,7 @@ impl ChatTool for ListAsnsTool {
         "list_asns"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "list_asns",
             "List hosting ASN networks sorted by players online. Optional search filters by asn number or asnOrg label.",

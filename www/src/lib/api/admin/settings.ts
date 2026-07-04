@@ -10,9 +10,25 @@ export type SettingsResponse = {
   metricsPushCron: string;
   signUpEnabled: boolean;
   wwwOrigin: string;
+  llmBaseUrl: string;
+  llmModel: string;
+  llmMaxToolRounds: number;
+  llmContextMaxTurns: number;
+  llmToolMaxTokens: number;
+  llmFinalMaxTokens: number;
+  llmContextMax: number;
+  llmContextReserve: number;
+  llmTimeoutSecs: number;
+  llmProvider: string;
+  llmParallelSlots: number;
+  llmApiKey?: string;
 };
 
-export type PatchSettingsRequest = Partial<SettingsResponse>;
+export type PatchSettingsRequest = Partial<
+  Omit<SettingsResponse, "llmApiKey">
+> & {
+  llmApiKey?: string | null;
+};
 
 export function getAdminSettings() {
   return apiFetch<SettingsResponse>("/admin/settings");

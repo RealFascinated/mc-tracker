@@ -21,8 +21,10 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tokio-stream = "0.1"
+tokio-util = { version = "0.7", features = ["rt"] }
 tracing = { workspace = true }
 uuid = { workspace = true }
+jsonschema = "0.29"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "test-util"] }

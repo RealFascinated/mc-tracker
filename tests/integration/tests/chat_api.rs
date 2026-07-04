@@ -1,21 +1,28 @@
-use std::net::SocketAddr;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::Mutex as StdMutex;
+use std::sync::{Arc, LazyLock};
 
 use axum::body::Body;
-use axum::extract::ConnectInfo;
 use axum::http::{Request, StatusCode};
 use axum::response::Response;
 use futures::Stream;
 use mc_api_types::ChatStreamEvent;
-use mc_chat::{AgentChatRequest, ChatAgent, ChatError};
+use mc_chat::{AgentChatRequest, AgentConfig, ChatAgent, ChatError};
 use mc_db::UserRole;
+use tokio_util::sync::CancellationToken;
 use tower::ServiceExt;
+use uuid::Uuid;
 
 use mc_test_support::{
     bootstrap_admin, build_app_with_chat, create_user, login_admin, login_as, manager_with_vm_url,
     setup_pool, start_postgres,
 };
+
+static CHAT_ENV_LOCK: LazyLock<StdMutex<()>> = LazyLock::new(|| StdMutex::new(()));
+
+fn lock_chat_env() -> std::sync::MutexGuard<'static, ()> {
+    CHAT_ENV_LOCK.lock().unwrap()
+}
 
 struct MockChatAgent;
 
@@ -23,6 +30,8 @@ impl ChatAgent for MockChatAgent {
     fn chat_stream(
         &self,
         _request: AgentChatRequest,
+        _config: AgentConfig,
+        _cancel: CancellationToken,
     ) -> Pin<Box<dyn Stream<Item = Result<ChatStreamEvent, ChatError>> + Send>> {
         let events = vec![
             Ok(ChatStreamEvent::Delta {
@@ -34,10 +43,27 @@ impl ChatAgent for MockChatAgent {
             Ok(ChatStreamEvent::Done {
                 tool_calls: vec![],
                 usage: None,
-                raw_history: None,
+                truncated: false,
+                finish_reason: None,
+                quota_used: None,
             }),
         ];
         Box::pin(futures::stream::iter(events))
+    }
+}
+
+struct ErrorChatAgent;
+
+impl ChatAgent for ErrorChatAgent {
+    fn chat_stream(
+        &self,
+        _request: AgentChatRequest,
+        _config: AgentConfig,
+        _cancel: CancellationToken,
+    ) -> Pin<Box<dyn Stream<Item = Result<ChatStreamEvent, ChatError>> + Send>> {
+        Box::pin(futures::stream::iter(vec![Ok(ChatStreamEvent::Error {
+            message: "agent failed".into(),
+        })]))
     }
 }
 
@@ -55,30 +81,62 @@ async fn collect_sse_json(body: Body) -> Vec<serde_json::Value> {
         .collect()
 }
 
-fn chat_request(cookie: Option<&str>, message: &str, ip_octet: u8) -> Request<Body> {
+fn chat_request(cookie: Option<&str>, message: &str, session_id: Uuid) -> Request<Body> {
     let mut builder = Request::builder()
         .method("POST")
         .uri("/chat")
-        .header("content-type", "application/json")
-        .extension(ConnectInfo(SocketAddr::from(([127, 0, 0, ip_octet], 8080))));
+        .header("content-type", "application/json");
     if let Some(cookie) = cookie {
         builder = builder.header("cookie", cookie);
     }
     builder
-        .body(Body::from(format!(r#"{{"message":"{message}"}}"#)))
+        .body(Body::from(format!(
+            r#"{{"message":"{message}","sessionId":"{session_id}"}}"#
+        )))
         .unwrap()
+}
+
+async fn drain_chat(response: Response) -> (StatusCode, Vec<serde_json::Value>) {
+    let status = response.status();
+    let events = if status == StatusCode::OK || status == StatusCode::TOO_MANY_REQUESTS {
+        collect_sse_json(response.into_body()).await
+    } else {
+        vec![]
+    };
+    (status, events)
 }
 
 async fn post_chat(
     app: &axum::Router,
     cookie: Option<&str>,
     message: &str,
-    ip_octet: u8,
+    session_id: Uuid,
 ) -> Response {
     app.clone()
-        .oneshot(chat_request(cookie, message, ip_octet))
+        .oneshot(chat_request(cookie, message, session_id))
         .await
         .unwrap()
+}
+
+async fn post_chat_drained(
+    app: &axum::Router,
+    cookie: Option<&str>,
+    message: &str,
+    session_id: Uuid,
+) -> (StatusCode, Vec<serde_json::Value>) {
+    drain_chat(post_chat(app, cookie, message, session_id).await).await
+}
+
+fn configure_chat_rate_limit(limit: u32) {
+    let _guard = lock_chat_env();
+    std::env::set_var("CHAT_RATE_LIMIT_PER_MINUTE", limit.to_string());
+}
+
+async fn enable_chat(pool: &mc_db::DbPool) {
+    configure_chat_rate_limit(100);
+    mc_db::db::repos::settings::set(pool, "llm_base_url", "http://127.0.0.1:9")
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -86,12 +144,14 @@ async fn post_chat_streams_sse_events() {
     let (_postgres, database_url) = start_postgres().await;
     let pool = setup_pool(&database_url).await;
     bootstrap_admin(&pool).await;
+    enable_chat(&pool).await;
 
     let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
     let app = build_app_with_chat(pool, manager, "development", Arc::new(MockChatAgent)).await;
     let cookie = login_admin(&app).await;
+    let session_id = Uuid::new_v4();
 
-    let response = post_chat(&app, Some(&cookie), "hi", 1).await;
+    let response = post_chat(&app, Some(&cookie), "hi", session_id).await;
 
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(
@@ -116,11 +176,12 @@ async fn post_chat_requires_auth() {
     let (_postgres, database_url) = start_postgres().await;
     let pool = setup_pool(&database_url).await;
     bootstrap_admin(&pool).await;
+    enable_chat(&pool).await;
 
     let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
     let app = build_app_with_chat(pool, manager, "development", Arc::new(MockChatAgent)).await;
 
-    let response = post_chat(&app, None, "hi", 1).await;
+    let response = post_chat(&app, None, "hi", Uuid::new_v4()).await;
 
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
@@ -131,23 +192,21 @@ async fn post_chat_enforces_weekly_limit() {
     let pool = setup_pool(&database_url).await;
     bootstrap_admin(&pool).await;
     create_user(&pool, "chatuser", "pass", UserRole::User).await;
+    enable_chat(&pool).await;
 
     let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
     let app = build_app_with_chat(pool, manager, "development", Arc::new(MockChatAgent)).await;
     let cookie = login_as(&app, "chatuser", "pass").await;
 
     for i in 0..20 {
-        let response = post_chat(&app, Some(&cookie), &format!("msg{i}"), i as u8 + 1).await;
-        assert_eq!(
-            response.status(),
-            StatusCode::OK,
-            "request {i} should succeed"
-        );
+        let (status, _) =
+            post_chat_drained(&app, Some(&cookie), &format!("msg{i}"), Uuid::new_v4()).await;
+        assert_eq!(status, StatusCode::OK, "request {i} should succeed");
     }
 
-    let response = post_chat(&app, Some(&cookie), "one too many", 21).await;
-    assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
-    let events = collect_sse_json(response.into_body()).await;
+    let (status, events) =
+        post_chat_drained(&app, Some(&cookie), "one too many", Uuid::new_v4()).await;
+    assert_eq!(status, StatusCode::TOO_MANY_REQUESTS);
     assert_eq!(events[0]["type"], "error");
     assert_eq!(events[0]["message"], "weekly message limit reached");
 }
@@ -157,14 +216,16 @@ async fn post_chat_admin_unlimited() {
     let (_postgres, database_url) = start_postgres().await;
     let pool = setup_pool(&database_url).await;
     bootstrap_admin(&pool).await;
+    enable_chat(&pool).await;
 
     let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
     let app = build_app_with_chat(pool, manager, "development", Arc::new(MockChatAgent)).await;
     let cookie = login_admin(&app).await;
 
     for i in 0..21 {
-        let response = post_chat(&app, Some(&cookie), &format!("admin{i}"), i as u8 + 1).await;
-        assert_eq!(response.status(), StatusCode::OK, "admin request {i}");
+        let (status, _) =
+            post_chat_drained(&app, Some(&cookie), &format!("admin{i}"), Uuid::new_v4()).await;
+        assert_eq!(status, StatusCode::OK, "admin request {i}");
     }
 }
 
@@ -237,17 +298,16 @@ async fn post_chat_flagged_user_unlimited() {
         .await
         .unwrap();
 
+    enable_chat(&pool).await;
+
     let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
     let app = build_app_with_chat(pool, manager, "development", Arc::new(MockChatAgent)).await;
     let cookie = login_as(&app, "vip", "pass").await;
 
     for i in 0..21 {
-        let response = post_chat(&app, Some(&cookie), &format!("vip{i}"), i as u8 + 1).await;
-        assert_eq!(
-            response.status(),
-            StatusCode::OK,
-            "flagged user request {i}"
-        );
+        let (status, _) =
+            post_chat_drained(&app, Some(&cookie), &format!("vip{i}"), Uuid::new_v4()).await;
+        assert_eq!(status, StatusCode::OK, "flagged user request {i}");
     }
 }
 
@@ -299,7 +359,135 @@ async fn post_chat_returns_503_when_unconfigured() {
     let app = mc_test_support::build_app_with_env(pool, manager, "development").await;
     let cookie = login_admin(&app).await;
 
-    let response = post_chat(&app, Some(&cookie), "hi", 1).await;
+    let response = post_chat(&app, Some(&cookie), "hi", Uuid::new_v4()).await;
 
     assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+}
+
+#[tokio::test]
+async fn chat_session_ownership_enforced() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+    bootstrap_admin(&pool).await;
+    create_user(&pool, "alice", "pass", UserRole::User).await;
+    create_user(&pool, "bob", "pass", UserRole::User).await;
+    enable_chat(&pool).await;
+
+    let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
+    let app = build_app_with_chat(pool, manager, "development", Arc::new(MockChatAgent)).await;
+    let alice = login_as(&app, "alice", "pass").await;
+    let bob = login_as(&app, "bob", "pass").await;
+    let session_id = Uuid::new_v4();
+
+    let response = post_chat(&app, Some(&alice), "hello", session_id).await;
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let bob_get = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(format!("/chat/sessions/{session_id}"))
+                .header("cookie", &bob)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(bob_get.status(), StatusCode::NOT_FOUND);
+
+    let alice_list = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/chat/sessions")
+                .header("cookie", &alice)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(alice_list.status(), StatusCode::OK);
+    let list: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(alice_list.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(list["sessions"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        list["sessions"][0]["sessionId"].as_str().unwrap(),
+        session_id.to_string()
+    );
+}
+
+#[tokio::test]
+async fn post_chat_error_does_not_increment_quota() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+    bootstrap_admin(&pool).await;
+    create_user(&pool, "chatuser", "pass", UserRole::User).await;
+    enable_chat(&pool).await;
+
+    let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
+    let app = build_app_with_chat(
+        pool.clone(),
+        manager,
+        "development",
+        Arc::new(ErrorChatAgent),
+    )
+    .await;
+    let cookie = login_as(&app, "chatuser", "pass").await;
+
+    let since = mc_tracker::chat_quota::calendar_week_start_utc(chrono::Utc::now());
+    let before = mc_db::db::repos::chat_messages::count_since(
+        &pool,
+        {
+            let user = mc_db::db::repos::users::get_by_username(&pool, "chatuser")
+                .await
+                .unwrap();
+            user.id
+        },
+        since,
+    )
+    .await
+    .unwrap();
+
+    let response = post_chat(&app, Some(&cookie), "fail", Uuid::new_v4()).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let events = collect_sse_json(response.into_body()).await;
+    assert_eq!(events[0]["type"], "error");
+
+    let user = mc_db::db::repos::users::get_by_username(&pool, "chatuser")
+        .await
+        .unwrap();
+    let after = mc_db::db::repos::chat_messages::count_since(&pool, user.id, since)
+        .await
+        .unwrap();
+    assert_eq!(before, after);
+}
+
+#[tokio::test]
+async fn post_chat_rate_limit_per_user() {
+    configure_chat_rate_limit(2);
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+    bootstrap_admin(&pool).await;
+    mc_db::db::repos::settings::set(&pool, "llm_base_url", "http://127.0.0.1:9")
+        .await
+        .unwrap();
+
+    let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
+    let app = build_app_with_chat(pool, manager, "development", Arc::new(MockChatAgent)).await;
+    let cookie = login_admin(&app).await;
+
+    for i in 0..2 {
+        let (status, _) =
+            post_chat_drained(&app, Some(&cookie), &format!("r{i}"), Uuid::new_v4()).await;
+        assert_eq!(status, StatusCode::OK, "request {i}");
+    }
+
+    let (status, events) = post_chat_drained(&app, Some(&cookie), "blocked", Uuid::new_v4()).await;
+    assert_eq!(status, StatusCode::TOO_MANY_REQUESTS);
+    assert_eq!(events[0]["type"], "error");
+    assert_eq!(events[0]["message"], "rate limit exceeded");
 }

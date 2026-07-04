@@ -12,4 +12,17 @@ pub struct PatchSettingsRequest {
     pub metrics_push_cron: Option<String>,
     pub sign_up_enabled: Option<bool>,
     pub www_origin: Option<String>,
+    pub llm_base_url: Option<String>,
+    pub llm_model: Option<String>,
+    pub llm_max_tool_rounds: Option<u32>,
+    pub llm_context_max_turns: Option<u32>,
+    pub llm_tool_max_tokens: Option<u32>,
+    pub llm_final_max_tokens: Option<u32>,
+    pub llm_context_max: Option<u32>,
+    pub llm_context_reserve: Option<u32>,
+    pub llm_timeout_secs: Option<u64>,
+    pub llm_provider: Option<String>,
+    pub llm_parallel_slots: Option<u32>,
+    /// Write-only: omit to leave unchanged, empty string clears.
+    pub llm_api_key: Option<String>,
 }

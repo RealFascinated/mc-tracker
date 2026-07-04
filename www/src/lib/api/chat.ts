@@ -1,4 +1,5 @@
 import { apiUrl } from "@/lib/api/url";
+import { apiFetch } from "@/lib/api/client";
 
 export type ChatContextServer = {
   serverId: string;
@@ -7,8 +8,7 @@ export type ChatContextServer = {
 
 export type ChatRequest = {
   message: string;
-  sessionId?: string;
-  rawHistory?: unknown[];
+  sessionId: string;
   contextServer?: ChatContextServer;
 };
 
@@ -32,9 +32,34 @@ export type ChatStreamEvent =
       type: "done";
       toolCalls?: ChatToolCallRecord[];
       usage?: ChatTokenUsage;
-      rawHistory?: unknown[];
+      truncated?: boolean;
+      finishReason?: string;
+      quotaUsed?: number;
     }
   | { type: "error"; message: string };
+
+export type ChatSessionListItem = {
+  sessionId: string;
+  updatedAt: string;
+  preview: string;
+  turnCount: number;
+};
+
+export type ChatSessionListResponse = {
+  sessions: ChatSessionListItem[];
+};
+
+export type ChatSessionTurn = {
+  role: "user" | "assistant";
+  content: string;
+  toolNames?: string[];
+  createdAt: string;
+};
+
+export type ChatSessionDetailResponse = {
+  sessionId: string;
+  turns: ChatSessionTurn[];
+};
 
 export class ChatStreamError extends Error {
   readonly status: number;
@@ -44,6 +69,18 @@ export class ChatStreamError extends Error {
     this.name = "ChatStreamError";
     this.status = status;
   }
+}
+
+export function fetchChatSessions() {
+  return apiFetch<ChatSessionListResponse>("/chat/sessions");
+}
+
+export function fetchChatSession(sessionId: string) {
+  return apiFetch<ChatSessionDetailResponse>(`/chat/sessions/${sessionId}`);
+}
+
+export function deleteChatSession(sessionId: string) {
+  return apiFetch<void>(`/chat/sessions/${sessionId}`, { method: "DELETE" });
 }
 
 async function errorMessageFromResponse(response: Response): Promise<string> {
@@ -67,7 +104,10 @@ async function errorMessageFromResponse(response: Response): Promise<string> {
 
   if (contentType.includes("application/json")) {
     try {
-      const error = (await response.json()) as { code?: string; message?: string };
+      const error = (await response.json()) as {
+        code?: string;
+        message?: string;
+      };
       if (error.message) {
         return error.message;
       }
@@ -97,7 +137,6 @@ export async function streamChat(
     body: JSON.stringify({
       message: body.message,
       sessionId: body.sessionId,
-      rawHistory: body.rawHistory,
       contextServer: body.contextServer,
     }),
     credentials: "include",

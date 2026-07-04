@@ -48,7 +48,7 @@ function AsnsPage() {
     ...serversQueryOptions(),
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
-  const { data: asnsData, isPending: asnsPending } = useQuery({
+  const { data: asnsData } = useQuery({
     ...asnsQueryOptions(),
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
@@ -73,10 +73,8 @@ function AsnsPage() {
         <main className="dashboard-shell">
           {globalSummary ? <DashboardStatsRow summary={globalSummary} /> : null}
 
-          {asnsPending && !asnsData ? (
+          {!asnsData ? (
             <LoadingState message="Loading networks…" centered />
-          ) : !asnsData ? (
-            <p className="text-destructive">Failed to load dashboard data.</p>
           ) : (
             <MetricChartsScope
               window={timeWindow}

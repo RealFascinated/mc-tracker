@@ -15,6 +15,9 @@ use testcontainers::ImageExt;
 use testcontainers_modules::postgres::Postgres;
 use tokio::sync::RwLock;
 
+mod mock_llm;
+
+pub use mock_llm::{length_finish_chunk, text_chunk, MockLlmClient, MockLlmScript};
 pub use testcontainers;
 pub use testcontainers_modules;
 

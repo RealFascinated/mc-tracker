@@ -15,7 +15,7 @@ impl ChatTool for RankAsnsByGrowthTool {
         "rank_asns_by_growth"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "rank_asns_by_growth",
             "Rank hosting ASN networks by total player count change over a time range. Use for which provider grew or declined the most — one call, not per-network summaries.",

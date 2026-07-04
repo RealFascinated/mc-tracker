@@ -15,7 +15,7 @@ impl ChatTool for RankServersByGrowthTool {
         "rank_servers_by_growth"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "rank_servers_by_growth",
             "Rank all tracked servers by player count change over a time range. Use for which server gained or lost the most — one call, not per-server summaries.",

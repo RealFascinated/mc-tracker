@@ -1,5 +1,25 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MessageRole {
+    System,
+    User,
+    Assistant,
+    Tool,
+}
+
+impl MessageRole {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::System => "system",
+            Self::User => "user",
+            Self::Assistant => "assistant",
+            Self::Tool => "tool",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct LlmRequestOptions {
     /// OpenRouter sticky routing + llama.cpp slot affinity (hashed from this value).
@@ -10,7 +30,7 @@ pub struct LlmRequestOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
-    pub role: String,
+    pub role: MessageRole,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -52,6 +72,27 @@ pub struct ToolFunctionSchema {
 pub enum ToolChoice {
     Auto,
     Required,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FinishReason {
+    Stop,
+    Length,
+    ToolCalls,
+    #[serde(other)]
+    Other,
+}
+
+impl FinishReason {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Stop => "stop",
+            Self::Length => "length",
+            Self::ToolCalls => "tool_calls",
+            Self::Other => "other",
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -111,6 +152,8 @@ pub struct ChatCompletionResponse {
 #[derive(Debug, Clone, Deserialize)]
 pub struct ChatCompletionChoice {
     pub message: ChatMessage,
+    #[serde(default)]
+    pub finish_reason: Option<FinishReason>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -124,6 +167,8 @@ pub struct ChatCompletionChunk {
 #[derive(Debug, Clone, Deserialize)]
 pub struct ChatCompletionChunkChoice {
     pub delta: ChatCompletionDelta,
+    #[serde(default)]
+    pub finish_reason: Option<FinishReason>,
 }
 
 /// Incremental tool-call fragment in a streaming completion chunk.
@@ -153,4 +198,6 @@ pub struct ChatCompletionDelta {
     pub content: Option<String>,
     #[serde(default)]
     pub tool_calls: Option<Vec<StreamToolCallDelta>>,
+    #[serde(default)]
+    pub reasoning_content: Option<String>,
 }

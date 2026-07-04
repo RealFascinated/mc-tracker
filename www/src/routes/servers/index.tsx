@@ -122,41 +122,35 @@ function ServersPage() {
         <main className="dashboard-shell">
           {globalSummary ? <DashboardStatsRow summary={globalSummary} /> : null}
 
-          {serversPending && !serversData ? (
-            <LoadingState message="Loading servers…" centered />
-          ) : !serversData ? (
-            <p className="text-destructive">Failed to load dashboard data.</p>
-          ) : (
-            <MetricChartsScope
+          <MetricChartsScope
+            window={timeWindow}
+            onZoomToRange={handleZoomToRange}
+          >
+            <HeroChartPanel
+              hasServers={
+                globalSummary ? globalSummary.trackedServers > 0 : false
+              }
               window={timeWindow}
-              onZoomToRange={handleZoomToRange}
-            >
-              <HeroChartPanel
-                hasServers={
-                  globalSummary ? globalSummary.trackedServers > 0 : false
-                }
-                window={timeWindow}
-              />
+            />
 
-              {pinnedServers.length > 0 ? (
-                <PinnedServersGrid
-                  servers={pinnedServers}
-                  window={timeWindow}
-                />
-              ) : null}
-              <ServerMetricsGrid
-                servers={filteredServers}
+            {pinnedServers.length > 0 ? (
+              <PinnedServersGrid
+                servers={pinnedServers}
                 window={timeWindow}
-                platformFilter={platformFilter}
-                onPlatformFilterChange={setPlatformFilter}
-                sort={serverSort}
-                onSortChange={setServerSort}
-                trackedServers={serversData.summary.trackedServers}
-                pinnedServerIds={pinnedServerIds}
-                showPinButtons={isAuthenticated}
               />
-            </MetricChartsScope>
-          )}
+            ) : null}
+            <ServerMetricsGrid
+              servers={filteredServers}
+              window={timeWindow}
+              platformFilter={platformFilter}
+              onPlatformFilterChange={setPlatformFilter}
+              sort={serverSort}
+              onSortChange={setServerSort}
+              trackedServers={serversData.summary.trackedServers}
+              pinnedServerIds={pinnedServerIds}
+              showPinButtons={isAuthenticated}
+            />
+          </MetricChartsScope>
         </main>
       )}
     </>

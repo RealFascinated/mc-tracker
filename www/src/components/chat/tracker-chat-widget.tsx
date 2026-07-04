@@ -27,6 +27,7 @@ import { useAuth } from "@/lib/auth/context";
 import { cn } from "cnfast";
 
 import { ChatAuthGate } from "@/components/chat/chat-auth-gate";
+import { ChatHistorySheet } from "@/components/chat/chat-history-sheet";
 import { ChatBubble } from "@/components/chat/chat-bubble";
 import { ChatSuggestions } from "@/components/chat/chat-suggestions";
 import { ContextUsage } from "@/components/chat/context-usage";
@@ -54,8 +55,10 @@ export function TrackerChatWidget() {
     pickSuggestion,
     cancelStream,
     startNewChat,
+    loadSession,
     canStartNewChat,
     sendMessage,
+    truncatedNotice,
   } = useChatSession();
   const { size: chatWindowSize, isResizable, onResizePointerDown } =
     useChatWindowSize();
@@ -110,7 +113,9 @@ export function TrackerChatWidget() {
                 <ContextUsage usage={tokenUsage} />
               ) : null}
               {isAuthenticated ? (
-                <Tooltip>
+                <>
+                  <ChatHistorySheet onLoadSession={loadSession} />
+                  <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       type="button"
@@ -126,7 +131,8 @@ export function TrackerChatWidget() {
                   <TooltipContent side="bottom" sideOffset={6}>
                     New chat
                   </TooltipContent>
-                </Tooltip>
+                  </Tooltip>
+                </>
               ) : null}
               <Button
                 type="button"
@@ -184,6 +190,12 @@ export function TrackerChatWidget() {
               </div>
 
               <div className="shrink-0 border-t border-border">
+                {truncatedNotice ? (
+                  <p className="text-muted-foreground border-b border-border px-4 py-2 text-xs">
+                    Older messages were omitted from the model context. Full
+                    history is still saved.
+                  </p>
+                ) : null}
                 {messages.length > 0 &&
                 !isStreaming &&
                 followUpSuggestionsExpanded ? (

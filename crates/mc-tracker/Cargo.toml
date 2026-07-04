@@ -44,6 +44,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = "0.10"
 tokio = { workspace = true }
+tokio-stream = "0.1"
+tokio-util = { version = "0.7", features = ["rt"] }
 tower-http = { version = "0.6", features = ["cors"] }
 hex = "0.4"
 mime_guess = "2"

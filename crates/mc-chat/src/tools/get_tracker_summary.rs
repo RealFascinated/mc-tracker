@@ -14,7 +14,7 @@ impl ChatTool for GetTrackerSummaryTool {
         "get_tracker_summary"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "get_tracker_summary",
             "Current network snapshot: total players online, Java/Bedrock split, tracked server count, and network peaks. Use for how many players are tracked right now — not list_servers.",

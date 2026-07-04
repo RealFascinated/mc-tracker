@@ -17,10 +17,8 @@ import {
   serializeCompareIds,
 } from "@/lib/compare/ids";
 import { pageTitle } from "@/lib/page-title";
-import {
-  parseMetricTimeWindowSearch,
-  type MetricTimeWindowSearch,
-} from "@/lib/metrics/time-window";
+import type { MetricTimeWindowSearch } from "@/lib/metrics/time-window";
+import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 
 type CompareSearch = MetricTimeWindowSearch & {
   ids?: string;

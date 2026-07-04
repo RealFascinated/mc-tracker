@@ -155,6 +155,18 @@ fn settings_response_serializes_camel_case() {
         metrics_push_cron: "*/10 * * * * *".into(),
         sign_up_enabled: false,
         www_origin: String::new(),
+        llm_base_url: String::new(),
+        llm_model: "default".into(),
+        llm_max_tool_rounds: 8,
+        llm_context_max_turns: 10,
+        llm_tool_max_tokens: 1024,
+        llm_final_max_tokens: 2048,
+        llm_context_max: 16384,
+        llm_context_reserve: 2048,
+        llm_timeout_secs: 60,
+        llm_provider: "llama_cpp".into(),
+        llm_parallel_slots: 2,
+        llm_api_key: None,
     })
     .unwrap();
     assert!(json.contains(r#""pingerTimeoutMs":5000"#));

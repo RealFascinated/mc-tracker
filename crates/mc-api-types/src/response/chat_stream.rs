@@ -35,8 +35,12 @@ pub enum ChatStreamEvent {
         tool_calls: Vec<ChatToolCallRecord>,
         #[serde(skip_serializing_if = "Option::is_none")]
         usage: Option<ChatTokenUsage>,
-        #[serde(skip_serializing_if = "Option::is_none", rename = "rawHistory")]
-        raw_history: Option<Vec<serde_json::Value>>,
+        #[serde(default)]
+        truncated: bool,
+        #[serde(skip_serializing_if = "Option::is_none", rename = "finishReason")]
+        finish_reason: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none", rename = "quotaUsed")]
+        quota_used: Option<u32>,
     },
     Error {
         message: String,

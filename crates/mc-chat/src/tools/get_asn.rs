@@ -14,7 +14,7 @@ impl ChatTool for GetAsnTool {
         "get_asn"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "get_asn",
             "ASN/hosting network lookup by asn number or asnOrg label. Only when the user asks about hosting, provider, or network — not server names.",

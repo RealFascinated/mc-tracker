@@ -14,7 +14,7 @@ impl ChatTool for GetServerTool {
         "get_server"
     }
 
-    fn definition(&self) -> serde_json::Value {
+    fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "get_server",
             "Get one server by UUID or name/query. Use for tell me about / what is questions and any single-server question.",

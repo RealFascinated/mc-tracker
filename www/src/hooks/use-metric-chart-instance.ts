@@ -271,7 +271,6 @@ function useMetricChartInstance({
     if (sizeElement) resizeObserver.observe(sizeElement);
 
     const syncSizeAfterLayout = () => {
-      if (!chart) return;
       const { width, height: chartHeight } = getChartSize();
       if (width > 0 && chartHeight > 0) {
         chart.setSize({ width, height: chartHeight });
