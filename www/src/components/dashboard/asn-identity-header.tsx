@@ -32,7 +32,7 @@ export function AsnIdentityHeader({
       <div className="entity-metrics-identity">
         <div className="min-w-0">
           <div className="entity-metrics-title-row">
-            {linkToDetail ? (
+            {linkToDetail && asn.asn ? (
               <Link
                 to="/asns/$asn"
                 params={{ asn: asn.asn }}

@@ -26,14 +26,18 @@ function AsnMetricsCardHeader({ asn }: { asn: AsnListItem }) {
       <div className="entity-metrics-identity">
         <div className="min-w-0">
           <div className="entity-metrics-name">
-            <Link
-              to="/asns/$asn"
-              params={{ asn: asn.asn }}
-              search={asnDetailSearch(asn.asnOrg, timeWindowSearch)}
-              className="hover:text-monitor focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:hover:text-warning dark:focus-visible:ring-warning"
-            >
-              {asnDisplayName(asn)}
-            </Link>
+            {asn.asn ? (
+              <Link
+                to="/asns/$asn"
+                params={{ asn: asn.asn }}
+                search={asnDetailSearch(asn.asnOrg, timeWindowSearch)}
+                className="hover:text-monitor focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:hover:text-warning dark:focus-visible:ring-warning"
+              >
+                {asnDisplayName(asn)}
+              </Link>
+            ) : (
+              asnDisplayName(asn)
+            )}
           </div>
           <div className="entity-metrics-subtitle">
             {asn.asn || "Unknown ASN"}
