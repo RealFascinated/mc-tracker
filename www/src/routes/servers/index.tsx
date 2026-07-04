@@ -1,15 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { PinnedServersGrid } from "@/components/dashboard/grids/pinned-servers-grid";
 import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-row";
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
-import { DashboardSearchInput } from "@/components/dashboard/dashboard-search-input";
 import { LoadingState } from "@/components/loading-state";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
-import { SiteHeaderDashboard } from "@/components/site-header-dashboard";
 import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
 import { usePersistedServerSort } from "@/hooks/use-persisted-server-sort";
 import { useSearchParamNavigation } from "@/hooks/use-search-param-navigation";
@@ -72,7 +70,6 @@ function ServersPage() {
     order: urlOrder,
   } = Route.useSearch();
   const navigate = Route.useNavigate();
-  const [searchInput, setSearchInput] = useState("");
   const platformFilter: ServerPlatformFilter = urlPlatform ?? "all";
   const { serverSort, setServerSort } = usePersistedServerSort(navigate, {
     sort: urlSortField,
@@ -89,12 +86,7 @@ function ServersPage() {
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
 
-  const {
-    timeWindow,
-    setPresetTimeRange,
-    setCustomTimeRange,
-    handleZoomToRange,
-  } = useMetricTimeWindowControls(
+  const { timeWindow, handleZoomToRange } = useMetricTimeWindowControls(
     { range: searchRange, from: searchFrom, to: searchTo },
     navigate,
   );
@@ -120,18 +112,6 @@ function ServersPage() {
 
   return (
     <>
-      <SiteHeaderDashboard
-        window={timeWindow}
-        onPresetChange={setPresetTimeRange}
-        onCustomChange={setCustomTimeRange}
-        search={
-          <DashboardSearchInput
-            value={searchInput}
-            onChange={setSearchInput}
-          />
-        }
-      />
-
       {showPageLoading ? (
         <LoadingState message="Loading dashboard…" centered />
       ) : !globalSummary && !serversData ? (

@@ -7,7 +7,6 @@ import { ComparePlayersChart } from "@/components/compare/compare-players-chart"
 import { CompareServersTable } from "@/components/compare/compare-servers-table";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
-import { SiteHeaderDashboard } from "@/components/site-header-dashboard";
 import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import { serversCompareQueryOptions } from "@/lib/api/compare.queries";
@@ -49,12 +48,7 @@ function ComparePage() {
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const serverIds = useMemo(() => parseCompareIdsParam(idsParam), [idsParam]);
 
-  const {
-    timeWindow,
-    setPresetTimeRange,
-    setCustomTimeRange,
-    handleZoomToRange,
-  } = useMetricTimeWindowControls(
+  const { timeWindow, handleZoomToRange } = useMetricTimeWindowControls(
     { range: searchRange, from: searchFrom, to: searchTo },
     navigate,
   );
@@ -81,14 +75,7 @@ function ComparePage() {
   );
 
   return (
-    <>
-      <SiteHeaderDashboard
-        window={timeWindow}
-        onPresetChange={setPresetTimeRange}
-        onCustomChange={setCustomTimeRange}
-      />
-
-      <main className="dashboard-shell compare-page">
+    <main className="dashboard-shell compare-page">
         <Link
           to="/servers"
           search={timeWindowSearch}
@@ -130,7 +117,6 @@ function ComparePage() {
             </FadeInAnimation>
           </MetricChartsScope>
         ) : null}
-      </main>
-    </>
+    </main>
   );
 }

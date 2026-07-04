@@ -12,8 +12,7 @@ import { serversSearchQueryOptions } from "@/lib/api/servers.queries";
 import { cn } from "cnfast";
 
 type DashboardSearchInputProps = {
-  value: string;
-  onChange: (value: string) => void;
+  className?: string;
 };
 
 const AUTOCOMPLETE_DEBOUNCE_MS = 150;
@@ -26,14 +25,12 @@ function formatServerAddress(server: ServerSearchItem): string {
   return `${server.host}:${server.port}`;
 }
 
-export function DashboardSearchInput({
-  value,
-  onChange,
-}: DashboardSearchInputProps) {
+export function DashboardSearchInput({ className }: DashboardSearchInputProps) {
   const listboxId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
+  const [value, setValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -112,7 +109,7 @@ export function DashboardSearchInput({
   };
 
   return (
-    <div className="dashboard-search">
+    <div className={cn("dashboard-search", className)}>
       <Search
         aria-hidden
         className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
@@ -125,7 +122,7 @@ export function DashboardSearchInput({
         role="combobox"
         value={value}
         onChange={(event) => {
-          onChange(event.target.value);
+          setValue(event.target.value);
           setIsOpen(true);
           setActiveIndex(-1);
         }}
@@ -153,7 +150,7 @@ export function DashboardSearchInput({
           type="button"
           className="dashboard-search-clear"
           onClick={() => {
-            onChange("");
+            setValue("");
             closeSuggestions();
             inputRef.current?.focus();
           }}

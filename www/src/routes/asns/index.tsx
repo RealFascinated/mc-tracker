@@ -6,7 +6,6 @@ import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { LoadingState } from "@/components/loading-state";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
-import { SiteHeaderDashboard } from "@/components/site-header-dashboard";
 import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
 import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
 import { asnsQueryOptions } from "@/lib/api/asns.queries";
@@ -54,12 +53,7 @@ function AsnsPage() {
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
 
-  const {
-    timeWindow,
-    setPresetTimeRange,
-    setCustomTimeRange,
-    handleZoomToRange,
-  } = useMetricTimeWindowControls(
+  const { timeWindow, handleZoomToRange } = useMetricTimeWindowControls(
     { range: searchRange, from: searchFrom, to: searchTo },
     navigate,
   );
@@ -69,12 +63,6 @@ function AsnsPage() {
 
   return (
     <>
-      <SiteHeaderDashboard
-        window={timeWindow}
-        onPresetChange={setPresetTimeRange}
-        onCustomChange={setCustomTimeRange}
-      />
-
       {showPageLoading ? (
         <LoadingState message="Loading dashboard…" centered />
       ) : !globalSummary && !asnsData ? (

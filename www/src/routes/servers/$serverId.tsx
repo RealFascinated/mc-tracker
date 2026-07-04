@@ -1,19 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
 
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { DashboardCardHeader } from "@/components/dashboard/dashboard-card-header";
 import { ServerPlayersChart } from "@/components/dashboard/charts/server-players-chart";
-import { DashboardSearchInput } from "@/components/dashboard/dashboard-search-input";
 import {
   ServerDetailMeta,
   ServerIdentityHeader,
 } from "@/components/dashboard/server-identity-header";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
-import { SiteHeaderDashboard } from "@/components/site-header-dashboard";
 import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import { asnDetailSearch } from "@/lib/api/asns";
@@ -55,7 +52,6 @@ function ServerDetailPage() {
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const { refreshIntervalMs } = useDashboardRefresh();
   const initialServer = Route.useLoaderData();
-  const [searchInput, setSearchInput] = useState("");
 
   const { data: server = initialServer } = useQuery(
     withDashboardEntityQuery(
@@ -65,28 +61,13 @@ function ServerDetailPage() {
     ),
   );
 
-  const {
-    timeWindow,
-    setPresetTimeRange,
-    setCustomTimeRange,
-    handleZoomToRange,
-  } = useMetricTimeWindowControls(
+  const { timeWindow, handleZoomToRange } = useMetricTimeWindowControls(
     { range: searchRange, from: searchFrom, to: searchTo },
     navigate,
   );
 
   return (
-    <>
-      <SiteHeaderDashboard
-        window={timeWindow}
-        onPresetChange={setPresetTimeRange}
-        onCustomChange={setCustomTimeRange}
-        search={
-          <DashboardSearchInput value={searchInput} onChange={setSearchInput} />
-        }
-      />
-
-      <main className="dashboard-shell server-detail-page">
+    <main className="dashboard-shell server-detail-page">
         <Link
           to="/servers"
           search={timeWindowSearch}
@@ -134,7 +115,6 @@ function ServerDetailPage() {
             </DashboardCard>
           </FadeInAnimation>
         </MetricChartsScope>
-      </main>
-    </>
+    </main>
   );
 }

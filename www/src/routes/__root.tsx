@@ -7,7 +7,6 @@ import {
 
 import { SiteHeader } from "@/components/site-header";
 import { TrackerChatWidget } from "@/components/chat/tracker-chat-widget";
-import { SiteHeaderToolbarProvider } from "@/components/site-header-toolbar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth/context";
@@ -59,14 +58,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <ThemeProvider>
           <TooltipProvider>
             <AuthProvider>
-              <SiteHeaderToolbarProvider>
-                <DashboardRefreshProvider>
-                  <div className="site-layout">
-                    <SiteHeader />
-                    {children}
-                  </div>
-                </DashboardRefreshProvider>
-              </SiteHeaderToolbarProvider>
+              <DashboardRefreshProvider>
+                <div className="site-layout">
+                  <SiteHeader />
+                  {children}
+                </div>
+              </DashboardRefreshProvider>
               <Toaster richColors closeButton />
               <TrackerChatWidget />
             </AuthProvider>
