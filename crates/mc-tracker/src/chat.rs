@@ -11,7 +11,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::post;
 use axum::{Json, Router};
 use futures::stream::{self, StreamExt};
-use mc_api_types::{ChatRequest, ChatStreamEvent, ErrorResponse};
+use mc_api_types::{ApiError, ApiErrorCode, ChatRequest, ChatStreamEvent};
 use mc_chat::{parse_raw_history, AgentChatRequest};
 use mc_db::db::repos::chat_messages;
 use mc_db::model::chat_quota_exempt;
@@ -58,7 +58,10 @@ async fn post_chat(
     let Some(agent) = state.chat.clone() else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
-            Json(ErrorResponse::new("chat is not configured")),
+            Json(ApiError::new(
+                ApiErrorCode::InternalError,
+                "chat is not configured",
+            )),
         )
             .into_response();
     };
@@ -74,7 +77,10 @@ async fn post_chat(
             Err(_) => {
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse::new("failed to check chat quota")),
+                    Json(ApiError::new(
+                        ApiErrorCode::InternalError,
+                        "failed to check chat quota",
+                    )),
                 )
                     .into_response();
             }
@@ -88,7 +94,10 @@ async fn post_chat(
         if chat_messages::record(&state.pool, user.id).await.is_err() {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse::new("failed to record chat usage")),
+                Json(ApiError::new(
+                    ApiErrorCode::InternalError,
+                    "failed to record chat usage",
+                )),
             )
                 .into_response();
         }

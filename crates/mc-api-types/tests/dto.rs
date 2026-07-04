@@ -6,7 +6,7 @@ use mc_api_types::request::settings::PatchSettingsRequest;
 use mc_api_types::response::admin_servers::AdminServerResponse;
 use mc_api_types::response::auth::{LoginResponse, MeResponse};
 use mc_api_types::response::settings::SettingsResponse;
-use mc_api_types::{ErrorResponse, HealthResponse};
+use mc_api_types::{ApiError, ApiErrorCode, ErrorTarget, HealthResponse, PartialError};
 
 #[test]
 fn health_response_serializes_camel_case() {
@@ -15,9 +15,46 @@ fn health_response_serializes_camel_case() {
 }
 
 #[test]
-fn error_response_serializes_camel_case() {
-    let json = serde_json::to_string(&ErrorResponse::new("not found")).unwrap();
-    assert_eq!(json, r#"{"error":"not found"}"#);
+fn api_error_serializes_camel_case() {
+    let json = serde_json::to_string(&ApiError::new(ApiErrorCode::NotFound, "not found")).unwrap();
+    assert_eq!(json, r#"{"code":"notFound","message":"not found"}"#);
+}
+
+#[test]
+fn partial_error_serializes_server_target() {
+    let error = PartialError::new(
+        ApiErrorCode::NoData,
+        "no data in range",
+        ErrorTarget::Server { id: "abc".into() },
+    );
+    let json = serde_json::to_string(&error).unwrap();
+    assert_eq!(
+        json,
+        r#"{"code":"noData","message":"no data in range","target":{"kind":"server","id":"abc"}}"#
+    );
+}
+
+#[test]
+fn partial_error_serializes_asn_target() {
+    let error = PartialError::new(
+        ApiErrorCode::NoData,
+        "no data in range",
+        ErrorTarget::Asn {
+            asn: "AS13335".into(),
+            asn_org: "Cloudflare".into(),
+        },
+    );
+    let json = serde_json::to_string(&error).unwrap();
+    assert_eq!(
+        json,
+        r#"{"code":"noData","message":"no data in range","target":{"kind":"asn","asn":"AS13335","asnOrg":"Cloudflare"}}"#
+    );
+}
+
+#[test]
+fn api_error_code_deserializes_camel_case() {
+    let code: ApiErrorCode = serde_json::from_str(r#""invalidRange""#).unwrap();
+    assert_eq!(code, ApiErrorCode::InvalidRange);
 }
 
 #[test]

@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 
 use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
-use mc_api_types::ErrorResponse;
+use mc_api_types::{ApiError, ApiErrorCode};
 use tokio::sync::Mutex;
 
 const MAX_ATTEMPTS: usize = 10;
@@ -48,7 +48,10 @@ fn rate_limited_response() -> Response {
     (
         StatusCode::TOO_MANY_REQUESTS,
         [(axum::http::header::RETRY_AFTER, retry_after)],
-        axum::Json(ErrorResponse::new("too many login attempts")),
+        axum::Json(ApiError::new(
+            ApiErrorCode::TooManyRequests,
+            "too many login attempts",
+        )),
     )
         .into_response()
 }

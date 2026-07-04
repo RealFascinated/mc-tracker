@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+use super::error::PartialError;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum TrendDirection {
@@ -75,7 +77,7 @@ pub struct ServersGrowthRankResponse {
     pub to: i64,
     pub order: GrowthRankOrder,
     pub servers: Vec<ServerGrowthRankItem>,
-    pub errors: Vec<ServerGrowthRankError>,
+    pub errors: Vec<PartialError>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -93,14 +95,7 @@ pub struct ServersPeriodPeakRankResponse {
     pub from: i64,
     pub to: i64,
     pub servers: Vec<ServerPeriodPeakRankItem>,
-    pub errors: Vec<ServerGrowthRankError>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ServerGrowthRankError {
-    pub id: String,
-    pub error: String,
+    pub errors: Vec<PartialError>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -121,13 +116,21 @@ pub struct AsnsGrowthRankResponse {
     pub to: i64,
     pub order: GrowthRankOrder,
     pub asns: Vec<AsnGrowthRankItem>,
-    pub errors: Vec<AsnGrowthRankError>,
+    pub errors: Vec<PartialError>,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AsnGrowthRankError {
-    pub asn: String,
-    pub asn_org: String,
-    pub error: String,
+pub struct ServerCompareItem {
+    pub id: String,
+    pub name: String,
+    #[serde(flatten)]
+    pub summary: TimeseriesSummaryResponse,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServersCompareResponse {
+    pub servers: Vec<ServerCompareItem>,
+    pub errors: Vec<PartialError>,
 }

@@ -1,7 +1,8 @@
 use mc_api_types::{
     AsnDetailResponse, AsnListItemResponse, AsnTimeseriesSummaryResponse, IpLookupResponse,
-    ServerListItemResponse, ServerSearchItemResponse, ServerTimeseriesSummaryResponse,
-    ServersListResponse, ServersSearchResponse, TimeseriesSummaryResponse,
+    PartialError, ServerListItemResponse, ServerSearchItemResponse,
+    ServerTimeseriesSummaryResponse, ServersCompareResponse, ServersListResponse,
+    ServersSearchResponse, TimeseriesSummaryResponse,
 };
 use mc_common::platform_display_label;
 use serde_json::{json, Value};
@@ -164,20 +165,17 @@ pub fn compact_asn_search(response: &mc_api_types::AsnSearchResponse) -> Value {
     })
 }
 
-pub fn compact_compare_servers(
-    rows: Vec<(String, String, TimeseriesSummaryResponse)>,
-    errors: Vec<(String, String)>,
-) -> Value {
+pub fn compact_compare_servers(response: ServersCompareResponse) -> Value {
     json!({
-        "servers": rows.into_iter().map(|(id, name, summary)| {
-            let mut value = compact_timeseries_summary(&summary);
+        "servers": response.servers.iter().map(|server| {
+            let mut value = compact_timeseries_summary(&server.summary);
             if let Value::Object(ref mut map) = value {
-                map.insert("id".into(), json!(id));
-                map.insert("name".into(), json!(name));
+                map.insert("id".into(), json!(server.id));
+                map.insert("name".into(), json!(server.name));
             }
             value
         }).collect::<Vec<_>>(),
-        "errors": errors.into_iter().map(|(id, error)| json!({ "id": id, "error": error })).collect::<Vec<_>>(),
+        "errors": compact_partial_errors(&response.errors),
     })
 }
 
@@ -226,9 +224,7 @@ pub fn compact_servers_period_peak_rank(
                 "avg": server.avg,
             })
         }).collect::<Vec<_>>(),
-        "errors": response.errors.iter().map(|entry| {
-            json!({ "id": entry.id, "error": entry.error })
-        }).collect::<Vec<_>>(),
+        "errors": compact_partial_errors(&response.errors),
     })
 }
 
@@ -301,9 +297,7 @@ pub fn compact_servers_growth_rank(response: mc_api_types::ServersGrowthRankResp
                 "trend": server.trend,
             })
         }).collect::<Vec<_>>(),
-        "errors": response.errors.iter().map(|entry| {
-            json!({ "id": entry.id, "error": entry.error })
-        }).collect::<Vec<_>>(),
+        "errors": compact_partial_errors(&response.errors),
     })
 }
 
@@ -326,10 +320,21 @@ pub fn compact_asns_growth_rank(response: mc_api_types::AsnsGrowthRankResponse) 
                 "trend": asn.trend,
             })
         }).collect::<Vec<_>>(),
-        "errors": response.errors.iter().map(|entry| {
-            json!({ "asn": entry.asn, "asnOrg": entry.asn_org, "error": entry.error })
-        }).collect::<Vec<_>>(),
+        "errors": compact_partial_errors(&response.errors),
     })
+}
+
+fn compact_partial_errors(errors: &[PartialError]) -> Vec<Value> {
+    errors
+        .iter()
+        .map(|error| {
+            json!({
+                "code": error.code,
+                "message": error.message,
+                "target": error.target,
+            })
+        })
+        .collect()
 }
 
 fn compact_entity_peaks(peaks: &mc_api_types::EntityPeakStats) -> Value {

@@ -36,6 +36,39 @@ export const TIMESERIES_SERIES_KEYS = {
   playersOnline: "playersOnline",
 } as const;
 
+export type ApiErrorCode =
+  | "invalidRange"
+  | "noData"
+  | "serverNotFound"
+  | "asnNotFound"
+  | "notFound"
+  | "badRequest"
+  | "unauthorized"
+  | "forbidden"
+  | "conflict"
+  | "tooManyRequests"
+  | "internalError";
+
+export type ApiError = {
+  code: ApiErrorCode;
+  message: string;
+};
+
+export type ErrorTarget =
+  | { kind: "server"; id: string }
+  | { kind: "asn"; asn: string; asnOrg: string };
+
+export type PartialError = {
+  code: ApiErrorCode;
+  message: string;
+  target: ErrorTarget;
+};
+
+export type ServersCompareResponse = {
+  servers: ServerTimeseriesSummaryResponse[];
+  errors: PartialError[];
+};
+
 export type TrendDirection = "growing" | "stable" | "declining" | "unknown";
 
 export type SummaryPoint = {

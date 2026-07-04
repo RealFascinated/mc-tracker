@@ -44,5 +44,6 @@ async fn metrics_endpoint_returns_not_found() {
             .unwrap(),
     )
     .unwrap();
-    assert_eq!(body["error"], "not found");
+    assert_eq!(body["code"], "notFound");
+    assert_eq!(body["message"], "not found");
 }

@@ -4,7 +4,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, patch, post};
 use axum::{Json, Router};
 use mc_api_types::{
-    ChangePasswordRequest, ErrorResponse, LoginRequest, LoginResponse, MeResponse,
+    ApiError, ApiErrorCode, ChangePasswordRequest, LoginRequest, LoginResponse, MeResponse,
     SignupEnabledResponse, SignupRequest,
 };
 use mc_db::db::repos::users;
@@ -38,7 +38,10 @@ async fn login(
     if state.auth.rate_limiter.check(ip).await.is_err() {
         return (
             StatusCode::TOO_MANY_REQUESTS,
-            Json(ErrorResponse::new("too many login attempts")),
+            Json(ApiError::new(
+                ApiErrorCode::TooManyRequests,
+                "too many login attempts",
+            )),
         )
             .into_response();
     }
@@ -93,7 +96,10 @@ async fn me(
         Some(quota_for_user(&state.pool, id).await.map_err(|_| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse::new("failed to load chat quota")),
+                Json(ApiError::new(
+                    ApiErrorCode::InternalError,
+                    "failed to load chat quota",
+                )),
             )
                 .into_response()
         })?)
@@ -123,7 +129,10 @@ async fn signup(
     if !sign_up_allowed(&state.manager, &settings) {
         return (
             StatusCode::FORBIDDEN,
-            Json(ErrorResponse::new("sign up is disabled")),
+            Json(ApiError::new(
+                ApiErrorCode::Forbidden,
+                "sign up is disabled",
+            )),
         )
             .into_response();
     }
@@ -132,7 +141,10 @@ async fn signup(
     if state.auth.rate_limiter.check(ip).await.is_err() {
         return (
             StatusCode::TOO_MANY_REQUESTS,
-            Json(ErrorResponse::new("too many sign up attempts")),
+            Json(ApiError::new(
+                ApiErrorCode::TooManyRequests,
+                "too many sign up attempts",
+            )),
         )
             .into_response();
     }
@@ -145,7 +157,11 @@ async fn signup(
     let user = match users::create(&state.pool, username, &body.password, UserRole::User).await {
         Ok(user) => user,
         Err(mc_db::DbError::Conflict(message)) => {
-            return (StatusCode::CONFLICT, Json(ErrorResponse::new(message))).into_response();
+            return (
+                StatusCode::CONFLICT,
+                Json(ApiError::new(ApiErrorCode::Conflict, message)),
+            )
+                .into_response();
         }
         Err(_) => return invalid_credentials(),
     };
@@ -161,7 +177,10 @@ async fn change_password(
     if body.new_password.is_empty() {
         return (
             StatusCode::BAD_REQUEST,
-            Json(ErrorResponse::new("new password cannot be empty")),
+            Json(ApiError::new(
+                ApiErrorCode::BadRequest,
+                "new password cannot be empty",
+            )),
         )
             .into_response();
     }
@@ -174,7 +193,10 @@ async fn change_password(
     if !users::verify_password(&body.current_password, &db_user.password_hash).unwrap_or(false) {
         return (
             StatusCode::UNAUTHORIZED,
-            Json(ErrorResponse::new("current password is incorrect")),
+            Json(ApiError::new(
+                ApiErrorCode::Unauthorized,
+                "current password is incorrect",
+            )),
         )
             .into_response();
     }
@@ -182,7 +204,7 @@ async fn change_password(
     if let Err(err) = users::update_password(&state.pool, user.id, &body.new_password).await {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse::new(err.to_string())),
+            Json(ApiError::new(ApiErrorCode::InternalError, err.to_string())),
         )
             .into_response();
     }
@@ -200,7 +222,10 @@ async fn issue_session(state: &AppState, user: &mc_db::User) -> Response {
         Err(_) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse::new("failed to create session")),
+                Json(ApiError::new(
+                    ApiErrorCode::InternalError,
+                    "failed to create session",
+                )),
             )
                 .into_response();
         }
@@ -226,7 +251,10 @@ fn sign_up_allowed(manager: &ServerManager, settings: &AppSettings) -> bool {
 fn invalid_credentials() -> Response {
     (
         StatusCode::UNAUTHORIZED,
-        Json(ErrorResponse::new("invalid username or password")),
+        Json(ApiError::new(
+            ApiErrorCode::Unauthorized,
+            "invalid username or password",
+        )),
     )
         .into_response()
 }

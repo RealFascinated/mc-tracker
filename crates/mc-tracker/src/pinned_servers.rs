@@ -4,7 +4,8 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, put};
 use axum::{Json, Router};
 use mc_api_types::{
-    ErrorResponse, PinServerRequest, PinnedServersListResponse, ReorderPinnedServersRequest,
+    ApiError, ApiErrorCode, PinServerRequest, PinnedServersListResponse,
+    ReorderPinnedServersRequest,
 };
 use mc_db::db::repos::{pinned_servers, servers};
 use mc_db::DbError;
@@ -96,23 +97,41 @@ async fn build_pinned_response(
 }
 
 fn not_found(message: &str) -> Response {
-    (StatusCode::NOT_FOUND, Json(ErrorResponse::new(message))).into_response()
+    (
+        StatusCode::NOT_FOUND,
+        Json(ApiError::new(ApiErrorCode::NotFound, message)),
+    )
+        .into_response()
 }
 
 fn conflict(message: &str) -> Response {
-    (StatusCode::CONFLICT, Json(ErrorResponse::new(message))).into_response()
+    (
+        StatusCode::CONFLICT,
+        Json(ApiError::new(ApiErrorCode::Conflict, message)),
+    )
+        .into_response()
 }
 
 fn bad_request(message: &str) -> Response {
-    (StatusCode::BAD_REQUEST, Json(ErrorResponse::new(message))).into_response()
+    (
+        StatusCode::BAD_REQUEST,
+        Json(ApiError::new(ApiErrorCode::BadRequest, message)),
+    )
+        .into_response()
 }
 
 fn map_db_error(err: DbError) -> Response {
-    let (status, message) = match err {
-        DbError::NotFound(message) => (StatusCode::NOT_FOUND, message),
-        DbError::Conflict(message) => (StatusCode::CONFLICT, message),
-        DbError::InvalidSettings(message) => (StatusCode::BAD_REQUEST, message),
-        other => (StatusCode::INTERNAL_SERVER_ERROR, other.to_string()),
+    let (status, code, message) = match err {
+        DbError::NotFound(message) => (StatusCode::NOT_FOUND, ApiErrorCode::NotFound, message),
+        DbError::Conflict(message) => (StatusCode::CONFLICT, ApiErrorCode::Conflict, message),
+        DbError::InvalidSettings(message) => {
+            (StatusCode::BAD_REQUEST, ApiErrorCode::BadRequest, message)
+        }
+        other => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            ApiErrorCode::InternalError,
+            other.to_string(),
+        ),
     };
-    (status, Json(ErrorResponse::new(message))).into_response()
+    (status, Json(ApiError::new(code, message))).into_response()
 }

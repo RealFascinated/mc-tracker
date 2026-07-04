@@ -7,9 +7,9 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use mc_api_types::{
-    AsnDetailQuery, AsnTimeseriesQuery, AsnTimeseriesSummaryQuery, AsnsListQuery, AsnsListResponse,
-    ErrorResponse, HealthResponse, ServersListQuery, ServersListResponse, ServersSearchQuery,
-    ServersSearchResponse, TimeseriesQuery, TimeseriesSummaryQuery,
+    ApiError, ApiErrorCode, AsnDetailQuery, AsnTimeseriesQuery, AsnTimeseriesSummaryQuery,
+    AsnsListQuery, AsnsListResponse, HealthResponse, ServersListQuery, ServersListResponse,
+    ServersSearchQuery, ServersSearchResponse, TimeseriesQuery, TimeseriesSummaryQuery,
 };
 use mc_db::AppSettings;
 use mc_db::DbPool;
@@ -146,7 +146,10 @@ async fn get_server(State(state): State<AppState>, Path(id): Path<Uuid>) -> Resp
         Some(response) => Json(response).into_response(),
         None => (
             StatusCode::NOT_FOUND,
-            Json(ErrorResponse::new("server not found")),
+            Json(ApiError::new(
+                ApiErrorCode::ServerNotFound,
+                "server not found",
+            )),
         )
             .into_response(),
     }
@@ -186,7 +189,7 @@ async fn get_asn(
         Some(response) => Json(response).into_response(),
         None => (
             StatusCode::NOT_FOUND,
-            Json(ErrorResponse::new("asn not found")),
+            Json(ApiError::new(ApiErrorCode::AsnNotFound, "asn not found")),
         )
             .into_response(),
     }
@@ -248,8 +251,8 @@ async fn server_timeseries_summary(
     {
         Ok(response) => Json(response).into_response(),
         Err(err) => {
-            let (status, message) = map_insights_error(err);
-            (status, Json(ErrorResponse::new(message))).into_response()
+            let (status, error) = map_insights_error(err);
+            (status, Json(error)).into_response()
         }
     }
 }
@@ -265,8 +268,8 @@ async fn total_timeseries_summary(
     {
         Ok(response) => Json(response).into_response(),
         Err(err) => {
-            let (status, message) = map_insights_error(err);
-            (status, Json(ErrorResponse::new(message))).into_response()
+            let (status, error) = map_insights_error(err);
+            (status, Json(error)).into_response()
         }
     }
 }
@@ -287,22 +290,31 @@ async fn asn_timeseries_summary(
     {
         Ok(response) => Json(response).into_response(),
         Err(err) => {
-            let (status, message) = map_insights_error(err);
-            (status, Json(ErrorResponse::new(message))).into_response()
+            let (status, error) = map_insights_error(err);
+            (status, Json(error)).into_response()
         }
     }
 }
 
 async fn not_found() -> impl IntoResponse {
-    (StatusCode::NOT_FOUND, Json(ErrorResponse::new("not found")))
+    (
+        StatusCode::NOT_FOUND,
+        Json(ApiError::new(ApiErrorCode::NotFound, "not found")),
+    )
 }
 
 fn map_metrics_error(err: mc_metrics::MetricsError) -> Response {
-    let (status, message) = match &err {
-        mc_metrics::MetricsError::InvalidWindow(message) => {
-            (StatusCode::BAD_REQUEST, message.clone())
-        }
-        _ => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+    let (status, code, message) = match &err {
+        mc_metrics::MetricsError::InvalidWindow(message) => (
+            StatusCode::BAD_REQUEST,
+            ApiErrorCode::InvalidRange,
+            message.clone(),
+        ),
+        _ => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            ApiErrorCode::InternalError,
+            err.to_string(),
+        ),
     };
-    (status, Json(ErrorResponse::new(message))).into_response()
+    (status, Json(ApiError::new(code, message))).into_response()
 }

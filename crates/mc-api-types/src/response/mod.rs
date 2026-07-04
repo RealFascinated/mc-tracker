@@ -22,13 +22,13 @@ pub use self::asns::{
 pub use self::auth::{ChatQuota, LoginResponse, MeResponse};
 pub use self::auth_config::SignupEnabledResponse;
 pub use self::chat_stream::{ChatStreamEvent, ChatTokenUsage, ChatToolCallRecord};
-pub use self::error::ErrorResponse;
+pub use self::error::{ApiError, ApiErrorCode, ErrorTarget, PartialError};
 pub use self::health::HealthResponse;
 pub use self::insights::{
-    AsnGrowthRankError, AsnGrowthRankItem, AsnTimeseriesSummaryResponse, AsnsGrowthRankResponse,
-    GrowthRankOrder, ServerGrowthRankError, ServerGrowthRankItem, ServerPeriodPeakRankItem,
-    ServerTimeseriesSummaryResponse, ServersGrowthRankResponse, ServersPeriodPeakRankResponse,
-    SummaryPoint, TimeseriesSummaryResponse, TrendDirection,
+    AsnGrowthRankItem, AsnTimeseriesSummaryResponse, AsnsGrowthRankResponse, GrowthRankOrder,
+    ServerCompareItem, ServerGrowthRankItem, ServerPeriodPeakRankItem,
+    ServerTimeseriesSummaryResponse, ServersCompareResponse, ServersGrowthRankResponse,
+    ServersPeriodPeakRankResponse, SummaryPoint, TimeseriesSummaryResponse, TrendDirection,
 };
 pub use self::pinned_servers::PinnedServersListResponse;
 pub use self::servers::{

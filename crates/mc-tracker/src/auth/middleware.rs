@@ -4,7 +4,7 @@ use axum::http::{header, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
-use mc_api_types::ErrorResponse;
+use mc_api_types::{ApiError, ApiErrorCode};
 use mc_db::db::repos::users;
 use mc_db::model::UserFlags;
 use mc_db::model::UserRole;
@@ -95,13 +95,17 @@ pub fn parse_cookie_value(cookie_header: &str, name: &str) -> Option<String> {
 fn unauthorized() -> Response {
     (
         StatusCode::UNAUTHORIZED,
-        Json(ErrorResponse::new("unauthorized")),
+        Json(ApiError::new(ApiErrorCode::Unauthorized, "unauthorized")),
     )
         .into_response()
 }
 
 fn forbidden() -> Response {
-    (StatusCode::FORBIDDEN, Json(ErrorResponse::new("forbidden"))).into_response()
+    (
+        StatusCode::FORBIDDEN,
+        Json(ApiError::new(ApiErrorCode::Forbidden, "forbidden")),
+    )
+        .into_response()
 }
 
 #[cfg(test)]

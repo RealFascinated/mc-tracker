@@ -1,8 +1,7 @@
 import { apiUrl } from "@/lib/api/url";
+import type { ApiError } from "@/lib/api/types";
 
-export type ApiErrorBody = {
-  error: string;
-};
+export type ApiErrorBody = ApiError;
 
 export class ApiClientError extends Error {
   readonly status: number;
@@ -45,8 +44,8 @@ export async function apiFetch<T>(
     let message = response.statusText;
     try {
       const error = (await response.json()) as ApiErrorBody;
-      if (error.error) {
-        message = error.error;
+      if (error.message) {
+        message = error.message;
       }
     } catch {
       // Response may have no JSON body.

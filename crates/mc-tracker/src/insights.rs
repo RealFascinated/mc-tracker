@@ -3,8 +3,8 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use futures::future::join_all;
 use mc_api_types::{
-    AsnGrowthRankError, AsnGrowthRankItem, AsnTimeseriesSummaryResponse, AsnsGrowthRankResponse,
-    GrowthRankOrder, ServerGrowthRankError, ServerGrowthRankItem, ServerPeriodPeakRankItem,
+    AsnGrowthRankItem, AsnTimeseriesSummaryResponse, AsnsGrowthRankResponse, ErrorTarget,
+    GrowthRankOrder, ServerGrowthRankItem, ServerPeriodPeakRankItem,
     ServerTimeseriesSummaryResponse, ServersGrowthRankResponse, ServersPeriodPeakRankResponse,
     TimeseriesSummaryResponse,
 };
@@ -148,10 +148,9 @@ impl InsightsService {
                     change_pct: summary.summary.change_pct,
                     trend: summary.summary.trend,
                 }),
-                Err(err) => errors.push(ServerGrowthRankError {
-                    id: id.to_string(),
-                    error: err.to_string(),
-                }),
+                Err(err) => {
+                    errors.push(err.to_partial_error(ErrorTarget::Server { id: id.to_string() }))
+                }
             }
         }
 
@@ -208,10 +207,9 @@ impl InsightsService {
                     max: summary.summary.max,
                     avg: summary.summary.avg,
                 }),
-                Err(err) => errors.push(ServerGrowthRankError {
-                    id: id.to_string(),
-                    error: err.to_string(),
-                }),
+                Err(err) => {
+                    errors.push(err.to_partial_error(ErrorTarget::Server { id: id.to_string() }))
+                }
             }
         }
 
@@ -260,11 +258,7 @@ impl InsightsService {
                     change_pct: summary.summary.change_pct,
                     trend: summary.summary.trend,
                 }),
-                Err(err) => errors.push(AsnGrowthRankError {
-                    asn,
-                    asn_org,
-                    error: err.to_string(),
-                }),
+                Err(err) => errors.push(err.to_partial_error(ErrorTarget::Asn { asn, asn_org })),
             }
         }
 
@@ -386,9 +380,13 @@ fn map_metrics_error(err: MetricsError) -> InsightsError {
     }
 }
 
-pub fn map_insights_error(err: InsightsError) -> (http::StatusCode, String) {
-    match err {
-        InsightsError::InvalidRange(message) => (http::StatusCode::BAD_REQUEST, message),
-        InsightsError::NoData => (http::StatusCode::NOT_FOUND, "no data in range".into()),
-    }
+pub fn map_insights_error(err: InsightsError) -> (http::StatusCode, mc_api_types::ApiError) {
+    let status = match err.api_code() {
+        mc_api_types::ApiErrorCode::ServerNotFound | mc_api_types::ApiErrorCode::NoData => {
+            http::StatusCode::NOT_FOUND
+        }
+        mc_api_types::ApiErrorCode::InvalidRange => http::StatusCode::BAD_REQUEST,
+        _ => http::StatusCode::INTERNAL_SERVER_ERROR,
+    };
+    (status, err.to_api_error())
 }

@@ -67,9 +67,9 @@ async function errorMessageFromResponse(response: Response): Promise<string> {
 
   if (contentType.includes("application/json")) {
     try {
-      const error = (await response.json()) as { error?: string };
-      if (error.error) {
-        return error.error;
+      const error = (await response.json()) as { code?: string; message?: string };
+      if (error.message) {
+        return error.message;
       }
     } catch {
       // Response may have no JSON body.

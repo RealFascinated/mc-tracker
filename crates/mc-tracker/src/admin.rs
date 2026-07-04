@@ -5,7 +5,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, patch};
 use axum::{Json, Router};
 use mc_api_types::{
-    AdminServersListResponse, AdminUsersListResponse, CreateServerRequest, ErrorResponse,
+    AdminServersListResponse, AdminUsersListResponse, ApiError, ApiErrorCode, CreateServerRequest,
     PatchSettingsRequest, PatchUserFlagsRequest, PatchUserFlagsResponse, SettingsResponse,
     UpdateServerRequest,
 };
@@ -119,7 +119,10 @@ async fn update_server(
             if !state.manager.update_server_config(server.clone()).await {
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse::new("server missing from memory")),
+                    Json(ApiError::new(
+                        ApiErrorCode::InternalError,
+                        "server missing from memory",
+                    )),
                 )
                     .into_response();
             }
@@ -137,7 +140,10 @@ async fn delete_server(State(state): State<AppState>, Path(id): Path<Uuid>) -> R
         }
         Ok(_) => (
             StatusCode::NOT_FOUND,
-            Json(ErrorResponse::new(format!("server {id}"))),
+            Json(ApiError::new(
+                ApiErrorCode::NotFound,
+                format!("server {id}"),
+            )),
         )
             .into_response(),
         Err(err) => map_db_error(err),
@@ -212,17 +218,27 @@ fn parse_platform(value: &str) -> Result<Platform, String> {
 }
 
 fn bad_request(message: &str) -> Response {
-    (StatusCode::BAD_REQUEST, Json(ErrorResponse::new(message))).into_response()
+    (
+        StatusCode::BAD_REQUEST,
+        Json(ApiError::new(ApiErrorCode::BadRequest, message)),
+    )
+        .into_response()
 }
 
 fn map_db_error(err: DbError) -> Response {
-    let (status, message) = match err {
-        DbError::NotFound(message) => (StatusCode::NOT_FOUND, message),
-        DbError::Conflict(message) => (StatusCode::CONFLICT, message),
-        DbError::InvalidSettings(message) => (StatusCode::BAD_REQUEST, message),
-        other => (StatusCode::INTERNAL_SERVER_ERROR, other.to_string()),
+    let (status, code, message) = match err {
+        DbError::NotFound(message) => (StatusCode::NOT_FOUND, ApiErrorCode::NotFound, message),
+        DbError::Conflict(message) => (StatusCode::CONFLICT, ApiErrorCode::Conflict, message),
+        DbError::InvalidSettings(message) => {
+            (StatusCode::BAD_REQUEST, ApiErrorCode::BadRequest, message)
+        }
+        other => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            ApiErrorCode::InternalError,
+            other.to_string(),
+        ),
     };
-    (status, Json(ErrorResponse::new(message))).into_response()
+    (status, Json(ApiError::new(code, message))).into_response()
 }
 
 #[cfg(test)]
