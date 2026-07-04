@@ -12,7 +12,7 @@ use crate::llm::types::{
     ChatCompletionRequest, ChatCompletionResponse, ChatMessage, CompletionUsage, LlmRequestOptions,
     ToolChoice, ToolDefinition,
 };
-use crate::prompt::SYSTEM_PROMPT;
+use crate::prompt::system_prompt;
 use crate::tools::ToolRegistry;
 use crate::traits::{ChatToolDeps, LlmClient};
 use crate::types::{AgentChatRequest, ChatAgent};
@@ -327,7 +327,7 @@ fn push_user_message(messages: &mut Vec<ChatMessage>, request: &AgentChatRequest
 fn initial_messages() -> Vec<ChatMessage> {
     vec![ChatMessage {
         role: "system".into(),
-        content: Some(SYSTEM_PROMPT.into()),
+        content: Some(system_prompt()),
         tool_calls: None,
         tool_call_id: None,
     }]

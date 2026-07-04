@@ -1675,6 +1675,7 @@ name = "mc-chat"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "chrono",
  "futures",
  "mc-api-types",
  "mc-common",
