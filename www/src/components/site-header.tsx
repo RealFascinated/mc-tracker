@@ -17,6 +17,8 @@ import { APP_NAME } from "@/lib/page-title";
 import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 import { cn } from "cnfast";
 
+const SITE_LOGO = `${import.meta.env.BASE_URL}favicon.svg`;
+
 function showsHeaderSearch(pathname: string): boolean {
   return pathname.startsWith("/servers");
 }
@@ -116,8 +118,15 @@ function SiteHeader({ className }: SiteHeaderProps) {
       >
         <Link
           to="/servers"
-          className="site-header-brand shrink-0 text-base font-bold text-foreground hover:text-monitor dark:hover:text-warning"
+          className="site-header-brand flex shrink-0 items-center gap-2 text-base font-bold text-foreground hover:text-monitor dark:hover:text-warning"
         >
+          <img
+            src={SITE_LOGO}
+            alt=""
+            className="size-6 shrink-0"
+            width={24}
+            height={24}
+          />
           {APP_NAME}
         </Link>
 
