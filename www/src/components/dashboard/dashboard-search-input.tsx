@@ -96,9 +96,11 @@ export function DashboardSearchInput({ className }: DashboardSearchInputProps) {
       return;
     }
 
-    if (event.key === "Enter" && activeIndex >= 0) {
+    if (event.key === "Enter") {
       event.preventDefault();
-      selectSuggestion(suggestions[activeIndex]);
+      selectSuggestion(
+        activeIndex >= 0 ? suggestions[activeIndex] : suggestions[0],
+      );
       return;
     }
 
