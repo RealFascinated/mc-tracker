@@ -37,11 +37,11 @@ export function ChatBubble({
             isUser
               ? "rounded-soft border border-monitor bg-monitor text-white whitespace-pre-wrap dark:border-monitor-100 dark:bg-monitor/90"
               : "rounded-soft border border-border bg-muted/40 text-foreground",
-            pending && "text-muted-foreground italic",
+            pending && "text-muted-foreground",
           )}
         >
           {pending ? (
-            <span className="inline-flex flex-col gap-2">
+            <span className="inline-flex flex-col ">
               <ToolCallList toolCalls={toolCalls} activeTool={activeTool} />
               {!activeTool ? <ThinkingIndicator /> : null}
             </span>
@@ -52,8 +52,6 @@ export function ChatBubble({
               <ToolCallList toolCalls={toolCalls} activeTool={null} />
               {message.content ? (
                 <ChatMarkdown content={message.content} />
-              ) : isStreaming ? (
-                <ThinkingIndicator />
               ) : (
                 <p className="text-muted-foreground text-xs italic">
                   No response generated.

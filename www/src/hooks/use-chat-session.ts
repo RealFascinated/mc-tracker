@@ -236,6 +236,7 @@ export function useChatSession() {
     chatQuota,
     quotaExceeded,
     serverContext,
+    sessionId,
     inputRef,
     pickSuggestion,
     cancelStream,

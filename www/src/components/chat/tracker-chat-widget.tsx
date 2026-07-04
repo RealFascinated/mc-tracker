@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import {
+  ChevronDownIcon,
+  ChevronUpIcon,
   MessageCircleIcon,
   MessageSquarePlusIcon,
   SendIcon,
@@ -30,10 +32,13 @@ import { ChatSuggestions } from "@/components/chat/chat-suggestions";
 import { ContextUsage } from "@/components/chat/context-usage";
 import { QuotaUsage } from "@/components/chat/quota-usage";
 import { useChatSession } from "@/hooks/use-chat-session";
+import { useChatWindowSize } from "@/hooks/use-chat-window-size";
 
 export function TrackerChatWidget() {
   const { isLoading, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
+  const [followUpSuggestionsExpanded, setFollowUpSuggestionsExpanded] =
+    useState(true);
   const {
     messages,
     input,
@@ -44,6 +49,7 @@ export function TrackerChatWidget() {
     chatQuota,
     quotaExceeded,
     serverContext,
+    sessionId,
     inputRef,
     pickSuggestion,
     cancelStream,
@@ -51,6 +57,8 @@ export function TrackerChatWidget() {
     canStartNewChat,
     sendMessage,
   } = useChatSession();
+  const { size: chatWindowSize, isResizable, onResizePointerDown } =
+    useChatWindowSize();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -76,7 +84,18 @@ export function TrackerChatWidget() {
   return (
     <>
       {open ? (
-        <DashboardCard className="fixed right-4 bottom-4 z-50 flex h-[min(38rem,calc(100dvh-2rem))] w-[min(32rem,calc(100vw-2rem))] flex-col border-monitor/25 shadow-2xl ring-1 ring-black/10 dark:border-warning/30 dark:ring-white/10">
+        <DashboardCard
+          style={{ width: chatWindowSize.width, height: chatWindowSize.height }}
+          className="fixed right-4 bottom-4 z-50 flex flex-col border-monitor/25 shadow-2xl ring-1 ring-black/10 dark:border-warning/30 dark:ring-white/10"
+        >
+          {isResizable ? (
+            <button
+              type="button"
+              aria-label="Resize chat window"
+              className="absolute top-0 left-0 z-10 size-4 cursor-nwse-resize touch-none border-0 bg-transparent p-0"
+              onPointerDown={onResizePointerDown}
+            />
+          ) : null}
           <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
             <div className="min-w-0">
               <h2 className="truncate text-sm font-bold text-foreground">
@@ -144,6 +163,7 @@ export function TrackerChatWidget() {
                           <ChatSuggestions
                             disabled={isStreaming || quotaExceeded}
                             onPick={pickSuggestion}
+                            rotationKey={`${sessionId}:0`}
                             serverName={serverContext?.serverName}
                           />
                         ) : (
@@ -164,12 +184,48 @@ export function TrackerChatWidget() {
               </div>
 
               <div className="shrink-0 border-t border-border">
+                {messages.length > 0 &&
+                !isStreaming &&
+                followUpSuggestionsExpanded ? (
+                  <div className="px-3 pt-2">
+                    <ChatSuggestions
+                      variant="follow-up"
+                      disabled={quotaExceeded}
+                      onPick={pickSuggestion}
+                      rotationKey={`${sessionId}:${messages.length}`}
+                      serverName={serverContext?.serverName}
+                    />
+                  </div>
+                ) : null}
                 {chatQuota ? (
                   <div className="px-3 pt-2">
                     <QuotaUsage quota={chatQuota} />
                   </div>
                 ) : null}
                 <div className="flex items-center gap-2 p-3">
+                  {messages.length > 0 && !isStreaming ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-10 shrink-0 text-muted-foreground"
+                      aria-label={
+                        followUpSuggestionsExpanded
+                          ? "Hide suggestions"
+                          : "Show suggestions"
+                      }
+                      aria-expanded={followUpSuggestionsExpanded}
+                      onClick={() =>
+                        setFollowUpSuggestionsExpanded((current) => !current)
+                      }
+                    >
+                      {followUpSuggestionsExpanded ? (
+                        <ChevronDownIcon />
+                      ) : (
+                        <ChevronUpIcon />
+                      )}
+                    </Button>
+                  ) : null}
                   <textarea
                     ref={inputRef}
                     value={input}

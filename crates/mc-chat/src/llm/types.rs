@@ -126,8 +126,31 @@ pub struct ChatCompletionChunkChoice {
     pub delta: ChatCompletionDelta,
 }
 
+/// Incremental tool-call fragment in a streaming completion chunk.
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct StreamToolCallDelta {
+    #[serde(default)]
+    pub index: Option<u32>,
+    #[serde(default)]
+    pub id: Option<String>,
+    #[serde(rename = "type", default)]
+    pub call_type: Option<String>,
+    #[serde(default)]
+    pub function: Option<StreamToolCallFunctionDelta>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct StreamToolCallFunctionDelta {
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub arguments: Option<String>,
+}
+
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct ChatCompletionDelta {
     #[serde(default)]
     pub content: Option<String>,
+    #[serde(default)]
+    pub tool_calls: Option<Vec<StreamToolCallDelta>>,
 }

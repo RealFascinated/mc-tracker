@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -10,7 +11,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use crate::error::ChatError;
 use crate::llm::types::{
     ChatCompletionRequest, ChatCompletionResponse, ChatMessage, CompletionUsage, LlmRequestOptions,
-    ToolChoice, ToolDefinition,
+    StreamToolCallDelta, ToolCall, ToolChoice, ToolDefinition,
 };
 use crate::prompt::system_prompt;
 use crate::tools::ToolRegistry;
@@ -22,8 +23,12 @@ const MAX_TOOL_ROUNDS: usize = 8;
 /// dropped as whole conversation blocks so the cached prefix stays stable.
 const MAX_TURNS: usize = 10;
 const TOOL_MAX_TOKENS: u32 = 1024;
-const FINAL_MAX_TOKENS: u32 = 1024;
+const FINAL_MAX_TOKENS: u32 = 2048;
 const TOOL_PARSE_RETRIES: usize = 3;
+/// Cap on tool-round → stream → retry cycles (stream may yield tool calls without tools in request).
+const MAX_AGENT_CYCLES: usize = MAX_TOOL_ROUNDS + 2;
+const EMPTY_RESPONSE_FALLBACK: &str =
+    "Sorry, I couldn't generate a response. Please try again.";
 
 pub struct AgentLoop {
     llm: Arc<dyn LlmClient>,
@@ -116,124 +121,165 @@ async fn run_agent(
         "chat turn started"
     );
 
-    for _ in 0..MAX_TOOL_ROUNDS {
+    let mut skip_tool_rounds = false;
+    for _ in 0..MAX_AGENT_CYCLES {
+        if !skip_tool_rounds {
+            for _ in 0..MAX_TOOL_ROUNDS {
+                check_timeout(started, timeout)?;
+                let response = tool_round_completion(
+                    llm.as_ref(),
+                    &model,
+                    &messages,
+                    &tool_defs,
+                    session_id.clone(),
+                )
+                .await?;
+                if let Some(round_usage) = response.usage {
+                    round_usage.merge_into(&mut usage);
+                }
+
+                let choice = response
+                    .choices
+                    .into_iter()
+                    .next()
+                    .ok_or_else(|| ChatError::Llm("empty completion".into()))?;
+                let assistant = choice.message;
+                if let Some(calls) = non_empty_tool_calls(&assistant) {
+                    execute_tool_calls(
+                        &calls,
+                        &mut messages,
+                        &tools,
+                        &deps,
+                        &tx,
+                        &mut tool_trace,
+                        assistant,
+                    )
+                    .await?;
+                    continue;
+                }
+                break;
+            }
+        }
+        skip_tool_rounds = false;
+
         check_timeout(started, timeout)?;
-        let response = tool_round_completion(
+
+        let (content, content_streamed, stream_tool_calls) = stream_final_response(
             llm.as_ref(),
             &model,
             &messages,
-            &tool_defs,
             session_id.clone(),
+            started,
+            timeout,
+            &tx,
+            &mut usage,
         )
         .await?;
+
+        if let Some(text) = non_empty_text(content) {
+            return finish_turn(
+                &tx,
+                &messages,
+                text,
+                content_streamed,
+                tool_trace,
+                &usage,
+                context_max,
+                session_id.as_deref(),
+            )
+            .await;
+        }
+
+        if let Some(calls) = stream_tool_calls {
+            let assistant = ChatMessage {
+                role: "assistant".into(),
+                content: None,
+                tool_calls: Some(calls.clone()),
+                tool_call_id: None,
+            };
+            execute_tool_calls(
+                &calls,
+                &mut messages,
+                &tools,
+                &deps,
+                &tx,
+                &mut tool_trace,
+                assistant,
+            )
+            .await?;
+            skip_tool_rounds = true;
+            continue;
+        }
+
+        check_timeout(started, timeout)?;
+        let response = llm
+            .chat_completion(ChatCompletionRequest {
+                model: model.clone(),
+                messages: messages.clone(),
+                tools: None,
+                tool_choice: None,
+                stream: false,
+                options: LlmRequestOptions {
+                    session_id: session_id.clone(),
+                    max_tokens: Some(FINAL_MAX_TOKENS),
+                    parse_tool_calls: false,
+                },
+            })
+            .await?;
         if let Some(round_usage) = response.usage {
             round_usage.merge_into(&mut usage);
         }
-
         let choice = response
             .choices
             .into_iter()
             .next()
             .ok_or_else(|| ChatError::Llm("empty completion".into()))?;
         let assistant = choice.message;
-        if let Some(calls) = assistant.tool_calls.clone() {
-            if calls.is_empty() {
-                break;
-            }
-            messages.push(assistant.clone());
-            for call in calls {
-                let name = call.function.name.clone();
-                let _ = tx
-                    .send(Ok(ChatStreamEvent::ToolStart { name: name.clone() }))
-                    .await;
-                let args: serde_json::Value =
-                    serde_json::from_str(&call.function.arguments).unwrap_or(serde_json::json!({}));
-                let result = tools.execute(&name, args, &deps).await;
-                let content = match result {
-                    Ok(value) => {
-                        serde_json::to_string(&value).unwrap_or_else(|_| value.to_string())
-                    }
-                    Err(err) => json_error(&err),
-                };
-                tool_trace.push(ChatToolCallRecord { name: name.clone() });
-                let _ = tx.send(Ok(ChatStreamEvent::ToolDone { name })).await;
-                messages.push(ChatMessage {
-                    role: "tool".into(),
-                    content: Some(content),
-                    tool_calls: None,
-                    tool_call_id: Some(call.id),
-                });
-            }
+        if let Some(calls) = non_empty_tool_calls(&assistant) {
+            execute_tool_calls(
+                &calls,
+                &mut messages,
+                &tools,
+                &deps,
+                &tx,
+                &mut tool_trace,
+                assistant,
+            )
+            .await?;
             continue;
         }
-        break;
-    }
-
-    check_timeout(started, timeout)?;
-
-    let mut history_snapshot: Vec<serde_json::Value> = messages
-        .iter()
-        .filter_map(|m| serde_json::to_value(m).ok())
-        .collect();
-
-    let mut stream = llm
-        .chat_completion_stream(ChatCompletionRequest {
-            model,
-            messages,
-            tools: None,
-            tool_choice: None,
-            stream: true,
-            options: LlmRequestOptions {
-                session_id: session_id.clone(),
-                max_tokens: Some(FINAL_MAX_TOKENS),
-                parse_tool_calls: false,
-            },
-        })
-        .await?;
-
-    let mut assistant_content = String::new();
-    while let Some(chunk) = stream.next().await {
-        check_timeout(started, timeout)?;
-        let chunk = chunk?;
-        if let Some(chunk_usage) = chunk.usage {
-            chunk_usage.merge_into(&mut usage);
-        }
-        for choice in chunk.choices {
-            if let Some(content) = choice.delta.content {
-                if !content.is_empty() {
-                    assistant_content.push_str(&content);
-                    let _ = tx.send(Ok(ChatStreamEvent::Delta { content })).await;
-                }
-            }
-        }
-    }
-
-    if let Ok(assistant) = serde_json::to_value(ChatMessage {
-        role: "assistant".into(),
-        content: Some(assistant_content),
-        tool_calls: None,
-        tool_call_id: None,
-    }) {
-        history_snapshot.push(assistant);
-    }
-
-    log_context_usage(session_id.as_deref(), context_max, &usage);
-
-    let cache_details = usage.prompt_tokens_details;
-    let _ = tx
-        .send(Ok(ChatStreamEvent::Done {
-            tool_calls: tool_trace,
-            usage: Some(mc_api_types::ChatTokenUsage {
-                prompt_tokens: usage.prompt_tokens,
-                completion_tokens: usage.completion_tokens,
+        if let Some(content) = assistant_text(&assistant) {
+            return finish_turn(
+                &tx,
+                &messages,
+                content,
+                false,
+                tool_trace,
+                &usage,
                 context_max,
-                cached_tokens: cache_details.map(|d| d.cached_tokens),
-                cache_write_tokens: cache_details.map(|d| d.cache_write_tokens),
-            }),
-            raw_history: Some(history_snapshot),
-        }))
+                session_id.as_deref(),
+            )
+            .await;
+        }
+
+        tracing::warn!(
+            session_id = session_id.as_deref(),
+            "model returned empty content after stream and non-streaming fallback"
+        );
+        return finish_turn(
+            &tx,
+            &messages,
+            EMPTY_RESPONSE_FALLBACK.into(),
+            false,
+            tool_trace,
+            &usage,
+            context_max,
+            session_id.as_deref(),
+        )
         .await;
-    Ok(())
+    }
+
+    Err(ChatError::Limit("agent cycle limit".into()))
 }
 
 /// Parse opaque history echoed from the previous turn. Invalid entries are dropped
@@ -437,15 +483,229 @@ fn log_context_usage(session_id: Option<&str>, context_max: u32, usage: &Complet
     );
 }
 
+fn json_error(err: &ChatError) -> String {
+    serde_json::json!({ "error": err.to_string() }).to_string()
+}
+
+fn non_empty_text(content: String) -> Option<String> {
+    if content.trim().is_empty() {
+        None
+    } else {
+        Some(content)
+    }
+}
+
+fn assistant_text(message: &ChatMessage) -> Option<String> {
+    message.content.as_ref().and_then(|c| non_empty_text(c.clone()))
+}
+
+fn non_empty_tool_calls(message: &ChatMessage) -> Option<Vec<ToolCall>> {
+    message
+        .tool_calls
+        .as_ref()
+        .filter(|calls| !calls.is_empty())
+        .cloned()
+}
+
+async fn execute_tool_calls(
+    calls: &[ToolCall],
+    messages: &mut Vec<ChatMessage>,
+    tools: &ToolRegistry,
+    deps: &ChatToolDeps,
+    tx: &mpsc::Sender<Result<ChatStreamEvent, ChatError>>,
+    tool_trace: &mut Vec<ChatToolCallRecord>,
+    assistant: ChatMessage,
+) -> Result<(), ChatError> {
+    messages.push(assistant);
+    for call in calls {
+        let name = call.function.name.clone();
+        let _ = tx
+            .send(Ok(ChatStreamEvent::ToolStart {
+                name: name.clone(),
+            }))
+            .await;
+        let args: serde_json::Value =
+            serde_json::from_str(&call.function.arguments).unwrap_or(serde_json::json!({}));
+        let result = tools.execute(&name, args, deps).await;
+        let content = match result {
+            Ok(value) => serde_json::to_string(&value).unwrap_or_else(|_| value.to_string()),
+            Err(err) => json_error(&err),
+        };
+        tool_trace.push(ChatToolCallRecord { name: name.clone() });
+        let _ = tx.send(Ok(ChatStreamEvent::ToolDone { name })).await;
+        messages.push(ChatMessage {
+            role: "tool".into(),
+            content: Some(content),
+            tool_calls: None,
+            tool_call_id: Some(call.id.clone()),
+        });
+    }
+    Ok(())
+}
+
+async fn stream_final_response(
+    llm: &dyn LlmClient,
+    model: &str,
+    messages: &[ChatMessage],
+    session_id: Option<String>,
+    started: Instant,
+    timeout: Duration,
+    tx: &mpsc::Sender<Result<ChatStreamEvent, ChatError>>,
+    usage: &mut CompletionUsage,
+) -> Result<(String, bool, Option<Vec<ToolCall>>), ChatError> {
+    let mut stream = llm
+        .chat_completion_stream(ChatCompletionRequest {
+            model: model.to_string(),
+            messages: messages.to_vec(),
+            tools: None,
+            tool_choice: None,
+            stream: true,
+            options: LlmRequestOptions {
+                session_id,
+                max_tokens: Some(FINAL_MAX_TOKENS),
+                parse_tool_calls: false,
+            },
+        })
+        .await?;
+
+    let mut content = String::new();
+    let mut tool_acc: BTreeMap<u32, PartialStreamToolCall> = BTreeMap::new();
+    while let Some(chunk) = stream.next().await {
+        check_timeout(started, timeout)?;
+        let chunk = chunk?;
+        if let Some(chunk_usage) = chunk.usage {
+            chunk_usage.merge_into(usage);
+        }
+        for choice in chunk.choices {
+            if let Some(piece) = choice.delta.content {
+                if !piece.is_empty() {
+                    content.push_str(&piece);
+                    let _ = tx.send(Ok(ChatStreamEvent::Delta { content: piece })).await;
+                }
+            }
+            if let Some(deltas) = choice.delta.tool_calls {
+                merge_stream_tool_calls(&mut tool_acc, &deltas);
+            }
+        }
+    }
+
+    let content_streamed = !content.is_empty();
+    let stream_tool_calls = finalize_stream_tool_calls(tool_acc);
+    Ok((content, content_streamed, stream_tool_calls))
+}
+
+#[derive(Debug, Default)]
+struct PartialStreamToolCall {
+    id: Option<String>,
+    call_type: Option<String>,
+    name: Option<String>,
+    arguments: String,
+}
+
+fn merge_stream_tool_calls(acc: &mut BTreeMap<u32, PartialStreamToolCall>, deltas: &[StreamToolCallDelta]) {
+    for delta in deltas {
+        let index = delta.index.unwrap_or(0);
+        let entry = acc.entry(index).or_default();
+        if let Some(id) = &delta.id {
+            entry.id = Some(id.clone());
+        }
+        if let Some(call_type) = &delta.call_type {
+            entry.call_type = Some(call_type.clone());
+        }
+        if let Some(function) = &delta.function {
+            if let Some(name) = &function.name {
+                entry.name = Some(name.clone());
+            }
+            if let Some(arguments) = &function.arguments {
+                entry.arguments.push_str(arguments);
+            }
+        }
+    }
+}
+
+fn finalize_stream_tool_calls(acc: BTreeMap<u32, PartialStreamToolCall>) -> Option<Vec<ToolCall>> {
+    if acc.is_empty() {
+        return None;
+    }
+    let calls: Vec<ToolCall> = acc
+        .into_iter()
+        .filter_map(|(index, partial)| {
+            let name = partial.name?;
+            let id = partial
+                .id
+                .unwrap_or_else(|| format!("stream_call_{index}"));
+            Some(ToolCall {
+                id,
+                call_type: partial.call_type.unwrap_or_else(|| "function".into()),
+                function: crate::llm::types::ToolCallFunction {
+                    name,
+                    arguments: partial.arguments,
+                },
+            })
+        })
+        .collect();
+    if calls.is_empty() {
+        None
+    } else {
+        Some(calls)
+    }
+}
+
+async fn finish_turn(
+    tx: &mpsc::Sender<Result<ChatStreamEvent, ChatError>>,
+    messages: &[ChatMessage],
+    assistant_content: String,
+    content_already_streamed: bool,
+    tool_trace: Vec<ChatToolCallRecord>,
+    usage: &CompletionUsage,
+    context_max: u32,
+    session_id: Option<&str>,
+) -> Result<(), ChatError> {
+    if !content_already_streamed {
+        let _ = tx
+            .send(Ok(ChatStreamEvent::Delta {
+                content: assistant_content.clone(),
+            }))
+            .await;
+    }
+
+    let mut history_snapshot: Vec<serde_json::Value> = messages
+        .iter()
+        .filter_map(|m| serde_json::to_value(m).ok())
+        .collect();
+    if let Ok(assistant) = serde_json::to_value(ChatMessage {
+        role: "assistant".into(),
+        content: Some(assistant_content),
+        tool_calls: None,
+        tool_call_id: None,
+    }) {
+        history_snapshot.push(assistant);
+    }
+
+    log_context_usage(session_id, context_max, usage);
+
+    let cache_details = usage.prompt_tokens_details;
+    let _ = tx
+        .send(Ok(ChatStreamEvent::Done {
+            tool_calls: tool_trace,
+            usage: Some(mc_api_types::ChatTokenUsage {
+                prompt_tokens: usage.prompt_tokens,
+                completion_tokens: usage.completion_tokens,
+                context_max,
+                cached_tokens: cache_details.map(|d| d.cached_tokens),
+                cache_write_tokens: cache_details.map(|d| d.cache_write_tokens),
+            }),
+            raw_history: Some(history_snapshot),
+        }))
+        .await;
+    Ok(())
+}
+
 fn check_timeout(started: Instant, timeout: Duration) -> Result<(), ChatError> {
     if started.elapsed() > timeout {
         return Err(ChatError::Limit("timeout".into()));
     }
     Ok(())
-}
-
-fn json_error(err: &ChatError) -> String {
-    serde_json::json!({ "error": err.to_string() }).to_string()
 }
 
 #[cfg(test)]
@@ -481,7 +741,7 @@ mod tests {
                 choices: vec![ChatCompletionChoice {
                     message: ChatMessage {
                         role: "assistant".into(),
-                        content: Some("ok".into()),
+                        content: None,
                         tool_calls: None,
                         tool_call_id: None,
                     },
@@ -503,6 +763,7 @@ mod tests {
                     choices: vec![ChatCompletionChunkChoice {
                         delta: ChatCompletionDelta {
                             content: Some("Hello".into()),
+                            ..Default::default()
                         },
                     }],
                     usage: None,
@@ -511,6 +772,7 @@ mod tests {
                     choices: vec![ChatCompletionChunkChoice {
                         delta: ChatCompletionDelta {
                             content: Some(" world".into()),
+                            ..Default::default()
                         },
                     }],
                     usage: None,
@@ -758,6 +1020,37 @@ mod tests {
         assert_eq!(parsed.len(), 2);
         assert_eq!(parsed[0].role, "system");
         assert_eq!(parsed[1].role, "user");
+    }
+
+    #[test]
+    fn finalize_stream_tool_calls_merges_fragments() {
+        let mut acc = BTreeMap::new();
+        merge_stream_tool_calls(
+            &mut acc,
+            &[
+                StreamToolCallDelta {
+                    index: Some(0),
+                    id: Some("call_1".into()),
+                    call_type: Some("function".into()),
+                    function: Some(crate::llm::types::StreamToolCallFunctionDelta {
+                        name: Some("get_server".into()),
+                        arguments: Some("{\"query\":".into()),
+                    }),
+                },
+                StreamToolCallDelta {
+                    index: Some(0),
+                    function: Some(crate::llm::types::StreamToolCallFunctionDelta {
+                        name: None,
+                        arguments: Some("\"test\"}".into()),
+                    }),
+                    ..Default::default()
+                },
+            ],
+        );
+        let calls = finalize_stream_tool_calls(acc).expect("tool calls");
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].function.name, "get_server");
+        assert_eq!(calls[0].function.arguments, "{\"query\":\"test\"}");
     }
 
     #[test]

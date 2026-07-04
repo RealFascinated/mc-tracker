@@ -14,9 +14,9 @@ export function ThinkingIndicator() {
   }, []);
 
   return (
-    <span className="text-muted-foreground inline-flex items-center gap-2 text-xs italic">
+    <span className="text-muted-foreground inline-flex items-center gap-2 text-xs shimmer">
       <LoaderCircleIcon className="size-3.5 shrink-0 animate-spin" />
       {THINKING_MESSAGES[messageIndex]}
     </span>
   );
-}
+} 
