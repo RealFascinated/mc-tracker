@@ -9,7 +9,10 @@ import { LazyMetricChartBody } from "@/components/dashboard/charts/lazy-metric-c
 import { resolveLazyMetricChartState } from "@/components/dashboard/charts/lazy-metric-chart-state";
 import { AnimatedStatValue } from "@/components/dashboard/stats/animated-stat-value";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
-import { useGridItemVisible } from "@/hooks/use-intersection-visible";
+import {
+  useGridItemVisible,
+  useIntersectionVisible,
+} from "@/hooks/use-intersection-visible";
 import { useVisibleTimeseriesQuery } from "@/hooks/timeseries/use-visible-timeseries-query";
 import {
   EMPTY_METRIC_TIME_SERIES,
@@ -264,11 +267,14 @@ export function EntityCardStats({
   playersOnline: number | null;
   peaks: EntityPeakStats;
 }) {
+  const { ref, hasBeenVisible } = useIntersectionVisible();
+
   return (
-    <div className="entity-card-stats">
+    <div ref={ref} className="entity-card-stats">
       <div className="entity-card-stat">
         <span className="entity-card-stat-label">Now</span>
         <AnimatedStatValue
+          active={hasBeenVisible}
           value={playersOnline}
           className="entity-card-stat-value"
         />
@@ -276,6 +282,7 @@ export function EntityCardStats({
       <div className="entity-card-stat">
         <span className="entity-card-stat-label">Peak 24h</span>
         <AnimatedStatValue
+          active={hasBeenVisible}
           value={peaks.players24h}
           className="entity-card-stat-value"
         />
@@ -283,6 +290,7 @@ export function EntityCardStats({
       <div className="entity-card-stat">
         <span className="entity-card-stat-label">All-time</span>
         <AnimatedStatValue
+          active={hasBeenVisible}
           tooltip={peakTimestampTooltip(peaks.allTime?.timestamp)}
           value={peaks.allTime?.players ?? null}
           className="entity-card-stat-value"

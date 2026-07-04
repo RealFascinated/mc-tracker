@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef } from "react";
 
 import { prefersReducedMotion } from "@/lib/theme/transition";
 
@@ -26,6 +26,7 @@ type AnimState = {
 export function useCountUp(
   target: number | null | undefined,
   durationMs = DEFAULT_DURATION_MS,
+  active = true,
 ): number | null {
   const to = normalizeTarget(target);
   const valueRef = useRef<number | null>(null);
@@ -33,17 +34,32 @@ export function useCountUp(
   const frameRef = useRef<number | undefined>(undefined);
   const [, bumpFrame] = useReducer((count: number) => count + 1, 0);
 
-  const [prevTo, setPrevTo] = useState<number | null | undefined>(undefined);
-  if (to !== prevTo) {
-    setPrevTo(to);
+  useEffect(() => {
+    if (frameRef.current !== undefined) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = undefined;
+    }
 
     if (to === null) {
       valueRef.current = null;
       animRef.current = null;
-    } else if (prefersReducedMotion()) {
+      bumpFrame();
+      return;
+    }
+
+    if (prefersReducedMotion()) {
       valueRef.current = to;
       animRef.current = null;
-    } else if (valueRef.current === null) {
+      bumpFrame();
+      return;
+    }
+
+    if (!active) {
+      animRef.current = null;
+      return;
+    }
+
+    if (valueRef.current === null) {
       animRef.current = {
         from: 0,
         to,
@@ -57,14 +73,11 @@ export function useCountUp(
         start: performance.now(),
         countingFromZero: false,
       };
-    }
-  }
-
-  useEffect(() => {
-    const anim = animRef.current;
-    if (!anim || anim.to !== to) {
+    } else {
       return;
     }
+
+    const anim = animRef.current;
 
     const tick = (now: number) => {
       const progress = Math.min((now - anim.start) / durationMs, 1);
@@ -93,10 +106,14 @@ export function useCountUp(
         cancelAnimationFrame(frameRef.current);
       }
     };
-  }, [to, durationMs, bumpFrame]);
+  }, [active, to, durationMs, bumpFrame]);
 
   if (to === null) {
     return null;
+  }
+
+  if (!active && valueRef.current === null) {
+    return 0;
   }
 
   if (!animRef.current) {
