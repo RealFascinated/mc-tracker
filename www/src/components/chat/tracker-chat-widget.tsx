@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
@@ -38,6 +38,7 @@ import { useChatWindowSize } from "@/hooks/use-chat-window-size";
 export function TrackerChatWidget() {
   const { isLoading, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [followUpSuggestionsExpanded, setFollowUpSuggestionsExpanded] =
     useState(true);
   const {
@@ -66,12 +67,21 @@ export function TrackerChatWidget() {
     onResizePointerDown,
   } = useChatWindowSize();
 
+  const openChat = useCallback(() => {
+    setMounted(true);
+    setOpen(true);
+  }, []);
+
+  const closeChat = useCallback(() => {
+    cancelStream();
+    setOpen(false);
+  }, [cancelStream]);
+
   useEffect(() => {
     if (!isAuthenticated) {
-      cancelStream();
-      setOpen(false);
+      closeChat();
     }
-  }, [isAuthenticated, cancelStream]);
+  }, [isAuthenticated, closeChat]);
 
   useEffect(() => {
     if (!open || !isAuthenticated) {
@@ -89,11 +99,27 @@ export function TrackerChatWidget() {
 
   return (
     <>
-      {open ? (
-        <DashboardCard
-          style={{ width: chatWindowSize.width, height: chatWindowSize.height }}
-          className="fixed right-4 bottom-4 z-50 flex flex-col border-monitor/25 shadow-2xl ring-1 ring-black/10 dark:border-warning/30 dark:ring-white/10"
+      {mounted ? (
+        <div
+          data-state={open ? "open" : "closed"}
+          style={{
+            width: chatWindowSize.width,
+            height: chatWindowSize.height,
+          }}
+          className={cn(
+            "fixed right-4 bottom-4 z-50 origin-bottom-right duration-200",
+            "data-[state=closed]:pointer-events-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-2 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:fill-mode-forwards",
+          )}
+          onAnimationEnd={(event) => {
+            if (event.target !== event.currentTarget || open) {
+              return;
+            }
+            event.currentTarget.style.opacity = "0";
+            event.currentTarget.style.pointerEvents = "none";
+            setMounted(false);
+          }}
         >
+          <DashboardCard className="flex h-full flex-col border-monitor/25 shadow-2xl ring-1 ring-black/10 dark:border-warning/30 dark:ring-white/10">
           {isResizable ? (
             <button
               type="button"
@@ -142,10 +168,7 @@ export function TrackerChatWidget() {
                 variant="ghost"
                 size="icon-sm"
                 aria-label="Close chat"
-                onClick={() => {
-                  cancelStream();
-                  setOpen(false);
-                }}
+                onClick={closeChat}
               >
                 <XIcon />
               </Button>
@@ -280,7 +303,8 @@ export function TrackerChatWidget() {
               </div>
             </>
           )}
-        </DashboardCard>
+          </DashboardCard>
+        </div>
       ) : null}
 
       <Button
@@ -288,12 +312,12 @@ export function TrackerChatWidget() {
         variant="brand"
         size="icon-lg"
         className={cn(
-          "fixed right-4 bottom-4 z-50 size-12 rounded-full shadow-lg ring-2 ring-background",
+          "fixed right-4 bottom-4 z-50 size-12 rounded-full shadow-lg ring-2 ring-background transition-all duration-200",
           open && "pointer-events-none scale-0 opacity-0",
         )}
         aria-label="Open chat"
         aria-hidden={open}
-        onClick={() => setOpen(true)}
+        onClick={openChat}
       >
         <MessageCircleIcon className="size-5" />
       </Button>
