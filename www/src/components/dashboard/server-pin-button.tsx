@@ -3,6 +3,11 @@ import { Pin, PinOff } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { pinServer, unpinServer } from "@/lib/api/pinned-servers";
 import { pinnedServersQueryKey } from "@/lib/api/pinned-servers.queries";
 import { cn } from "cnfast";
@@ -31,22 +36,31 @@ export function ServerPinButton({
     },
   });
 
+  const label = isPinned ? "Unpin server" : "Pin server";
+
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon-sm"
-      className={cn("shrink-0", className)}
-      aria-label={isPinned ? "Unpin server" : "Pin server"}
-      aria-pressed={isPinned}
-      disabled={mutation.isPending}
-      onClick={() => mutation.mutate()}
-    >
-      {isPinned ? (
-        <PinOff className="size-4" aria-hidden />
-      ) : (
-        <Pin className="size-4" aria-hidden />
-      )}
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className={cn("shrink-0", className)}
+          aria-label={label}
+          aria-pressed={isPinned}
+          disabled={mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          {isPinned ? (
+            <PinOff className="size-4" aria-hidden />
+          ) : (
+            <Pin className="size-4" aria-hidden />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
   );
 }
