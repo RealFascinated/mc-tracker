@@ -6,7 +6,6 @@ import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { DashboardCardHeader } from "@/components/dashboard/dashboard-card-header";
 import { ServerPlayersChart } from "@/components/dashboard/charts/server-players-chart";
 import {
-  ServerDetailMeta,
   ServerIdentityHeader,
 } from "@/components/dashboard/server-identity-header";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
@@ -87,10 +86,9 @@ function ServerDetailPage() {
         <FadeInAnimation>
           <DashboardCard className="server-detail-card">
             <ServerIdentityHeader server={server} layout="page" />
-            <div className="server-detail-body">
-              <ServerDetailMeta server={server} />
-              {server.asn ? (
-                <p className="server-detail-asn-link text-sm text-muted-foreground">
+            {server.asn ? (
+              <div className="server-detail-body">
+                <p className="text-sm text-muted-foreground">
                   View all servers on this network on the{" "}
                   <Link
                     to="/asns/$asn"
@@ -102,8 +100,8 @@ function ServerDetailPage() {
                   </Link>
                   .
                 </p>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
           </DashboardCard>
         </FadeInAnimation>
 

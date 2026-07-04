@@ -1241,7 +1241,7 @@
   }
 
   .server-detail-header {
-    @apply flex flex-col gap-4 border-b border-border px-4 py-4 sm:flex-row sm:items-start sm:justify-between;
+    @apply flex flex-col gap-4 px-4 pt-4 pb-3 sm:flex-row sm:items-start sm:justify-between;
   }
 
   .server-detail-header .entity-card-stats {
@@ -1249,23 +1249,7 @@
   }
 
   .server-detail-body {
-    @apply flex flex-col gap-4 px-4 py-4;
-  }
-
-  .server-detail-meta {
-    @apply grid gap-3 sm:grid-cols-3;
-  }
-
-  .server-detail-meta-item {
-    @apply flex min-w-0 flex-col gap-1 rounded-snug border border-border bg-muted/30 px-3 py-2.5;
-  }
-
-  .server-detail-meta-item dt {
-    @apply text-[10px] font-semibold tracking-wider text-muted-foreground uppercase;
-  }
-
-  .server-detail-meta-item dd {
-    @apply text-sm font-medium text-foreground;
+    @apply border-t border-border px-4 pb-4 pt-3;
   }
 
   .link-underline-animate {
@@ -1298,10 +1282,6 @@
     .link-underline-animate::after {
       transition: none;
     }
-  }
-
-  .server-detail-asn-link {
-    @apply border-t border-border pt-4;
   }
 
   .server-detail-page {
