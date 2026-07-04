@@ -17,13 +17,14 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { GripVertical } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
 import { EntityMetricsGrid } from "@/components/dashboard/grids/entity-metrics-grid";
 import { ServerIdentityHeader } from "@/components/dashboard/server-identity-header";
 import { ServerPinButton } from "@/components/dashboard/server-pin-button";
+import { Button } from "@/components/ui/button";
 import { reorderPinnedServers } from "@/lib/api/pinned-servers";
 import { pinnedServersQueryKey } from "@/lib/api/pinned-servers.queries";
 import type {
@@ -46,6 +47,36 @@ type SortablePinnedItemProps = {
   children: ReactNode;
 };
 
+type SortableDragHandleProps = {
+  attributes: ReturnType<typeof useSortable>["attributes"];
+  listeners: ReturnType<typeof useSortable>["listeners"];
+};
+
+const SortableDragHandleContext = createContext<SortableDragHandleProps | null>(
+  null,
+);
+
+function SortableDragHandle() {
+  const dragHandle = useContext(SortableDragHandleContext);
+  if (!dragHandle) {
+    return null;
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      className="shrink-0 cursor-grab active:cursor-grabbing"
+      aria-label="Drag to rearrange"
+      {...dragHandle.attributes}
+      {...dragHandle.listeners}
+    >
+      <GripVertical className="size-4" aria-hidden />
+    </Button>
+  );
+}
+
 function SortablePinnedItem({ id, children }: SortablePinnedItemProps) {
   const {
     attributes,
@@ -56,34 +87,35 @@ function SortablePinnedItem({ id, children }: SortablePinnedItemProps) {
     isDragging,
   } = useSortable({ id });
 
+  const dragHandle = useMemo(
+    () => ({ attributes, listeners }),
+    [attributes, listeners],
+  );
+
   return (
-    <div
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-      className={cn("min-w-0", isDragging && "z-10 opacity-90")}
-    >
-      <div className="relative">
-        <button
-          type="button"
-          className="absolute top-3 left-2 z-10 flex size-8 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
-          aria-label="Drag to rearrange"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="size-4" aria-hidden />
-        </button>
+    <SortableDragHandleContext.Provider value={dragHandle}>
+      <div
+        ref={setNodeRef}
+        style={{
+          transform: CSS.Transform.toString(transform),
+          transition,
+        }}
+        className={cn("min-w-0", isDragging && "z-10 opacity-90")}
+      >
         {children}
       </div>
-    </div>
+    </SortableDragHandleContext.Provider>
   );
 }
 
 function PinnedServerHeader({ server }: { server: ServerListItem }) {
   const trailing = useMemo(
-    () => <ServerPinButton serverId={server.id} isPinned />,
+    () => (
+      <div className="flex items-center">
+        <ServerPinButton serverId={server.id} isPinned />
+        <SortableDragHandle />
+      </div>
+    ),
     [server.id],
   );
 
