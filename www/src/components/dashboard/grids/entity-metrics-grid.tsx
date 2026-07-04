@@ -1,5 +1,5 @@
 import type { VisibleTimeseriesQueryOptions } from "@/lib/api/visible-timeseries-options";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import type { ReactNode } from "react";
 
 import type { EntityPeakStats, TimeseriesResponse } from "@/lib/api/types";
@@ -239,7 +239,11 @@ export function EntityMetricsGrid<
               />
             );
             if (wrapItem) {
-              return wrapItem({ item, visibilityKey, children: card });
+              return (
+                <Fragment key={visibilityKey}>
+                  {wrapItem({ item, visibilityKey, children: card })}
+                </Fragment>
+              );
             }
             return (
               <FadeInAnimation key={visibilityKey} className="min-w-0">

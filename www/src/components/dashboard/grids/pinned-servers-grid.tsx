@@ -208,7 +208,7 @@ export function PinnedServersGrid({ servers, window }: PinnedServersGridProps) {
           items={items}
           window={window}
           trackedCount={items.length}
-          getKey={(server) => server.id}
+          getKey={(server) => `pinned:${server.id}`}
           renderHeader={renderHeader}
           chartDef={chartDef}
           timeseriesOptions={timeseriesOptions}
