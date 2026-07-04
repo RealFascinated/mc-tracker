@@ -45,7 +45,11 @@ function SiteHeaderPageNav() {
   );
 }
 
-function SiteHeaderDashboardBar() {
+type SiteHeaderBarProps = {
+  showDashboardControls: boolean;
+};
+
+function SiteHeaderBar({ showDashboardControls }: SiteHeaderBarProps) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const metricSearch = useRouterState({
     select: (state) =>
@@ -61,33 +65,24 @@ function SiteHeaderDashboardBar() {
 
   return (
     <>
-      <div className="site-header-toolbar">
-        <div className="dashboard-header-search-slot">
-          {showsHeaderSearch(pathname) ? <DashboardSearchInput /> : null}
+      {showDashboardControls ? (
+        <div className="site-header-toolbar">
+          <div className="dashboard-header-search-slot">
+            {showsHeaderSearch(pathname) ? <DashboardSearchInput /> : null}
+          </div>
         </div>
-      </div>
+      ) : null}
       <div className="site-header-nav">
         <div className="site-header-controls">
           <SiteHeaderPageNav />
-          <DashboardTimeControls
-            window={timeWindow}
-            onPresetChange={setPresetTimeRange}
-            onCustomChange={setCustomTimeRange}
-          />
+          {showDashboardControls ? (
+            <DashboardTimeControls
+              window={timeWindow}
+              onPresetChange={setPresetTimeRange}
+              onCustomChange={setCustomTimeRange}
+            />
+          ) : null}
         </div>
-      </div>
-      <div className="site-header-actions">
-        <SiteHeaderActions iconOnly />
-      </div>
-    </>
-  );
-}
-
-function SiteHeaderAppBar() {
-  return (
-    <>
-      <div className="site-header-nav">
-        <SiteHeaderPageNav />
       </div>
       <div className="site-header-actions">
         <SiteHeaderActions iconOnly />
@@ -116,11 +111,9 @@ function SiteHeader({ className }: SiteHeaderProps) {
         className={cn(
           "site-header-inner mx-auto px-3 sm:px-5",
           hasPageNav ? null : "max-w-7xl",
-          isDashboardPage
+          hasPageNav
             ? "site-header-inner--with-toolbar"
-            : hasPageNav
-              ? "site-header-inner--with-nav"
-              : "site-header-inner--simple",
+            : "site-header-inner--simple",
         )}
       >
         <Link
@@ -130,10 +123,8 @@ function SiteHeader({ className }: SiteHeaderProps) {
           {APP_NAME}
         </Link>
 
-        {isDashboardPage ? (
-          <SiteHeaderDashboardBar />
-        ) : hasPageNav ? (
-          <SiteHeaderAppBar />
+        {hasPageNav ? (
+          <SiteHeaderBar showDashboardControls={isDashboardPage} />
         ) : (
           <nav className="site-header-nav site-header-nav--simple">
             <SiteHeaderActions />
