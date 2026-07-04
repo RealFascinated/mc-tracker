@@ -1,15 +1,18 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 
+import { DashboardRangeToggle } from "@/components/dashboard/dashboard-range-toggle";
 import { DashboardSearchInput } from "@/components/dashboard/dashboard-search-input";
 import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
 import { SiteHeaderActions } from "@/components/site-header-actions";
 import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import {
-  DASHBOARD_HEADER_ROUTES,
+  activeDashboardHeaderRoute,
+  DASHBOARD_HEADER_ROUTE_OPTIONS,
   isDashboardHeaderRoute,
   showsSiteHeaderPageNav,
 } from "@/lib/dashboard/header-routes";
+import type { DashboardHeaderRoute } from "@/lib/dashboard/header-routes";
 import { APP_NAME } from "@/lib/page-title";
 import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 import { cn } from "cnfast";
@@ -20,28 +23,23 @@ function showsHeaderSearch(pathname: string): boolean {
 
 function SiteHeaderPageNav() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const navigate = useNavigate();
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
+  const activeRoute = activeDashboardHeaderRoute(pathname);
 
   return (
-    <nav className="site-header-page-nav" aria-label="Dashboard pages">
-      {DASHBOARD_HEADER_ROUTES.map((item) => {
-        const active = pathname.startsWith(item.to);
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            search={timeWindowSearch}
-            className={cn(
-              "site-header-page-nav-link",
-              active && "site-header-page-nav-link--active",
-            )}
-            aria-current={active ? "page" : undefined}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
+    <DashboardRangeToggle
+      value={activeRoute}
+      options={DASHBOARD_HEADER_ROUTE_OPTIONS}
+      onValueChange={(to) => {
+        void navigate({
+          to: to as DashboardHeaderRoute,
+          search: timeWindowSearch,
+        });
+      }}
+      aria-label="Dashboard pages"
+      className="site-header-page-nav shrink-0"
+    />
   );
 }
 

@@ -757,16 +757,7 @@
   }
 
   .site-header-page-nav {
-    @apply inline-flex shrink-0 items-center rounded-snug bg-muted p-0.5;
-  }
-
-  .site-header-page-nav-link {
-    @apply inline-flex h-7 items-center rounded-snug px-2.5 text-xs font-medium text-muted-foreground transition-colors;
-    @apply hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning;
-  }
-
-  .site-header-page-nav-link--active {
-    @apply font-semibold text-monitor dark:text-warning;
+    @apply shrink-0;
   }
 
   .site-header-nav--simple {

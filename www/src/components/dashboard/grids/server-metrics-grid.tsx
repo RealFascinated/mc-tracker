@@ -1,13 +1,11 @@
 import { useCallback, useMemo } from "react";
 
 import { ServerSortToggle } from "@/components/dashboard/server-sort-toggle";
-import { DashboardRangeToggle } from "@/components/dashboard/dashboard-range-toggle";
-import type { DashboardRangeOption } from "@/components/dashboard/dashboard-range-toggle";
+import { ServerPlatformFilterToggle } from "@/components/dashboard/server-platform-filter-toggle";
 import { EntityMetricsGrid } from "@/components/dashboard/grids/entity-metrics-grid";
 import type { EntityMetricsSectionCopy } from "@/components/dashboard/grids/entity-metrics-grid";
 import { ServerIdentityHeader } from "@/components/dashboard/server-identity-header";
 import { ServerPinButton } from "@/components/dashboard/server-pin-button";
-import { SERVER_PLATFORM_FILTER_OPTIONS } from "@/lib/api/platform";
 import type { ServerPlatformFilter } from "@/lib/api/platform";
 import type { ServerSort } from "@/lib/api/server-sort";
 import type {
@@ -18,14 +16,6 @@ import { serverTimeseriesQueryOptions } from "@/lib/api/servers.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
 import { createServerPlayersChart } from "@/lib/metrics/charts/players";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
-
-const SERVER_PLATFORM_FILTER_TOGGLE_OPTIONS: Array<
-  DashboardRangeOption<ServerPlatformFilter>
-> = SERVER_PLATFORM_FILTER_OPTIONS.map((option) => ({
-  value: option.value,
-  shortLabel: option.shortLabel,
-  label: option.label,
-}));
 
 type ServerMetricsGridProps = {
   servers: ServerListItem[];
@@ -109,11 +99,9 @@ export function ServerMetricsGrid({
     () => (
       <div className="flex flex-wrap items-center gap-2">
         <ServerSortToggle value={sort} onValueChange={onSortChange} />
-        <DashboardRangeToggle
+        <ServerPlatformFilterToggle
           value={platformFilter}
-          options={SERVER_PLATFORM_FILTER_TOGGLE_OPTIONS}
           onValueChange={onPlatformFilterChange}
-          aria-label="Server platform"
         />
       </div>
     ),

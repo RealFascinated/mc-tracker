@@ -69,7 +69,12 @@ function SlidingSegmentedControl({
     const container = containerRef.current;
     const item = getItemRefs().get(value);
     const indicator = indicatorRef.current;
-    if (!container || !item || !indicator) {
+    if (!container || !indicator) {
+      return;
+    }
+
+    if (!item) {
+      indicator.style.opacity = "0";
       return;
     }
 
