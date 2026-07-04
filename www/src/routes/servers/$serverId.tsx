@@ -10,6 +10,7 @@ import {
   ServerIdentityHeader,
 } from "@/components/dashboard/server-identity-header";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
+import { NotFoundPage } from "@/components/not-found-page";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
 import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
@@ -38,6 +39,12 @@ export const Route = createFileRoute("/servers/$serverId")({
   head: ({ loaderData }) => ({
     meta: [{ title: pageTitle(loaderData?.name ?? "Server") }],
   }),
+  notFoundComponent: () => (
+    <NotFoundPage
+      title="Server not found"
+      description="No tracked server matches this address."
+    />
+  ),
   component: ServerDetailPage,
 });
 

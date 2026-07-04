@@ -9,6 +9,7 @@ import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { DashboardCardHeader } from "@/components/dashboard/dashboard-card-header";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
+import { NotFoundPage } from "@/components/not-found-page";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
 import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
@@ -66,6 +67,12 @@ export const Route = createFileRoute("/asns/$asn")({
       },
     ],
   }),
+  notFoundComponent: () => (
+    <NotFoundPage
+      title="Network not found"
+      description="No tracked network matches this ASN."
+    />
+  ),
   component: AsnDetailPage,
 });
 
