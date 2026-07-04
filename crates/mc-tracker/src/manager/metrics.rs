@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
-use mc_db::AppSettings;
 use mc_metrics::{
     peak_players_24h_by_asn, peak_players_24h_by_server, VmPushClient, VmQueryBuilder,
     VmQueryClient,
 };
+use mc_settings::{victoriametrics_base_url, victoriametrics_import_url, SettingsStore};
 use tracing::warn;
 
 use super::mappers::{asn_key_from_labels, label_value};
@@ -12,15 +12,12 @@ use super::search::AsnAggregateKey;
 use super::ServerManager;
 
 impl ServerManager {
-    pub(crate) async fn refresh_vm_clients(&self, settings: &AppSettings) {
-        *self.push_client.write().await = VmPushClient::new(
-            settings.victoriametrics_import_url(),
-            self.vm_auth_token.clone(),
-        );
-        *self.query_client.write().await = VmQueryClient::new(
-            settings.victoriametrics_base_url(),
-            self.vm_auth_token.clone(),
-        );
+    pub(crate) async fn refresh_vm_clients(&self, store: &SettingsStore) {
+        let url = store.cached_str(mc_settings::SettingKey::VictoriametricsUrl);
+        *self.push_client.write().await =
+            VmPushClient::new(victoriametrics_import_url(&url), self.vm_auth_token.clone());
+        *self.query_client.write().await =
+            VmQueryClient::new(victoriametrics_base_url(&url), self.vm_auth_token.clone());
     }
 
     pub(crate) async fn peaks_24h_by_server_id(&self, environment: &str) -> BTreeMap<String, f64> {

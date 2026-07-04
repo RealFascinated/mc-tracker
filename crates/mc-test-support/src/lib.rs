@@ -5,15 +5,16 @@ use std::sync::Arc;
 
 use mc_db::{DbPool, PoolSettings};
 use mc_geo::GeoService;
+use mc_settings::SettingsStore;
 use mc_tracker::api::{router, AppState};
 use mc_tracker::auth::{AuthContext, LoginRateLimiter, SessionManager};
 use mc_tracker::chat::ChatRateLimiter;
 use mc_tracker::insights::InsightsService;
 use mc_tracker::manager::ServerManager;
+use serde_json::json;
 use testcontainers::runners::AsyncRunner;
 use testcontainers::ImageExt;
 use testcontainers_modules::postgres::Postgres;
-use tokio::sync::RwLock;
 
 mod mock_llm;
 
@@ -74,6 +75,14 @@ pub async fn bootstrap_admin(pool: &DbPool) {
     .unwrap();
 }
 
+pub async fn settings_store(pool: &DbPool, deployment_environment: &str) -> Arc<SettingsStore> {
+    Arc::new(
+        SettingsStore::preload(pool.clone(), deployment_environment)
+            .await
+            .expect("preload settings"),
+    )
+}
+
 pub async fn build_app(pool: DbPool, manager: Arc<ServerManager>) -> axum::Router {
     let deployment_environment = manager.environment().to_owned();
     build_app_with_env(pool, manager, &deployment_environment).await
@@ -103,7 +112,7 @@ async fn build_app_with_options(
     chat: Option<Arc<dyn mc_chat::ChatAgent>>,
 ) -> axum::Router {
     let sessions = Arc::new(SessionManager::new(b"test-secret", false));
-    let settings = manager.settings().await;
+    let settings = manager.settings();
     router(
         AppState {
             pool: pool.clone(),
@@ -132,25 +141,18 @@ pub async fn manager_with_vm_url_env(
     vm_base_url: &str,
     deployment_environment: &str,
 ) -> Arc<ServerManager> {
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(pool).await.unwrap(),
-    ));
-    {
-        let mut current = settings.write().await;
-        current.victoriametrics_url = vm_base_url.into();
-    }
-    mc_db::db::repos::settings::set(pool, "victoriametrics_url", vm_base_url)
+    let settings = settings_store(pool, deployment_environment).await;
+    settings
+        .update("victoriametrics_url", json!(vm_base_url))
         .await
         .unwrap();
 
-    let bootstrap = settings.read().await.clone();
     Arc::new(ServerManager::new(
         vec![],
         Some(pool.clone()),
         settings,
         fixture_geo(),
         None,
-        &bootstrap,
         deployment_environment,
     ))
 }
@@ -196,11 +198,25 @@ pub async fn create_user(pool: &DbPool, username: &str, password: &str, role: mc
         .unwrap();
 }
 
+pub async fn manager_from_pool(pool: &DbPool, deployment_environment: &str) -> Arc<ServerManager> {
+    let settings = settings_store(pool, deployment_environment).await;
+    Arc::new(ServerManager::new(
+        vec![],
+        None,
+        settings,
+        fixture_geo(),
+        None,
+        deployment_environment,
+    ))
+}
+
 pub async fn enable_sign_up(pool: &DbPool, manager: &Arc<ServerManager>) {
-    let mut settings = manager.settings().await;
-    settings.sign_up_enabled = true;
     mc_db::db::repos::settings::set(pool, "sign_up_enabled", "true")
         .await
         .unwrap();
-    manager.apply_settings(settings).await;
+    manager
+        .settings()
+        .update("sign_up_enabled", json!(true))
+        .await
+        .unwrap();
 }

@@ -146,9 +146,7 @@ function useMetricChartInstance({
       const element = getSizeElement();
       const width = Math.max(element?.clientWidth ?? 1, 1);
       const chartHeight =
-        element && element.clientHeight > 0
-          ? element.clientHeight
-          : height;
+        element && element.clientHeight > 0 ? element.clientHeight : height;
       return { width, height: chartHeight };
     };
 

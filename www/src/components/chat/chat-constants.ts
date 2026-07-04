@@ -65,5 +65,8 @@ export function pickRotatingSuggestions(
     return [];
   }
   const limit = Math.min(count, pool.length);
-  return Array.from({ length: limit }, (_, i) => pool[(offset + i) % pool.length]);
+  return Array.from(
+    { length: limit },
+    (_, i) => pool[(offset + i) % pool.length],
+  );
 }

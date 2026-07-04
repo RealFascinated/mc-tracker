@@ -71,10 +71,7 @@ export function useChatSession() {
       if (!hasContent) {
         return withoutStreaming;
       }
-      return [
-        ...withoutStreaming,
-        { ...streaming, id: crypto.randomUUID() },
-      ];
+      return [...withoutStreaming, { ...streaming, id: crypto.randomUUID() }];
     });
   }, []);
 
@@ -188,7 +185,9 @@ export function useChatSession() {
               }
               if (event.quotaUsed !== undefined && chatQuota) {
                 setQuotaUsed((current) =>
-                  current !== null ? current + event.quotaUsed! : chatQuota.used + event.quotaUsed!,
+                  current !== null
+                    ? current + event.quotaUsed!
+                    : chatQuota.used + event.quotaUsed!,
                 );
               } else if (chatQuota) {
                 void refreshUser();

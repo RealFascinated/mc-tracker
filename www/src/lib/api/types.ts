@@ -55,8 +55,7 @@ export type ApiError = {
 };
 
 export type ErrorTarget =
-  | { kind: "server"; id: string }
-  | { kind: "asn"; asn: string; asnOrg: string };
+  { kind: "server"; id: string } | { kind: "asn"; asn: string; asnOrg: string };
 
 export type PartialError = {
   code: ApiErrorCode;

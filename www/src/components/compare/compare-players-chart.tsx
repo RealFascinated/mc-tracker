@@ -74,14 +74,7 @@ export function ComparePlayersChart({
     });
 
     return { data, def };
-  }, [
-    seriesInput,
-    from,
-    to,
-    showTotal,
-    totalTimeseries,
-    scale,
-  ]);
+  }, [seriesInput, from, to, showTotal, totalTimeseries, scale]);
 
   const showTotalLoading = showTotal && totalPending && !totalTimeseries;
 

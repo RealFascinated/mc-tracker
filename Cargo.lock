@@ -1919,6 +1919,19 @@ name = "mc-search"
 version = "0.1.0"
 
 [[package]]
+name = "mc-settings"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "cron",
+ "mc-db",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "mc-test-support"
 version = "0.1.0"
 dependencies = [
@@ -1928,6 +1941,7 @@ dependencies = [
  "mc-chat",
  "mc-db",
  "mc-geo",
+ "mc-settings",
  "mc-tracker",
  "serde_json",
  "testcontainers",
@@ -1960,6 +1974,7 @@ dependencies = [
  "mc-metrics",
  "mc-ping",
  "mc-search",
+ "mc-settings",
  "mc-test-support",
  "mime_guess",
  "rust-embed",

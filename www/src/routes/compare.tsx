@@ -68,53 +68,54 @@ function ComparePage() {
   });
 
   const platformWarning = useMemo(
-    () => comparePlatformWarning(data?.servers.map((item) => item.server) ?? []),
+    () =>
+      comparePlatformWarning(data?.servers.map((item) => item.server) ?? []),
     [data?.servers],
   );
 
   return (
     <main className="dashboard-shell compare-page">
-        <Link
-          to="/servers"
-          search={timeWindowSearch}
-          className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      <Link
+        to="/servers"
+        search={timeWindowSearch}
+        className="inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="size-3.5" aria-hidden />
+        Back to dashboard
+      </Link>
+
+      <FadeInAnimation>
+        <CompareServersTable
+          ids={serverIds}
+          onIdsChange={setServerIds}
+          compareData={data}
+          compareLoading={canCompare && isPending}
+        />
+      </FadeInAnimation>
+
+      {canCompare && isError ? (
+        <p className="text-destructive">Failed to load compare chart.</p>
+      ) : null}
+
+      {canCompare && data && data.servers.length > 0 ? (
+        <MetricChartsScope
+          window={timeWindow}
+          onZoomToRange={handleZoomToRange}
         >
-          <ArrowLeft className="size-3.5" aria-hidden />
-          Back to dashboard
-        </Link>
+          {platformWarning ? (
+            <p className="text-sm text-muted-foreground">{platformWarning}</p>
+          ) : null}
 
-        <FadeInAnimation>
-          <CompareServersTable
-            ids={serverIds}
-            onIdsChange={setServerIds}
-            compareData={data}
-            compareLoading={canCompare && isPending}
-          />
-        </FadeInAnimation>
-
-        {canCompare && isError ? (
-          <p className="text-destructive">Failed to load compare chart.</p>
-        ) : null}
-
-        {canCompare && data && data.servers.length > 0 ? (
-          <MetricChartsScope
-            window={timeWindow}
-            onZoomToRange={handleZoomToRange}
-          >
-            {platformWarning ? (
-              <p className="text-sm text-muted-foreground">{platformWarning}</p>
-            ) : null}
-
-            <FadeInAnimation>
-              <ComparePlayersChart
-                servers={data.servers}
-                window={timeWindow}
-                from={data.from}
-                to={data.to}
-              />
-            </FadeInAnimation>
-          </MetricChartsScope>
-        ) : null}
+          <FadeInAnimation>
+            <ComparePlayersChart
+              servers={data.servers}
+              window={timeWindow}
+              from={data.from}
+              to={data.to}
+            />
+          </FadeInAnimation>
+        </MetricChartsScope>
+      ) : null}
     </main>
   );
 }

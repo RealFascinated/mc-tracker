@@ -15,7 +15,9 @@ function NotFoundPage({
   title = "Page not found",
   description = "This page doesn't exist or may have been moved.",
 }: NotFoundPageProps) {
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
 
   useEffect(() => {
     document.title = pageTitle(title);

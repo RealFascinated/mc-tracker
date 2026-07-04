@@ -4,6 +4,7 @@ members = [
     "crates/mc-api-types",
     "crates/mc-common",
     "crates/mc-db",
+    "crates/mc-settings",
     "crates/mc-test-support",
     "crates/mc-dns",
     "crates/mc-geo",

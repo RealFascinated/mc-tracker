@@ -12,7 +12,7 @@ pub use request::servers::{
     CreateServerRequest, ServersListQuery, ServersListSortField, ServersSearchQuery, SortOrder,
     UpdateServerRequest,
 };
-pub use request::settings::PatchSettingsRequest;
+pub use request::settings::PatchSettingRequest;
 pub use request::timeseries::TimeseriesQuery;
 pub use request::users::PatchUserFlagsRequest;
 pub use response::{
@@ -27,7 +27,7 @@ pub use response::{
     ServerGrowthRankItem, ServerListItemResponse, ServerPeriodPeakRankItem,
     ServerSearchItemResponse, ServerTimeseriesResponse, ServerTimeseriesSummaryResponse,
     ServersCompareItem, ServersCompareResponse, ServersGrowthRankResponse, ServersListResponse,
-    ServersPeriodPeakRankResponse, ServersSearchResponse, ServersSummaryResponse, SettingsResponse,
-    SignupEnabledResponse, SummaryPoint, TimeseriesLane, TimeseriesLanes,
-    TimeseriesSummaryResponse, TrendDirection,
+    ServersPeriodPeakRankResponse, ServersSearchResponse, ServersSummaryResponse, SettingResponse,
+    SettingsListResponse, SummaryPoint, TimeseriesLane, TimeseriesLanes, TimeseriesSummaryResponse,
+    TrendDirection,
 };

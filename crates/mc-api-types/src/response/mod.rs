@@ -1,7 +1,6 @@
 pub mod admin_servers;
 pub mod asns;
 pub mod auth;
-pub mod auth_config;
 pub mod chat_session;
 pub mod chat_stream;
 pub mod error;
@@ -21,7 +20,6 @@ pub use self::asns::{
     AsnsListResponse, AsnsSummaryResponse, IpLookupResponse,
 };
 pub use self::auth::{ChatQuota, LoginResponse, MeResponse};
-pub use self::auth_config::SignupEnabledResponse;
 pub use self::chat_session::{
     ChatSessionDetailResponse, ChatSessionListItem, ChatSessionListResponse, ChatSessionTurn,
 };
@@ -40,5 +38,5 @@ pub use self::servers::{
     ServerSearchItemResponse, ServerTimeseriesResponse, ServersListResponse, ServersSearchResponse,
     ServersSummaryResponse,
 };
-pub use self::settings::SettingsResponse;
+pub use self::settings::{SettingResponse, SettingsListResponse};
 pub use self::users::{AdminUser, AdminUsersListResponse, PatchUserFlagsResponse};

@@ -23,7 +23,9 @@ function alignPoints(
   timestamps: number[],
   points: SummaryPoint[],
 ): Array<number | null> {
-  const valueMap = new Map(points.map((point) => [point.timestamp, point.value]));
+  const valueMap = new Map(
+    points.map((point) => [point.timestamp, point.value]),
+  );
   return timestamps.map((timestamp) => valueMap.get(timestamp) ?? null);
 }
 

@@ -6,7 +6,7 @@ mod search;
 mod timeseries;
 mod tracked;
 
-pub use mappers::{admin_server_response, settings_response};
+pub use mappers::admin_server_response;
 pub use push::{spawn_push_loop, PushLoopHandle};
 pub use tracked::{ServerSummary, TrackedServer};
 
@@ -32,20 +32,20 @@ use mc_api_types::{
 };
 use mc_common::constants::limits::DEFAULT_LIST_LIMIT;
 use mc_db::model::Server;
-use mc_db::AppSettings;
 use mc_db::DbPool;
 use mc_dns::{DnsResolver, HickoryDnsResolver};
 use mc_geo::{AsnLookup, GeoService};
 use mc_metrics::{
     peak_players_24h, peak_players_7d, PlayerCountRegistry, VmPushClient, VmQueryClient,
 };
+use mc_settings::{SettingKey, SettingsStore};
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
 pub struct ServerManager {
     pub(crate) pool: Option<DbPool>,
     pub(crate) servers: RwLock<Vec<TrackedServer>>,
-    pub(crate) settings: Arc<RwLock<AppSettings>>,
+    pub(crate) settings: Arc<SettingsStore>,
     pub(crate) metrics_environment: String,
     pub(crate) dns: RwLock<HickoryDnsResolver>,
     pub(crate) geo: Arc<GeoService>,
@@ -60,13 +60,13 @@ impl ServerManager {
     pub fn new(
         servers: Vec<Server>,
         pool: Option<DbPool>,
-        settings: Arc<RwLock<AppSettings>>,
+        settings: Arc<SettingsStore>,
         geo: Arc<GeoService>,
         vm_auth_token: Option<String>,
-        bootstrap_settings: &AppSettings,
         metrics_environment: impl Into<String>,
     ) -> Self {
         let metrics_environment = metrics_environment.into();
+        let vm_url = settings.cached_str(SettingKey::VictoriametricsUrl);
         Self {
             pool,
             servers: RwLock::new(
@@ -75,17 +75,17 @@ impl ServerManager {
                     .map(TrackedServer::from_config)
                     .collect(),
             ),
-            settings,
+            settings: Arc::clone(&settings),
             metrics_environment: metrics_environment.clone(),
-            dns: RwLock::new(HickoryDnsResolver::new(dns_cache_for(bootstrap_settings))),
+            dns: RwLock::new(HickoryDnsResolver::new(dns_cache_for(settings.as_ref()))),
             geo,
             metrics: RwLock::new(PlayerCountRegistry::new(&metrics_environment)),
             push_client: RwLock::new(VmPushClient::new(
-                bootstrap_settings.victoriametrics_import_url(),
+                mc_settings::victoriametrics_import_url(&vm_url),
                 vm_auth_token.clone(),
             )),
             query_client: RwLock::new(VmQueryClient::new(
-                bootstrap_settings.victoriametrics_base_url(),
+                mc_settings::victoriametrics_base_url(&vm_url),
                 vm_auth_token.clone(),
             )),
             vm_auth_token,
@@ -527,26 +527,17 @@ impl ServerManager {
         })
     }
 
-    pub async fn settings(&self) -> AppSettings {
-        self.settings.read().await.clone()
+    pub fn settings(&self) -> Arc<SettingsStore> {
+        Arc::clone(&self.settings)
     }
 
-    pub async fn apply_settings(&self, updated: AppSettings) {
-        let (dns_changed, vm_url_changed) = {
-            let current = self.settings.read().await;
-            (
-                current.dns_cache_enabled != updated.dns_cache_enabled
-                    || current.dns_cache_ttl_minutes != updated.dns_cache_ttl_minutes,
-                current.victoriametrics_url != updated.victoriametrics_url,
-            )
-        };
-        *self.settings.write().await = updated.clone();
-        if dns_changed {
-            let settings = self.settings.read().await;
-            *self.dns.write().await = HickoryDnsResolver::new(dns_cache_for(&settings));
+    pub async fn on_setting_updated(&self, key: SettingKey) {
+        let effects = key.side_effects();
+        if effects.dns {
+            *self.dns.write().await = HickoryDnsResolver::new(dns_cache_for(&self.settings));
         }
-        if vm_url_changed {
-            self.refresh_vm_clients(&updated).await;
+        if effects.vm_url {
+            self.refresh_vm_clients(&self.settings).await;
         }
     }
 }
@@ -578,15 +569,13 @@ mod tests {
 
     #[tokio::test]
     async fn loads_servers_into_memory() {
-        let settings = Arc::new(RwLock::new(AppSettings::default()));
-        let bootstrap = settings.read().await.clone();
+        let settings = SettingsStore::for_testing("development");
         let manager = ServerManager::new(
             vec![sample_server(), sample_server()],
             None,
             settings,
             fixture_geo(),
             None,
-            &bootstrap,
             "development",
         );
         assert_eq!(manager.summary().await.tracked_servers, 2);
@@ -594,15 +583,13 @@ mod tests {
 
     #[tokio::test]
     async fn summary_counts_only_online_servers() {
-        let settings = Arc::new(RwLock::new(AppSettings::default()));
-        let bootstrap = settings.read().await.clone();
+        let settings = SettingsStore::for_testing("development");
         let manager = ServerManager::new(
             vec![sample_server()],
             None,
             settings,
             fixture_geo(),
             None,
-            &bootstrap,
             "development",
         );
         {
@@ -619,17 +606,9 @@ mod tests {
 
     #[tokio::test]
     async fn append_update_and_remove_server() {
-        let settings = Arc::new(RwLock::new(AppSettings::default()));
-        let bootstrap = settings.read().await.clone();
-        let manager = ServerManager::new(
-            vec![],
-            None,
-            settings,
-            fixture_geo(),
-            None,
-            &bootstrap,
-            "development",
-        );
+        let settings = SettingsStore::for_testing("development");
+        let manager =
+            ServerManager::new(vec![], None, settings, fixture_geo(), None, "development");
 
         let server = sample_server();
         let id = server.id;
@@ -659,8 +638,7 @@ mod tests {
 
     #[tokio::test]
     async fn paused_servers_are_excluded_from_public_summary() {
-        let settings = Arc::new(RwLock::new(AppSettings::default()));
-        let bootstrap = settings.read().await.clone();
+        let settings = SettingsStore::for_testing("development");
         let active = sample_server();
         let paused = Server {
             paused: true,
@@ -672,7 +650,6 @@ mod tests {
             settings,
             fixture_geo(),
             None,
-            &bootstrap,
             "development",
         );
 
@@ -794,8 +771,7 @@ mod tests {
 
     #[tokio::test]
     async fn search_asns_response_counts_matching_org_servers() {
-        let settings = Arc::new(RwLock::new(AppSettings::default()));
-        let bootstrap = settings.read().await.clone();
+        let settings = SettingsStore::for_testing("development");
         let manager = ServerManager::new(
             vec![
                 sample_server_with_id(Uuid::new_v4()),
@@ -805,7 +781,6 @@ mod tests {
             settings,
             fixture_geo(),
             None,
-            &bootstrap,
             "development",
         );
 
@@ -840,8 +815,7 @@ mod tests {
         let id_low = Uuid::new_v4();
         let id_offline = Uuid::new_v4();
 
-        let settings = Arc::new(RwLock::new(AppSettings::default()));
-        let bootstrap = settings.read().await.clone();
+        let settings = SettingsStore::for_testing("development");
         let manager = ServerManager::new(
             vec![
                 sample_server_with_id(id_low),
@@ -853,7 +827,6 @@ mod tests {
             settings,
             fixture_geo(),
             None,
-            &bootstrap,
             "development",
         );
 
@@ -882,8 +855,7 @@ mod tests {
         let id_alpha = Uuid::new_v4();
         let id_bravo = Uuid::new_v4();
 
-        let settings = Arc::new(RwLock::new(AppSettings::default()));
-        let bootstrap = settings.read().await.clone();
+        let settings = SettingsStore::for_testing("development");
         let manager = ServerManager::new(
             vec![
                 Server {
@@ -906,7 +878,6 @@ mod tests {
             settings,
             fixture_geo(),
             None,
-            &bootstrap,
             "development",
         );
 
@@ -927,8 +898,7 @@ mod tests {
         let id_match_b = Uuid::new_v4();
         let id_other = Uuid::new_v4();
 
-        let settings = Arc::new(RwLock::new(AppSettings::default()));
-        let bootstrap = settings.read().await.clone();
+        let settings = SettingsStore::for_testing("development");
         let manager = ServerManager::new(
             vec![
                 sample_server_with_id(id_match_a),
@@ -939,7 +909,6 @@ mod tests {
             settings,
             fixture_geo(),
             None,
-            &bootstrap,
             "development",
         );
 
@@ -983,18 +952,16 @@ mod tests {
 
     #[tokio::test]
     async fn push_loop_exits_on_drain() {
-        let settings = Arc::new(RwLock::new(AppSettings {
-            metrics_push_cron: "0 0 * * * *".into(),
-            ..Default::default()
-        }));
-        let bootstrap = settings.read().await.clone();
+        let settings = SettingsStore::for_testing_with(
+            "development",
+            &[("metrics_push_cron", serde_json::json!("0 0 * * * *"))],
+        );
         let manager = Arc::new(ServerManager::new(
             vec![],
             None,
             settings,
             fixture_geo(),
             None,
-            &bootstrap,
             "development",
         ));
         let push_loop = spawn_push_loop(manager);

@@ -39,14 +39,8 @@ function clampChatWindowSize(size: ChatWindowSize): ChatWindowSize {
   const maxHeight = window.innerHeight - CHAT_WINDOW_VIEWPORT_MARGIN;
 
   return {
-    width: Math.min(
-      Math.max(size.width, MIN_CHAT_WINDOW_WIDTH),
-      maxWidth,
-    ),
-    height: Math.min(
-      Math.max(size.height, MIN_CHAT_WINDOW_HEIGHT),
-      maxHeight,
-    ),
+    width: Math.min(Math.max(size.width, MIN_CHAT_WINDOW_WIDTH), maxWidth),
+    height: Math.min(Math.max(size.height, MIN_CHAT_WINDOW_HEIGHT), maxHeight),
   };
 }
 

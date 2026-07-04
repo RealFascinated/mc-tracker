@@ -36,7 +36,9 @@ pub fn spawn_push_loop(manager: Arc<ServerManager>) -> PushLoopHandle {
         let mut schedule: Option<Schedule> = None;
 
         loop {
-            let next_cron = manager.settings.read().await.metrics_push_cron.clone();
+            let next_cron = manager
+                .settings
+                .cached_str(mc_settings::SettingKey::MetricsPushCron);
             if next_cron != cron_expr {
                 cron_expr = next_cron;
                 match Schedule::from_str(&cron_expr) {
@@ -127,7 +129,6 @@ impl ServerManager {
         }
         let _guard = Guard(&self.pushing);
 
-        let settings = self.settings.read().await.clone();
         let server_ids: Vec<Uuid> = self
             .servers
             .read()
@@ -138,10 +139,11 @@ impl ServerManager {
             .collect();
 
         let fetch_started = std::time::Instant::now();
-        let ping_results = join_all(server_ids.into_iter().map(|id| {
-            let settings = settings.clone();
-            async move { (id, self.ping_server(id, &settings).await) }
-        }))
+        let ping_results = join_all(
+            server_ids
+                .into_iter()
+                .map(|id| async move { (id, self.ping_server(id).await) }),
+        )
         .await;
         let fetch_elapsed = fetch_started.elapsed();
         let online = ping_results

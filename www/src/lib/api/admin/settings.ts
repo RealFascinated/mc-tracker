@@ -1,42 +1,23 @@
 import { apiFetch } from "@/lib/api/client";
 
-export type SettingsResponse = {
-  pingerTimeoutMs: number;
-  pingerRetryAttempts: number;
-  pingerRetryDelayMs: number;
-  dnsCacheEnabled: boolean;
-  dnsCacheTtlMinutes: number;
-  victoriametricsUrl: string;
-  metricsPushCron: string;
-  signUpEnabled: boolean;
-  wwwOrigin: string;
-  llmBaseUrl: string;
-  llmModel: string;
-  llmMaxToolRounds: number;
-  llmContextMaxTurns: number;
-  llmToolMaxTokens: number;
-  llmFinalMaxTokens: number;
-  llmContextMax: number;
-  llmContextReserve: number;
-  llmTimeoutSecs: number;
-  llmProvider: string;
-  llmParallelSlots: number;
-  llmApiKey?: string;
+export type SettingItem = {
+  key: string;
+  type: "BOOLEAN" | "STRING" | "INTEGER" | "ENUM";
+  value: boolean | number | string;
+  updatedAt?: string;
 };
 
-export type PatchSettingsRequest = Partial<
-  Omit<SettingsResponse, "llmApiKey">
-> & {
-  llmApiKey?: string | null;
+export type SettingsListResponse = {
+  settings: SettingItem[];
 };
 
 export function getAdminSettings() {
-  return apiFetch<SettingsResponse>("/admin/settings");
+  return apiFetch<SettingsListResponse>("/admin/settings");
 }
 
-export function patchAdminSettings(body: PatchSettingsRequest) {
-  return apiFetch<SettingsResponse>("/admin/settings", {
+export function patchAdminSetting(key: string, value: unknown) {
+  return apiFetch<SettingItem>(`/admin/settings/${encodeURIComponent(key)}`, {
     method: "PATCH",
-    body: JSON.stringify(body),
+    body: JSON.stringify({ value }),
   });
 }

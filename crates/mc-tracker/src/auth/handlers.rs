@@ -5,7 +5,7 @@ use axum::routing::{get, patch, post};
 use axum::{Json, Router};
 use mc_api_types::{
     ApiError, ApiErrorCode, ChangePasswordRequest, LoginRequest, LoginResponse, MeResponse,
-    SignupEnabledResponse, SignupRequest,
+    SignupRequest,
 };
 use mc_db::db::repos::users;
 use mc_db::model::{chat_quota_exempt, UserRole};
@@ -16,7 +16,7 @@ use super::session::COOKIE_NAME;
 use crate::api::AppState;
 use crate::chat_quota::quota_for_user;
 use crate::manager::ServerManager;
-use mc_db::AppSettings;
+use mc_settings::SettingKey;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -24,7 +24,6 @@ pub fn router() -> Router<AppState> {
         .route("/logout", post(logout))
         .route("/me", get(me))
         .route("/signup", post(signup))
-        .route("/signup-enabled", get(signup_enabled))
         .route("/password", patch(change_password))
 }
 
@@ -113,20 +112,12 @@ async fn me(
     }))
 }
 
-async fn signup_enabled(State(state): State<AppState>) -> Json<SignupEnabledResponse> {
-    let settings = state.manager.settings().await;
-    Json(SignupEnabledResponse {
-        sign_up_enabled: sign_up_allowed(&state.manager, &settings),
-    })
-}
-
 async fn signup(
     State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     Json(body): Json<SignupRequest>,
 ) -> Response {
-    let settings = state.manager.settings().await;
-    if !sign_up_allowed(&state.manager, &settings) {
+    if !sign_up_allowed(&state.manager) {
         return (
             StatusCode::FORBIDDEN,
             Json(ApiError::new(
@@ -244,8 +235,9 @@ async fn issue_session(state: &AppState, user: &mc_db::User) -> Response {
         .into_response()
 }
 
-fn sign_up_allowed(manager: &ServerManager, settings: &AppSettings) -> bool {
-    settings.sign_up_enabled || manager.environment() == "development"
+fn sign_up_allowed(manager: &ServerManager) -> bool {
+    manager.settings().cached_bool(SettingKey::SignUpEnabled)
+        || manager.environment() == "development"
 }
 
 fn invalid_credentials() -> Response {

@@ -134,10 +134,7 @@ function ServersPage() {
             />
 
             {pinnedServers.length > 0 ? (
-              <PinnedServersGrid
-                servers={pinnedServers}
-                window={timeWindow}
-              />
+              <PinnedServersGrid servers={pinnedServers} window={timeWindow} />
             ) : null}
             <ServerMetricsGrid
               servers={filteredServers}

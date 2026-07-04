@@ -2,23 +2,23 @@ use std::time::Duration;
 
 use mc_api_types::{
     AdminServerResponse, EntityPeakStats, PeakPlayersRecord, ServerListItemResponse,
-    ServersListSortField, SettingsResponse, SortOrder,
+    ServersListSortField, SortOrder,
 };
-use mc_db::model::settings_constants::LLM_API_KEY_MASK;
 use mc_db::model::Server;
-use mc_db::AppSettings;
 use mc_dns::DnsCache;
-use mc_metrics::labels;
+use mc_settings::SettingsStore;
 
 use super::search::{players_sort_key, AsnAggregateKey};
 use super::tracked::TrackedServer;
 
-pub(crate) fn dns_cache_for(settings: &AppSettings) -> Option<DnsCache> {
-    settings.dns_cache_enabled.then(|| {
-        DnsCache::new(Duration::from_secs(
-            settings.dns_cache_ttl_minutes as u64 * 60,
-        ))
-    })
+pub(crate) fn dns_cache_for(store: &SettingsStore) -> Option<DnsCache> {
+    store
+        .cached_bool(mc_settings::SettingKey::DnsCacheEnabled)
+        .then(|| {
+            DnsCache::new(Duration::from_secs(
+                store.cached_u32(mc_settings::SettingKey::DnsCacheTtlMinutes) as u64 * 60,
+            ))
+        })
 }
 
 pub(crate) fn label_value(
@@ -35,8 +35,8 @@ pub(crate) fn asn_key_from_labels(
     labels: &serde_json::Map<String, serde_json::Value>,
 ) -> Option<AsnAggregateKey> {
     Some(AsnAggregateKey {
-        asn: label_value(labels, labels::ASN)?,
-        asn_org: label_value(labels, labels::ASN_ORG).unwrap_or_default(),
+        asn: label_value(labels, mc_metrics::labels::ASN)?,
+        asn_org: label_value(labels, mc_metrics::labels::ASN_ORG).unwrap_or_default(),
     })
 }
 
@@ -127,34 +127,6 @@ pub(crate) fn asn_peak_all_time(
             peak_players_record(server.peak_players, server.peak_players_timestamp)
         })
         .max_by_key(|peak| peak.players)
-}
-
-pub fn settings_response(settings: &AppSettings) -> SettingsResponse {
-    SettingsResponse {
-        pinger_timeout_ms: settings.pinger_timeout_ms,
-        pinger_retry_attempts: settings.pinger_retry_attempts,
-        pinger_retry_delay_ms: settings.pinger_retry_delay_ms,
-        dns_cache_enabled: settings.dns_cache_enabled,
-        dns_cache_ttl_minutes: settings.dns_cache_ttl_minutes,
-        victoriametrics_url: settings.victoriametrics_url.clone(),
-        metrics_push_cron: settings.metrics_push_cron.clone(),
-        sign_up_enabled: settings.sign_up_enabled,
-        www_origin: settings.www_origin.clone(),
-        llm_base_url: settings.llm_base_url.clone(),
-        llm_model: settings.llm_model.clone(),
-        llm_max_tool_rounds: settings.llm_max_tool_rounds,
-        llm_context_max_turns: settings.llm_context_max_turns,
-        llm_tool_max_tokens: settings.llm_tool_max_tokens,
-        llm_final_max_tokens: settings.llm_final_max_tokens,
-        llm_context_max: settings.llm_context_max,
-        llm_context_reserve: settings.llm_context_reserve,
-        llm_timeout_secs: settings.llm_timeout_secs,
-        llm_provider: settings.llm_provider.clone(),
-        llm_parallel_slots: settings.llm_parallel_slots,
-        llm_api_key: settings
-            .llm_api_key_configured()
-            .then(|| LLM_API_KEY_MASK.to_string()),
-    }
 }
 
 pub fn admin_server_response(server: &Server) -> AdminServerResponse {

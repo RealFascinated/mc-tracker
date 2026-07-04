@@ -60,8 +60,11 @@ export function TrackerChatWidget() {
     sendMessage,
     truncatedNotice,
   } = useChatSession();
-  const { size: chatWindowSize, isResizable, onResizePointerDown } =
-    useChatWindowSize();
+  const {
+    size: chatWindowSize,
+    isResizable,
+    onResizePointerDown,
+  } = useChatWindowSize();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -116,21 +119,21 @@ export function TrackerChatWidget() {
                 <>
                   <ChatHistorySheet onLoadSession={loadSession} />
                   <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label="New chat"
-                      disabled={!canStartNewChat}
-                      onClick={startNewChat}
-                    >
-                      <MessageSquarePlusIcon />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={6}>
-                    New chat
-                  </TooltipContent>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="New chat"
+                        disabled={!canStartNewChat}
+                        onClick={startNewChat}
+                      >
+                        <MessageSquarePlusIcon />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={6}>
+                      New chat
+                    </TooltipContent>
                   </Tooltip>
                 </>
               ) : null}

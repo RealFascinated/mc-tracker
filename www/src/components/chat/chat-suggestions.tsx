@@ -32,8 +32,8 @@ export function ChatSuggestions({
   const visibleCount = isFollowUp
     ? FOLLOW_UP_SUGGESTION_COUNT
     : EMPTY_SUGGESTION_COUNT;
-  const [offset, setOffset] = useState(
-    () => Math.floor(Math.random() * allSuggestions.length),
+  const [offset, setOffset] = useState(() =>
+    Math.floor(Math.random() * allSuggestions.length),
   );
 
   useEffect(() => {

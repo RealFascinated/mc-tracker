@@ -2,10 +2,10 @@ use mc_api_types::request::auth::{ChangePasswordRequest, LoginRequest};
 use mc_api_types::request::servers::{
     CreateServerRequest, ServersListQuery, ServersListSortField, SortOrder, UpdateServerRequest,
 };
-use mc_api_types::request::settings::PatchSettingsRequest;
+use mc_api_types::request::settings::PatchSettingRequest;
 use mc_api_types::response::admin_servers::AdminServerResponse;
 use mc_api_types::response::auth::{LoginResponse, MeResponse};
-use mc_api_types::response::settings::SettingsResponse;
+use mc_api_types::response::settings::{SettingResponse, SettingsListResponse};
 use mc_api_types::{ApiError, ApiErrorCode, ErrorTarget, HealthResponse, PartialError};
 
 #[test]
@@ -144,44 +144,39 @@ fn login_response_serializes_camel_case() {
 }
 
 #[test]
-fn settings_response_serializes_camel_case() {
-    let json = serde_json::to_string(&SettingsResponse {
-        pinger_timeout_ms: 5000,
-        pinger_retry_attempts: 3,
-        pinger_retry_delay_ms: 1000,
-        dns_cache_enabled: true,
-        dns_cache_ttl_minutes: 5,
-        victoriametrics_url: "http://localhost:8428".into(),
-        metrics_push_cron: "*/10 * * * * *".into(),
-        sign_up_enabled: false,
-        www_origin: String::new(),
-        llm_base_url: String::new(),
-        llm_model: "default".into(),
-        llm_max_tool_rounds: 8,
-        llm_context_max_turns: 10,
-        llm_tool_max_tokens: 1024,
-        llm_final_max_tokens: 2048,
-        llm_context_max: 16384,
-        llm_context_reserve: 2048,
-        llm_timeout_secs: 60,
-        llm_provider: "llama_cpp".into(),
-        llm_parallel_slots: 2,
-        llm_api_key: None,
+fn setting_response_serializes_camel_case() {
+    let json = serde_json::to_string(&SettingResponse {
+        key: "pinger_timeout_ms".into(),
+        setting_type: "INTEGER".into(),
+        value: serde_json::json!(5000),
+        updated_at: None,
     })
     .unwrap();
-    assert!(json.contains(r#""pingerTimeoutMs":5000"#));
-    assert!(json.contains(r#""dnsCacheEnabled":true"#));
-    assert!(json.contains(r#""victoriametricsUrl":"http://localhost:8428""#));
+    assert!(json.contains(r#""key":"pinger_timeout_ms""#));
+    assert!(json.contains(r#""type":"INTEGER""#));
+    assert!(json.contains(r#""value":5000"#));
 }
 
 #[test]
-fn patch_settings_request_deserializes_partial_fields() {
-    let req: PatchSettingsRequest =
-        serde_json::from_str(r#"{"metricsPushCron":"*/30 * * * * *","dnsCacheEnabled":false}"#)
-            .unwrap();
-    assert_eq!(req.metrics_push_cron, Some("*/30 * * * * *".into()));
-    assert_eq!(req.dns_cache_enabled, Some(false));
-    assert!(req.pinger_timeout_ms.is_none());
+fn settings_list_response_serializes_settings_array() {
+    let json = serde_json::to_string(&SettingsListResponse {
+        settings: vec![SettingResponse {
+            key: "sign_up_enabled".into(),
+            setting_type: "BOOLEAN".into(),
+            value: serde_json::json!(false),
+            updated_at: None,
+        }],
+    })
+    .unwrap();
+    assert!(json.contains(r#""settings""#));
+    assert!(!json.contains(r#""signUpEnabled""#));
+    assert!(json.contains(r#""sign_up_enabled""#));
+}
+
+#[test]
+fn patch_setting_request_deserializes_value() {
+    let req: PatchSettingRequest = serde_json::from_str(r#"{"value":"*/30 * * * * *"}"#).unwrap();
+    assert_eq!(req.value, serde_json::json!("*/30 * * * * *"));
 }
 
 #[test]

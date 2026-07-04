@@ -13,9 +13,9 @@ use mc_api_types::{
     TimeseriesSummaryQuery,
 };
 use mc_common::constants::limits::MAX_COMPARE_SERVERS;
-use mc_db::AppSettings;
 use mc_db::DbPool;
 use mc_geo::GeoService;
+use mc_settings::{cors_origin_candidates, SettingsStore};
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use uuid::Uuid;
 
@@ -24,6 +24,8 @@ use crate::auth::{require_admin, AuthContext};
 use crate::chat::ChatRateLimiter;
 use crate::insights::{map_insights_error, resolve_compare_max_points, InsightsService};
 use crate::manager::ServerManager;
+use crate::settings_api::to_settings_list;
+use mc_api_types::SettingsListResponse;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -37,15 +39,16 @@ pub struct AppState {
 }
 
 pub fn cors_layer(
-    settings: &AppSettings,
+    settings: &SettingsStore,
     deployment_environment: &str,
 ) -> Result<CorsLayer, String> {
     let allow_same_origin_only = cfg!(feature = "embedded-ui");
-    let origins: Result<Vec<_>, _> = settings
-        .cors_origin_candidates(deployment_environment, allow_same_origin_only)?
-        .into_iter()
-        .map(|origin| origin.parse())
-        .collect();
+    let www_origin = settings.cached_str(mc_settings::SettingKey::WwwOrigin);
+    let origins: Result<Vec<_>, _> =
+        cors_origin_candidates(&www_origin, deployment_environment, allow_same_origin_only)?
+            .into_iter()
+            .map(|origin| origin.parse())
+            .collect();
     let origins = origins.map_err(|_| "invalid CORS origin".to_string())?;
 
     if origins.is_empty() {
@@ -72,13 +75,14 @@ pub fn cors_layer(
 
 pub fn router(
     state: AppState,
-    settings: &AppSettings,
+    settings: &SettingsStore,
     deployment_environment: &str,
 ) -> Result<Router, String> {
     let cors = cors_layer(settings, deployment_environment)?;
 
     let mut app = Router::new()
         .route("/health", get(health))
+        .route("/settings/public", get(public_settings))
         .route("/servers", get(list_servers))
         .route("/servers/search", get(search_servers))
         .route("/servers/compare/summary", get(servers_compare_summary))
@@ -122,6 +126,11 @@ async fn health(State(state): State<AppState>) -> Json<HealthResponse> {
     let db_ok = mc_db::health_check(&state.pool).await;
     let maxmind_ok = state.geo.is_ready();
     Json(HealthResponse::ok(db_ok, maxmind_ok))
+}
+
+async fn public_settings(State(state): State<AppState>) -> Json<SettingsListResponse> {
+    let items = state.manager.settings().list_public().await;
+    Json(to_settings_list(items))
 }
 
 fn trim_search(value: Option<&str>) -> Option<&str> {

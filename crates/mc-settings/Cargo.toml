@@ -1,0 +1,21 @@
+[package]
+name = "mc-settings"
+description = "Trait-based settings registry and store for mc-tracker"
+edition.workspace = true
+version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+chrono = { workspace = true }
+cron = { workspace = true }
+mc-db = { path = "../mc-db" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

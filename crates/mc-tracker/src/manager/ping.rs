@@ -1,8 +1,8 @@
 use mc_db::model::Platform;
-use mc_db::AppSettings;
 use mc_dns::{resolve_bedrock, resolve_java, DnsError};
 use mc_geo::{AsnLookup, GeoError};
 use mc_ping::{ping_bedrock, ping_java, with_retry, Ping, PingError};
+use mc_settings::SettingKey;
 use uuid::Uuid;
 
 use super::ServerManager;
@@ -30,7 +30,6 @@ impl ServerManager {
     pub(crate) async fn ping_server(
         &self,
         id: Uuid,
-        settings: &AppSettings,
     ) -> Result<(Ping, AsnLookup, String), PingServerError> {
         let server = self
             .get_tracked(id)
@@ -55,9 +54,10 @@ impl ServerManager {
         let hostname = resolved.hostname.clone();
         let ip = resolved.ip.clone();
         let port = resolved.port;
-        let timeout_ms = settings.pinger_timeout_ms;
-        let attempts = settings.pinger_retry_attempts;
-        let delay_ms = settings.pinger_retry_delay_ms;
+        let store = &self.settings;
+        let timeout_ms = store.cached_u64(SettingKey::PingerTimeoutMs);
+        let attempts = store.cached_u32(SettingKey::PingerRetryAttempts);
+        let delay_ms = store.cached_u64(SettingKey::PingerRetryDelayMs);
 
         let ping = match server.config.platform {
             Platform::Pc => with_retry(attempts, delay_ms, &hostname, || {

@@ -5,9 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { DashboardCardHeader } from "@/components/dashboard/dashboard-card-header";
 import { ServerPlayersChart } from "@/components/dashboard/charts/server-players-chart";
-import {
-  ServerIdentityHeader,
-} from "@/components/dashboard/server-identity-header";
+import { ServerIdentityHeader } from "@/components/dashboard/server-identity-header";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import { NotFoundPage } from "@/components/not-found-page";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
@@ -74,52 +72,49 @@ function ServerDetailPage() {
 
   return (
     <main className="dashboard-shell server-detail-page">
-        <Link
-          to="/servers"
-          search={timeWindowSearch}
-          className="server-detail-back inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" aria-hidden />
-          Back to dashboard
-        </Link>
+      <Link
+        to="/servers"
+        search={timeWindowSearch}
+        className="server-detail-back inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="size-3.5" aria-hidden />
+        Back to dashboard
+      </Link>
 
+      <FadeInAnimation>
+        <DashboardCard className="server-detail-card">
+          <ServerIdentityHeader server={server} layout="page" />
+          {server.asn ? (
+            <div className="server-detail-body">
+              <p className="text-sm text-muted-foreground">
+                View all servers on this network on the{" "}
+                <Link
+                  to="/asns/$asn"
+                  params={{ asn: server.asn }}
+                  search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
+                  className="link-underline-animate link-underline-animate--primary font-medium text-foreground hover:text-monitor dark:hover:text-warning"
+                >
+                  network page
+                </Link>
+                .
+              </p>
+            </div>
+          ) : null}
+        </DashboardCard>
+      </FadeInAnimation>
+
+      <MetricChartsScope window={timeWindow} onZoomToRange={handleZoomToRange}>
         <FadeInAnimation>
-          <DashboardCard className="server-detail-card">
-            <ServerIdentityHeader server={server} layout="page" />
-            {server.asn ? (
-              <div className="server-detail-body">
-                <p className="text-sm text-muted-foreground">
-                  View all servers on this network on the{" "}
-                  <Link
-                    to="/asns/$asn"
-                    params={{ asn: server.asn }}
-                    search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
-                    className="link-underline-animate link-underline-animate--primary font-medium text-foreground hover:text-monitor dark:hover:text-warning"
-                  >
-                    network page
-                  </Link>
-                  .
-                </p>
-              </div>
-            ) : null}
+          <DashboardCard className="hero-chart-panel">
+            <DashboardCardHeader title="Player history" />
+            <ServerPlayersChart
+              serverId={server.id}
+              window={timeWindow}
+              height={360}
+            />
           </DashboardCard>
         </FadeInAnimation>
-
-        <MetricChartsScope
-          window={timeWindow}
-          onZoomToRange={handleZoomToRange}
-        >
-          <FadeInAnimation>
-            <DashboardCard className="hero-chart-panel">
-              <DashboardCardHeader title="Player history" />
-              <ServerPlayersChart
-                serverId={server.id}
-                window={timeWindow}
-                height={360}
-              />
-            </DashboardCard>
-          </FadeInAnimation>
-        </MetricChartsScope>
+      </MetricChartsScope>
     </main>
   );
 }

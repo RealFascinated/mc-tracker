@@ -17,13 +17,21 @@ async fn health_check_succeeds() {
 }
 
 #[tokio::test]
-async fn settings_seed_loads_into_app_settings() {
+async fn settings_seed_loads_from_db() {
     let (_postgres, database_url) = start_postgres().await;
     let pool = setup_pool(&database_url).await;
 
-    let settings = mc_db::db::repos::settings::load_all(&pool).await.unwrap();
-    assert_eq!(settings.pinger_timeout_ms, 5000);
-    assert!(!settings.sign_up_enabled);
+    let timeout = mc_db::db::repos::settings::get(&pool, "pinger_timeout_ms")
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(timeout, "5000");
+
+    let signup = mc_db::db::repos::settings::get(&pool, "sign_up_enabled")
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(signup, "false");
 }
 
 #[tokio::test]
@@ -250,20 +258,4 @@ async fn bootstrap_fails_without_credentials() {
     .await
     .unwrap_err();
     assert!(matches!(err, mc_db::DbError::Bootstrap(_)));
-}
-
-#[test]
-fn app_settings_rejects_invalid_bool() {
-    let mut map = std::collections::HashMap::new();
-    map.insert("pinger_timeout_ms".into(), "5000".into());
-    map.insert("pinger_retry_attempts".into(), "3".into());
-    map.insert("pinger_retry_delay_ms".into(), "1000".into());
-    map.insert("dns_cache_enabled".into(), "maybe".into());
-    map.insert("dns_cache_ttl_minutes".into(), "5".into());
-    map.insert("victoriametrics_url".into(), "http://localhost:8428".into());
-    map.insert("metrics_push_cron".into(), "*/10 * * * * *".into());
-    map.insert("sign_up_enabled".into(), "false".into());
-    map.insert("www_origin".into(), "".into());
-
-    assert!(mc_db::AppSettings::from_map(&map).is_err());
 }

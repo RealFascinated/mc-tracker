@@ -3,18 +3,17 @@ use std::sync::Arc;
 
 use clap::Parser;
 use mc_db::{
-    db::repos::{servers, settings},
-    ensure_admin_user, setup_database, BootstrapConfig, DbContext, PoolSettings,
+    db::repos::servers, ensure_admin_user, setup_database, BootstrapConfig, DbContext, PoolSettings,
 };
 use mc_geo::{GeoConfig, GeoService};
+use mc_settings::SettingsStore;
 use mc_tracker::api::{router, AppState};
 use mc_tracker::auth::{AuthContext, LoginRateLimiter, SessionManager};
 use mc_tracker::chat::ChatRateLimiter;
-use mc_tracker::chat_config::{build_chat_agent, chat_enabled};
+use mc_tracker::chat_config::{build_chat_agent, chat_enabled_for};
 use mc_tracker::insights::InsightsService;
 use mc_tracker::manager::{spawn_push_loop, ServerManager};
 use tokio::signal;
-use tokio::sync::RwLock;
 use tracing::info;
 
 #[derive(Parser, Debug)]
@@ -85,7 +84,11 @@ async fn main() -> anyhow::Result<()> {
     .await?;
 
     let _db = DbContext::new(Arc::new(pool.clone()));
-    let app_settings = settings::load_all(&pool).await?;
+    let settings = Arc::new(
+        SettingsStore::preload(pool.clone(), &config.environment)
+            .await
+            .map_err(anyhow::Error::msg)?,
+    );
     let server_list = servers::list(&pool).await?;
 
     let geo = GeoService::initialize(GeoConfig {
@@ -95,15 +98,13 @@ async fn main() -> anyhow::Result<()> {
     .await?;
     geo.spawn_refresh_scheduler();
 
-    let settings = Arc::new(RwLock::new(app_settings.clone()));
     let server_count = server_list.len();
     let manager = Arc::new(ServerManager::new(
         server_list,
         Some(pool.clone()),
-        Arc::clone(&settings),
+        settings,
         Arc::clone(&geo),
         config.victoriametrics_auth_token.clone(),
-        &app_settings,
         &config.environment,
     ));
 
@@ -130,14 +131,14 @@ async fn main() -> anyhow::Result<()> {
     let app = router(
         AppState {
             pool: pool.clone(),
-            manager,
+            manager: Arc::clone(&manager),
             geo,
             auth,
             insights,
             chat,
             chat_rate_limiter: Arc::new(ChatRateLimiter::new()),
         },
-        &app_settings,
+        &manager.settings(),
         &config.environment,
     )
     .map_err(anyhow::Error::msg)?;
@@ -147,7 +148,7 @@ async fn main() -> anyhow::Result<()> {
         environment = %config.environment,
         servers = server_count,
         maxmind_ready = true,
-        chat_enabled = chat_enabled(&app_settings),
+        chat_enabled = chat_enabled_for(&manager.settings()),
         "mc-tracker started"
     );
 

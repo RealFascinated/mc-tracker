@@ -24,20 +24,15 @@ import {
   formatServerPlatformLabel,
   serverPlatformBadgeClassName,
 } from "@/lib/api/platform";
+import { MAX_COMPARE_SERVERS, MIN_COMPARE_SERVERS } from "@/lib/compare/ids";
 import {
-  MAX_COMPARE_SERVERS,
-  MIN_COMPARE_SERVERS,
-} from "@/lib/compare/ids";
-import { formatDecimal, formatPercentValue, formatPlayers } from "@/lib/formatter";
+  formatDecimal,
+  formatPercentValue,
+  formatPlayers,
+} from "@/lib/formatter";
 
 type SortField =
-  | "name"
-  | "now"
-  | "start"
-  | "end"
-  | "delta"
-  | "changePct"
-  | "avg";
+  "name" | "now" | "start" | "end" | "delta" | "changePct" | "avg";
 
 type SortOrder = "asc" | "desc";
 
@@ -97,9 +92,7 @@ export function CompareServersTable({
       const compareItem = compareData?.servers.find(
         (item) => item.server.id === id,
       );
-      const error = compareData
-        ? errorForServer(compareData.errors, id)
-        : null;
+      const error = compareData ? errorForServer(compareData.errors, id) : null;
       const detailQuery = serverQueries[index];
 
       return {
@@ -119,7 +112,10 @@ export function CompareServersTable({
     const direction = sortOrder === "asc" ? 1 : -1;
 
     copy.sort((left, right) => {
-      const compare = (a: number | string | null, b: number | string | null) => {
+      const compare = (
+        a: number | string | null,
+        b: number | string | null,
+      ) => {
         if (a == null && b == null) return 0;
         if (a == null) return 1;
         if (b == null) return -1;
@@ -138,7 +134,10 @@ export function CompareServersTable({
             right.server?.playersOnline ?? null,
           );
         case "start":
-          return compare(left.summary?.start ?? null, right.summary?.start ?? null);
+          return compare(
+            left.summary?.start ?? null,
+            right.summary?.start ?? null,
+          );
         case "end":
           return compare(left.summary?.end ?? null, right.summary?.end ?? null);
         case "delta": {
@@ -313,7 +312,10 @@ export function CompareServersTable({
                     <TableCell>
                       {row.loading && !server ? (
                         <div className="flex items-center gap-2 text-muted-foreground">
-                          <Loader2 className="size-4 animate-spin" aria-hidden />
+                          <Loader2
+                            className="size-4 animate-spin"
+                            aria-hidden
+                          />
                           <span>Loading…</span>
                         </div>
                       ) : server ? (

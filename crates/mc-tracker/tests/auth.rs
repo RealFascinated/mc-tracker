@@ -2,9 +2,6 @@ use mc_test_support as common;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use mc_tracker::manager::ServerManager;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use tower::ServiceExt;
 
 #[tokio::test]
@@ -13,19 +10,7 @@ async fn login_me_logout_flow() {
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        settings,
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
+    let manager = common::manager_from_pool(&pool, "development").await;
     let app = common::build_app(pool, manager).await;
     let cookie = common::login_admin(&app).await;
 
@@ -83,19 +68,7 @@ async fn admin_routes_require_auth() {
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        settings,
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
+    let manager = common::manager_from_pool(&pool, "development").await;
     let app = common::build_app(pool, manager).await;
 
     let response = app
@@ -116,19 +89,7 @@ async fn public_servers_stay_public() {
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        settings,
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
+    let manager = common::manager_from_pool(&pool, "development").await;
     let app = common::build_app(pool, manager).await;
 
     let response = app
@@ -149,19 +110,7 @@ async fn login_sets_secure_session_cookie_flags() {
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        settings,
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
+    let manager = common::manager_from_pool(&pool, "development").await;
     let app = common::build_app(pool, manager).await;
 
     let body = serde_json::json!({ "username": "admin", "password": "adminpass" });
@@ -195,19 +144,7 @@ async fn change_password_rejects_wrong_current_password() {
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        settings,
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
+    let manager = common::manager_from_pool(&pool, "development").await;
     let app = common::build_app(pool.clone(), manager).await;
     let cookie = common::login_admin(&app).await;
 
@@ -234,19 +171,7 @@ async fn change_password_updates_credentials() {
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        settings,
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
+    let manager = common::manager_from_pool(&pool, "development").await;
     let app = common::build_app(pool, manager).await;
     let cookie = common::login_admin(&app).await;
 
@@ -301,19 +226,7 @@ async fn revoked_session_rejected_after_logout() {
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        settings,
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
+    let manager = common::manager_from_pool(&pool, "development").await;
     let app = common::build_app(pool, manager).await;
     let cookie = common::login_admin(&app).await;
 

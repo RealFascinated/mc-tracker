@@ -11,7 +11,9 @@ export function llmProviderShowsApiKey(provider: LlmProviderId): boolean {
   return provider !== "llama_cpp";
 }
 
-export function llmProviderShowsParallelSlots(provider: LlmProviderId): boolean {
+export function llmProviderShowsParallelSlots(
+  provider: LlmProviderId,
+): boolean {
   return provider === "llama_cpp";
 }
 

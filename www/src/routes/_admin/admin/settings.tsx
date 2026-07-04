@@ -11,11 +11,12 @@ import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { patchAdminSettings } from "@/lib/api/admin/settings";
-import type {
-  PatchSettingsRequest,
-  SettingsResponse,
-} from "@/lib/api/admin/settings";
+import {
+  dirtySettingPatches,
+  settingsListToFormValues,
+} from "@/lib/admin/settings-form";
+import type { SettingsFormValues } from "@/lib/admin/settings-form";
+import { patchAdminSetting } from "@/lib/api/admin/settings";
 import { adminSettingsQueryOptions } from "@/lib/api/admin/settings.queries";
 import {
   llmBaseUrlPlaceholder,
@@ -38,11 +39,25 @@ export const Route = createFileRoute("/_admin/admin/settings")({
 function AdminSettingsPage() {
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery(adminSettingsQueryOptions());
-  const [draft, setDraft] = useState<SettingsResponse | null>(null);
+  const [draft, setDraft] = useState<SettingsFormValues | null>(null);
   const [apiKeyDraft, setApiKeyDraft] = useState<string | null>(null);
 
   const saveMutation = useMutation({
-    mutationFn: (body: PatchSettingsRequest) => patchAdminSettings(body),
+    mutationFn: async ({
+      loaded,
+      next,
+      apiKey,
+    }: {
+      loaded: SettingsFormValues;
+      next: SettingsFormValues;
+      apiKey: string | null;
+    }) => {
+      const patches = dirtySettingPatches(loaded, next, apiKey);
+      await Promise.all(
+        patches.map(({ key, value }) => patchAdminSetting(key, value)),
+      );
+      return getAdminSettingsRefetch(queryClient);
+    },
     onSuccess: async (saved) => {
       toast.success("Settings saved");
       setDraft(null);
@@ -63,18 +78,18 @@ function AdminSettingsPage() {
     return <p className="text-destructive">Failed to load settings.</p>;
   }
 
-  const loaded = data;
-  const values: SettingsResponse = draft ?? loaded;
+  const loaded = settingsListToFormValues(data.settings);
+  const values: SettingsFormValues = draft ?? loaded;
   const isDirty = draft !== null || apiKeyDraft !== null;
   const llmProvider = parseLlmProvider(values.llmProvider);
   const showLlmApiKey = llmProviderShowsApiKey(llmProvider);
   const showLlmParallelSlots = llmProviderShowsParallelSlots(llmProvider);
 
-  function currentValues(): SettingsResponse {
+  function currentValues(): SettingsFormValues {
     return draft ?? loaded;
   }
 
-  function updateNumber<TKey extends keyof SettingsResponse>(
+  function updateNumber<TKey extends keyof SettingsFormValues>(
     key: TKey,
     raw: string,
   ) {
@@ -84,7 +99,7 @@ function AdminSettingsPage() {
     });
   }
 
-  function updateString<TKey extends keyof SettingsResponse>(
+  function updateString<TKey extends keyof SettingsFormValues>(
     key: TKey,
     value: string,
   ) {
@@ -106,33 +121,11 @@ function AdminSettingsPage() {
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const next = currentValues();
-    const patch: PatchSettingsRequest = {
-      pingerTimeoutMs: next.pingerTimeoutMs,
-      pingerRetryAttempts: next.pingerRetryAttempts,
-      pingerRetryDelayMs: next.pingerRetryDelayMs,
-      dnsCacheEnabled: next.dnsCacheEnabled,
-      dnsCacheTtlMinutes: next.dnsCacheTtlMinutes,
-      victoriametricsUrl: next.victoriametricsUrl,
-      metricsPushCron: next.metricsPushCron,
-      signUpEnabled: next.signUpEnabled,
-      wwwOrigin: next.wwwOrigin,
-      llmBaseUrl: next.llmBaseUrl,
-      llmModel: next.llmModel,
-      llmMaxToolRounds: next.llmMaxToolRounds,
-      llmContextMaxTurns: next.llmContextMaxTurns,
-      llmToolMaxTokens: next.llmToolMaxTokens,
-      llmFinalMaxTokens: next.llmFinalMaxTokens,
-      llmContextMax: next.llmContextMax,
-      llmContextReserve: next.llmContextReserve,
-      llmTimeoutSecs: next.llmTimeoutSecs,
-      llmProvider: next.llmProvider,
-      llmParallelSlots: next.llmParallelSlots,
-    };
-    if (apiKeyDraft !== null) {
-      patch.llmApiKey = apiKeyDraft;
-    }
-    saveMutation.mutate(patch);
+    saveMutation.mutate({
+      loaded,
+      next: currentValues(),
+      apiKey: apiKeyDraft,
+    });
   }
 
   return (
@@ -336,7 +329,9 @@ function AdminSettingsPage() {
                 id="llm-api-key"
                 type="password"
                 autoComplete="new-password"
-                placeholder={loaded.llmApiKey ? "********" : undefined}
+                placeholder={
+                  loaded.llmApiKeyConfigured ? "********" : undefined
+                }
                 value={apiKeyDraft ?? ""}
                 onChange={(event) => setApiKeyDraft(event.target.value)}
                 spellCheck={false}
@@ -345,83 +340,83 @@ function AdminSettingsPage() {
           ) : null}
           <SettingsField
             label="Max tool rounds"
-                htmlFor="llm-max-tool-rounds"
-                hint="Maximum tool-call loops per chat turn."
-              >
-                <Input
-                  id="llm-max-tool-rounds"
-                  type="number"
-                  min={1}
-                  value={values.llmMaxToolRounds}
-                  onChange={(event) =>
-                    updateNumber("llmMaxToolRounds", event.target.value)
-                  }
-                />
-              </SettingsField>
-              <SettingsField
-                label="Max turn pairs in prompt"
-                htmlFor="llm-context-max-turns"
-                hint="Soft cap on user/assistant pairs included in the LLM prompt."
-              >
-                <Input
-                  id="llm-context-max-turns"
-                  type="number"
-                  min={1}
-                  value={values.llmContextMaxTurns}
-                  onChange={(event) =>
-                    updateNumber("llmContextMaxTurns", event.target.value)
-                  }
-                />
-              </SettingsField>
-              <SettingsField
-                label="Context max tokens"
-                htmlFor="llm-context-max"
-                hint={
-                  llmProvider === "llama_cpp"
-                    ? "Match your llama.cpp --ctx-size."
-                    : "Model context window size used for budgeting."
-                }
-              >
-                <Input
-                  id="llm-context-max"
-                  type="number"
-                  min={1}
-                  value={values.llmContextMax}
-                  onChange={(event) =>
-                    updateNumber("llmContextMax", event.target.value)
-                  }
-                />
-              </SettingsField>
-              <SettingsField
-                label="Context reserve tokens"
-                htmlFor="llm-context-reserve"
-                hint="Tokens reserved for the model completion."
-              >
-                <Input
-                  id="llm-context-reserve"
-                  type="number"
-                  min={1}
-                  value={values.llmContextReserve}
-                  onChange={(event) =>
-                    updateNumber("llmContextReserve", event.target.value)
-                  }
-                />
-              </SettingsField>
-              <SettingsField
-                label="Timeout (seconds)"
-                htmlFor="llm-timeout-secs"
-                hint="Maximum time for a single chat turn."
-              >
-                <Input
-                  id="llm-timeout-secs"
-                  type="number"
-                  min={1}
-                  value={values.llmTimeoutSecs}
-                  onChange={(event) =>
-                    updateNumber("llmTimeoutSecs", event.target.value)
-                  }
-              />
-            </SettingsField>
+            htmlFor="llm-max-tool-rounds"
+            hint="Maximum tool-call loops per chat turn."
+          >
+            <Input
+              id="llm-max-tool-rounds"
+              type="number"
+              min={1}
+              value={values.llmMaxToolRounds}
+              onChange={(event) =>
+                updateNumber("llmMaxToolRounds", event.target.value)
+              }
+            />
+          </SettingsField>
+          <SettingsField
+            label="Max turn pairs in prompt"
+            htmlFor="llm-context-max-turns"
+            hint="Soft cap on user/assistant pairs included in the LLM prompt."
+          >
+            <Input
+              id="llm-context-max-turns"
+              type="number"
+              min={1}
+              value={values.llmContextMaxTurns}
+              onChange={(event) =>
+                updateNumber("llmContextMaxTurns", event.target.value)
+              }
+            />
+          </SettingsField>
+          <SettingsField
+            label="Context max tokens"
+            htmlFor="llm-context-max"
+            hint={
+              llmProvider === "llama_cpp"
+                ? "Match your llama.cpp --ctx-size."
+                : "Model context window size used for budgeting."
+            }
+          >
+            <Input
+              id="llm-context-max"
+              type="number"
+              min={1}
+              value={values.llmContextMax}
+              onChange={(event) =>
+                updateNumber("llmContextMax", event.target.value)
+              }
+            />
+          </SettingsField>
+          <SettingsField
+            label="Context reserve tokens"
+            htmlFor="llm-context-reserve"
+            hint="Tokens reserved for the model completion."
+          >
+            <Input
+              id="llm-context-reserve"
+              type="number"
+              min={1}
+              value={values.llmContextReserve}
+              onChange={(event) =>
+                updateNumber("llmContextReserve", event.target.value)
+              }
+            />
+          </SettingsField>
+          <SettingsField
+            label="Timeout (seconds)"
+            htmlFor="llm-timeout-secs"
+            hint="Maximum time for a single chat turn."
+          >
+            <Input
+              id="llm-timeout-secs"
+              type="number"
+              min={1}
+              value={values.llmTimeoutSecs}
+              onChange={(event) =>
+                updateNumber("llmTimeoutSecs", event.target.value)
+              }
+            />
+          </SettingsField>
           {showLlmParallelSlots ? (
             <SettingsField
               label="Parallel slots"
@@ -475,4 +470,10 @@ function AdminSettingsPage() {
       </div>
     </form>
   );
+}
+
+async function getAdminSettingsRefetch(
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  return queryClient.fetchQuery(adminSettingsQueryOptions());
 }

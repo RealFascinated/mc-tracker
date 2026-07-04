@@ -24,7 +24,9 @@ function showsHeaderSearch(pathname: string): boolean {
 }
 
 function SiteHeaderPageNav() {
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const navigate = useNavigate();
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const activeRoute = activeDashboardHeaderRoute(pathname);
@@ -50,7 +52,9 @@ type SiteHeaderBarProps = {
 };
 
 function SiteHeaderBar({ showDashboardControls }: SiteHeaderBarProps) {
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const metricSearch = useRouterState({
     select: (state) =>
       parseMetricTimeWindowSearch(
@@ -59,8 +63,9 @@ function SiteHeaderBar({ showDashboardControls }: SiteHeaderBarProps) {
   });
   const navigate = useNavigate();
   const { timeWindow, setPresetTimeRange, setCustomTimeRange } =
-    useMetricTimeWindowControls(metricSearch, (options) =>
-      void navigate(options as never),
+    useMetricTimeWindowControls(
+      metricSearch,
+      (options) => void navigate(options as never),
     );
 
   return (
@@ -96,7 +101,9 @@ type SiteHeaderProps = {
 };
 
 function SiteHeader({ className }: SiteHeaderProps) {
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const isDashboardPage = isDashboardHeaderRoute(pathname);
   const hasPageNav = showsSiteHeaderPageNav(pathname);
 

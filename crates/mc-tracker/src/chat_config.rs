@@ -1,12 +1,12 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use mc_chat::tools::ToolRegistry;
-use mc_chat::{AgentLoop, ChatAgent, ChatToolDeps, LlmClient, OpenAiLlmClient};
-use mc_chat::{AgentConfig, LlmProvider};
-use mc_db::AppSettings;
 use crate::insights::InsightsService;
 use crate::manager::ServerManager;
+use mc_chat::tools::ToolRegistry;
+use mc_chat::{AgentConfig, LlmProvider};
+use mc_chat::{AgentLoop, ChatAgent, ChatToolDeps, LlmClient, OpenAiLlmClient};
+use mc_settings::{chat_enabled, SettingKey, SettingsStore};
 
 pub fn build_chat_agent(
     manager: Arc<ServerManager>,
@@ -20,27 +20,28 @@ pub fn build_chat_agent(
     Arc::new(AgentLoop::new(llm, ToolRegistry::default_tools(), deps))
 }
 
-pub fn agent_config(settings: &AppSettings) -> Result<AgentConfig, String> {
+pub fn agent_config(store: &SettingsStore) -> Result<AgentConfig, String> {
+    let api_key = store.cached_str(SettingKey::LlmApiKey);
     Ok(AgentConfig {
-        llm_base_url: settings.llm_base_url.clone(),
-        llm_model: settings.llm_model.clone(),
-        max_tool_rounds: settings.llm_max_tool_rounds,
-        context_max_turns: settings.llm_context_max_turns,
-        tool_max_tokens: settings.llm_tool_max_tokens,
-        final_max_tokens: settings.llm_final_max_tokens,
-        context_max: settings.llm_context_max,
-        context_reserve: settings.llm_context_reserve,
-        timeout: Duration::from_secs(settings.llm_timeout_secs),
-        provider: LlmProvider::parse(&settings.llm_provider)?,
-        parallel_slots: settings.llm_parallel_slots,
-        api_key: if settings.llm_api_key.is_empty() {
+        llm_base_url: store.cached_str(SettingKey::LlmBaseUrl),
+        llm_model: store.cached_str(SettingKey::LlmModel),
+        max_tool_rounds: store.cached_u32(SettingKey::LlmMaxToolRounds),
+        context_max_turns: store.cached_u32(SettingKey::LlmContextMaxTurns),
+        tool_max_tokens: store.cached_u32(SettingKey::LlmToolMaxTokens),
+        final_max_tokens: store.cached_u32(SettingKey::LlmFinalMaxTokens),
+        context_max: store.cached_u32(SettingKey::LlmContextMax),
+        context_reserve: store.cached_u32(SettingKey::LlmContextReserve),
+        timeout: Duration::from_secs(store.cached_u64(SettingKey::LlmTimeoutSecs)),
+        provider: LlmProvider::parse(&store.cached_str(SettingKey::LlmProvider))?,
+        parallel_slots: store.cached_u32(SettingKey::LlmParallelSlots),
+        api_key: if api_key.is_empty() {
             None
         } else {
-            Some(settings.llm_api_key.clone())
+            Some(api_key)
         },
     })
 }
 
-pub fn chat_enabled(settings: &AppSettings) -> bool {
-    settings.chat_enabled()
+pub fn chat_enabled_for(store: &SettingsStore) -> bool {
+    chat_enabled(&store.cached_str(SettingKey::LlmBaseUrl))
 }

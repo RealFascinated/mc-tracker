@@ -168,10 +168,7 @@ mod tests {
 
     #[test]
     fn tool_call_dedupe_key_normalizes_json() {
-        let a = tool_call_dedupe_key(
-            "get_asn",
-            &serde_json::json!({ "query": "DonutSMP" }),
-        );
+        let a = tool_call_dedupe_key("get_asn", &serde_json::json!({ "query": "DonutSMP" }));
         let b = tool_call_dedupe_key(
             "get_asn",
             &serde_json::from_str(r#"{"query":"DonutSMP"}"#).unwrap(),

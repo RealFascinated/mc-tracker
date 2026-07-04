@@ -9,5 +9,5 @@ pub mod embedded;
 pub mod insights;
 pub mod manager;
 pub mod pinned_servers;
-pub mod settings;
+pub mod settings_api;
 pub mod tracker_read;

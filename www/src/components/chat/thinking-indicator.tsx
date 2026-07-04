@@ -19,4 +19,4 @@ export function ThinkingIndicator() {
       {THINKING_MESSAGES[messageIndex]}
     </span>
   );
-} 
+}

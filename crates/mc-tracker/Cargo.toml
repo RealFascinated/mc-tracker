@@ -40,6 +40,7 @@ mc-insights = { path = "../mc-insights" }
 mc-metrics = { path = "../mc-metrics" }
 mc-ping = { path = "../mc-ping" }
 mc-search = { path = "../mc-search" }
+mc-settings = { path = "../mc-settings" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = "0.10"

@@ -4,9 +4,16 @@ use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use mc_tracker::manager::ServerManager;
-use tokio::sync::RwLock;
 use tower::ServiceExt;
+
+fn setting_value<'a>(body: &'a serde_json::Value, key: &str) -> &'a serde_json::Value {
+    &body["settings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["key"] == key)
+        .unwrap_or_else(|| panic!("missing setting {key}"))["value"]
+}
 
 #[tokio::test]
 async fn get_and_patch_admin_settings() {
@@ -14,19 +21,7 @@ async fn get_and_patch_admin_settings() {
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        Arc::clone(&settings),
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
+    let manager = common::manager_from_pool(&pool, "development").await;
 
     let app = common::build_app(pool.clone(), Arc::clone(&manager)).await;
     let cookie = common::login_admin(&app).await;
@@ -50,40 +45,54 @@ async fn get_and_patch_admin_settings() {
             .unwrap(),
     )
     .unwrap();
-    assert_eq!(current["metricsPushCron"], "*/10 * * * * *");
+    assert_eq!(
+        setting_value(&current, "metrics_push_cron"),
+        "*/10 * * * * *"
+    );
 
-    let patch = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .method("PATCH")
-                .uri("/admin/settings")
-                .header("cookie", &cookie)
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    r#"{"metricsPushCron":"*/15 * * * * *","victoriametricsUrl":"http://vm:8428"}"#,
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(patch.status(), StatusCode::OK);
-    let updated: serde_json::Value = serde_json::from_slice(
-        &axum::body::to_bytes(patch.into_body(), usize::MAX)
+    for (key, value) in [
+        ("metrics_push_cron", r#""*/15 * * * * *""#),
+        ("victoriametrics_url", r#""http://vm:8428""#),
+    ] {
+        let patch = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("PATCH")
+                    .uri(format!("/admin/settings/{key}"))
+                    .header("cookie", &cookie)
+                    .header("content-type", "application/json")
+                    .body(Body::from(format!(r#"{{"value":{value}}}"#)))
+                    .unwrap(),
+            )
             .await
-            .unwrap(),
-    )
-    .unwrap();
-    assert_eq!(updated["metricsPushCron"], "*/15 * * * * *");
-    assert_eq!(updated["victoriametricsUrl"], "http://vm:8428");
+            .unwrap();
+        assert_eq!(patch.status(), StatusCode::OK, "patch {key}");
+    }
 
-    let in_memory = manager.settings().await;
-    assert_eq!(in_memory.metrics_push_cron, "*/15 * * * * *");
-    assert_eq!(in_memory.victoriametrics_url, "http://vm:8428");
+    assert_eq!(
+        manager
+            .settings()
+            .cached_str(mc_settings::SettingKey::MetricsPushCron),
+        "*/15 * * * * *"
+    );
+    assert_eq!(
+        manager
+            .settings()
+            .cached_str(mc_settings::SettingKey::VictoriametricsUrl),
+        "http://vm:8428"
+    );
 
-    let from_db = mc_db::db::repos::settings::load_all(&pool).await.unwrap();
-    assert_eq!(from_db.metrics_push_cron, "*/15 * * * * *");
-    assert_eq!(from_db.victoriametrics_url, "http://vm:8428");
+    let cron = mc_db::db::repos::settings::get(&pool, "metrics_push_cron")
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(cron, "*/15 * * * * *");
+    let vm = mc_db::db::repos::settings::get(&pool, "victoriametrics_url")
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(vm, "http://vm:8428");
 }
 
 #[tokio::test]
@@ -92,20 +101,7 @@ async fn patch_admin_settings_rejects_invalid_values() {
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        Arc::clone(&settings),
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
-
+    let manager = common::manager_from_pool(&pool, "development").await;
     let app = common::build_app(pool, Arc::clone(&manager)).await;
     let cookie = common::login_admin(&app).await;
 
@@ -113,10 +109,10 @@ async fn patch_admin_settings_rejects_invalid_values() {
         .oneshot(
             Request::builder()
                 .method("PATCH")
-                .uri("/admin/settings")
+                .uri("/admin/settings/metrics_push_cron")
                 .header("cookie", &cookie)
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{"metricsPushCron":"not a cron"}"#))
+                .body(Body::from(r#"{"value":"not a cron"}"#))
                 .unwrap(),
         )
         .await

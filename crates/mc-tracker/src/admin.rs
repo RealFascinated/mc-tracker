@@ -6,18 +6,19 @@ use axum::routing::{get, patch};
 use axum::{Json, Router};
 use mc_api_types::{
     AdminServersListResponse, AdminUsersListResponse, ApiError, ApiErrorCode, CreateServerRequest,
-    PatchSettingsRequest, PatchUserFlagsRequest, PatchUserFlagsResponse, SettingsResponse,
+    PatchSettingRequest, PatchUserFlagsRequest, PatchUserFlagsResponse, SettingsListResponse,
     UpdateServerRequest,
 };
 use mc_db::db::repos::servers::{self, NewServer, UpdateServer};
-use mc_db::db::repos::{settings, users};
+use mc_db::db::repos::users;
 use mc_db::error::DbError;
 use mc_db::model::{Platform, User, UserFlags};
+use mc_settings::{SettingKey, SettingsError};
 use uuid::Uuid;
 
 use crate::api::AppState;
-use crate::manager::{admin_server_response, settings_response};
-use crate::settings::{merge_settings, validate_settings};
+use crate::manager::admin_server_response;
+use crate::settings_api::{to_setting_response, to_settings_list};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -26,7 +27,8 @@ pub fn router() -> Router<AppState> {
             "/servers/{id}",
             get(get_server).patch(update_server).delete(delete_server),
         )
-        .route("/settings", get(get_settings).patch(patch_settings))
+        .route("/settings", get(get_settings))
+        .route("/settings/{key}", patch(patch_setting))
         .route("/users", get(list_users))
         .route("/users/{id}/flags", patch(patch_user_flags))
 }
@@ -150,27 +152,28 @@ async fn delete_server(State(state): State<AppState>, Path(id): Path<Uuid>) -> R
     }
 }
 
-async fn get_settings(State(state): State<AppState>) -> Json<SettingsResponse> {
-    let current = state.manager.settings().await;
-    Json(settings_response(&current))
+async fn get_settings(State(state): State<AppState>) -> Json<SettingsListResponse> {
+    let items = state.manager.settings().list_all().await;
+    Json(to_settings_list(items))
 }
 
-async fn patch_settings(
+async fn patch_setting(
     State(state): State<AppState>,
-    Json(body): Json<PatchSettingsRequest>,
+    Path(key): Path<String>,
+    Json(body): Json<PatchSettingRequest>,
 ) -> Response {
-    let current = state.manager.settings().await;
-    let updated = merge_settings(&current, &body);
-    if let Err(message) = validate_settings(&updated, state.manager.environment()) {
-        return bad_request(&message);
-    }
+    let setting_key = match SettingKey::from_key(&key) {
+        Ok(key) => key,
+        Err(message) => return bad_request(&message),
+    };
 
-    match settings::save(&state.pool, &updated).await {
-        Ok(()) => {
-            state.manager.apply_settings(updated.clone()).await;
-            Json(settings_response(&updated)).into_response()
+    match state.manager.settings().update(&key, body.value).await {
+        Ok(item) => {
+            state.manager.on_setting_updated(setting_key).await;
+            Json(to_setting_response(item)).into_response()
         }
-        Err(err) => map_db_error(err),
+        Err(SettingsError::Validation(message)) => bad_request(&message),
+        Err(SettingsError::Database(err)) => map_db_error(err),
     }
 }
 
@@ -243,13 +246,10 @@ fn map_db_error(err: DbError) -> Response {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
     use chrono::Utc;
     use mc_db::model::{Platform, Server};
-    use mc_db::AppSettings;
+    use mc_settings::SettingsStore;
     use mc_test_support::fixture_geo;
-    use tokio::sync::RwLock;
     use uuid::Uuid;
 
     use super::parse_platform;
@@ -269,15 +269,13 @@ mod tests {
             peak_players_timestamp: None,
             paused: false,
         };
-        let settings = Arc::new(RwLock::new(AppSettings::default()));
-        let bootstrap = settings.read().await.clone();
+        let settings = SettingsStore::for_testing("development");
         let manager = ServerManager::new(
             vec![server],
             None,
             settings,
             fixture_geo(),
             None,
-            &bootstrap,
             "development",
         );
 

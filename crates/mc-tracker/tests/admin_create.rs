@@ -4,8 +4,6 @@ use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use mc_tracker::manager::ServerManager;
-use tokio::sync::RwLock;
 use tower::ServiceExt;
 
 #[tokio::test]
@@ -14,19 +12,7 @@ async fn post_admin_server_persists_and_updates_memory() {
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        Arc::clone(&settings),
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
+    let manager = common::manager_from_pool(&pool, "development").await;
 
     let app = common::build_app(pool.clone(), Arc::clone(&manager)).await;
     let cookie = common::login_admin(&app).await;
@@ -66,19 +52,7 @@ async fn patch_and_delete_admin_server() {
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        Arc::clone(&settings),
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
+    let manager = common::manager_from_pool(&pool, "development").await;
 
     let app = common::build_app(pool.clone(), Arc::clone(&manager)).await;
     let cookie = common::login_admin(&app).await;
@@ -155,19 +129,7 @@ async fn patch_admin_server_pause_and_resume() {
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        Arc::clone(&settings),
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
+    let manager = common::manager_from_pool(&pool, "development").await;
 
     let app = common::build_app(pool.clone(), Arc::clone(&manager)).await;
     let cookie = common::login_admin(&app).await;

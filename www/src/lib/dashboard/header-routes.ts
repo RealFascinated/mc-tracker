@@ -15,7 +15,9 @@ function isDashboardHeaderRoute(pathname: string): boolean {
   return DASHBOARD_HEADER_ROUTES.some((item) => pathname.startsWith(item.to));
 }
 
-function activeDashboardHeaderRoute(pathname: string): DashboardHeaderRoute | "" {
+function activeDashboardHeaderRoute(
+  pathname: string,
+): DashboardHeaderRoute | "" {
   const match = DASHBOARD_HEADER_ROUTES.find((item) =>
     pathname.startsWith(item.to),
   );

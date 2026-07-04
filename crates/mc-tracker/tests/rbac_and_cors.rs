@@ -3,34 +3,20 @@ use mc_test_support as common;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use mc_db::UserRole;
-use mc_tracker::manager::ServerManager;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use tower::ServiceExt;
 
 async fn test_app() -> (
     mc_test_support::PostgresContainer,
     axum::Router,
-    Arc<ServerManager>,
+    Arc<mc_tracker::manager::ServerManager>,
     mc_db::DbPool,
 ) {
     let (postgres, database_url) = common::start_postgres().await;
     let pool = common::setup_pool(&database_url).await;
     common::bootstrap_admin(&pool).await;
 
-    let settings = Arc::new(RwLock::new(
-        mc_db::db::repos::settings::load_all(&pool).await.unwrap(),
-    ));
-    let bootstrap = settings.read().await.clone();
-    let manager = Arc::new(ServerManager::new(
-        vec![],
-        None,
-        Arc::clone(&settings),
-        common::fixture_geo(),
-        None,
-        &bootstrap,
-        "development",
-    ));
+    let manager = common::manager_from_pool(&pool, "development").await;
     let app = common::build_app(pool.clone(), Arc::clone(&manager)).await;
     (postgres, app, manager, pool)
 }
@@ -61,10 +47,10 @@ async fn non_admin_forbidden_on_admin_routes() {
         .oneshot(
             Request::builder()
                 .method("PATCH")
-                .uri("/admin/settings")
+                .uri("/admin/settings/metrics_push_cron")
                 .header("cookie", &cookie)
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{"metricsPushCron":"*/30 * * * * *"}"#))
+                .body(Body::from(r#"{"value":"*/30 * * * * *"}"#))
                 .unwrap(),
         )
         .await
@@ -92,9 +78,9 @@ async fn admin_settings_require_auth() {
         .oneshot(
             Request::builder()
                 .method("PATCH")
-                .uri("/admin/settings")
+                .uri("/admin/settings/metrics_push_cron")
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{"metricsPushCron":"*/30 * * * * *"}"#))
+                .body(Body::from(r#"{"value":"*/30 * * * * *"}"#))
                 .unwrap(),
         )
         .await
@@ -169,10 +155,10 @@ async fn patch_settings_persists_www_origin() {
         .oneshot(
             Request::builder()
                 .method("PATCH")
-                .uri("/admin/settings")
+                .uri("/admin/settings/www_origin")
                 .header("cookie", &cookie)
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{"wwwOrigin":"https://tracker.example.com"}"#))
+                .body(Body::from(r#"{"value":"https://tracker.example.com"}"#))
                 .unwrap(),
         )
         .await
@@ -184,14 +170,19 @@ async fn patch_settings_persists_www_origin() {
             .unwrap(),
     )
     .unwrap();
-    assert_eq!(body["wwwOrigin"], "https://tracker.example.com");
+    assert_eq!(body["value"], "https://tracker.example.com");
 
     assert_eq!(
-        manager.settings().await.www_origin,
+        manager
+            .settings()
+            .cached_str(mc_settings::SettingKey::WwwOrigin),
         "https://tracker.example.com"
     );
-    let from_db = mc_db::db::repos::settings::load_all(&pool).await.unwrap();
-    assert_eq!(from_db.www_origin, "https://tracker.example.com");
+    let from_db = mc_db::db::repos::settings::get(&pool, "www_origin")
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(from_db, "https://tracker.example.com");
 }
 
 #[tokio::test]

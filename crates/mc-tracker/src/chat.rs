@@ -27,7 +27,7 @@ use uuid::Uuid;
 
 use crate::api::AppState;
 use crate::auth::AuthUser;
-use crate::chat_config::agent_config;
+use crate::chat_config::{agent_config, chat_enabled_for};
 use crate::chat_quota::{calendar_week_start_utc, WEEKLY_MESSAGE_LIMIT};
 
 fn rate_limit_per_minute() -> u32 {
@@ -75,8 +75,8 @@ async fn post_chat(
     user: AuthUser,
     Json(body): Json<ChatRequest>,
 ) -> Response {
-    let settings = state.manager.settings().await;
-    if !settings.chat_enabled() {
+    let settings = state.manager.settings();
+    if !chat_enabled_for(&settings) {
         return chat_disabled_response();
     }
 
