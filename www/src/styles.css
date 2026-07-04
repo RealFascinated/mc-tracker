@@ -1289,6 +1289,11 @@
     transform: scaleX(1);
   }
 
+  .link-underline-animate--primary:hover::after,
+  .link-underline-animate--primary:focus-visible::after {
+    @apply bg-monitor dark:bg-warning;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .link-underline-animate::after {
       transition: none;

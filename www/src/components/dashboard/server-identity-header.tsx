@@ -47,15 +47,18 @@ export function ServerIdentityHeader({
   const address = formatServerAddress(server);
 
   const nameContent = (
-    <div
-      className={cn(
-        "entity-metrics-name",
-        linkToDetail &&
-          "transition-colors group-hover:text-monitor dark:group-hover:text-warning",
-      )}
+    <div className="entity-metrics-name">{server.name}</div>
+  );
+
+  const linkedNameContent = (
+    <Link
+      to="/servers/$serverId"
+      params={{ serverId: server.id }}
+      search={timeWindowSearch}
+      className="link-underline-animate link-underline-animate--primary entity-metrics-name min-w-0 transition-colors hover:text-monitor dark:hover:text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning"
     >
       {server.name}
-    </div>
+    </Link>
   );
 
   return (
@@ -75,18 +78,7 @@ export function ServerIdentityHeader({
           />
           <div className="min-w-0">
             <div className="entity-metrics-title-row">
-              {linkToDetail ? (
-                <Link
-                  to="/servers/$serverId"
-                  params={{ serverId: server.id }}
-                  search={timeWindowSearch}
-                  className="link-underline-animate group min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning"
-                >
-                  {nameContent}
-                </Link>
-              ) : (
-                nameContent
-              )}
+              {linkToDetail ? linkedNameContent : nameContent}
               <span className={serverPlatformBadgeClassName(server.type)}>
                 {formatServerPlatformLabel(server.type)}
               </span>
@@ -101,7 +93,7 @@ export function ServerIdentityHeader({
                       to="/asns/$asn"
                       params={{ asn: server.asn }}
                       search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
-                      className="link-underline-animate hover:text-foreground"
+                      className="link-underline-animate link-underline-animate--primary hover:text-monitor dark:hover:text-warning"
                     >
                       {asnName}
                     </Link>
