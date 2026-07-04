@@ -14,22 +14,6 @@ export const SERVER_PLATFORM_FILTER_OPTIONS: Array<{
   { value: "PE", shortLabel: "Bedrock", label: "Bedrock" },
 ];
 
-const SERVER_PLATFORMS = ["PC", "PE"] as const;
-
-export type ServerPlatform = (typeof SERVER_PLATFORMS)[number];
-
-export type ServerPlatformFilter = "all" | ServerPlatform;
-
-export const SERVER_PLATFORM_FILTER_OPTIONS: Array<{
-  value: ServerPlatformFilter;
-  shortLabel: string;
-  label: string;
-}> = [
-  { value: "all", shortLabel: "All", label: "All platforms" },
-  { value: "PC", shortLabel: "Java", label: "Java" },
-  { value: "PE", shortLabel: "Bedrock", label: "Bedrock" },
-];
-
 export function formatServerPlatformLabel(platform: ServerPlatform): string {
   return platform === "PE" ? "Bedrock" : "Java";
 }

@@ -6,7 +6,10 @@ import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-li
 import { ServerFavicon } from "@/components/dashboard/server-favicon";
 import type { ServerListItem } from "@/lib/api/servers";
 import { asnDetailSearch } from "@/lib/api/asns";
-import { formatServerPlatformLabel, serverPlatformBadgeClassName } from "@/lib/api/platform";
+import {
+  formatServerPlatformLabel,
+  serverPlatformBadgeClassName,
+} from "@/lib/api/platform";
 import { cn } from "cnfast";
 
 function serverAsnName(server: ServerListItem): string | null {
@@ -55,7 +58,11 @@ export function ServerIdentityHeader({
     >
       <div className="flex items-start gap-2">
         <div className="entity-metrics-identity min-w-0 flex-1">
-          <ServerFavicon name={server.name} favicon={server.favicon} size="md" />
+          <ServerFavicon
+            name={server.name}
+            favicon={server.favicon}
+            size="md"
+          />
           <div className="min-w-0">
             <div className="entity-metrics-title-row">
               {linkToDetail ? (

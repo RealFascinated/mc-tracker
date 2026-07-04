@@ -1,9 +1,3 @@
-import {
-  readLocalStorageJson,
-  removeLocalStorage,
-  writeLocalStorageJson,
-} from "@/lib/local-storage";
-
 const STORAGE_KEY_PREFIX = "mc-tracker:chart-hidden-series:";
 
 function storageKey(chartId: string) {
@@ -16,25 +10,6 @@ function parseHiddenSeriesLabels(raw: unknown): Array<string> | null {
   }
 
   return raw.filter((entry): entry is string => typeof entry === "string");
-}
-
-export function readHiddenSeriesLabels(chartId: string): Array<string> {
-  return (
-    readLocalStorageJson(storageKey(chartId), parseHiddenSeriesLabels) ?? []
-  );
-}
-
-export function writeHiddenSeriesLabels(
-  chartId: string,
-  labels: Array<string>,
-) {
-  const key = storageKey(chartId);
-  if (labels.length === 0) {
-    removeLocalStorage(key);
-    return;
-  }
-
-  writeLocalStorageJson(key, labels);
 }
 
 export function hiddenIndicesToLabels(
@@ -70,6 +45,8 @@ export function chartHiddenSeriesStorageKey(chartId: string) {
   return storageKey(chartId);
 }
 
-export function parseChartHiddenSeriesLabels(raw: unknown): Array<string> | null {
+export function parseChartHiddenSeriesLabels(
+  raw: unknown,
+): Array<string> | null {
   return parseHiddenSeriesLabels(raw);
 }

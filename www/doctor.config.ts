@@ -3,5 +3,7 @@ export default {
     // Theme toggles use the View Transitions API on documentElement directly;
     // React's <ViewTransition> is not available in this React version.
     "react-doctor/no-document-start-view-transition": "off",
+    // flushSync keeps theme class and persisted preference in sync before transitions.
+    "react-doctor/no-flush-sync": "off",
   },
 };

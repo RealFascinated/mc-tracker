@@ -3,7 +3,7 @@ use serde_json::json;
 
 use crate::error::ChatError;
 use crate::tools::compact::compact_server_timeseries_summary;
-use crate::tools::helpers::{resolve_server_id, require_str, tool_def};
+use crate::tools::helpers::{require_str, resolve_server_id, tool_def};
 use crate::traits::{ChatTool, ChatToolDeps};
 
 pub struct ServerTimeseriesSummaryTool;

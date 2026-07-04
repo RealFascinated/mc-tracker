@@ -34,22 +34,17 @@ function ContextUsageTooltip({ usage }: { usage: ChatTokenUsage }) {
         </p>
       </div>
 
-      <div
-        className="bg-muted h-1.5 overflow-hidden rounded-full"
-        role="progressbar"
-        aria-valuenow={pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
+      <progress
+        className={cn(
+          "bg-muted h-1.5 w-full overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:rounded-full",
+          hot
+            ? "[&::-webkit-progress-value]:bg-destructive [&::-moz-progress-bar]:bg-destructive"
+            : "[&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary",
+        )}
+        value={pct}
+        max={100}
         aria-label="Context window usage"
-      >
-        <div
-          className={cn(
-            "h-full rounded-full transition-all",
-            hot ? "bg-destructive" : "bg-primary",
-          )}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
+      />
 
       <dl className="grid gap-1.5 text-[11px] leading-tight">
         <div className="flex items-baseline justify-between gap-4">

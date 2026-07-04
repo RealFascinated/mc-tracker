@@ -5,9 +5,7 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use chrono::Utc;
 use mc_db::model::{Platform, Server};
-use mc_metrics::{
-    min_span, peak_players_24h, peak_players_7d, player_count_series,
-};
+use mc_metrics::{min_span, peak_players_24h, peak_players_7d, player_count_series};
 use tower::ServiceExt;
 use uuid::Uuid;
 use wiremock::matchers::{method, query_param};

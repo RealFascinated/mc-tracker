@@ -7,12 +7,12 @@ import { useAuth } from "@/lib/auth/context";
 import type { ChatQuota } from "@/lib/auth/types";
 import { chatQuotaExempt } from "@/lib/user-flags";
 
-import { STREAMING_ID  } from "@/components/chat/chat-types";
-import type {ChatMessage} from "@/components/chat/chat-types";
+import { STREAMING_ID } from "@/components/chat/chat-types";
+import type { ChatMessage } from "@/components/chat/chat-types";
 import { toolStatusLabel } from "@/components/chat/chat-utils";
 import { useChatServerContext } from "@/hooks/use-chat-server-context";
 
-export function useChatSession(open: boolean) {
+export function useChatSession() {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -72,12 +72,6 @@ export function useChatSession(open: boolean) {
 
   const canStartNewChat =
     messages.length > 0 || isStreaming || rawHistory != null;
-
-  useEffect(() => {
-    if (!open) {
-      cancelStream();
-    }
-  }, [cancelStream, open]);
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();

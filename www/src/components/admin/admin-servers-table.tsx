@@ -37,8 +37,8 @@ import type { AdminServer } from "@/lib/api/admin/servers";
 import {
   formatServerPlatformLabel,
   serverPlatformBadgeClassName,
-  type ServerPlatform,
 } from "@/lib/api/platform";
+import type { ServerPlatform } from "@/lib/api/platform";
 import { cn } from "cnfast";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {

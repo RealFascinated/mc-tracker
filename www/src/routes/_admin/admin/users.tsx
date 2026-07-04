@@ -78,10 +78,7 @@ function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Users"
-        description="Manage user accounts."
-      />
+      <PageHeader title="Users" description="Manage user accounts." />
 
       <Table>
         <TableHeader>
@@ -105,9 +102,7 @@ function AdminUsersPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    setEditState({ user, flags: user.flags })
-                  }
+                  onClick={() => setEditState({ user, flags: user.flags })}
                 >
                   Edit flags
                 </Button>
@@ -122,9 +117,7 @@ function AdminUsersPage() {
         saving={flagsMutation.isPending}
         onClose={() => setEditState(null)}
         onFlagsChange={(flags) =>
-          setEditState((current) =>
-            current ? { ...current, flags } : current,
-          )
+          setEditState((current) => (current ? { ...current, flags } : current))
         }
         onSave={() => {
           if (!editState) {
@@ -214,11 +207,7 @@ function EditFlagsDialog({
           >
             Cancel
           </Button>
-          <Button
-            type="button"
-            disabled={!isDirty || saving}
-            onClick={onSave}
-          >
+          <Button type="button" disabled={!isDirty || saving} onClick={onSave}>
             Save
           </Button>
         </DialogFooter>

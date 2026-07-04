@@ -1,6 +1,13 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, LogIn, LogOut, Shield, User, UserPlus } from "lucide-react";
+import {
+  ChevronDown,
+  LogIn,
+  LogOut,
+  Shield,
+  User,
+  UserPlus,
+} from "lucide-react";
 import { useState } from "react";
 
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -145,17 +152,17 @@ function SiteHeaderActions({ iconOnly = false }: { iconOnly?: boolean }) {
             className="site-header-nav-button"
           >
             <Link to="/login" aria-label="Sign in">
-            <LogIn
-              className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
-              aria-hidden
-            />
-            <span
-              className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}
-            >
-              Sign in
-            </span>
-          </Link>
-        </Button>
+              <LogIn
+                className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
+                aria-hidden
+              />
+              <span
+                className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}
+              >
+                Sign in
+              </span>
+            </Link>
+          </Button>
         </>
       )}
     </>

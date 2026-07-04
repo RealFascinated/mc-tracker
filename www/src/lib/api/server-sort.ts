@@ -71,9 +71,10 @@ export function resolveServerSort(search: {
   return { field, order };
 }
 
-export function serverSortToSearchParams(
-  sort: ServerSort,
-): { sort?: ServerSortField; order?: SortOrder } {
+export function serverSortToSearchParams(sort: ServerSort): {
+  sort?: ServerSortField;
+  order?: SortOrder;
+} {
   const params: { sort?: ServerSortField; order?: SortOrder } = {};
   if (sort.field !== DEFAULT_SERVER_SORT.field) {
     params.sort = sort.field;
@@ -91,8 +92,9 @@ export function sortServersBy<
   if (sort.field === "name") {
     sorted.sort((left, right) => {
       const cmp =
-        left.name.localeCompare(right.name, undefined, { sensitivity: "base" }) ||
-        left.id.localeCompare(right.id);
+        left.name.localeCompare(right.name, undefined, {
+          sensitivity: "base",
+        }) || left.id.localeCompare(right.id);
       return sort.order === "asc" ? cmp : -cmp;
     });
     return sorted;

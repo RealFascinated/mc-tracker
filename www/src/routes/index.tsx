@@ -141,10 +141,13 @@ function DashboardPage() {
     [platformFilter, serversData?.servers],
   );
   const pinnedServers = pinnedServersData?.servers ?? [];
-  const pinnedServerIds = useMemo(
-    () => new Set(pinnedServers.map((server) => server.id)),
-    [pinnedServers],
-  );
+  const pinnedServerIds = useMemo(() => {
+    const servers = pinnedServersData?.servers;
+    if (!servers) {
+      return new Set<string>();
+    }
+    return new Set(servers.map((server) => server.id));
+  }, [pinnedServersData?.servers]);
   const activeData = dashboardView === "asn" ? asnsData : serversData;
   const activePending = dashboardView === "asn" ? asnsPending : serversPending;
   const globalSummary = serversData?.summary;
@@ -188,9 +191,7 @@ function DashboardPage() {
         </main>
       ) : (
         <main className="dashboard-shell">
-          {globalSummary ? (
-            <DashboardStatsRow summary={globalSummary} />
-          ) : null}
+          {globalSummary ? <DashboardStatsRow summary={globalSummary} /> : null}
 
           {showInitialLoading ? (
             <LoadingState
@@ -209,7 +210,9 @@ function DashboardPage() {
               onZoomToRange={handleZoomToRange}
             >
               <HeroChartPanel
-                hasServers={globalSummary ? globalSummary.trackedServers > 0 : false}
+                hasServers={
+                  globalSummary ? globalSummary.trackedServers > 0 : false
+                }
                 window={timeWindow}
               />
 

@@ -50,13 +50,14 @@ export function TrackerChatWidget() {
     startNewChat,
     canStartNewChat,
     sendMessage,
-  } = useChatSession(open);
+  } = useChatSession();
 
   useEffect(() => {
     if (!isAuthenticated) {
+      cancelStream();
       setOpen(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, cancelStream]);
 
   if (isLoading) {
     return null;
@@ -103,7 +104,10 @@ export function TrackerChatWidget() {
                 variant="ghost"
                 size="icon-sm"
                 aria-label="Close chat"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  cancelStream();
+                  setOpen(false);
+                }}
               >
                 <XIcon />
               </Button>
@@ -155,13 +159,7 @@ export function TrackerChatWidget() {
                     <QuotaUsage quota={chatQuota} />
                   </div>
                 ) : null}
-                <form
-                  className="flex items-center gap-2 p-3"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void sendMessage();
-                  }}
-                >
+                <div className="flex items-center gap-2 p-3">
                   <textarea
                     ref={inputRef}
                     value={input}
@@ -181,17 +179,23 @@ export function TrackerChatWidget() {
                     className="monitor-input h-10! min-h-10 max-h-24 flex-1 resize-none overflow-y-auto px-3 py-0 text-sm leading-10"
                   />
                   <Button
-                    type={isStreaming ? "button" : "submit"}
+                    type="button"
                     variant={isStreaming ? "outline" : "brand"}
                     size="icon"
                     className="size-10 shrink-0"
                     disabled={!isStreaming && (quotaExceeded || !input.trim())}
                     aria-label={isStreaming ? "Stop response" : "Send message"}
-                    onClick={isStreaming ? cancelStream : undefined}
+                    onClick={() => {
+                      if (isStreaming) {
+                        cancelStream();
+                        return;
+                      }
+                      void sendMessage();
+                    }}
                   >
                     {isStreaming ? <SquareIcon /> : <SendIcon />}
                   </Button>
-                </form>
+                </div>
               </div>
             </>
           )}

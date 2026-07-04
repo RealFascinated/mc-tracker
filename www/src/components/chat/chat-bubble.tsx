@@ -4,8 +4,8 @@ import { cn } from "cnfast";
 
 import { ThinkingIndicator } from "@/components/chat/thinking-indicator";
 import { ToolCallList } from "@/components/chat/tool-call-list";
-import { STREAMING_ID  } from "@/components/chat/chat-types";
-import type {ChatMessage} from "@/components/chat/chat-types";
+import { STREAMING_ID } from "@/components/chat/chat-types";
+import type { ChatMessage } from "@/components/chat/chat-types";
 
 export function ChatBubble({
   message,

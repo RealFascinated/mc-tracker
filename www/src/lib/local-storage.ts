@@ -37,23 +37,3 @@ export function removeLocalStorage(key: string): void {
     // ignore quota / privacy mode errors
   }
 }
-
-export function readLocalStorageJson<T>(
-  key: string,
-  parse: (raw: unknown) => T | null,
-): T | null {
-  const raw = readLocalStorage(key);
-  if (raw === null) {
-    return null;
-  }
-
-  try {
-    return parse(JSON.parse(raw));
-  } catch {
-    return null;
-  }
-}
-
-export function writeLocalStorageJson(key: string, value: unknown): void {
-  writeLocalStorage(key, JSON.stringify(value));
-}

@@ -32,8 +32,7 @@ function DashboardRefreshProvider({ children }: { children: ReactNode }) {
     {
       defaultValue: DEFAULT_DASHBOARD_REFRESH_INTERVAL,
       ...localStorageStringOptions,
-      deserialize: (raw) =>
-        isDashboardRefreshInterval(raw) ? raw : null,
+      deserialize: (raw) => (isDashboardRefreshInterval(raw) ? raw : null),
     },
   );
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);

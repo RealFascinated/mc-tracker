@@ -402,7 +402,7 @@ export function createCursorTooltipHandler({
   };
 }
 
-export function applyChartTooltipTheme(
+function applyChartTooltipTheme(
   tooltip: HTMLDivElement,
   theme: ResolvedTheme,
   useColumnLayout = false,

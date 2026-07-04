@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { ServerSortToggle } from "@/components/dashboard/server-sort-toggle";
 import { DashboardRangeToggle } from "@/components/dashboard/dashboard-range-toggle";
@@ -64,6 +64,33 @@ function serverGridEmptyCopy(platformFilter: ServerPlatformFilter): {
   };
 }
 
+function ServerMetricsGridHeader({
+  server,
+  showPinButtons,
+  pinnedServerIds,
+}: {
+  server: ServerListItem;
+  showPinButtons: boolean;
+  pinnedServerIds?: ReadonlySet<string>;
+}) {
+  const trailing = useMemo(() => {
+    if (!showPinButtons) {
+      return undefined;
+    }
+
+    return (
+      <ServerPinButton
+        serverId={server.id}
+        isPinned={pinnedServerIds?.has(server.id) ?? false}
+      />
+    );
+  }, [pinnedServerIds, server.id, showPinButtons]);
+
+  return (
+    <ServerIdentityHeader server={server} linkToDetail trailing={trailing} />
+  );
+}
+
 export function ServerMetricsGrid({
   servers,
   window,
@@ -92,6 +119,41 @@ export function ServerMetricsGrid({
     ),
     [onPlatformFilterChange, onSortChange, platformFilter, sort],
   );
+  const renderHeader = useCallback(
+    (server: ServerListItem) => (
+      <ServerMetricsGridHeader
+        server={server}
+        showPinButtons={showPinButtons}
+        pinnedServerIds={pinnedServerIds}
+      />
+    ),
+    [pinnedServerIds, showPinButtons],
+  );
+  const chartDef = useCallback(
+    (server: ServerListItem) =>
+      createServerPlayersChart(`server-players-${server.id}`),
+    [],
+  );
+  const timeseriesOptions = useCallback(
+    (server: ServerListItem, timeWindow: MetricTimeWindow) =>
+      toVisibleTimeseriesOptions(
+        serverTimeseriesQueryOptions(server.id, timeWindow),
+      ),
+    [],
+  );
+  const sectionCopy = useMemo(
+    () =>
+      section ?? {
+        title: "Servers",
+        subtitleDefault: "Player history for each tracked server",
+        subtitleFiltered: (shown: number, total: number) =>
+          `Showing ${shown} of ${total} servers`,
+        emptyTracked: "No servers are being tracked yet.",
+        emptyFiltered: emptyCopy.emptyFiltered,
+        emptyFilteredHint: emptyCopy.emptyFilteredHint,
+      },
+    [emptyCopy.emptyFiltered, emptyCopy.emptyFilteredHint, section],
+  );
 
   return (
     <EntityMetricsGrid<ServerListItem, ServerTimeseriesResponse>
@@ -101,40 +163,11 @@ export function ServerMetricsGrid({
       trackedCount={trackedServers}
       headerTrailing={headerTrailing}
       getKey={(server) => server.id}
-      renderHeader={(server) => (
-        <ServerIdentityHeader
-          server={server}
-          linkToDetail
-          trailing={
-            showPinButtons ? (
-              <ServerPinButton
-                serverId={server.id}
-                isPinned={pinnedServerIds?.has(server.id) ?? false}
-              />
-            ) : undefined
-          }
-        />
-      )}
-      chartDef={(server) =>
-        createServerPlayersChart(`server-players-${server.id}`)
-      }
-      timeseriesOptions={(server, timeWindow) =>
-        toVisibleTimeseriesOptions(
-          serverTimeseriesQueryOptions(server.id, timeWindow),
-        )
-      }
+      renderHeader={renderHeader}
+      chartDef={chartDef}
+      timeseriesOptions={timeseriesOptions}
       timeseriesEnabled={(server) => server.id.length > 0}
-      section={
-        section ?? {
-          title: "Servers",
-          subtitleDefault: "Player history for each tracked server",
-          subtitleFiltered: (shown, total) =>
-            `Showing ${shown} of ${total} servers`,
-          emptyTracked: "No servers are being tracked yet.",
-          emptyFiltered: emptyCopy.emptyFiltered,
-          emptyFilteredHint: emptyCopy.emptyFilteredHint,
-        }
-      }
+      section={sectionCopy}
     />
   );
 }

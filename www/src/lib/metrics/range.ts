@@ -147,13 +147,24 @@ const METRIC_RANGE_GROUP_ORDER: Array<MetricRangeGroupId> = [
 ];
 
 export const METRIC_RANGE_GROUPS: Array<MetricRangeGroup> =
-  METRIC_RANGE_GROUP_ORDER.map((id) => ({
-    id,
-    label: METRIC_RANGE_GROUP_LABELS[id],
-    options: METRIC_RANGE_OPTION_DEFS.filter(
-      (option) => option.group === id,
-    ).map(({ value, label, shortLabel }) => ({ value, label, shortLabel })),
-  }));
+  METRIC_RANGE_GROUP_ORDER.map((id) => {
+    const options: MetricRangeGroup["options"] = [];
+    for (const option of METRIC_RANGE_OPTION_DEFS) {
+      if (option.group !== id) {
+        continue;
+      }
+      options.push({
+        value: option.value,
+        label: option.label,
+        shortLabel: option.shortLabel,
+      });
+    }
+    return {
+      id,
+      label: METRIC_RANGE_GROUP_LABELS[id],
+      options,
+    };
+  });
 
 const METRIC_RANGE_BY_VALUE = Object.fromEntries(
   METRIC_RANGE_OPTIONS.map((option) => [option.value, option]),

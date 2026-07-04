@@ -8,7 +8,11 @@ import {
   SERVER_SORT_STORAGE_KEY,
   serverSortToSearchParams,
 } from "@/lib/api/server-sort";
-import type { ServerSort, ServerSortField, SortOrder } from "@/lib/api/server-sort";
+import type {
+  ServerSort,
+  ServerSortField,
+  SortOrder,
+} from "@/lib/api/server-sort";
 import {
   localStorageJsonOptions,
   useLocalStorage,
@@ -24,16 +28,12 @@ export function usePersistedServerSort(
   search: ServerSortSearch,
 ) {
   const initialized = useRef(false);
-  const [storedSort, setStoredSort] = useLocalStorage(
-    SERVER_SORT_STORAGE_KEY,
-    {
-      defaultValue: DEFAULT_SERVER_SORT,
-      ...localStorageJsonOptions(parseStoredServerSort),
-    },
-  );
+  const [storedSort, setStoredSort] = useLocalStorage(SERVER_SORT_STORAGE_KEY, {
+    defaultValue: DEFAULT_SERVER_SORT,
+    ...localStorageJsonOptions(parseStoredServerSort),
+  });
 
-  const hasUrlSort =
-    search.sort !== undefined || search.order !== undefined;
+  const hasUrlSort = search.sort !== undefined || search.order !== undefined;
   const serverSort = hasUrlSort ? resolveServerSort(search) : storedSort;
 
   useLayoutEffect(() => {

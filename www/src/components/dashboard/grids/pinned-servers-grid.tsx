@@ -1,13 +1,12 @@
 import {
   DndContext,
-  
   KeyboardSensor,
   PointerSensor,
   closestCenter,
   useSensor,
-  useSensors
+  useSensors,
 } from "@dnd-kit/core";
-import type {DragEndEvent} from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
 import {
   SortableContext,
   arrayMove,
@@ -18,7 +17,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { GripVertical } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -82,27 +81,51 @@ function SortablePinnedItem({ id, children }: SortablePinnedItemProps) {
   );
 }
 
+function PinnedServerHeader({ server }: { server: ServerListItem }) {
+  const trailing = useMemo(
+    () => <ServerPinButton serverId={server.id} isPinned />,
+    [server.id],
+  );
+
+  return (
+    <ServerIdentityHeader server={server} linkToDetail trailing={trailing} />
+  );
+}
+
+function PinnedServerWrapItem({
+  item,
+  visibilityKey,
+  children,
+}: {
+  item: ServerListItem;
+  visibilityKey: string;
+  children: ReactNode;
+}) {
+  return (
+    <SortablePinnedItem key={visibilityKey} id={item.id}>
+      {children}
+    </SortablePinnedItem>
+  );
+}
+
 export function PinnedServersGrid({ servers, window }: PinnedServersGridProps) {
   const queryClient = useQueryClient();
-  const [items, setItems] = useState(servers);
+  const [optimisticItems, setOptimisticItems] = useState<
+    ServerListItem[] | null
+  >(null);
+  const items = optimisticItems ?? servers;
 
   const reorderMutation = useMutation({
     mutationFn: reorderPinnedServers,
     onSuccess: (data) => {
       queryClient.setQueryData(pinnedServersQueryKey, data);
-      setItems(data.servers);
+      setOptimisticItems(null);
     },
     onError: () => {
-      setItems(servers);
+      setOptimisticItems(null);
       toast.error("Failed to reorder pinned servers");
     },
   });
-
-  useEffect(() => {
-    if (!reorderMutation.isPending) {
-      setItems(servers);
-    }
-  }, [servers, reorderMutation.isPending]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -125,10 +148,46 @@ export function PinnedServersGrid({ servers, window }: PinnedServersGridProps) {
       }
 
       const nextItems = arrayMove(items, oldIndex, newIndex);
-      setItems(nextItems);
+      setOptimisticItems(nextItems);
       reorderMutation.mutate(nextItems.map((server) => server.id));
     },
     [items, reorderMutation],
+  );
+
+  const renderHeader = useCallback(
+    (server: ServerListItem) => <PinnedServerHeader server={server} />,
+    [],
+  );
+
+  const chartDef = useCallback(
+    (server: ServerListItem) =>
+      createServerPlayersChart(`pinned-server-players-${server.id}`),
+    [],
+  );
+
+  const timeseriesOptions = useCallback(
+    (server: ServerListItem, timeWindow: MetricTimeWindow) =>
+      toVisibleTimeseriesOptions(
+        serverTimeseriesQueryOptions(server.id, timeWindow),
+      ),
+    [],
+  );
+
+  const wrapItem = useCallback(
+    ({
+      item,
+      visibilityKey,
+      children,
+    }: {
+      item: ServerListItem;
+      visibilityKey: string;
+      children: ReactNode;
+    }) => (
+      <PinnedServerWrapItem item={item} visibilityKey={visibilityKey}>
+        {children}
+      </PinnedServerWrapItem>
+    ),
+    [],
   );
 
   if (servers.length === 0) {
@@ -150,27 +209,11 @@ export function PinnedServersGrid({ servers, window }: PinnedServersGridProps) {
           window={window}
           trackedCount={items.length}
           getKey={(server) => server.id}
-          renderHeader={(server) => (
-            <ServerIdentityHeader
-              server={server}
-              linkToDetail
-              trailing={<ServerPinButton serverId={server.id} isPinned />}
-            />
-          )}
-          chartDef={(server) =>
-            createServerPlayersChart(`pinned-server-players-${server.id}`)
-          }
-          timeseriesOptions={(server, timeWindow) =>
-            toVisibleTimeseriesOptions(
-              serverTimeseriesQueryOptions(server.id, timeWindow),
-            )
-          }
+          renderHeader={renderHeader}
+          chartDef={chartDef}
+          timeseriesOptions={timeseriesOptions}
           timeseriesEnabled={(server) => server.id.length > 0}
-          wrapItem={({ item, visibilityKey, children }) => (
-            <SortablePinnedItem key={visibilityKey} id={item.id}>
-              {children}
-            </SortablePinnedItem>
-          )}
+          wrapItem={wrapItem}
           section={{
             title: "Pinned servers",
             subtitleDefault: "Drag to rearrange",

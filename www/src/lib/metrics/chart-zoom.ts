@@ -60,17 +60,6 @@ export function resolveChartXWindow(
   return metricTimeWindowToEpochWindow(window);
 }
 
-export function chartXWindowKey(
-  window: MetricTimeWindow,
-  xWindow: MetricsDataWindow,
-): string {
-  if (window.kind === "custom") {
-    return `custom:${window.from}:${window.to}`;
-  }
-
-  return `preset:${xWindow.from}:${xWindow.to}`;
-}
-
 export function applyChartXWindow(
   chart: uPlot,
   xWindow: MetricsDataWindow,

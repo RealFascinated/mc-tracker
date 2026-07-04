@@ -1,9 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useSyncExternalStore,
-} from "react";
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 
 import { useLocalStorage } from "@/hooks/use-local-storage";

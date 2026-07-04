@@ -19,7 +19,6 @@ import {
   applyChartXWindow,
   resolveChartXWindow,
 } from "@/lib/metrics/chart-zoom";
-import { metricTimeWindowQueryKey } from "@/lib/metrics/time-window";
 import { useMetricsChartZoom } from "@/hooks/use-metrics-chart-zoom";
 import { cn } from "cnfast";
 import { useTheme } from "@/hooks/use-theme";
@@ -99,7 +98,10 @@ function MetricChart({
     "normal",
   );
   const layoutDensityRef = useRef(layoutDensity);
-  const yMaxFloorRef = useRef(new Map<string, number>());
+  const yMaxFloorRef = useRef<Map<string, number> | null>(null);
+  if (yMaxFloorRef.current === null) {
+    yMaxFloorRef.current = new Map();
+  }
   const activeLayout = chartLayoutForDensity(layoutDensity);
   const labelsKey = labels.join("\0");
   const negatedKey = negated.map(String).join("\0");
@@ -118,10 +120,10 @@ function MetricChart({
       chartAxes.map((axis) => {
         if (axis.yRange.max == null) return axis;
         const computed = axis.yRange.max;
-        const prev = yMaxFloorRef.current.get(axis.id) ?? 0;
+        const prev = yMaxFloorRef.current!.get(axis.id) ?? 0;
         const max =
           computed < prev * 0.85 ? computed : Math.max(prev, computed);
-        yMaxFloorRef.current.set(axis.id, max);
+        yMaxFloorRef.current!.set(axis.id, max);
         if (max === axis.yRange.max) return axis;
         return { ...axis, yRange: { ...axis.yRange, max } };
       }),
@@ -132,15 +134,12 @@ function MetricChart({
   const reserveUnitLabels = !compact && chartAxes.some((axis) => axis.visible);
 
   const timeWindow = chartZoom?.window ?? null;
-  const timeWindowKey = timeWindow
-    ? JSON.stringify(metricTimeWindowQueryKey(timeWindow))
-    : null;
   const xWindow = useMemo(() => {
     if (!timeWindow) {
       return undefined;
     }
     return resolveChartXWindow(timeWindow);
-  }, [timeWindow, timeWindowKey]);
+  }, [timeWindow]);
 
   const unitLabels = useMemo(() => {
     const axisLabels: Array<{ id: string; side: string; label: string }> = [];

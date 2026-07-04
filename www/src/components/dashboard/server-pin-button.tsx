@@ -21,8 +21,7 @@ export function ServerPinButton({
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: () =>
-      isPinned ? unpinServer(serverId) : pinServer(serverId),
+    mutationFn: () => (isPinned ? unpinServer(serverId) : pinServer(serverId)),
     onSuccess: (data) => {
       queryClient.setQueryData(pinnedServersQueryKey, data);
       toast.success(isPinned ? "Server unpinned" : "Server pinned");

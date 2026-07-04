@@ -55,7 +55,9 @@ impl ChatTool for GetServerStatsTool {
             .map(|(label, result)| {
                 (
                     *label,
-                    result.map(|summary| summary.summary).map_err(|err| err.to_string()),
+                    result
+                        .map(|summary| summary.summary)
+                        .map_err(|err| err.to_string()),
                 )
             })
             .collect();

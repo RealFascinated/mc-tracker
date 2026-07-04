@@ -116,26 +116,47 @@ export async function streamChat(
 
   const reader = stream.getReader();
   const decoder = new TextDecoder();
-  let buffer = "";
+  await readSseStream(reader, decoder, "", onEvent);
+}
 
-  let chunk = await reader.read();
-  while (!chunk.done) {
-    buffer += decoder.decode(chunk.value, { stream: true });
-    const frames = buffer.split("\n\n");
-    buffer = frames.pop() ?? "";
-    for (const frame of frames) {
-      const dataLine = frame
-        .split("\n")
-        .find((line) => line.startsWith("data: "));
-      if (!dataLine) {
-        continue;
-      }
-      const payload = dataLine.slice("data: ".length);
-      if (!payload) {
-        continue;
-      }
-      onEvent(JSON.parse(payload) as ChatStreamEvent);
+function dispatchSseFrames(
+  buffer: string,
+  onEvent: (event: ChatStreamEvent) => void,
+) {
+  const frames = buffer.split("\n\n");
+  const remainder = frames.pop() ?? "";
+  for (const frame of frames) {
+    const dataLine = frame
+      .split("\n")
+      .find((line) => line.startsWith("data: "));
+    if (!dataLine) {
+      continue;
     }
-    chunk = await reader.read();
+    const payload = dataLine.slice("data: ".length);
+    if (!payload) {
+      continue;
+    }
+    onEvent(JSON.parse(payload) as ChatStreamEvent);
   }
+  return remainder;
+}
+
+async function readSseStream(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  decoder: TextDecoder,
+  buffer: string,
+  onEvent: (event: ChatStreamEvent) => void,
+): Promise<void> {
+  const { done, value } = await reader.read();
+  if (done) {
+    return;
+  }
+
+  const nextBuffer = buffer + decoder.decode(value, { stream: true });
+  await readSseStream(
+    reader,
+    decoder,
+    dispatchSseFrames(nextBuffer, onEvent),
+    onEvent,
+  );
 }

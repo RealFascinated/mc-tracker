@@ -59,7 +59,7 @@ export const localStorageStringOptions = {
   deserialize: (raw: string) => raw,
 } as const;
 
-export const localStorageJsonOptions = <T,>(parse: (raw: unknown) => T | null) =>
+export const localStorageJsonOptions = <T>(parse: (raw: unknown) => T | null) =>
   ({
     serialize: (value: T) => JSON.stringify(value),
     deserialize: (raw: string) => {

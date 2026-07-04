@@ -1,7 +1,7 @@
 import type { UserRole } from "@/lib/auth/types";
 
 // Bit positions must stay in sync with mc-db/src/model/user_flags.rs
-export const UserFlag = {
+const UserFlag = {
   UNLIMITED_CHAT: 1 << 0,
 } as const;
 
