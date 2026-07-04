@@ -32,12 +32,7 @@ export const Route = createFileRoute("/_admin")({
 
 function AdminLayout() {
   return (
-    <AppShell
-      section="Administration"
-      nav={[...adminNav]}
-      backLink={{ to: "/servers", label: "Back to dashboard" }}
-      fullWidth
-    >
+    <AppShell section="Administration" nav={[...adminNav]} fullWidth>
       <Outlet />
     </AppShell>
   );

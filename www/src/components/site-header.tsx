@@ -8,6 +8,7 @@ import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-li
 import {
   DASHBOARD_HEADER_ROUTES,
   isDashboardHeaderRoute,
+  showsSiteHeaderPageNav,
 } from "@/lib/dashboard/header-routes";
 import { APP_NAME } from "@/lib/page-title";
 import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
@@ -17,9 +18,35 @@ function showsHeaderSearch(pathname: string): boolean {
   return pathname.startsWith("/servers");
 }
 
-function SiteHeaderDashboardBar() {
+function SiteHeaderPageNav() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
+
+  return (
+    <nav className="site-header-page-nav" aria-label="Dashboard pages">
+      {DASHBOARD_HEADER_ROUTES.map((item) => {
+        const active = pathname.startsWith(item.to);
+        return (
+          <Link
+            key={item.to}
+            to={item.to}
+            search={timeWindowSearch}
+            className={cn(
+              "site-header-page-nav-link",
+              active && "site-header-page-nav-link--active",
+            )}
+            aria-current={active ? "page" : undefined}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function SiteHeaderDashboardBar() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const metricSearch = useRouterState({
     select: (state) =>
       parseMetricTimeWindowSearch(
@@ -41,31 +68,26 @@ function SiteHeaderDashboardBar() {
       </div>
       <div className="site-header-nav">
         <div className="site-header-controls">
-          <nav className="site-header-page-nav" aria-label="Dashboard pages">
-            {DASHBOARD_HEADER_ROUTES.map((item) => {
-              const active = pathname.startsWith(item.to);
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  search={timeWindowSearch}
-                  className={cn(
-                    "site-header-page-nav-link",
-                    active && "site-header-page-nav-link--active",
-                  )}
-                  aria-current={active ? "page" : undefined}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <SiteHeaderPageNav />
           <DashboardTimeControls
             window={timeWindow}
             onPresetChange={setPresetTimeRange}
             onCustomChange={setCustomTimeRange}
           />
         </div>
+      </div>
+      <div className="site-header-actions">
+        <SiteHeaderActions iconOnly />
+      </div>
+    </>
+  );
+}
+
+function SiteHeaderAppBar() {
+  return (
+    <>
+      <div className="site-header-nav">
+        <SiteHeaderPageNav />
       </div>
       <div className="site-header-actions">
         <SiteHeaderActions iconOnly />
@@ -81,6 +103,7 @@ type SiteHeaderProps = {
 function SiteHeader({ className }: SiteHeaderProps) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isDashboardPage = isDashboardHeaderRoute(pathname);
+  const hasPageNav = showsSiteHeaderPageNav(pathname);
 
   return (
     <header
@@ -92,9 +115,12 @@ function SiteHeader({ className }: SiteHeaderProps) {
       <div
         className={cn(
           "site-header-inner mx-auto px-3 sm:px-5",
+          hasPageNav ? null : "max-w-7xl",
           isDashboardPage
             ? "site-header-inner--with-toolbar"
-            : "site-header-inner--simple max-w-7xl",
+            : hasPageNav
+              ? "site-header-inner--with-nav"
+              : "site-header-inner--simple",
         )}
       >
         <Link
@@ -106,6 +132,8 @@ function SiteHeader({ className }: SiteHeaderProps) {
 
         {isDashboardPage ? (
           <SiteHeaderDashboardBar />
+        ) : hasPageNav ? (
+          <SiteHeaderAppBar />
         ) : (
           <nav className="site-header-nav site-header-nav--simple">
             <SiteHeaderActions />

@@ -8,4 +8,12 @@ function isDashboardHeaderRoute(pathname: string): boolean {
   return DASHBOARD_HEADER_ROUTES.some((item) => pathname.startsWith(item.to));
 }
 
-export { DASHBOARD_HEADER_ROUTES, isDashboardHeaderRoute };
+function showsSiteHeaderPageNav(pathname: string): boolean {
+  return isDashboardHeaderRoute(pathname) || pathname.startsWith("/admin");
+}
+
+export {
+  DASHBOARD_HEADER_ROUTES,
+  isDashboardHeaderRoute,
+  showsSiteHeaderPageNav,
+};
