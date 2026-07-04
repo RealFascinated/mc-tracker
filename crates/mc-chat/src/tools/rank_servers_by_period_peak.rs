@@ -1,10 +1,9 @@
 use async_trait::async_trait;
-use serde_json::json;
 
 use crate::error::ChatError;
 use crate::tools::compact::compact_servers_period_peak_rank;
 use crate::tools::constants::{DEFAULT_RANK_LIMIT, MAX_RANK_LIMIT};
-use crate::tools::helpers::{require_str, tool_def};
+use crate::tools::helpers::{require_str, schema_time_range_limit, tool_def};
 use crate::traits::{ChatTool, ChatToolDeps};
 
 pub struct RankServersByPeriodPeakTool;
@@ -18,19 +17,8 @@ impl ChatTool for RankServersByPeriodPeakTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "rank_servers_by_period_peak",
-            "Rank tracked servers by highest player count reached during a time range. Use for which server had the most players this week/month — one call, not per-server summaries.",
-            json!({
-                "type": "object",
-                "properties": {
-                    "from": { "type": "string", "description": "Start bound, e.g. 30d or 7d" },
-                    "to": { "type": "string", "description": "End bound, e.g. now" },
-                    "limit": {
-                        "type": "integer",
-                        "description": "Max servers to return (default 10)"
-                    }
-                },
-                "required": ["from", "to"]
-            }),
+            "Rank servers by peak players reached during a range.",
+            schema_time_range_limit(),
         )
     }
 

@@ -1,10 +1,9 @@
 use async_trait::async_trait;
-use serde_json::json;
 
 use crate::error::ChatError;
 use crate::tools::compact::compact_asns_list;
 use crate::tools::constants::LIST_CAP;
-use crate::tools::helpers::{optional_search, tool_def, truncate};
+use crate::tools::helpers::{optional_search, schema_optional_search, tool_def, truncate};
 use crate::traits::{ChatTool, ChatToolDeps};
 
 pub struct ListAsnsTool;
@@ -18,16 +17,8 @@ impl ChatTool for ListAsnsTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "list_asns",
-            "List hosting ASN networks sorted by players online. Optional search filters by asn number or asnOrg label.",
-            json!({
-                "type": "object",
-                "properties": {
-                    "search": {
-                        "type": "string",
-                        "description": "Filter by ASN number or asnOrg label substring"
-                    }
-                }
-            }),
+            "List ASNs by players online; optional search filter.",
+            schema_optional_search(),
         )
     }
 

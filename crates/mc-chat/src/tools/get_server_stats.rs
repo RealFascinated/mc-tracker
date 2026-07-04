@@ -1,10 +1,9 @@
 use async_trait::async_trait;
 use futures::future::join_all;
-use serde_json::json;
 
 use crate::error::ChatError;
 use crate::tools::compact::compact_server_stats;
-use crate::tools::helpers::{resolve_server_id, tool_def};
+use crate::tools::helpers::{resolve_server_id, schema_server_lookup, tool_def};
 use crate::traits::{ChatTool, ChatToolDeps};
 
 const DEFAULT_PERIODS: &[&str] = &["7d", "30d"];
@@ -20,14 +19,8 @@ impl ChatTool for GetServerStatsTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "get_server_stats",
-            "Server snapshot plus player-count trends for 7d and 30d (to now) in one call. Use for stats about / tell me about / overview of a server — not get_server + separate timeseries calls.",
-            json!({
-                "type": "object",
-                "properties": {
-                    "server_id": { "type": "string", "description": "Server UUID" },
-                    "query": { "type": "string", "description": "Loose search when UUID unknown" }
-                }
-            }),
+            "Server snapshot plus 7d and 30d player trends. Prefer over get_server + timeseries.",
+            schema_server_lookup(),
         )
     }
 

@@ -1,9 +1,8 @@
 use async_trait::async_trait;
-use serde_json::json;
 
 use crate::error::ChatError;
 use crate::tools::compact::compact_timeseries_summary;
-use crate::tools::helpers::{require_str, tool_def};
+use crate::tools::helpers::{require_str, schema_time_range, tool_def};
 use crate::traits::{ChatTool, ChatToolDeps};
 
 pub struct TotalTimeseriesSummaryTool;
@@ -17,15 +16,8 @@ impl ChatTool for TotalTimeseriesSummaryTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "get_total_timeseries_summary",
-            "Network-wide player count trend summary, including downsampled points over the range. Use relative from/to like 7d and now.",
-            json!({
-                "type": "object",
-                "properties": {
-                    "from": { "type": "string", "description": "Start bound, e.g. 7d" },
-                    "to": { "type": "string", "description": "End bound, e.g. now" }
-                },
-                "required": ["from", "to"]
-            }),
+            "Network-wide player trend over a range.",
+            schema_time_range(),
         )
     }
 

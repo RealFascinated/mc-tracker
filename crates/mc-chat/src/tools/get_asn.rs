@@ -17,11 +17,11 @@ impl ChatTool for GetAsnTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "get_asn",
-            "ASN/hosting network lookup by asn number or asnOrg label. Only when the user asks about hosting, provider, or network — not server names.",
+            "Hosting ASN lookup by asn/asn_org or query. Not for server names.",
             json!({
                 "type": "object",
                 "properties": {
-                    "query": { "type": "string", "description": "Loose search, e.g. DonutSMP or OVH" },
+                    "query": { "type": "string" },
                     "asn": { "type": "string" },
                     "asn_org": { "type": "string" }
                 }

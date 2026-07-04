@@ -17,12 +17,12 @@ impl ChatTool for SearchServersTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "search_servers",
-            "Discover servers by keyword when no single server is named. Not for resolving a server the user already named — use get_server instead.",
+            "Keyword server discovery when name is unknown. Named servers → get_server.",
             json!({
                 "type": "object",
                 "properties": {
                     "query": { "type": "string" },
-                    "limit": { "type": "integer", "description": "Max results (default 5)" }
+                    "limit": { "type": "integer" }
                 },
                 "required": ["query"]
             }),

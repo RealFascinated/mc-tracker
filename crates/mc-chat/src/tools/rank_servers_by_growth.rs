@@ -1,10 +1,9 @@
 use async_trait::async_trait;
-use serde_json::json;
 
 use crate::error::ChatError;
 use crate::tools::compact::compact_servers_growth_rank;
 use crate::tools::constants::{DEFAULT_RANK_LIMIT, MAX_RANK_LIMIT};
-use crate::tools::helpers::{require_str, tool_def};
+use crate::tools::helpers::{require_str, schema_time_range_rank, tool_def};
 use crate::traits::{ChatTool, ChatToolDeps};
 
 pub struct RankServersByGrowthTool;
@@ -18,24 +17,8 @@ impl ChatTool for RankServersByGrowthTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "rank_servers_by_growth",
-            "Rank all tracked servers by player count change over a time range. Use for which server gained or lost the most — one call, not per-server summaries.",
-            json!({
-                "type": "object",
-                "properties": {
-                    "from": { "type": "string", "description": "Start bound, e.g. 30d or 7d" },
-                    "to": { "type": "string", "description": "End bound, e.g. now" },
-                    "limit": {
-                        "type": "integer",
-                        "description": "Max servers to return (default 10)"
-                    },
-                    "order": {
-                        "type": "string",
-                        "enum": ["gainers", "losers"],
-                        "description": "Rank by highest growth (gainers) or largest decline (losers). Default gainers."
-                    }
-                },
-                "required": ["from", "to"]
-            }),
+            "Rank servers by player count change over a range.",
+            schema_time_range_rank(),
         )
     }
 

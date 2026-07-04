@@ -17,11 +17,11 @@ impl ChatTool for LookupIpTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "lookup_ip",
-            "Resolve an IP address or hostname and look up its ASN/hosting network via MaxMind. Use when the user asks about a specific IP — not tracked server names (get_server) or ASN labels (get_asn).",
+            "IP or hostname → ASN/hosting. Not server names (get_server) or ASN labels (get_asn).",
             json!({
                 "type": "object",
                 "properties": {
-                    "query": { "type": "string", "description": "IPv4/IPv6 address or hostname" }
+                    "query": { "type": "string" }
                 },
                 "required": ["query"]
             }),

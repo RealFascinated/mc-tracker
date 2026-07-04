@@ -1,9 +1,8 @@
 use async_trait::async_trait;
-use serde_json::json;
 
 use crate::error::ChatError;
 use crate::tools::compact::compact_tracker_summary;
-use crate::tools::helpers::tool_def;
+use crate::tools::helpers::{schema_empty, tool_def};
 use crate::traits::{ChatTool, ChatToolDeps};
 
 pub struct GetTrackerSummaryTool;
@@ -17,11 +16,8 @@ impl ChatTool for GetTrackerSummaryTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "get_tracker_summary",
-            "Current network snapshot: total players online, Java/Bedrock split, tracked server count, and network peaks. Use for how many players are tracked right now — not list_servers.",
-            json!({
-                "type": "object",
-                "properties": {}
-            }),
+            "Network totals now: players online, Java/Bedrock split, server count, peaks. Not list_servers.",
+            schema_empty(),
         )
     }
 

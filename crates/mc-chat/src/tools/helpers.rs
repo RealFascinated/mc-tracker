@@ -17,6 +17,78 @@ pub fn tool_def(name: &str, description: &str, parameters: serde_json::Value) ->
     }
 }
 
+pub fn schema_empty() -> serde_json::Value {
+    serde_json::json!({ "type": "object", "properties": {} })
+}
+
+pub fn schema_optional_search() -> serde_json::Value {
+    serde_json::json!({
+        "type": "object",
+        "properties": {
+            "search": { "type": "string" }
+        }
+    })
+}
+
+pub fn schema_server_lookup() -> serde_json::Value {
+    serde_json::json!({
+        "type": "object",
+        "properties": {
+            "server_id": { "type": "string" },
+            "query": { "type": "string" }
+        }
+    })
+}
+
+pub fn schema_time_range() -> serde_json::Value {
+    serde_json::json!({
+        "type": "object",
+        "properties": {
+            "from": { "type": "string" },
+            "to": { "type": "string" }
+        },
+        "required": ["from", "to"]
+    })
+}
+
+pub fn schema_time_range_rank() -> serde_json::Value {
+    serde_json::json!({
+        "type": "object",
+        "properties": {
+            "from": { "type": "string" },
+            "to": { "type": "string" },
+            "limit": { "type": "integer" },
+            "order": { "type": "string", "enum": ["gainers", "losers"] }
+        },
+        "required": ["from", "to"]
+    })
+}
+
+pub fn schema_time_range_limit() -> serde_json::Value {
+    serde_json::json!({
+        "type": "object",
+        "properties": {
+            "from": { "type": "string" },
+            "to": { "type": "string" },
+            "limit": { "type": "integer" }
+        },
+        "required": ["from", "to"]
+    })
+}
+
+pub fn schema_server_time_range() -> serde_json::Value {
+    serde_json::json!({
+        "type": "object",
+        "properties": {
+            "server_id": { "type": "string" },
+            "query": { "type": "string" },
+            "from": { "type": "string" },
+            "to": { "type": "string" }
+        },
+        "required": ["from", "to"]
+    })
+}
+
 pub fn truncate<T>(items: &mut Vec<T>, cap: usize) -> bool {
     let truncated = items.len() > cap;
     if truncated {

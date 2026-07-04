@@ -1,9 +1,8 @@
 use async_trait::async_trait;
-use serde_json::json;
 
 use crate::error::ChatError;
 use crate::tools::compact::compact_server_timeseries_summary;
-use crate::tools::helpers::{require_str, resolve_server_id, tool_def};
+use crate::tools::helpers::{require_str, resolve_server_id, schema_server_time_range, tool_def};
 use crate::traits::{ChatTool, ChatToolDeps};
 
 pub struct ServerTimeseriesSummaryTool;
@@ -17,17 +16,8 @@ impl ChatTool for ServerTimeseriesSummaryTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "get_server_timeseries_summary",
-            "Player count trend summary for one server over a single range, including downsampled points. For stats/overview with both 7d and 30d, use get_server_stats instead.",
-            json!({
-                "type": "object",
-                "properties": {
-                    "server_id": { "type": "string" },
-                    "query": { "type": "string", "description": "Loose search when UUID unknown" },
-                    "from": { "type": "string", "description": "Start bound, e.g. 7d" },
-                    "to": { "type": "string", "description": "End bound, e.g. now" }
-                },
-                "required": ["from", "to"]
-            }),
+            "One-server player trend over a range. 7d+30d overview → get_server_stats.",
+            schema_server_time_range(),
         )
     }
 

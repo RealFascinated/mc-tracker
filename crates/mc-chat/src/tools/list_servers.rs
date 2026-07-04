@@ -1,10 +1,9 @@
 use async_trait::async_trait;
-use serde_json::json;
 
 use crate::error::ChatError;
 use crate::tools::compact::compact_servers_list;
 use crate::tools::constants::LIST_CAP;
-use crate::tools::helpers::{optional_search, tool_def, truncate};
+use crate::tools::helpers::{optional_search, schema_optional_search, tool_def, truncate};
 use crate::traits::{ChatTool, ChatToolDeps};
 
 pub struct ListServersTool;
@@ -18,16 +17,8 @@ impl ChatTool for ListServersTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "list_servers",
-            "List tracked servers sorted by players online. Optional search filters by name or host.",
-            json!({
-                "type": "object",
-                "properties": {
-                    "search": {
-                        "type": "string",
-                        "description": "Filter by server name or host substring"
-                    }
-                }
-            }),
+            "List servers by players online; optional search filter.",
+            schema_optional_search(),
         )
     }
 

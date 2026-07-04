@@ -20,18 +20,12 @@ impl ChatTool for RankServersNearPeakTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "rank_servers_near_peak",
-            "Find servers currently near their recent peak player count. Ranks by utilization (players online vs 24h peak, falling back to all-time peak).",
+            "Servers near recent peak (online vs 24h peak, else all-time).",
             json!({
                 "type": "object",
                 "properties": {
-                    "limit": {
-                        "type": "integer",
-                        "description": "Max servers to return (default 10)"
-                    },
-                    "min_utilization_pct": {
-                        "type": "number",
-                        "description": "Minimum utilization percent vs reference peak (default 90)"
-                    }
+                    "limit": { "type": "integer" },
+                    "min_utilization_pct": { "type": "number" }
                 }
             }),
         )

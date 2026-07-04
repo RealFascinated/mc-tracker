@@ -1,9 +1,8 @@
 use async_trait::async_trait;
-use serde_json::json;
 
 use crate::error::ChatError;
 use crate::tools::compact::compact_servers_all_time_peak;
-use crate::tools::helpers::tool_def;
+use crate::tools::helpers::{schema_empty, tool_def};
 use crate::traits::{ChatTool, ChatToolDeps};
 
 pub struct RankServersByAllTimePeakTool;
@@ -17,11 +16,8 @@ impl ChatTool for RankServersByAllTimePeakTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "rank_servers_by_all_time_peak",
-            "Find which tracked server(s) have the highest all-time player peak. Returns every server tied at the top.",
-            json!({
-                "type": "object",
-                "properties": {}
-            }),
+            "Servers with the highest all-time player peak (includes ties).",
+            schema_empty(),
         )
     }
 

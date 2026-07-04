@@ -21,23 +21,19 @@ impl ChatTool for CompareServersTool {
     fn definition(&self) -> crate::llm::types::ToolDefinition {
         tool_def(
             "compare_servers",
-            "Compare player count trends for 2–5 servers; each result includes downsampled points. Pass server_ids for a specific set, or server_id/query + peer_count to compare one server against the current top peers.",
+            "Compare 2–5 server trends. server_ids, or base server + peer_count.",
             json!({
                 "type": "object",
                 "properties": {
                     "server_ids": {
                         "type": "array",
-                        "items": { "type": "string" },
-                        "description": "Specific server UUIDs to compare (2–5)"
+                        "items": { "type": "string" }
                     },
-                    "server_id": { "type": "string", "description": "Base server UUID" },
-                    "query": { "type": "string", "description": "Base server name when UUID unknown" },
-                    "peer_count": {
-                        "type": "integer",
-                        "description": "With server_id/query: how many top servers to compare against (default 4)"
-                    },
-                    "from": { "type": "string", "description": "Start bound, e.g. 7d" },
-                    "to": { "type": "string", "description": "End bound, e.g. now" }
+                    "server_id": { "type": "string" },
+                    "query": { "type": "string" },
+                    "peer_count": { "type": "integer" },
+                    "from": { "type": "string" },
+                    "to": { "type": "string" }
                 },
                 "required": ["from", "to"]
             }),
