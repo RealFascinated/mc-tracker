@@ -980,7 +980,7 @@
     }
 
     .site-header-inner--with-toolbar .site-header-actions {
-      @apply shrink-0;
+      @apply ml-auto shrink-0;
       order: 5;
     }
   }

@@ -65,13 +65,13 @@ function SiteHeaderBar({ showDashboardControls }: SiteHeaderBarProps) {
 
   return (
     <>
-      {showDashboardControls ? (
-        <div className="site-header-toolbar">
-          <div className="dashboard-header-search-slot">
-            {showsHeaderSearch(pathname) ? <DashboardSearchInput /> : null}
-          </div>
+      <div className="site-header-toolbar">
+        <div className="dashboard-header-search-slot">
+          {showDashboardControls && showsHeaderSearch(pathname) ? (
+            <DashboardSearchInput />
+          ) : null}
         </div>
-      ) : null}
+      </div>
       <div className="site-header-nav">
         <div className="site-header-controls">
           <SiteHeaderPageNav />
