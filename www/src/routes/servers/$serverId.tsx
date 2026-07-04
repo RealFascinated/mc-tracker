@@ -89,7 +89,7 @@ function ServerDetailPage() {
                     to="/asns/$asn"
                     params={{ asn: server.asn }}
                     search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
-                    className="font-medium text-foreground underline-offset-4 hover:underline"
+                    className="link-underline-animate font-medium text-foreground"
                   >
                     network page
                   </Link>

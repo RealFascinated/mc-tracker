@@ -46,7 +46,17 @@ export function ServerIdentityHeader({
   const asnName = serverAsnName(server);
   const address = formatServerAddress(server);
 
-  const nameContent = <div className="entity-metrics-name">{server.name}</div>;
+  const nameContent = (
+    <div
+      className={cn(
+        "entity-metrics-name",
+        linkToDetail &&
+          "transition-colors group-hover:text-monitor dark:group-hover:text-warning",
+      )}
+    >
+      {server.name}
+    </div>
+  );
 
   return (
     <div
@@ -70,7 +80,7 @@ export function ServerIdentityHeader({
                   to="/servers/$serverId"
                   params={{ serverId: server.id }}
                   search={timeWindowSearch}
-                  className="min-w-0 hover:text-monitor focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:hover:text-warning dark:focus-visible:ring-warning"
+                  className="link-underline-animate group min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning"
                 >
                   {nameContent}
                 </Link>
@@ -91,7 +101,7 @@ export function ServerIdentityHeader({
                       to="/asns/$asn"
                       params={{ asn: server.asn }}
                       search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
-                      className="hover:text-foreground hover:underline underline-offset-4"
+                      className="link-underline-animate hover:text-foreground"
                     >
                       {asnName}
                     </Link>

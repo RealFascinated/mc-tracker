@@ -1277,6 +1277,33 @@
     @apply text-sm font-medium text-foreground;
   }
 
+  .link-underline-animate {
+    @apply relative inline-block max-w-full no-underline;
+  }
+
+  .link-underline-animate::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 1px;
+    background-color: var(--foreground);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 150ms ease;
+  }
+
+  .link-underline-animate:hover::after,
+  .link-underline-animate:focus-visible::after {
+    transform: scaleX(1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .link-underline-animate::after {
+      transition: none;
+    }
+  }
+
   .server-detail-asn-link {
     @apply border-t border-border pt-4;
   }
