@@ -8,14 +8,10 @@ import { AsnPlayersChart } from "@/components/dashboard/charts/asn-players-chart
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
 import { DashboardCardHeader } from "@/components/dashboard/dashboard-card-header";
 import { DashboardSearchInput } from "@/components/dashboard/dashboard-search-input";
-import { DashboardTimeControls } from "@/components/dashboard/dashboard-time-controls";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
-import {
-  SiteHeaderNav,
-  SiteHeaderToolbar,
-} from "@/components/site-header-toolbar";
+import { SiteHeaderDashboard } from "@/components/site-header-dashboard";
 import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import { usePersistedServerSort } from "@/hooks/use-persisted-server-sort";
@@ -128,23 +124,19 @@ function AsnDetailPage() {
 
   return (
     <>
-      <SiteHeaderNav>
-        <DashboardTimeControls
-          window={timeWindow}
-          onPresetChange={setPresetTimeRange}
-          onCustomChange={setCustomTimeRange}
-        />
-      </SiteHeaderNav>
-      <SiteHeaderToolbar>
-        <div className="dashboard-header-search-slot">
+      <SiteHeaderDashboard
+        window={timeWindow}
+        onPresetChange={setPresetTimeRange}
+        onCustomChange={setCustomTimeRange}
+        search={
           <DashboardSearchInput value={searchInput} onChange={setSearchInput} />
-        </div>
-      </SiteHeaderToolbar>
+        }
+      />
 
       <main className="dashboard-shell server-detail-page">
         <Link
-          to="/"
-          search={{ ...timeWindowSearch, view: "asn" }}
+          to="/asns"
+          search={timeWindowSearch}
           className="server-detail-back inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-3.5" aria-hidden />

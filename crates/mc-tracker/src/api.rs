@@ -8,19 +8,21 @@ use axum::routing::get;
 use axum::{Json, Router};
 use mc_api_types::{
     ApiError, ApiErrorCode, AsnDetailQuery, AsnTimeseriesQuery, AsnTimeseriesSummaryQuery,
-    AsnsListQuery, AsnsListResponse, HealthResponse, ServersListQuery, ServersListResponse,
-    ServersSearchQuery, ServersSearchResponse, TimeseriesQuery, TimeseriesSummaryQuery,
+    AsnsListQuery, AsnsListResponse, HealthResponse, ServersCompareQuery, ServersListQuery,
+    ServersListResponse, ServersSearchQuery, ServersSearchResponse, TimeseriesQuery,
+    TimeseriesSummaryQuery,
 };
 use mc_db::AppSettings;
 use mc_db::DbPool;
 use mc_geo::GeoService;
+use mc_common::constants::limits::MAX_COMPARE_SERVERS;
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use uuid::Uuid;
 
 use crate::admin;
 use crate::auth::{require_admin, AuthContext};
 use crate::chat::ChatRateLimiter;
-use crate::insights::{map_insights_error, InsightsService};
+use crate::insights::{map_insights_error, resolve_compare_max_points, InsightsService};
 use crate::manager::ServerManager;
 
 #[derive(Clone)]
@@ -79,6 +81,7 @@ pub fn router(
         .route("/health", get(health))
         .route("/servers", get(list_servers))
         .route("/servers/search", get(search_servers))
+        .route("/servers/compare/summary", get(servers_compare_summary))
         .route("/servers/timeseries/total", get(total_timeseries))
         .route("/servers/{id}", get(get_server))
         .route("/servers/{id}/timeseries", get(server_timeseries))
@@ -294,6 +297,53 @@ async fn asn_timeseries_summary(
             (status, Json(error)).into_response()
         }
     }
+}
+
+async fn servers_compare_summary(
+    State(state): State<AppState>,
+    Query(query): Query<ServersCompareQuery>,
+) -> Response {
+    let ids = match parse_compare_ids(&query.ids) {
+        Ok(ids) => ids,
+        Err(error) => return (StatusCode::BAD_REQUEST, Json(error)).into_response(),
+    };
+    let max_points = match resolve_compare_max_points(query.max_points) {
+        Ok(max_points) => max_points,
+        Err(err) => {
+            let (status, error) = map_insights_error(err);
+            return (status, Json(error)).into_response();
+        }
+    };
+    match state
+        .insights
+        .compare_servers(&ids, &query.from, &query.to, max_points)
+        .await
+    {
+        Ok(response) => Json(response).into_response(),
+        Err(err) => {
+            let (status, error) = map_insights_error(err);
+            (status, Json(error)).into_response()
+        }
+    }
+}
+
+fn parse_compare_ids(ids: &str) -> Result<Vec<Uuid>, ApiError> {
+    let ids: Result<Vec<Uuid>, _> = ids
+        .split(',')
+        .map(str::trim)
+        .filter(|part| !part.is_empty())
+        .map(Uuid::parse_str)
+        .collect();
+    let ids = ids.map_err(|_| {
+        ApiError::new(ApiErrorCode::BadRequest, "invalid server id in ids")
+    })?;
+    if ids.len() < 2 || ids.len() > MAX_COMPARE_SERVERS {
+        return Err(ApiError::new(
+            ApiErrorCode::BadRequest,
+            format!("need between 2 and {MAX_COMPARE_SERVERS} server ids"),
+        ));
+    }
+    Ok(ids)
 }
 
 async fn not_found() -> impl IntoResponse {

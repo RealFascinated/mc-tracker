@@ -119,6 +119,14 @@ export function metricTimeWindowToEpochWindow(window: MetricTimeWindow): {
   return { from, to };
 }
 
+export function metricTimeWindowToSummaryBounds(window: MetricTimeWindow): {
+  from: string;
+  to: string;
+} {
+  const { from, to } = metricTimeWindowToEpochWindow(window);
+  return { from: String(from), to: String(to) };
+}
+
 export function metricTimeWindowQueryKey(
   window: MetricTimeWindow,
 ): string | number[] {

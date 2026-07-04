@@ -73,6 +73,7 @@ type UseMetricChartInstanceParams = {
   tooltipSort:
     ((a: TooltipSortEntry, b: TooltipSortEntry) => number) | undefined;
   setLayoutDensity: Dispatch<SetStateAction<"normal" | "compact">>;
+  inlineLegend?: boolean;
 };
 
 function useMetricChartInstance({
@@ -115,6 +116,7 @@ function useMetricChartInstance({
   tooltipColumnSize,
   tooltipSort,
   setLayoutDensity,
+  inlineLegend = false,
 }: UseMetricChartInstanceParams) {
   const chartZoom = useMetricsChartZoom();
   const syncKey = useMetricsChartSyncKey() ?? undefined;
@@ -143,7 +145,10 @@ function useMetricChartInstance({
     const getChartSize = () => {
       const element = getSizeElement();
       const width = Math.max(element?.clientWidth ?? 1, 1);
-      const chartHeight = Math.max(element?.clientHeight ?? height, height);
+      const chartHeight =
+        element && element.clientHeight > 0
+          ? element.clientHeight
+          : height;
       return { width, height: chartHeight };
     };
 
@@ -181,6 +186,7 @@ function useMetricChartInstance({
       seriesColors: seriesColorsRef.current,
       seriesFills,
       xDrag,
+      inlineLegend,
     });
 
     const colors = seriesColorsRef.current ?? getChartColors();
@@ -264,6 +270,18 @@ function useMetricChartInstance({
     const sizeElement = getSizeElement();
     if (sizeElement) resizeObserver.observe(sizeElement);
 
+    const syncSizeAfterLayout = () => {
+      if (!chart) return;
+      const { width, height: chartHeight } = getChartSize();
+      if (width > 0 && chartHeight > 0) {
+        chart.setSize({ width, height: chartHeight });
+        syncUnitInsetsRef.current(chart);
+      }
+    };
+    requestAnimationFrame(() => {
+      requestAnimationFrame(syncSizeAfterLayout);
+    });
+
     unbindInteractionDismiss =
       showTooltip && tooltip
         ? bindChartInteractionDismiss(chart, tooltip)
@@ -295,6 +313,7 @@ function useMetricChartInstance({
     height,
     hiddenSeriesRef,
     hideYAxis,
+    inlineLegend,
     labels,
     labelsKey,
     layoutDensityRef,

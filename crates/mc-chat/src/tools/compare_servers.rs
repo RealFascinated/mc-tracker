@@ -8,7 +8,7 @@ use crate::tools::helpers::{
     compare_peer_ids, parse_uuid, require_str, resolve_server_id, tool_def,
 };
 use crate::traits::{ChatTool, ChatToolDeps};
-use mc_api_types::{ErrorTarget, ServerCompareItem, ServersCompareResponse};
+use mc_insights::DEFAULT_MAX_SUMMARY_POINTS;
 
 pub struct CompareServersTool;
 
@@ -69,24 +69,10 @@ impl ChatTool for CompareServersTool {
             return Err(ChatError::Tool("need at least 2 servers to compare".into()));
         }
 
-        let mut servers = Vec::with_capacity(ids.len());
-        let mut errors = Vec::new();
-        for id in ids {
-            match deps.insights.server_timeseries_summary(id, from, to).await {
-                Ok(summary) => servers.push(ServerCompareItem {
-                    id: summary.id,
-                    name: summary.name,
-                    summary: summary.summary,
-                }),
-                Err(err) => {
-                    errors.push(err.to_partial_error(ErrorTarget::Server { id: id.to_string() }))
-                }
-            }
-        }
-
-        Ok(compact_compare_servers(ServersCompareResponse {
-            servers,
-            errors,
-        }))
+        let response = deps
+            .insights
+            .compare_servers(&ids, from, to, DEFAULT_MAX_SUMMARY_POINTS)
+            .await?;
+        Ok(compact_compare_servers(response))
     }
 }

@@ -31,7 +31,7 @@ function SiteHeader({ className }: SiteHeaderProps) {
         )}
       >
         <Link
-          to="/"
+          to="/servers"
           className="site-header-brand shrink-0 text-base font-bold text-foreground hover:text-monitor dark:hover:text-warning"
         >
           {APP_NAME}

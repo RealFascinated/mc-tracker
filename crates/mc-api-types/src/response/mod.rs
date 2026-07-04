@@ -26,7 +26,7 @@ pub use self::error::{ApiError, ApiErrorCode, ErrorTarget, PartialError};
 pub use self::health::HealthResponse;
 pub use self::insights::{
     AsnGrowthRankItem, AsnTimeseriesSummaryResponse, AsnsGrowthRankResponse, GrowthRankOrder,
-    ServerCompareItem, ServerGrowthRankItem, ServerPeriodPeakRankItem,
+    ServersCompareItem, ServerGrowthRankItem, ServerPeriodPeakRankItem,
     ServerTimeseriesSummaryResponse, ServersCompareResponse, ServersGrowthRankResponse,
     ServersPeriodPeakRankResponse, SummaryPoint, TimeseriesSummaryResponse, TrendDirection,
 };

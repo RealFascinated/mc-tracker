@@ -222,6 +222,8 @@ type BuildUPlotOptionsParams = {
   seriesColors?: Array<string>;
   seriesFills?: Array<boolean | undefined>;
   xDrag?: boolean;
+  /** Legend row sits directly above the plot; use tighter top padding. */
+  inlineLegend?: boolean;
 };
 
 const SCALE_KEYS = ["y", "y2", "y3", "y4", "y5"] as const;
@@ -350,6 +352,7 @@ export function buildUPlotOptions({
   seriesColors,
   seriesFills,
   xDrag = false,
+  inlineLegend = false,
 }: BuildUPlotOptionsParams): uPlot.Options {
   const colors = getChartColors();
   const { gridColor, axisColor } = chartThemeColors();
@@ -515,7 +518,11 @@ export function buildUPlotOptions({
     padding: compact
       ? [2, 0, 2, 0]
       : [
-          reserveUnitLabels ? layout.paddingTopWithUnits : layout.paddingTop,
+          inlineLegend
+            ? 6
+            : reserveUnitLabels
+              ? layout.paddingTopWithUnits
+              : layout.paddingTop,
           hasVisibleRight ? layout.paddingRightDual : layout.paddingRight,
           layout.paddingBottom,
           layout.paddingLeft,

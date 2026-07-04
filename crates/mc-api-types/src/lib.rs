@@ -4,7 +4,9 @@ pub mod response;
 pub use request::asns::{AsnDetailQuery, AsnTimeseriesQuery, AsnsListQuery};
 pub use request::auth::{ChangePasswordRequest, LoginRequest, SignupRequest};
 pub use request::chat::{ChatContextServer, ChatRequest};
-pub use request::insights::{AsnTimeseriesSummaryQuery, TimeseriesSummaryQuery};
+pub use request::insights::{
+    AsnTimeseriesSummaryQuery, ServersCompareQuery, TimeseriesSummaryQuery,
+};
 pub use request::pinned_servers::{PinServerRequest, ReorderPinnedServersRequest};
 pub use request::servers::{
     CreateServerRequest, ServersListQuery, ServersListSortField, ServersSearchQuery, SortOrder,
@@ -21,7 +23,7 @@ pub use response::{
     ChatTokenUsage, ChatToolCallRecord, EntityPeakStats, ErrorTarget, GrowthRankOrder,
     HealthResponse, IpLookupResponse, LoginResponse, MeResponse, PartialError,
     PatchUserFlagsResponse, PeakPlayersRecord, PinnedServersListResponse, PlayersPeakSummary,
-    ServerCompareItem, ServerGrowthRankItem, ServerListItemResponse, ServerPeriodPeakRankItem,
+    ServerGrowthRankItem, ServerListItemResponse, ServerPeriodPeakRankItem, ServersCompareItem,
     ServerSearchItemResponse, ServerTimeseriesResponse, ServerTimeseriesSummaryResponse,
     ServersCompareResponse, ServersGrowthRankResponse, ServersListResponse,
     ServersPeriodPeakRankResponse, ServersSearchResponse, ServersSummaryResponse, SettingsResponse,

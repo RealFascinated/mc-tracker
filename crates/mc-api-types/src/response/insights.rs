@@ -1,6 +1,7 @@
 use serde::Serialize;
 
 use super::error::PartialError;
+use super::servers::ServerListItemResponse;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -121,16 +122,16 @@ pub struct AsnsGrowthRankResponse {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ServerCompareItem {
-    pub id: String,
-    pub name: String,
-    #[serde(flatten)]
+pub struct ServersCompareItem {
+    pub server: ServerListItemResponse,
     pub summary: TimeseriesSummaryResponse,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServersCompareResponse {
-    pub servers: Vec<ServerCompareItem>,
+    pub from: i64,
+    pub to: i64,
+    pub servers: Vec<ServersCompareItem>,
     pub errors: Vec<PartialError>,
 }

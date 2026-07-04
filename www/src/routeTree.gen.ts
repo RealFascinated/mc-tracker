@@ -11,9 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ServersIndexRouteImport } from './routes/servers/index'
+import { Route as AsnsIndexRouteImport } from './routes/asns/index'
 import { Route as ServersServerIdRouteImport } from './routes/servers/$serverId'
 import { Route as AsnsAsnRouteImport } from './routes/asns/$asn'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
@@ -32,6 +35,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -43,6 +51,16 @@ const AdminRoute = AdminRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServersIndexRoute = ServersIndexRouteImport.update({
+  id: '/servers/',
+  path: '/servers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AsnsIndexRoute = AsnsIndexRouteImport.update({
+  id: '/asns/',
+  path: '/asns/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServersServerIdRoute = ServersServerIdRouteImport.update({
@@ -83,11 +101,14 @@ const AdminAdminServersRoute = AdminAdminServersRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/compare': typeof CompareRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/account': typeof AuthenticatedAccountRoute
   '/asns/$asn': typeof AsnsAsnRoute
   '/servers/$serverId': typeof ServersServerIdRoute
+  '/asns/': typeof AsnsIndexRoute
+  '/servers/': typeof ServersIndexRoute
   '/admin/servers': typeof AdminAdminServersRoute
   '/admin/settings': typeof AdminAdminSettingsRoute
   '/admin/users': typeof AdminAdminUsersRoute
@@ -95,11 +116,14 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/compare': typeof CompareRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/account': typeof AuthenticatedAccountRoute
   '/asns/$asn': typeof AsnsAsnRoute
   '/servers/$serverId': typeof ServersServerIdRoute
+  '/asns': typeof AsnsIndexRoute
+  '/servers': typeof ServersIndexRoute
   '/admin/servers': typeof AdminAdminServersRoute
   '/admin/settings': typeof AdminAdminSettingsRoute
   '/admin/users': typeof AdminAdminUsersRoute
@@ -110,11 +134,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_admin': typeof AdminRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/compare': typeof CompareRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/asns/$asn': typeof AsnsAsnRoute
   '/servers/$serverId': typeof ServersServerIdRoute
+  '/asns/': typeof AsnsIndexRoute
+  '/servers/': typeof ServersIndexRoute
   '/_admin/admin/servers': typeof AdminAdminServersRoute
   '/_admin/admin/settings': typeof AdminAdminSettingsRoute
   '/_admin/admin/users': typeof AdminAdminUsersRoute
@@ -124,11 +151,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/compare'
     | '/login'
     | '/signup'
     | '/account'
     | '/asns/$asn'
     | '/servers/$serverId'
+    | '/asns/'
+    | '/servers/'
     | '/admin/servers'
     | '/admin/settings'
     | '/admin/users'
@@ -136,11 +166,14 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/compare'
     | '/login'
     | '/signup'
     | '/account'
     | '/asns/$asn'
     | '/servers/$serverId'
+    | '/asns'
+    | '/servers'
     | '/admin/servers'
     | '/admin/settings'
     | '/admin/users'
@@ -150,11 +183,14 @@ export interface FileRouteTypes {
     | '/'
     | '/_admin'
     | '/_authenticated'
+    | '/compare'
     | '/login'
     | '/signup'
     | '/_authenticated/account'
     | '/asns/$asn'
     | '/servers/$serverId'
+    | '/asns/'
+    | '/servers/'
     | '/_admin/admin/servers'
     | '/_admin/admin/settings'
     | '/_admin/admin/users'
@@ -165,10 +201,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  CompareRoute: typeof CompareRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   AsnsAsnRoute: typeof AsnsAsnRoute
   ServersServerIdRoute: typeof ServersServerIdRoute
+  AsnsIndexRoute: typeof AsnsIndexRoute
+  ServersIndexRoute: typeof ServersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -185,6 +224,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -206,6 +252,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/servers/': {
+      id: '/servers/'
+      path: '/servers'
+      fullPath: '/servers/'
+      preLoaderRoute: typeof ServersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/asns/': {
+      id: '/asns/'
+      path: '/asns'
+      fullPath: '/asns/'
+      preLoaderRoute: typeof AsnsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/servers/$serverId': {
@@ -292,10 +352,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  CompareRoute: CompareRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   AsnsAsnRoute: AsnsAsnRoute,
   ServersServerIdRoute: ServersServerIdRoute,
+  AsnsIndexRoute: AsnsIndexRoute,
+  ServersIndexRoute: ServersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

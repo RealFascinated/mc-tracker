@@ -52,6 +52,12 @@ type MetricChartProps = {
   xTime?: boolean;
   seriesColors?: Array<string>;
   seriesFills?: Array<boolean | undefined>;
+  /** Size chart to a flex parent instead of a fixed pixel height. */
+  fill?: boolean;
+  /** Mount target when `fill` (e.g. hydration / resize observer ref). */
+  mountRef?: RefObject<HTMLDivElement | null>;
+  /** Legend row sits directly above the plot; use tighter top padding. */
+  inlineLegend?: boolean;
 };
 
 const axisUnitClassName =
@@ -79,8 +85,12 @@ function MetricChart({
   xTime = true,
   seriesColors,
   seriesFills,
+  fill = false,
+  mountRef,
+  inlineLegend = false,
 }: MetricChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const localContainerRef = useRef<HTMLDivElement>(null);
+  const containerRef = mountRef ?? localContainerRef;
   const chartRef = useRef<uPlot | null>(null);
   const seriesFormattersRef = useRef(seriesFormatters);
   const dataRef = useRef(data);
@@ -241,6 +251,7 @@ function MetricChart({
     tooltipColumnSize,
     tooltipSort,
     setLayoutDensity,
+    inlineLegend,
   });
 
   useLayoutEffect(() => {
@@ -271,7 +282,12 @@ function MetricChart({
   const rightUnits = unitLabels.filter((entry) => entry.side === "right");
 
   return (
-    <div className="relative h-full w-full">
+    <div
+      className={cn(
+        "relative w-full",
+        fill ? "flex min-h-0 flex-1 flex-col" : "h-full",
+      )}
+    >
       {reserveUnitLabels && leftUnit ? (
         <span className={axisUnitClassName} style={{ left: unitInsets.left }}>
           {leftUnit.label}
@@ -292,7 +308,10 @@ function MetricChart({
             </span>
           ))
         : null}
-      <div ref={containerRef} className="h-full w-full" />
+      <div
+        ref={containerRef}
+        className={cn("w-full", fill ? "min-h-0 flex-1" : "h-full")}
+      />
     </div>
   );
 }

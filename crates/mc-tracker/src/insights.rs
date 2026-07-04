@@ -5,9 +5,10 @@ use futures::future::join_all;
 use mc_api_types::{
     AsnGrowthRankItem, AsnTimeseriesSummaryResponse, AsnsGrowthRankResponse, ErrorTarget,
     GrowthRankOrder, ServerGrowthRankItem, ServerPeriodPeakRankItem,
-    ServerTimeseriesSummaryResponse, ServersGrowthRankResponse, ServersPeriodPeakRankResponse,
-    TimeseriesSummaryResponse,
+    ServerTimeseriesSummaryResponse, ServersCompareItem, ServersCompareResponse,
+    ServersGrowthRankResponse, ServersPeriodPeakRankResponse, TimeseriesSummaryResponse,
 };
+use mc_common::constants::limits::MAX_COMPARE_SERVERS;
 use mc_common::constants::limits::DEFAULT_LIST_LIMIT;
 use mc_insights::{
     AnalyzeOptions, DefaultTimeRangeParser, DefaultTimeseriesAnalyzer, InsightsError,
@@ -64,7 +65,7 @@ impl InsightsService {
             .server_timeseries(id, range.from, range.to)
             .await
             .map_err(map_metrics_error)?;
-        let summary = self.summarize(&timeseries.timeseries, range)?;
+        let summary = self.summarize(&timeseries.timeseries, range, DEFAULT_MAX_SUMMARY_POINTS)?;
         Ok(ServerTimeseriesSummaryResponse {
             id: detail.id,
             name: detail.name,
@@ -83,7 +84,7 @@ impl InsightsService {
             .total_timeseries(range.from, range.to)
             .await
             .map_err(map_metrics_error)?;
-        self.summarize(&timeseries.timeseries, range)
+        self.summarize(&timeseries.timeseries, range, DEFAULT_MAX_SUMMARY_POINTS)
     }
 
     pub async fn asn_timeseries_summary(
@@ -99,7 +100,7 @@ impl InsightsService {
             .asn_timeseries(asn, asn_org, range.from, range.to)
             .await
             .map_err(map_metrics_error)?;
-        let summary = self.summarize(&timeseries.timeseries, range)?;
+        let summary = self.summarize(&timeseries.timeseries, range, DEFAULT_MAX_SUMMARY_POINTS)?;
         Ok(AsnTimeseriesSummaryResponse {
             asn: timeseries.asn,
             asn_org: timeseries.asn_org,
@@ -277,6 +278,73 @@ impl InsightsService {
         })
     }
 
+    pub async fn compare_servers(
+        &self,
+        ids: &[Uuid],
+        from: &str,
+        to: &str,
+        max_points: usize,
+    ) -> Result<ServersCompareResponse, InsightsError> {
+        if ids.len() < 2 || ids.len() > MAX_COMPARE_SERVERS {
+            return Err(InsightsError::InvalidRange(format!(
+                "need between 2 and {MAX_COMPARE_SERVERS} server ids"
+            )));
+        }
+        let range = self.parse_range(from, to)?;
+        if max_points == 0 {
+            return Err(InsightsError::InvalidRange(
+                "max_points must be at least 1".into(),
+            ));
+        }
+        let max_points = max_points.min(mc_metrics::max_points() as usize);
+
+        let futures: Vec<_> = ids
+            .iter()
+            .map(|&id| self.compare_server_item(id, range, max_points))
+            .collect();
+        let results = join_all(futures).await;
+
+        let mut servers = Vec::with_capacity(results.len());
+        let mut errors = Vec::new();
+        for (&id, result) in ids.iter().zip(results) {
+            match result {
+                Ok(item) => servers.push(item),
+                Err(err) => {
+                    errors.push(err.to_partial_error(ErrorTarget::Server {
+                        id: id.to_string(),
+                    }))
+                }
+            }
+        }
+
+        Ok(ServersCompareResponse {
+            from: range.from,
+            to: range.to,
+            servers,
+            errors,
+        })
+    }
+
+    async fn compare_server_item(
+        &self,
+        id: Uuid,
+        range: ResolvedTimeRange,
+        max_points: usize,
+    ) -> Result<ServersCompareItem, InsightsError> {
+        let server = self
+            .manager
+            .server_detail_response(id)
+            .await
+            .ok_or_else(|| InsightsError::InvalidRange("server not found".into()))?;
+        let timeseries = self
+            .manager
+            .server_timeseries(id, range.from, range.to)
+            .await
+            .map_err(map_metrics_error)?;
+        let summary = self.summarize(&timeseries.timeseries, range, max_points)?;
+        Ok(ServersCompareItem { server, summary })
+    }
+
     fn parse_range(&self, from: &str, to: &str) -> Result<ResolvedTimeRange, InsightsError> {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -289,14 +357,28 @@ impl InsightsService {
         &self,
         lanes: &mc_api_types::TimeseriesLanes,
         _range: ResolvedTimeRange,
+        max_points: usize,
     ) -> Result<TimeseriesSummaryResponse, InsightsError> {
         self.analyzer.summarize(
             lanes,
-            AnalyzeOptions {
-                max_points: DEFAULT_MAX_SUMMARY_POINTS,
-            },
+            AnalyzeOptions { max_points },
         )
     }
+}
+
+pub fn resolve_compare_max_points(requested: Option<usize>) -> Result<usize, InsightsError> {
+    resolve_summary_max_points(requested, mc_metrics::max_points() as usize)
+}
+
+fn resolve_summary_max_points(requested: Option<usize>, default: usize) -> Result<usize, InsightsError> {
+    let cap = mc_metrics::max_points() as usize;
+    let points = requested.unwrap_or(default);
+    if points == 0 {
+        return Err(InsightsError::InvalidRange(
+            "max_points must be at least 1".into(),
+        ));
+    }
+    Ok(points.min(cap))
 }
 
 #[async_trait]
@@ -355,6 +437,16 @@ impl mc_chat::InsightsRead for InsightsService {
         order: GrowthRankOrder,
     ) -> Result<AsnsGrowthRankResponse, InsightsError> {
         self.rank_asns_by_growth(from, to, limit, order).await
+    }
+
+    async fn compare_servers(
+        &self,
+        ids: &[Uuid],
+        from: &str,
+        to: &str,
+        max_points: usize,
+    ) -> Result<ServersCompareResponse, InsightsError> {
+        self.compare_servers(ids, from, to, max_points).await
     }
 }
 

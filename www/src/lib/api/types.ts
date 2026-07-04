@@ -64,11 +64,6 @@ export type PartialError = {
   target: ErrorTarget;
 };
 
-export type ServersCompareResponse = {
-  servers: ServerTimeseriesSummaryResponse[];
-  errors: PartialError[];
-};
-
 export type TrendDirection = "growing" | "stable" | "declining" | "unknown";
 
 export type SummaryPoint = {

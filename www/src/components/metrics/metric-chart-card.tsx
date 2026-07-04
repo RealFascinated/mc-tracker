@@ -160,6 +160,7 @@ type MetricChartPanelProps = {
   seriesColors?: Array<string>;
   seriesFills?: Array<boolean | undefined>;
   queryWindow?: MetricsDataWindow;
+  inlineLegend?: boolean;
 };
 
 function MetricChartPanel({
@@ -177,18 +178,56 @@ function MetricChartPanel({
   seriesColors,
   seriesFills,
   queryWindow,
+  inlineLegend = false,
 }: MetricChartPanelProps) {
   const seriesAxisIds = built
     ? built.sourceIndices.map((index) => config.series[index]?.axis ?? "left")
     : [];
+
+  if (fill) {
+    return (
+      <div className={cn("flex min-h-0 w-full flex-1 flex-col", className)}>
+        {built ? (
+          <MetricChart
+            fill
+            mountRef={containerRef}
+            sizeRef={containerRef}
+            data={built.data}
+            labels={built.labels}
+            chartAxes={config.axes}
+            seriesAxisIds={seriesAxisIds}
+            negated={built.negated}
+            seriesRenders={built.renders}
+            seriesFormatters={config.seriesFormatters}
+            height={height}
+            mode={mode}
+            tooltipColumnSize={tooltipColumnSize}
+            tooltipSort={tooltipSort}
+            hiddenSeries={hiddenSeries}
+            sourceIndices={built.sourceIndices}
+            seriesColors={seriesColors}
+            seriesFills={seriesFills}
+            queryWindow={queryWindow}
+            inlineLegend={inlineLegend}
+          />
+        ) : (
+          <div
+            ref={containerRef}
+            id={chartId}
+            className="min-h-0 w-full flex-1"
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={cn("flex w-full flex-col", className)}>
       <div
         ref={containerRef}
         id={chartId}
-        className={cn("relative w-full", fill && "min-h-0 flex-1")}
-        style={fill ? { minHeight: height } : { height }}
+        className="relative w-full"
+        style={{ height }}
       >
         {built ? (
           <MetricChart
@@ -209,6 +248,7 @@ function MetricChartPanel({
             seriesColors={seriesColors}
             seriesFills={seriesFills}
             queryWindow={queryWindow}
+            inlineLegend={inlineLegend}
           />
         ) : null}
       </div>
@@ -343,6 +383,7 @@ function MetricChartCard({
     </div>
   ) : null;
   const inlineLegendNode = hideLegend ? null : seriesLegendNode;
+  const inlineLegend = Boolean(hideHeader && inlineLegendNode);
 
   return (
     <div
@@ -372,7 +413,7 @@ function MetricChartCard({
         </div>
       )}
       {hideHeader && inlineLegendNode ? (
-        <div id={`${config.id}-legend`} className="shrink-0 px-3 py-1.5">
+        <div id={`${config.id}-legend`} className="shrink-0 px-3 pt-1 pb-0">
           {inlineLegendNode}
         </div>
       ) : null}
@@ -390,6 +431,7 @@ function MetricChartCard({
           seriesColors={builtSeriesColors}
           seriesFills={builtSeriesFills}
           queryWindow={queryWindow}
+          inlineLegend={inlineLegend}
         />
       </div>
 

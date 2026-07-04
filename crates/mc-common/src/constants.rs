@@ -1,6 +1,8 @@
 pub mod limits {
     /// Default cap for list/search/rank endpoints and chat tool results.
     pub const DEFAULT_LIST_LIMIT: u32 = 25;
+    /// Max servers in a compare request (chat + HTTP).
+    pub const MAX_COMPARE_SERVERS: usize = 5;
 }
 
 pub mod time {

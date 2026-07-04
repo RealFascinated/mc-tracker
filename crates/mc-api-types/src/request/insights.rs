@@ -9,6 +9,15 @@ pub struct TimeseriesSummaryQuery {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ServersCompareQuery {
+    pub ids: String,
+    pub from: String,
+    pub to: String,
+    pub max_points: Option<usize>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AsnTimeseriesSummaryQuery {
     pub from: String,
     pub to: String,

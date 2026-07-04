@@ -745,8 +745,17 @@
     @apply w-fit max-w-full min-w-0 shrink max-sm:shrink-0;
   }
 
-  .site-header-controls .site-header-view-toggle {
-    @apply shrink-0;
+  .site-header-page-nav {
+    @apply inline-flex shrink-0 items-center rounded-snug bg-muted p-0.5;
+  }
+
+  .site-header-page-nav-link {
+    @apply inline-flex h-7 items-center rounded-snug px-2.5 text-xs font-medium text-muted-foreground transition-colors;
+    @apply hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning;
+  }
+
+  .site-header-page-nav-link--active {
+    @apply font-semibold text-monitor dark:text-warning;
   }
 
   .site-header-nav--simple {
@@ -772,9 +781,6 @@
     @apply size-9 px-0 lg:size-auto lg:px-3;
   }
 
-  .site-header-nav .dashboard-range-toggle {
-    @apply shrink-0;
-  }
 
   .dashboard-time-controls {
     @apply inline-flex h-8 max-w-full items-stretch overflow-hidden rounded-snug border border-border bg-muted/60;
@@ -949,7 +955,7 @@
       order: 1;
     }
 
-    .site-header-inner--with-toolbar .site-header-view-toggle {
+    .site-header-inner--with-toolbar .site-header-page-nav {
       order: 2;
     }
 
@@ -1056,8 +1062,6 @@
 
   .hero-chart-panel .uplot {
     box-sizing: border-box;
-    height: 100%;
-    padding: 0.25rem 0.5rem 0.5rem;
   }
 
   .server-favicon {

@@ -167,11 +167,13 @@ pub fn compact_asn_search(response: &mc_api_types::AsnSearchResponse) -> Value {
 
 pub fn compact_compare_servers(response: ServersCompareResponse) -> Value {
     json!({
-        "servers": response.servers.iter().map(|server| {
-            let mut value = compact_timeseries_summary(&server.summary);
+        "from": response.from,
+        "to": response.to,
+        "servers": response.servers.iter().map(|item| {
+            let mut value = compact_timeseries_summary(&item.summary);
             if let Value::Object(ref mut map) = value {
-                map.insert("id".into(), json!(server.id));
-                map.insert("name".into(), json!(server.name));
+                map.insert("id".into(), json!(item.server.id));
+                map.insert("name".into(), json!(item.server.name));
             }
             value
         }).collect::<Vec<_>>(),

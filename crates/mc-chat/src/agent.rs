@@ -686,6 +686,16 @@ mod tests {
         ) -> Result<mc_api_types::AsnsGrowthRankResponse, mc_insights::InsightsError> {
             Err(mc_insights::InsightsError::NoData)
         }
+
+        async fn compare_servers(
+            &self,
+            _: &[Uuid],
+            _: &str,
+            _: &str,
+            _: usize,
+        ) -> Result<mc_api_types::ServersCompareResponse, mc_insights::InsightsError> {
+            Err(mc_insights::InsightsError::NoData)
+        }
     }
 
     #[tokio::test]

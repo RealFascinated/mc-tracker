@@ -6,8 +6,8 @@ use futures::Stream;
 use mc_api_types::{
     AsnDetailResponse, AsnSearchResponse, AsnTimeseriesSummaryResponse, AsnsGrowthRankResponse,
     AsnsListResponse, GrowthRankOrder, IpLookupResponse, ServerListItemResponse,
-    ServerTimeseriesSummaryResponse, ServersGrowthRankResponse, ServersListResponse,
-    ServersSearchResponse, ServersSummaryResponse, TimeseriesSummaryResponse,
+    ServerTimeseriesSummaryResponse, ServersCompareResponse, ServersGrowthRankResponse,
+    ServersListResponse, ServersSearchResponse, ServersSummaryResponse, TimeseriesSummaryResponse,
 };
 use uuid::Uuid;
 
@@ -76,6 +76,14 @@ pub trait InsightsRead: Send + Sync {
         limit: u32,
         order: GrowthRankOrder,
     ) -> Result<AsnsGrowthRankResponse, mc_insights::InsightsError>;
+
+    async fn compare_servers(
+        &self,
+        ids: &[Uuid],
+        from: &str,
+        to: &str,
+        max_points: usize,
+    ) -> Result<ServersCompareResponse, mc_insights::InsightsError>;
 }
 
 #[async_trait]

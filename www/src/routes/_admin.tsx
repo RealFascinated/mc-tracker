@@ -35,7 +35,7 @@ function AdminLayout() {
     <AppShell
       section="Administration"
       nav={[...adminNav]}
-      backLink={{ to: "/", label: "Back to dashboard" }}
+      backLink={{ to: "/servers", label: "Back to dashboard" }}
       fullWidth
     >
       <Outlet />
