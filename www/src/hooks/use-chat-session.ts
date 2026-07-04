@@ -53,8 +53,33 @@ export function useChatSession() {
   }, []);
 
   const cancelStream = useCallback(() => {
-    abortRef.current?.abort();
+    const controller = abortRef.current;
+    if (!controller) {
+      return;
+    }
+    controller.abort();
     abortRef.current = null;
+    setIsStreaming(false);
+    setToolStatus(null);
+    setMessages((current) => {
+      const streaming = current.find((message) => message.id === STREAMING_ID);
+      if (!streaming) {
+        return current;
+      }
+      const hasContent =
+        streaming.content.trim().length > 0 ||
+        (streaming.toolCalls?.length ?? 0) > 0;
+      const withoutStreaming = current.filter(
+        (message) => message.id !== STREAMING_ID,
+      );
+      if (!hasContent) {
+        return withoutStreaming;
+      }
+      return [
+        ...withoutStreaming,
+        { ...streaming, id: crypto.randomUUID() },
+      ];
+    });
   }, []);
 
   const startNewChat = useCallback(() => {
@@ -168,9 +193,6 @@ export function useChatSession() {
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        setMessages((current) =>
-          current.filter((message) => message.id !== STREAMING_ID),
-        );
         return;
       }
       const errorMessage =

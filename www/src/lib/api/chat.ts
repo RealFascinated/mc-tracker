@@ -116,7 +116,11 @@ export async function streamChat(
 
   const reader = stream.getReader();
   const decoder = new TextDecoder();
-  await readSseStream(reader, decoder, "", onEvent);
+  try {
+    await readSseStream(reader, decoder, "", onEvent, signal);
+  } finally {
+    reader.releaseLock();
+  }
 }
 
 function dispatchSseFrames(
@@ -146,7 +150,12 @@ async function readSseStream(
   decoder: TextDecoder,
   buffer: string,
   onEvent: (event: ChatStreamEvent) => void,
+  signal?: AbortSignal,
 ): Promise<void> {
+  if (signal?.aborted) {
+    throw new DOMException("Aborted", "AbortError");
+  }
+
   const { done, value } = await reader.read();
   if (done) {
     return;
@@ -158,5 +167,6 @@ async function readSseStream(
     decoder,
     dispatchSseFrames(nextBuffer, onEvent),
     onEvent,
+    signal,
   );
 }

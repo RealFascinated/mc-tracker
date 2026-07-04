@@ -190,7 +190,7 @@ export function TrackerChatWidget() {
                   />
                   <Button
                     type="button"
-                    variant={isStreaming ? "outline" : "brand"}
+                    variant={isStreaming ? "destructive" : "brand"}
                     size="icon"
                     className="size-10 shrink-0"
                     disabled={!isStreaming && (quotaExceeded || !input.trim())}
