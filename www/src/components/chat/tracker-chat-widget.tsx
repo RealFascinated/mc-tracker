@@ -59,6 +59,16 @@ export function TrackerChatWidget() {
     }
   }, [isAuthenticated, cancelStream]);
 
+  useEffect(() => {
+    if (!open || !isAuthenticated) {
+      return;
+    }
+    const id = requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open, isAuthenticated, inputRef]);
+
   if (isLoading) {
     return null;
   }
