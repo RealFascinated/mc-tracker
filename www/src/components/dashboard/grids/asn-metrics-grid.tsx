@@ -6,7 +6,7 @@ import {
 } from "@/components/dashboard/grids/entity-metrics-grid";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import type { AsnListItem, AsnTimeseriesResponse } from "@/lib/api/asns";
-import { asnDisplayName, asnDetailSearch } from "@/lib/api/asns";
+import { asnChartSlug, asnDisplayName, asnDetailSearch } from "@/lib/api/asns";
 import { asnTimeseriesQueryOptions } from "@/lib/api/asns.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
 import { createPlayersChart } from "@/lib/metrics/charts/players";
@@ -66,10 +66,7 @@ export function AsnMetricsGrid({
       getKey={(asn) => `${asn.asn}\u0000${asn.asnOrg}`}
       renderHeader={(asn) => <AsnMetricsCardHeader asn={asn} />}
       chartDef={(asn) => {
-        const slug = `${asn.asn}-${asn.asnOrg}`.replace(
-          /[^a-zA-Z0-9_-]+/g,
-          "-",
-        );
+        const slug = asnChartSlug(asn.asn, asn.asnOrg);
         return createPlayersChart(`asn-players-${slug}`);
       }}
       timeseriesOptions={(asn, timeWindow) =>

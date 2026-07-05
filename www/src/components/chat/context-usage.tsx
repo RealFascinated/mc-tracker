@@ -7,7 +7,7 @@ import {
 import type { ChatTokenUsage } from "@/lib/api/chat";
 import { cn } from "cnfast";
 
-import { formatTokenCountFull } from "@/components/chat/chat-utils";
+import { formatLocaleInteger } from "@/lib/formatter";
 
 function ContextUsageTooltip({ usage }: { usage: ChatTokenUsage }) {
   const ratio = Math.min(usage.promptTokens / usage.contextMax, 1);
@@ -50,10 +50,10 @@ function ContextUsageTooltip({ usage }: { usage: ChatTokenUsage }) {
         <div className="flex items-baseline justify-between gap-4">
           <dt className="text-muted-foreground">Context</dt>
           <dd className="text-popover-foreground tabular-nums">
-            {formatTokenCountFull(usage.promptTokens)}
+            {formatLocaleInteger(usage.promptTokens)}
             <span className="text-muted-foreground">
               {" "}
-              / {formatTokenCountFull(usage.contextMax)}
+              / {formatLocaleInteger(usage.contextMax)}
             </span>
           </dd>
         </div>
@@ -61,7 +61,7 @@ function ContextUsageTooltip({ usage }: { usage: ChatTokenUsage }) {
           <div className="flex items-baseline justify-between gap-4">
             <dt className="text-muted-foreground">Cached</dt>
             <dd className="text-popover-foreground tabular-nums">
-              {formatTokenCountFull(cached)}
+              {formatLocaleInteger(cached)}
               {cachePct != null ? (
                 <span className="text-muted-foreground"> ({cachePct}%)</span>
               ) : null}
@@ -72,7 +72,7 @@ function ContextUsageTooltip({ usage }: { usage: ChatTokenUsage }) {
           <div className="flex items-baseline justify-between gap-4">
             <dt className="text-muted-foreground">Response</dt>
             <dd className="text-popover-foreground tabular-nums">
-              {formatTokenCountFull(usage.completionTokens)}
+              {formatLocaleInteger(usage.completionTokens)}
             </dd>
           </div>
         ) : null}

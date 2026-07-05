@@ -31,6 +31,7 @@ import {
   adminUsersQueryOptions,
 } from "@/lib/api/admin/users.queries";
 import { errorMessage } from "@/lib/api/error-message";
+import { formatMediumDateTime } from "@/lib/formatter";
 import { pageTitle } from "@/lib/page-title";
 import { privatePageHead } from "@/lib/embed-meta";
 import { hasFlag, setFlag, USER_FLAGS } from "@/lib/user-flags";
@@ -40,11 +41,6 @@ export const Route = createFileRoute("/_admin/admin/users")({
     queryClient.ensureQueryData(adminUsersQueryOptions()),
   head: () => privatePageHead(pageTitle("Admin users")),
   component: AdminUsersPage,
-});
-
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
 });
 
 type EditFlagsState = {
@@ -94,9 +90,7 @@ function AdminUsersPage() {
             <TableRow key={user.id}>
               <TableCell className="font-medium">{user.username}</TableCell>
               <TableCell className="capitalize">{user.role}</TableCell>
-              <TableCell>
-                {dateFormatter.format(new Date(user.createdAt))}
-              </TableCell>
+              <TableCell>{formatMediumDateTime(user.createdAt)}</TableCell>
               <TableCell>
                 <Button
                   type="button"

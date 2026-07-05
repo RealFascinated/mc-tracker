@@ -1,17 +1,7 @@
 import type { CreateServerRequest } from "@/lib/api/admin/servers";
+import { formatServerHost } from "@/lib/api/servers";
 
 import { mcutilsApi } from "./client";
-
-function formatMcutilsServerHost(
-  host: string,
-  port: number | null | undefined,
-): string {
-  const trimmed = host.trim();
-  if (port != null) {
-    return `${trimmed}:${port}`;
-  }
-  return trimmed;
-}
 
 function serverPlatform(type: string): "java" | "bedrock" {
   return type === "PE" ? "bedrock" : "java";
@@ -20,7 +10,7 @@ function serverPlatform(type: string): "java" | "bedrock" {
 export function lookupMcutilsServer(
   form: Pick<CreateServerRequest, "host" | "port" | "type">,
 ) {
-  const host = formatMcutilsServerHost(form.host, form.port);
+  const host = formatServerHost(form.host, form.port);
   return mcutilsApi.fetchServer(host, serverPlatform(form.type));
 }
 

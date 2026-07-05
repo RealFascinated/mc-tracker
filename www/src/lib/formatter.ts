@@ -1,3 +1,138 @@
+const DAY_SECONDS = 86_400;
+const MONTH_SECONDS = DAY_SECONDS * 28;
+const YEAR_SECONDS = DAY_SECONDS * 365;
+const THIRTY_DAYS_MS = 30 * DAY_SECONDS * 1000;
+
+function createDateFormatter(
+  options: Intl.DateTimeFormatOptions,
+): Intl.DateTimeFormat {
+  return new Intl.DateTimeFormat(undefined, options);
+}
+
+const dateTime = {
+  monthDay: createDateFormatter({ month: "short", day: "numeric" }),
+  monthDayYear: createDateFormatter({
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }),
+  month: createDateFormatter({ month: "short" }),
+  monthYear: createDateFormatter({ month: "short", year: "numeric" }),
+  year: createDateFormatter({ year: "numeric" }),
+  time: createDateFormatter({ hour: "numeric", minute: "2-digit" }),
+  timeWithSeconds: createDateFormatter({
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+  }),
+  time24: createDateFormatter({
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }),
+  weekdayMonthDay: createDateFormatter({
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }),
+  weekdayMonthDayYear: createDateFormatter({
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }),
+  monthDayTime: createDateFormatter({
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }),
+  monthDayYearTime: createDateFormatter({
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }),
+  monthDayTimeWithSeconds: createDateFormatter({
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+  }),
+  monthDayYearTimeWithSeconds: createDateFormatter({
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+  }),
+  mediumDateTime: createDateFormatter({
+    dateStyle: "medium",
+    timeStyle: "short",
+  }),
+  quotaReset: createDateFormatter({
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }),
+};
+
+const localeIntegerFormatter = new Intl.NumberFormat(undefined);
+
+const relativeTimeFormatter = new Intl.RelativeTimeFormat(undefined, {
+  numeric: "auto",
+});
+
+function toDate(value: Date | string | number): Date {
+  return value instanceof Date ? value : new Date(value);
+}
+
+function includeYear(date: Date, now = new Date()): boolean {
+  return date.getFullYear() !== now.getFullYear();
+}
+
+export function isSameCalendarDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+export function formatMonthDay(value: Date | string | number): string {
+  const date = toDate(value);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+  return dateTime.monthDay.format(date);
+}
+
+export function formatMediumDateTime(value: Date | string | number): string {
+  const date = toDate(value);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+  return dateTime.mediumDateTime.format(date);
+}
+
+export function formatQuotaResetAt(value: Date | string | number): string {
+  const date = toDate(value);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+  return dateTime.quotaReset.format(date);
+}
+
+export function formatLocaleInteger(value: number): string {
+  return localeIntegerFormatter.format(value);
+}
+
 export function formatNetworkBps(bps: number): string {
   const units = ["bps", "Kbps", "Mbps", "Gbps"];
   let value = bps;
@@ -46,60 +181,64 @@ export function formatCelsius(value: number, fractionDigits = 0): string {
   return `${formatDecimal(value, fractionDigits)}°C`;
 }
 
-const tooltipTimestampFormatterWithYear = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-});
-
-const tooltipTimestampFormatterWithYearAndSecond = new Intl.DateTimeFormat(
-  undefined,
-  {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-  },
-);
-
-const tooltipTimestampFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-});
-
-const tooltipTimestampFormatterWithSecond = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  second: "2-digit",
-});
-
 export function formatTooltipTimestamp(
   timestamp: number,
   rangeSeconds: number,
 ): string {
   const date = new Date(timestamp * 1000);
-  const now = new Date();
-  const includeYear =
-    date.getFullYear() !== now.getFullYear() || rangeSeconds > 86_400 * 180;
-  const includeSecond = rangeSeconds <= 86_400;
+  const showYear = includeYear(date) || rangeSeconds > DAY_SECONDS * 180;
+  const showSeconds = rangeSeconds <= DAY_SECONDS;
 
-  if (includeYear) {
-    return includeSecond
-      ? tooltipTimestampFormatterWithYearAndSecond.format(date)
-      : tooltipTimestampFormatterWithYear.format(date);
+  if (showYear) {
+    return showSeconds
+      ? dateTime.monthDayYearTimeWithSeconds.format(date)
+      : dateTime.monthDayYearTime.format(date);
   }
 
-  return includeSecond
-    ? tooltipTimestampFormatterWithSecond.format(date)
-    : tooltipTimestampFormatter.format(date);
+  return showSeconds
+    ? dateTime.monthDayTimeWithSeconds.format(date)
+    : dateTime.monthDayTime.format(date);
+}
+
+/** Relative label for recent dates; absolute date when older than 30 days. */
+export function formatTimeAgo(
+  value: Date | string | number,
+  nowMs = Date.now(),
+): string {
+  const date = toDate(value);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  const ageMs = nowMs - date.getTime();
+  if (ageMs >= THIRTY_DAYS_MS) {
+    const now = new Date(nowMs);
+    return includeYear(date, now)
+      ? dateTime.monthDayYear.format(date)
+      : dateTime.monthDay.format(date);
+  }
+
+  const divisions: Array<{
+    amount: number;
+    unit: Intl.RelativeTimeFormatUnit;
+  }> = [
+    { amount: 60, unit: "second" },
+    { amount: 60, unit: "minute" },
+    { amount: 24, unit: "hour" },
+    { amount: 30, unit: "day" },
+  ];
+
+  let duration = -Math.round(ageMs / 1000);
+  let unit: Intl.RelativeTimeFormatUnit = "second";
+  for (const division of divisions) {
+    if (Math.abs(duration) < division.amount) {
+      break;
+    }
+    duration = Math.round(duration / division.amount);
+    unit = division.unit;
+  }
+
+  return relativeTimeFormatter.format(duration, unit);
 }
 
 export type EpochRangeParts = {
@@ -109,54 +248,26 @@ export type EpochRangeParts = {
 
 function epochDateParts(epoch: number) {
   const date = new Date(epoch * 1000);
-  const now = new Date();
-  const includeYear = date.getFullYear() !== now.getFullYear();
-  return { date, includeYear };
-}
-
-const epochTimeFormatter = new Intl.DateTimeFormat(undefined, {
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-});
-
-const epochDateFormatter = new Intl.DateTimeFormat(undefined, {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-});
-
-const epochDateWithYearFormatter = new Intl.DateTimeFormat(undefined, {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-});
-
-function formatEpochTime(date: Date): string {
-  return epochTimeFormatter.format(date);
-}
-
-function formatEpochDate(date: Date, includeYear: boolean): string {
-  return includeYear
-    ? epochDateWithYearFormatter.format(date)
-    : epochDateFormatter.format(date);
+  return { date, includeYear: includeYear(date) };
 }
 
 export function formatEpochRangeParts(
   startEpoch: number,
   endEpoch: number | null,
 ): EpochRangeParts {
-  const { date: start, includeYear } = epochDateParts(startEpoch);
+  const { date: start, includeYear: startIncludeYear } =
+    epochDateParts(startEpoch);
   if (Number.isNaN(start.getTime())) {
     return { headline: "—", span: null };
   }
 
-  const startTime = formatEpochTime(start);
+  const startTime = dateTime.time24.format(start);
 
   if (endEpoch == null) {
     return {
-      headline: formatEpochDate(start, includeYear),
+      headline: startIncludeYear
+        ? dateTime.weekdayMonthDayYear.format(start)
+        : dateTime.weekdayMonthDay.format(start),
       span: `${startTime} – ongoing`,
     };
   }
@@ -164,62 +275,36 @@ export function formatEpochRangeParts(
   const { date: end, includeYear: endIncludeYear } = epochDateParts(endEpoch);
   if (Number.isNaN(end.getTime())) {
     return {
-      headline: formatEpochDate(start, includeYear),
+      headline: startIncludeYear
+        ? dateTime.weekdayMonthDayYear.format(start)
+        : dateTime.weekdayMonthDay.format(start),
       span: `${startTime} – ongoing`,
     };
   }
 
-  const sameDay =
-    start.getFullYear() === end.getFullYear() &&
-    start.getMonth() === end.getMonth() &&
-    start.getDate() === end.getDate();
+  const sameDay = isSameCalendarDay(start, end);
+
+  const startDateLabel = startIncludeYear
+    ? dateTime.weekdayMonthDayYear.format(start)
+    : dateTime.weekdayMonthDay.format(start);
 
   if (sameDay) {
     return {
-      headline: formatEpochDate(start, includeYear),
-      span: `${startTime} – ${formatEpochTime(end)}`,
+      headline: startDateLabel,
+      span: `${startTime} – ${dateTime.time24.format(end)}`,
     };
   }
 
-  const endDateLabel = formatEpochDate(end, includeYear || endIncludeYear);
+  const endDateLabel =
+    endIncludeYear || startIncludeYear
+      ? dateTime.weekdayMonthDayYear.format(end)
+      : dateTime.weekdayMonthDay.format(end);
+
   return {
-    headline: `${formatEpochDate(start, includeYear)}, ${startTime} – ${endDateLabel}, ${formatEpochTime(end)}`,
+    headline: `${startDateLabel}, ${startTime} – ${endDateLabel}, ${dateTime.time24.format(end)}`,
     span: null,
   };
 }
-
-const DAY_SECONDS = 86_400;
-const MONTH_SECONDS = 86_400 * 28;
-const YEAR_SECONDS = 86_400 * 365;
-
-const chartYearFormatter = new Intl.DateTimeFormat(undefined, {
-  year: "numeric",
-});
-const chartMonthFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-});
-const chartMonthYearFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  year: "numeric",
-});
-const chartMonthDayFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-});
-const chartMonthDayYearFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-});
-const chartTimeFormatter = new Intl.DateTimeFormat(undefined, {
-  hour: "numeric",
-  minute: "2-digit",
-});
-const chartTimeWithSecondFormatter = new Intl.DateTimeFormat(undefined, {
-  hour: "numeric",
-  minute: "2-digit",
-  second: "2-digit",
-});
 
 export function formatChartAxisTicks(
   splits: Array<number>,
@@ -228,16 +313,8 @@ export function formatChartAxisTicks(
   let prevYear: number | undefined;
   let prevDay: number | undefined;
 
-  const formatYear = (date: Date) => chartYearFormatter.format(date);
-  const formatMonth = (date: Date) => chartMonthFormatter.format(date);
-  const formatMonthYear = (date: Date) => chartMonthYearFormatter.format(date);
-  const formatMonthDay = (date: Date) => chartMonthDayFormatter.format(date);
-  const formatMonthDayYear = (date: Date) =>
-    chartMonthDayYearFormatter.format(date);
   const formatTime = (date: Date) =>
-    (foundIncr < 60 ? chartTimeWithSecondFormatter : chartTimeFormatter).format(
-      date,
-    );
+    (foundIncr < 60 ? dateTime.timeWithSeconds : dateTime.time).format(date);
 
   return splits.map((split) => {
     const date = new Date(split * 1000);
@@ -250,12 +327,22 @@ export function formatChartAxisTicks(
     prevYear = year;
     prevDay = day;
 
-    if (foundIncr >= YEAR_SECONDS) return formatYear(date);
-    if (foundIncr >= MONTH_SECONDS)
-      return atYearBoundary ? formatMonthYear(date) : formatMonth(date);
-    if (foundIncr >= DAY_SECONDS)
-      return atYearBoundary ? formatMonthDayYear(date) : formatMonthDay(date);
-    if (atDayBoundary) return formatMonthDay(date);
+    if (foundIncr >= YEAR_SECONDS) {
+      return dateTime.year.format(date);
+    }
+    if (foundIncr >= MONTH_SECONDS) {
+      return atYearBoundary
+        ? dateTime.monthYear.format(date)
+        : dateTime.month.format(date);
+    }
+    if (foundIncr >= DAY_SECONDS) {
+      return atYearBoundary
+        ? dateTime.monthDayYear.format(date)
+        : dateTime.monthDay.format(date);
+    }
+    if (atDayBoundary) {
+      return dateTime.monthDay.format(date);
+    }
     return formatTime(date);
   });
 }
@@ -296,11 +383,6 @@ export function formatPlayersAxisTick(value: number): string {
   ).format(rounded);
 }
 
-const peakTimestampFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
-
 export function peakTimestampTooltip(
   timestamp: number | null | undefined,
 ): string | undefined {
@@ -308,7 +390,7 @@ export function peakTimestampTooltip(
     return undefined;
   }
 
-  const formatted = peakTimestampFormatter.format(new Date(timestamp));
+  const formatted = formatMediumDateTime(timestamp);
 
   return `Peak on ${formatted}`;
 }

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { HistoryIcon } from "lucide-react";
+import { HistoryIcon, MessageSquareTextIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -7,18 +7,32 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   deleteChatSession,
   fetchChatSession,
   fetchChatSessions,
 } from "@/lib/api/chat";
 import { errorMessage } from "@/lib/api/error-message";
+import { formatTimeAgo } from "@/lib/formatter";
 import { cn } from "cnfast";
 
+type PendingDelete = {
+  sessionId: string;
+  preview: string;
+};
+
 type ChatHistorySheetProps = {
+  activeSessionId: string;
   onLoadSession: (
     sessionId: string,
     turns: Awaited<ReturnType<typeof fetchChatSession>>["turns"],
@@ -27,16 +41,46 @@ type ChatHistorySheetProps = {
       "tokensUsed" | "lastPromptTokens" | "contextMax"
     >,
   ) => void;
+  onDeleteActiveSession: () => void;
 };
 
-export function ChatHistorySheet({ onLoadSession }: ChatHistorySheetProps) {
+function HistoryLoadingSkeleton() {
+  return (
+    <ul className="flex flex-col gap-2.5" aria-hidden>
+      {Array.from({ length: 4 }, (_, index) => (
+        <li
+          key={index}
+          className="bg-muted/40 flex animate-pulse gap-3 rounded-soft border border-border px-4 py-3.5"
+        >
+          <div className="bg-muted size-9 shrink-0 rounded-soft" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
+            <div className="bg-muted h-3.5 w-4/5 rounded-sm" />
+            <div className="bg-muted h-3 w-1/3 rounded-sm" />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function ChatHistorySheet({
+  activeSessionId,
+  onLoadSession,
+  onDeleteActiveSession,
+}: ChatHistorySheetProps) {
   const [open, setOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(
+    null,
+  );
+  const [deleting, setDeleting] = useState(false);
 
   const { data, isPending, isError, refetch } = useQuery({
     queryKey: ["chat-sessions"],
     queryFn: fetchChatSessions,
     enabled: open,
   });
+
+  const sessionCount = data?.sessions.length ?? 0;
 
   async function handleSelect(sessionId: string) {
     try {
@@ -52,77 +96,207 @@ export function ChatHistorySheet({ onLoadSession }: ChatHistorySheetProps) {
     }
   }
 
-  async function handleDelete(sessionId: string) {
+  async function confirmDelete() {
+    if (!pendingDelete) {
+      return;
+    }
+    setDeleting(true);
     try {
-      await deleteChatSession(sessionId);
+      await deleteChatSession(pendingDelete.sessionId);
+      if (pendingDelete.sessionId === activeSessionId) {
+        onDeleteActiveSession();
+      }
+      setPendingDelete(null);
       await refetch();
     } catch (err) {
       toast.error(errorMessage(err));
+    } finally {
+      setDeleting(false);
     }
   }
 
   return (
     <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        aria-label="Chat history"
-        onClick={() => setOpen(true)}
-      >
-        <HistoryIcon />
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Chat history"
+            onClick={() => setOpen(true)}
+          >
+            <HistoryIcon />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" sideOffset={6}>
+          Chat history
+        </TooltipContent>
+      </Tooltip>
+
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="flex max-h-[min(32rem,85vh)] flex-col sm:max-w-md">
-          <DialogHeader>
+        <DialogContent
+          showCloseButton
+          className="flex max-h-[min(42rem,88vh)] min-h-[min(24rem,70vh)] w-[calc(100%-1.5rem)] max-w-xl flex-col gap-0 overflow-hidden p-0"
+        >
+          <DialogHeader className="shrink-0 border-b border-border px-5 py-4 pr-12">
             <DialogTitle>Chat history</DialogTitle>
+            <DialogDescription>
+              {isPending
+                ? "Loading your conversations…"
+                : sessionCount > 0
+                  ? `${sessionCount} saved conversation${sessionCount === 1 ? "" : "s"}`
+                  : "Resume a past conversation or start a new one."}
+            </DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto py-2">
-            {isPending ? (
-              <p className="text-muted-foreground px-1 text-sm">Loading…</p>
-            ) : null}
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            {isPending ? <HistoryLoadingSkeleton /> : null}
             {isError ? (
-              <p className="text-destructive px-1 text-sm">
-                Failed to load history.
-              </p>
+              <div className="rounded-soft border border-destructive/30 bg-destructive/5 px-4 py-6 text-center">
+                <p className="text-destructive text-sm font-medium">
+                  Failed to load history
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Check your connection and try again.
+                </p>
+              </div>
             ) : null}
-            {data?.sessions.length === 0 ? (
-              <p className="text-muted-foreground px-1 text-sm">
-                No past conversations yet.
-              </p>
+            {!isPending && !isError && sessionCount === 0 ? (
+              <div className="flex flex-col items-center gap-3 rounded-soft border border-dashed border-border px-6 py-12 text-center">
+                <MessageSquareTextIcon className="text-muted-foreground size-10 stroke-1" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground">
+                    No conversations yet
+                  </p>
+                  <p className="text-muted-foreground max-w-xs text-xs leading-relaxed">
+                    Chats you finish will show up here so you can pick up where
+                    you left off.
+                  </p>
+                </div>
+              </div>
             ) : null}
-            <ul className="flex flex-col gap-1">
-              {data?.sessions.map((session) => (
-                <li key={session.sessionId}>
-                  <div className="flex items-stretch gap-1">
-                    <button
-                      type="button"
-                      className={cn(
-                        "hover:bg-muted flex min-w-0 flex-1 flex-col rounded-md px-3 py-2 text-left",
-                      )}
-                      onClick={() => void handleSelect(session.sessionId)}
-                    >
-                      <span className="truncate text-sm font-medium">
-                        {session.preview}
-                      </span>
-                      <span className="text-muted-foreground text-xs">
-                        {new Date(session.updatedAt).toLocaleString()}
-                      </span>
-                    </button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground shrink-0"
-                      onClick={() => void handleDelete(session.sessionId)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {!isPending && !isError && sessionCount > 0 ? (
+              <ul className="flex flex-col gap-2.5">
+                {data.sessions.map((session) => {
+                  const isActive = session.sessionId === activeSessionId;
+
+                  return (
+                    <li key={session.sessionId}>
+                      <div
+                        className={cn(
+                          "group relative flex items-stretch gap-2 rounded-soft border transition-colors",
+                          isActive
+                            ? "border-primary/50 bg-primary/8 shadow-sm"
+                            : "border-border bg-card hover:border-border/80 hover:bg-muted/35",
+                        )}
+                      >
+                        <button
+                          type="button"
+                          className="flex min-w-0 flex-1 items-start gap-3 px-4 py-3.5 pr-12 text-left"
+                          onClick={() => void handleSelect(session.sessionId)}
+                        >
+                          <span
+                            className={cn(
+                              "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-soft border",
+                              isActive
+                                ? "border-primary/30 bg-primary/10 text-primary"
+                                : "border-border bg-muted/50 text-muted-foreground",
+                            )}
+                          >
+                            <MessageSquareTextIcon className="size-4" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="line-clamp-2 text-sm leading-snug font-medium text-foreground">
+                              {session.preview}
+                            </span>
+                            <span className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                              <time dateTime={session.updatedAt}>
+                                {formatTimeAgo(session.updatedAt)}
+                              </time>
+                              {isActive ? (
+                                <span className="bg-primary/15 text-primary rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+                                  Current
+                                </span>
+                              ) : null}
+                            </span>
+                          </span>
+                        </button>
+                        <div className="absolute top-2 right-2 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive size-8"
+                                aria-label={`Delete conversation: ${session.preview}`}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setPendingDelete({
+                                    sessionId: session.sessionId,
+                                    preview: session.preview,
+                                  });
+                                }}
+                              >
+                                <Trash2Icon className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" sideOffset={6}>
+                              Delete
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={pendingDelete !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen && !deleting) {
+            setPendingDelete(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-sm" showCloseButton>
+          <DialogHeader>
+            <DialogTitle>Delete conversation?</DialogTitle>
+            <DialogDescription>
+              {pendingDelete ? (
+                <>
+                  <span className="text-foreground font-medium">
+                    {pendingDelete.preview}
+                  </span>{" "}
+                  will be permanently removed. This cannot be undone.
+                </>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={deleting}
+              onClick={() => setPendingDelete(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleting}
+              onClick={() => void confirmDelete()}
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

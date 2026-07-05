@@ -39,12 +39,8 @@ import {
   serverPlatformBadgeClassName,
 } from "@/lib/api/platform";
 import type { ServerPlatform } from "@/lib/api/platform";
+import { formatMediumDateTime } from "@/lib/formatter";
 import { cn } from "cnfast";
-
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
 
 type AdminServersTableProps = {
   servers: AdminServer[];
@@ -171,7 +167,7 @@ export function AdminServersTable({
           Date.parse(rowB.original.createdAt),
         cell: ({ row }) => (
           <span className="text-muted-foreground">
-            {dateFormatter.format(new Date(row.original.createdAt))}
+            {formatMediumDateTime(row.original.createdAt)}
           </span>
         ),
       },

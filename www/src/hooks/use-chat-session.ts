@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import type { ChatSessionTurn, ChatTokenUsage } from "@/lib/api/chat";
 import { ChatStreamError, streamChat } from "@/lib/api/chat";
+import { errorMessage } from "@/lib/api/error-message";
 import { useAuth } from "@/lib/auth/context";
 import type { ChatQuota } from "@/lib/auth/types";
 import { chatQuotaExempt } from "@/lib/user-flags";
@@ -272,10 +273,7 @@ export function useChatSession() {
       if (error instanceof DOMException && error.name === "AbortError") {
         return;
       }
-      const errorMessage =
-        error instanceof ChatStreamError
-          ? error.message
-          : "Chat request failed";
+      const errorText = errorMessage(error, "Chat request failed");
       if (
         error instanceof ChatStreamError &&
         error.status === 429 &&
@@ -283,7 +281,7 @@ export function useChatSession() {
       ) {
         setQuotaUsed(chatQuota.limit);
       }
-      toast.error(errorMessage);
+      toast.error(errorText);
       setMessages((current) =>
         current.filter((message) => message.id !== STREAMING_ID),
       );

@@ -77,6 +77,22 @@ export function asnDisplayName(
   return "Unknown network";
 }
 
+export function asnLabelOptional(
+  asn: Pick<AsnListItem, "asn" | "asnOrg">,
+): string | null {
+  if (asn.asnOrg) {
+    return asn.asnOrg;
+  }
+  if (asn.asn) {
+    return asn.asn;
+  }
+  return null;
+}
+
+export function asnChartSlug(asn: string, asnOrg: string): string {
+  return `${asn}-${asnOrg}`.replace(/[^a-zA-Z0-9_-]+/g, "-");
+}
+
 export function getAsns() {
   return apiFetch<AsnsListResponse>("/asns", { credentials: "omit" });
 }

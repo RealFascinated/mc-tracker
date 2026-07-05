@@ -9,6 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { CreateServerRequest } from "@/lib/api/admin/servers";
+import { formatServerHost } from "@/lib/api/servers";
+import { formatPlayers } from "@/lib/formatter";
 import type { McutilsServer } from "@/lib/mcutils/lookup-server";
 
 export type AddServerLookupState =
@@ -39,10 +41,6 @@ function serverFaviconUrl(server: McutilsServer): string | null {
     }
   }
   return null;
-}
-
-function formatServerAddress(server: McutilsServer): string {
-  return `${server.hostname}:${server.port}`;
 }
 
 function serverVersionLabel(server: McutilsServer): string | null {
@@ -78,7 +76,7 @@ function ServerLookupDetails({ server }: { server: McutilsServer }) {
             {displayName}
           </p>
           <p className="truncate font-mono text-xs text-muted-foreground">
-            {formatServerAddress(server)}
+            {formatServerHost(server.hostname, server.port)}
           </p>
         </div>
         {server.motd.preview ? (
@@ -88,8 +86,8 @@ function ServerLookupDetails({ server }: { server: McutilsServer }) {
           <div className="flex justify-between gap-4">
             <dt className="text-muted-foreground">Players</dt>
             <dd className="font-medium text-foreground">
-              {server.players.online.toLocaleString()} /{" "}
-              {server.players.max.toLocaleString()}
+              {formatPlayers(server.players.online)} /{" "}
+              {formatPlayers(server.players.max)}
             </dd>
           </div>
           {version ? (

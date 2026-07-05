@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import { PlayersMetricChart } from "@/components/dashboard/charts/players-metric-chart";
+import { asnChartSlug } from "@/lib/api/asns";
 import { asnTimeseriesQueryOptions } from "@/lib/api/asns.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
 import { createPlayersChart } from "@/lib/metrics/charts/players";
@@ -20,7 +21,7 @@ export function AsnPlayersChart({
   height = 360,
 }: AsnPlayersChartProps) {
   const chartDef = useMemo(() => {
-    const slug = `${asn}-${asnOrg}`.replace(/[^a-zA-Z0-9_-]+/g, "-");
+    const slug = asnChartSlug(asn, asnOrg);
     return createPlayersChart(`asn-hero-players-${slug}`);
   }, [asn, asnOrg]);
   const timeseriesOptions = useMemo(

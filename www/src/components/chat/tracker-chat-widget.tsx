@@ -164,7 +164,11 @@ export function TrackerChatWidget() {
                 ) : null}
                 {isAuthenticated ? (
                   <>
-                    <ChatHistorySheet onLoadSession={loadSession} />
+                    <ChatHistorySheet
+                      activeSessionId={sessionId}
+                      onLoadSession={loadSession}
+                      onDeleteActiveSession={startNewChat}
+                    />
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button

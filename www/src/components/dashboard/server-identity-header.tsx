@@ -5,29 +5,13 @@ import { EntityCardStats } from "@/components/dashboard/grids/entity-metrics-gri
 import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
 import { ServerFavicon } from "@/components/dashboard/server-favicon";
 import type { ServerListItem } from "@/lib/api/servers";
-import { asnDetailSearch } from "@/lib/api/asns";
+import { formatServerHost } from "@/lib/api/servers";
+import { asnDetailSearch, asnLabelOptional } from "@/lib/api/asns";
 import {
   formatServerPlatformLabel,
   serverPlatformBadgeClassName,
 } from "@/lib/api/platform";
 import { cn } from "cnfast";
-
-function serverAsnName(server: ServerListItem): string | null {
-  if (server.asnOrg) {
-    return server.asnOrg;
-  }
-  if (server.asn) {
-    return server.asn;
-  }
-  return null;
-}
-
-function formatServerAddress(server: ServerListItem): string {
-  if (server.port == null) {
-    return server.host;
-  }
-  return `${server.host}:${server.port}`;
-}
 
 type ServerIdentityHeaderProps = {
   server: ServerListItem;
@@ -43,8 +27,8 @@ export function ServerIdentityHeader({
   trailing,
 }: ServerIdentityHeaderProps) {
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
-  const asnName = serverAsnName(server);
-  const address = formatServerAddress(server);
+  const asnName = asnLabelOptional(server);
+  const address = formatServerHost(server.host, server.port);
 
   const nameContent = <div className="entity-metrics-name">{server.name}</div>;
 

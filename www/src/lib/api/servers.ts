@@ -47,6 +47,14 @@ export type ServersSearchResponse = {
   servers: ServerSearchItem[];
 };
 
+export function formatServerHost(host: string, port?: number | null): string {
+  const trimmed = host.trim();
+  if (port == null) {
+    return trimmed;
+  }
+  return `${trimmed}:${port}`;
+}
+
 export function getServers(sort: ServerSort) {
   const params = new URLSearchParams({
     sort: sort.field,

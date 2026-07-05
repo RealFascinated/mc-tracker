@@ -6,7 +6,9 @@ import type { KeyboardEvent } from "react";
 import { ServerFavicon } from "@/components/dashboard/server-favicon";
 import { Input } from "@/components/ui/input";
 import type { ServerSearchItem } from "@/lib/api/servers";
+import { formatServerHost } from "@/lib/api/servers";
 import { serversSearchQueryOptions } from "@/lib/api/servers.queries";
+import { formatPlayers } from "@/lib/formatter";
 import { cn } from "cnfast";
 
 type CompareServerSearchProps = {
@@ -17,13 +19,6 @@ type CompareServerSearchProps = {
 
 const AUTOCOMPLETE_DEBOUNCE_MS = 150;
 const AUTOCOMPLETE_MIN_CHARS = 1;
-
-function formatServerAddress(server: ServerSearchItem): string {
-  if (server.port == null) {
-    return server.host;
-  }
-  return `${server.host}:${server.port}`;
-}
 
 export function CompareServerSearch({
   selectedIds,
@@ -203,12 +198,12 @@ export function CompareServerSearch({
                       {server.name}
                     </span>
                     <span className="dashboard-search-suggestion-host">
-                      {formatServerAddress(server)}
+                      {formatServerHost(server.host, server.port)}
                     </span>
                   </span>
                   {server.playersOnline != null ? (
                     <span className="dashboard-search-suggestion-players">
-                      {server.playersOnline.toLocaleString()}
+                      {formatPlayers(server.playersOnline)}
                     </span>
                   ) : null}
                   <Plus className="size-3.5 shrink-0 text-muted-foreground" />
