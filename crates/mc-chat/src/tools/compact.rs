@@ -4,13 +4,17 @@ use mc_api_types::{
     ServerTimeseriesSummaryResponse, ServersCompareResponse, ServersListResponse,
     ServersSearchResponse, TimeseriesSummaryResponse,
 };
-use mc_common::platform_display_label;
+use mc_common::{effective_server_port, platform_display_label};
 use serde_json::{json, Value};
 
 pub fn compact_servers_list(response: ServersListResponse, truncated: bool) -> Value {
     json!({
         "summary": compact_players_summary(&response.summary),
-        "servers": response.servers.iter().map(compact_server).collect::<Vec<_>>(),
+        "servers": response
+            .servers
+            .iter()
+            .map(compact_server_list_item)
+            .collect::<Vec<_>>(),
         "truncated": truncated,
     })
 }
@@ -18,6 +22,18 @@ pub fn compact_servers_list(response: ServersListResponse, truncated: bool) -> V
 pub fn compact_search(response: ServersSearchResponse) -> Value {
     json!({
         "servers": response.servers.iter().map(compact_search_item).collect::<Vec<_>>(),
+    })
+}
+
+fn compact_server_list_item(server: &ServerListItemResponse) -> Value {
+    json!({
+        "name": server.name,
+        "host": server.host,
+        "port": effective_server_port(server.port, &server.server_type),
+        "platform": platform_display_label(&server.server_type),
+        "playersOnline": server.players_online,
+        "asn": server.asn,
+        "asnOrg": server.asn_org,
     })
 }
 
@@ -402,8 +418,8 @@ fn compact_asns_summary(summary: &mc_api_types::AsnsSummaryResponse) -> Value {
 #[cfg(test)]
 mod tests {
     use mc_api_types::{
-        EntityPeakStats, PeakPlayersRecord, ServerListItemResponse, SummaryPoint,
-        TimeseriesSummaryResponse, TrendDirection,
+        EntityPeakStats, PeakPlayersRecord, ServerListItemResponse, ServersListResponse,
+        SummaryPoint, TimeseriesSummaryResponse, TrendDirection,
     };
 
     use super::*;
@@ -465,6 +481,33 @@ mod tests {
         let value = compact_server(&server);
         assert_eq!(value["peaks"]["peak24h"], 1000.0);
         assert_eq!(value["peaks"]["allTime"]["players"], 1000);
+    }
+
+    #[test]
+    fn compact_server_list_item_is_minimal_with_default_port() {
+        let mut server = sample_server("Hypixel", 100, 1000.0);
+        server.port = None;
+        let value = compact_servers_list(
+            ServersListResponse {
+                summary: mc_api_types::ServersSummaryResponse {
+                    total_players: 100,
+                    players_pc: 100,
+                    players_pe: 0,
+                    tracked_servers: 1,
+                    peaks: mc_api_types::PlayersPeakSummary {
+                        players_24h: None,
+                        players_7d: None,
+                    },
+                },
+                servers: vec![server],
+            },
+            false,
+        );
+        let item = &value["servers"][0];
+        assert!(item.get("id").is_none());
+        assert!(item.get("peaks").is_none());
+        assert_eq!(item["port"], 25565);
+        assert_eq!(item["name"], "Hypixel");
     }
 
     #[test]
