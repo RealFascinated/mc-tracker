@@ -61,6 +61,7 @@ export function TrackerChatWidget() {
     loadSession,
     canStartNewChat,
     sendMessage,
+    retryMessage,
     truncatedNotice,
   } = useChatSession();
   const {
@@ -235,6 +236,7 @@ export function TrackerChatWidget() {
                                 key={message.id}
                                 message={message}
                                 isStreaming={isStreaming}
+                                onRetry={retryMessage}
                               />
                             ))
                           )}

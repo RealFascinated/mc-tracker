@@ -25,7 +25,9 @@ export type ChatPart = ChatReasoningPart | ChatToolPart | ChatTextPart;
 
 export type ChatMessage = {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "error";
   content: string;
   parts?: ChatPart[];
+  /** User prompt to resend when this is a failed assistant turn. */
+  retryPrompt?: string;
 };

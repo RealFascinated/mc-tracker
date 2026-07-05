@@ -2,15 +2,28 @@ import { MessageScrollerItem } from "@/components/ui/message-scroller";
 import { cn } from "cnfast";
 
 import { ChatAssistantTurn } from "@/components/chat/chat-assistant-turn";
+import { ChatErrorTurn } from "@/components/chat/chat-error-turn";
 import type { ChatMessage } from "@/components/chat/chat-types";
 
 export function ChatBubble({
   message,
   isStreaming,
+  onRetry,
 }: {
   message: ChatMessage;
   isStreaming: boolean;
+  onRetry?: (prompt: string) => void;
 }) {
+  if (message.role === "error") {
+    return (
+      <ChatErrorTurn
+        message={message}
+        disabled={isStreaming}
+        onRetry={onRetry ?? (() => {})}
+      />
+    );
+  }
+
   if (message.role === "assistant") {
     return <ChatAssistantTurn message={message} isStreaming={isStreaming} />;
   }

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 
 import type { ChatSessionTurn, ChatTokenUsage } from "@/lib/api/chat";
 import { ChatStreamError, streamChat } from "@/lib/api/chat";
@@ -168,144 +167,202 @@ export function useChatSession() {
 
   const canStartNewChat = messages.length > 0 || isStreaming;
 
+  const runAssistantTurn = useCallback(
+    async (userText: string, options: { appendUserMessage: boolean }) => {
+      cancelStream();
+
+      const userMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: userText,
+      };
+
+      const nextMessages = options.appendUserMessage
+        ? [
+            ...messages,
+            userMessage,
+            {
+              id: STREAMING_ID,
+              role: "assistant" as const,
+              content: "",
+              parts: [],
+            },
+          ]
+        : [
+            ...(messages.at(-1)?.role === "error"
+              ? messages.slice(0, -1)
+              : messages),
+            {
+              id: STREAMING_ID,
+              role: "assistant" as const,
+              content: "",
+              parts: [],
+            },
+          ];
+
+      setMessages(nextMessages);
+      setIsStreaming(true);
+      setTruncatedNotice(false);
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        await streamChat(
+          {
+            message: userText,
+            contextServer: serverContext,
+            sessionId,
+          },
+          (event) => {
+            switch (event.type) {
+              case "toolStart":
+                setMessages((current) =>
+                  updateStreamingMessage(current, (parts) =>
+                    appendToolStart(parts, event.name),
+                  ),
+                );
+                break;
+              case "toolDone":
+                setMessages((current) =>
+                  updateStreamingMessage(current, (parts) =>
+                    markToolDone(parts, event.name),
+                  ),
+                );
+                break;
+              case "delta":
+                setMessages((current) =>
+                  updateStreamingMessage(current, (parts) =>
+                    appendTextDelta(parts, event.content),
+                  ),
+                );
+                break;
+              case "reasoningDelta":
+                setMessages((current) =>
+                  updateStreamingMessage(current, (parts) =>
+                    appendReasoningDelta(parts, event.content),
+                  ),
+                );
+                break;
+              case "usage":
+                setTokenUsage(event.usage);
+                setMessages((current) =>
+                  updateStreamingMessage(current, (parts) =>
+                    closeStreamingReasoning(parts),
+                  ),
+                );
+                break;
+              case "error":
+                throw new ChatStreamError(event.message, 0);
+              case "done":
+                if (event.truncated) {
+                  setTruncatedNotice(true);
+                }
+                if (event.usage) {
+                  setTokenUsage(event.usage);
+                }
+                if (event.quotaUsed !== undefined && chatQuota) {
+                  setQuotaUsed((current) =>
+                    current !== null
+                      ? current + event.quotaUsed!
+                      : chatQuota.used + event.quotaUsed!,
+                  );
+                } else if (chatQuota) {
+                  void refreshUser();
+                }
+                setMessages((current) =>
+                  current.map((message) => {
+                    if (message.id !== STREAMING_ID) {
+                      return message;
+                    }
+                    const parts = finalizeParts(message.parts ?? []);
+                    return {
+                      ...message,
+                      id: crypto.randomUUID(),
+                      parts,
+                      content: assistantTextFromParts(parts),
+                    };
+                  }),
+                );
+                break;
+            }
+          },
+          controller.signal,
+        );
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        const errorText = errorMessage(error, "Chat request failed");
+        if (
+          error instanceof ChatStreamError &&
+          error.status === 429 &&
+          chatQuota
+        ) {
+          setQuotaUsed(chatQuota.limit);
+        }
+        setMessages((current) => {
+          const streaming = current.find((message) => message.id === STREAMING_ID);
+          const withoutStreaming = current.filter(
+            (message) => message.id !== STREAMING_ID,
+          );
+          const next: ChatMessage[] = [...withoutStreaming];
+
+          if (streaming && assistantHasVisibleContent(streaming)) {
+            const parts = finalizeParts(streaming.parts ?? []);
+            next.push({
+              ...streaming,
+              id: crypto.randomUUID(),
+              parts,
+              content: assistantTextFromParts(parts),
+            });
+          }
+
+          next.push({
+            id: crypto.randomUUID(),
+            role: "error",
+            content: errorText,
+            retryPrompt: userText,
+          });
+
+          return next;
+        });
+      } finally {
+        setIsStreaming(false);
+        abortRef.current = null;
+      }
+    },
+    [
+      cancelStream,
+      messages,
+      serverContext,
+      sessionId,
+      chatQuota,
+      refreshUser,
+    ],
+  );
+
   const sendMessage = useCallback(async () => {
     const text = input.trim();
     if (!text || isStreaming || quotaExceeded) {
       return;
     }
 
-    cancelStream();
-    const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: text,
-    };
-    const nextMessages = [
-      ...messages,
-      userMessage,
-      { id: STREAMING_ID, role: "assistant" as const, content: "", parts: [] },
-    ];
-    setMessages(nextMessages);
     setInput("");
-    setIsStreaming(true);
-    setTruncatedNotice(false);
+    await runAssistantTurn(text, { appendUserMessage: true });
+  }, [input, isStreaming, quotaExceeded, runAssistantTurn]);
 
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      await streamChat(
-        {
-          message: text,
-          contextServer: serverContext,
-          sessionId,
-        },
-        (event) => {
-          switch (event.type) {
-            case "toolStart":
-              setMessages((current) =>
-                updateStreamingMessage(current, (parts) =>
-                  appendToolStart(parts, event.name),
-                ),
-              );
-              break;
-            case "toolDone":
-              setMessages((current) =>
-                updateStreamingMessage(current, (parts) =>
-                  markToolDone(parts, event.name),
-                ),
-              );
-              break;
-            case "delta":
-              setMessages((current) =>
-                updateStreamingMessage(current, (parts) =>
-                  appendTextDelta(parts, event.content),
-                ),
-              );
-              break;
-            case "reasoningDelta":
-              setMessages((current) =>
-                updateStreamingMessage(current, (parts) =>
-                  appendReasoningDelta(parts, event.content),
-                ),
-              );
-              break;
-            case "usage":
-              setTokenUsage(event.usage);
-              setMessages((current) =>
-                updateStreamingMessage(current, (parts) =>
-                  closeStreamingReasoning(parts),
-                ),
-              );
-              break;
-            case "error":
-              throw new ChatStreamError(event.message, 0);
-            case "done":
-              if (event.truncated) {
-                setTruncatedNotice(true);
-              }
-              if (event.usage) {
-                setTokenUsage(event.usage);
-              }
-              if (event.quotaUsed !== undefined && chatQuota) {
-                setQuotaUsed((current) =>
-                  current !== null
-                    ? current + event.quotaUsed!
-                    : chatQuota.used + event.quotaUsed!,
-                );
-              } else if (chatQuota) {
-                void refreshUser();
-              }
-              setMessages((current) =>
-                current.map((message) => {
-                  if (message.id !== STREAMING_ID) {
-                    return message;
-                  }
-                  const parts = finalizeParts(message.parts ?? []);
-                  return {
-                    ...message,
-                    id: crypto.randomUUID(),
-                    parts,
-                    content: assistantTextFromParts(parts),
-                  };
-                }),
-              );
-              break;
-          }
-        },
-        controller.signal,
-      );
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
+  const retryMessage = useCallback(
+    async (prompt: string) => {
+      const text = prompt.trim();
+      if (!text || isStreaming || quotaExceeded) {
         return;
       }
-      const errorText = errorMessage(error, "Chat request failed");
-      if (
-        error instanceof ChatStreamError &&
-        error.status === 429 &&
-        chatQuota
-      ) {
-        setQuotaUsed(chatQuota.limit);
-      }
-      toast.error(errorText);
-      setMessages((current) =>
-        current.filter((message) => message.id !== STREAMING_ID),
-      );
-    } finally {
-      setIsStreaming(false);
-      abortRef.current = null;
-    }
-  }, [
-    cancelStream,
-    input,
-    isStreaming,
-    messages,
-    serverContext,
-    sessionId,
-    quotaExceeded,
-    chatQuota,
-    refreshUser,
-  ]);
+
+      await runAssistantTurn(text, { appendUserMessage: false });
+    },
+    [isStreaming, quotaExceeded, runAssistantTurn],
+  );
 
   return {
     messages,
@@ -325,5 +382,6 @@ export function useChatSession() {
     loadSession,
     canStartNewChat,
     sendMessage,
+    retryMessage,
   };
 }
