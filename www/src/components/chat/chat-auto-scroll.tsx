@@ -4,14 +4,26 @@ import {
   useMessageScrollerScrollable,
 } from "@shadcn/react/message-scroller";
 
-import type { ChatMessage } from "@/components/chat/chat-types";
+import type { ChatMessage, ChatPart } from "@/components/chat/chat-types";
+
+function partFingerprint(part: ChatPart): string {
+  switch (part.kind) {
+    case "text":
+    case "reasoning":
+      return `${part.kind}:${part.content.length}:${part.streaming ? 1 : 0}`;
+    case "tool":
+      return `tool:${part.name}:${part.status}`;
+  }
+}
 
 function scrollFingerprint(messages: ChatMessage[]): string {
   return messages
-    .map(
-      (m) =>
-        `${m.id}:${m.content.length}:${m.reasoning?.length ?? 0}:${(m.toolCalls ?? []).length}`,
-    )
+    .map((message) => {
+      if (message.parts?.length) {
+        return `${message.id}:${message.parts.map(partFingerprint).join(",")}`;
+      }
+      return `${message.id}:${message.content.length}`;
+    })
     .join("|");
 }
 

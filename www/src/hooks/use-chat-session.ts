@@ -8,9 +8,35 @@ import type { ChatQuota } from "@/lib/auth/types";
 import { chatQuotaExempt } from "@/lib/user-flags";
 
 import { STREAMING_ID } from "@/components/chat/chat-types";
-import type { ChatMessage } from "@/components/chat/chat-types";
-import { toolStatusLabel } from "@/components/chat/chat-utils";
+import type { ChatMessage, ChatPart } from "@/components/chat/chat-types";
+import {
+  appendReasoningDelta,
+  appendTextDelta,
+  appendToolStart,
+  assistantHasVisibleContent,
+  assistantTextFromParts,
+  finalizeParts,
+  markToolDone,
+  turnsToAssistantParts,
+} from "@/components/chat/chat-part-utils";
 import { useChatServerContext } from "@/hooks/use-chat-server-context";
+
+function updateStreamingMessage(
+  current: ChatMessage[],
+  updater: (parts: ChatPart[]) => ChatPart[],
+): ChatMessage[] {
+  return current.map((message) => {
+    if (message.id !== STREAMING_ID) {
+      return message;
+    }
+    const parts = updater(message.parts ?? []);
+    return {
+      ...message,
+      parts,
+      content: assistantTextFromParts(parts),
+    };
+  });
+}
 
 export function useChatSession() {
   const { user, refreshUser } = useAuth();
@@ -18,7 +44,6 @@ export function useChatSession() {
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState<string>(() => crypto.randomUUID());
   const [isStreaming, setIsStreaming] = useState(false);
-  const [toolStatus, setToolStatus] = useState<string | null>(null);
   const [tokenUsage, setTokenUsage] = useState<ChatTokenUsage | null>(null);
   const [quotaUsed, setQuotaUsed] = useState<number | null>(null);
   const [truncatedNotice, setTruncatedNotice] = useState(false);
@@ -56,23 +81,27 @@ export function useChatSession() {
     controller.abort();
     abortRef.current = null;
     setIsStreaming(false);
-    setToolStatus(null);
     setMessages((current) => {
       const streaming = current.find((message) => message.id === STREAMING_ID);
       if (!streaming) {
         return current;
       }
-      const hasContent =
-        streaming.content.trim().length > 0 ||
-        (streaming.reasoning?.trim().length ?? 0) > 0 ||
-        (streaming.toolCalls?.length ?? 0) > 0;
       const withoutStreaming = current.filter(
         (message) => message.id !== STREAMING_ID,
       );
-      if (!hasContent) {
+      if (!assistantHasVisibleContent(streaming)) {
         return withoutStreaming;
       }
-      return [...withoutStreaming, { ...streaming, id: crypto.randomUUID() }];
+      const parts = finalizeParts(streaming.parts ?? []);
+      return [
+        ...withoutStreaming,
+        {
+          ...streaming,
+          id: crypto.randomUUID(),
+          parts,
+          content: assistantTextFromParts(parts) || streaming.content,
+        },
+      ];
     });
   }, []);
 
@@ -80,7 +109,6 @@ export function useChatSession() {
     cancelStream();
     setMessages([]);
     setTokenUsage(null);
-    setToolStatus(null);
     setInput("");
     setIsStreaming(false);
     setTruncatedNotice(false);
@@ -94,18 +122,24 @@ export function useChatSession() {
       setSessionId(id);
       setTruncatedNotice(false);
       setMessages(
-        turns.map((turn) => ({
-          id: crypto.randomUUID(),
-          role: turn.role,
-          content: turn.content,
-          toolCalls:
-            turn.toolNames && turn.toolNames.length > 0
-              ? turn.toolNames
-              : undefined,
-        })),
+        turns.map((turn) => {
+          if (turn.role === "user") {
+            return {
+              id: crypto.randomUUID(),
+              role: turn.role,
+              content: turn.content,
+            };
+          }
+          const parts = turnsToAssistantParts(turn.content, turn.toolNames);
+          return {
+            id: crypto.randomUUID(),
+            role: turn.role,
+            content: turn.content,
+            parts: parts.length > 0 ? parts : undefined,
+          };
+        }),
       );
       setTokenUsage(null);
-      setToolStatus(null);
       setInput("");
       setIsStreaming(false);
     },
@@ -129,12 +163,11 @@ export function useChatSession() {
     const nextMessages = [
       ...messages,
       userMessage,
-      { id: STREAMING_ID, role: "assistant" as const, content: "" },
+      { id: STREAMING_ID, role: "assistant" as const, content: "", parts: [] },
     ];
     setMessages(nextMessages);
     setInput("");
     setIsStreaming(true);
-    setToolStatus(null);
     setTruncatedNotice(false);
 
     const controller = new AbortController();
@@ -150,41 +183,30 @@ export function useChatSession() {
         (event) => {
           switch (event.type) {
             case "toolStart":
-              setToolStatus(toolStatusLabel(event.name));
+              setMessages((current) =>
+                updateStreamingMessage(current, (parts) =>
+                  appendToolStart(parts, event.name),
+                ),
+              );
               break;
             case "toolDone":
               setMessages((current) =>
-                current.map((message) =>
-                  message.id === STREAMING_ID
-                    ? {
-                        ...message,
-                        toolCalls: [...(message.toolCalls ?? []), event.name],
-                      }
-                    : message,
+                updateStreamingMessage(current, (parts) =>
+                  markToolDone(parts, event.name),
                 ),
               );
-              setToolStatus(null);
               break;
             case "delta":
-              setToolStatus(null);
               setMessages((current) =>
-                current.map((message) =>
-                  message.id === STREAMING_ID
-                    ? { ...message, content: message.content + event.content }
-                    : message,
+                updateStreamingMessage(current, (parts) =>
+                  appendTextDelta(parts, event.content),
                 ),
               );
               break;
             case "reasoningDelta":
-              setToolStatus(null);
               setMessages((current) =>
-                current.map((message) =>
-                  message.id === STREAMING_ID
-                    ? {
-                        ...message,
-                        reasoning: (message.reasoning ?? "") + event.content,
-                      }
-                    : message,
+                updateStreamingMessage(current, (parts) =>
+                  appendReasoningDelta(parts, event.content),
                 ),
               );
               break;
@@ -207,17 +229,36 @@ export function useChatSession() {
                 void refreshUser();
               }
               setMessages((current) =>
-                current.map((msg) =>
-                  msg.id === STREAMING_ID
-                    ? {
-                        ...msg,
-                        id: crypto.randomUUID(),
-                        toolCalls:
-                          event.toolCalls?.map((tool) => tool.name) ??
-                          msg.toolCalls,
-                      }
-                    : msg,
-                ),
+                current.map((message) => {
+                  if (message.id !== STREAMING_ID) {
+                    return message;
+                  }
+                  let parts = finalizeParts(message.parts ?? []);
+                  const streamedTools = new Set(
+                    parts
+                      .filter((part) => part.kind === "tool")
+                      .map((part) => part.name),
+                  );
+                  for (const tool of event.toolCalls ?? []) {
+                    if (!streamedTools.has(tool.name)) {
+                      parts = [
+                        ...parts,
+                        {
+                          id: crypto.randomUUID(),
+                          kind: "tool",
+                          name: tool.name,
+                          status: "done",
+                        },
+                      ];
+                    }
+                  }
+                  return {
+                    ...message,
+                    id: crypto.randomUUID(),
+                    parts,
+                    content: assistantTextFromParts(parts),
+                  };
+                }),
               );
               break;
           }
@@ -241,11 +282,10 @@ export function useChatSession() {
       }
       toast.error(errorMessage);
       setMessages((current) =>
-        current.filter((msg) => msg.id !== STREAMING_ID),
+        current.filter((message) => message.id !== STREAMING_ID),
       );
     } finally {
       setIsStreaming(false);
-      setToolStatus(null);
       abortRef.current = null;
     }
   }, [
@@ -265,7 +305,6 @@ export function useChatSession() {
     input,
     setInput,
     isStreaming,
-    toolStatus,
     tokenUsage,
     chatQuota,
     quotaExceeded,

@@ -48,7 +48,6 @@ export function TrackerChatWidget() {
     input,
     setInput,
     isStreaming,
-    toolStatus,
     tokenUsage,
     chatQuota,
     quotaExceeded,
@@ -229,7 +228,6 @@ export function TrackerChatWidget() {
                               <ChatBubble
                                 key={message.id}
                                 message={message}
-                                toolStatus={toolStatus}
                                 isStreaming={isStreaming}
                               />
                             ))
