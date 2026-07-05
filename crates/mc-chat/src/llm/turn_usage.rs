@@ -141,6 +141,7 @@ mod tests {
             api_key: None,
             www_origin: String::new(),
             thinking_enabled: false,
+            thinking_effort: crate::config::ThinkingEffort::Medium,
         });
         assert_eq!(usage.turn_total_tokens, 1_380);
         assert_eq!(usage.completion_tokens, 80);
@@ -176,6 +177,7 @@ mod tests {
             api_key: None,
             www_origin: String::new(),
             thinking_enabled: false,
+            thinking_effort: crate::config::ThinkingEffort::Medium,
         });
         assert_eq!(usage.cached_tokens, Some(128));
     }

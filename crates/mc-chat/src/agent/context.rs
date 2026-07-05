@@ -150,6 +150,7 @@ mod tests {
             api_key: None,
             www_origin: String::new(),
             thinking_enabled: false,
+            thinking_effort: crate::config::ThinkingEffort::Medium,
         };
         assert!(should_trim_from_last_usage(&config, Some(900)));
         assert!(!should_trim_from_last_usage(&config, Some(100)));

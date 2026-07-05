@@ -165,15 +165,23 @@ fn apply_thinking(config: &AgentConfig, body: &mut serde_json::Value) {
     match config.provider {
         LlmProvider::OpenRouter => {
             body["reasoning"] = if config.thinking_enabled {
-                json!({ "enabled": true })
+                json!({ "effort": config.thinking_effort.as_api_str() })
             } else {
                 json!({ "effort": "none" })
             };
         }
         LlmProvider::LlamaCpp => {
-            body["chat_template_kwargs"] = json!({
-                "enable_thinking": config.thinking_enabled
-            });
+            if config.thinking_enabled {
+                body["chat_template_kwargs"] = json!({
+                    "enable_thinking": true
+                });
+                body["thinking_budget_tokens"] =
+                    json!(config.thinking_effort.llama_thinking_budget_tokens());
+            } else {
+                body["chat_template_kwargs"] = json!({
+                    "enable_thinking": false
+                });
+            }
         }
         LlmProvider::OpenAiCompatible => {}
     }
@@ -277,6 +285,7 @@ mod tests {
     use std::time::Duration;
 
     use super::*;
+    use crate::config::ThinkingEffort;
     use crate::llm::types::LlmRequestOptions;
 
     fn test_config(provider: LlmProvider, base_url: &str) -> AgentConfig {
@@ -295,6 +304,7 @@ mod tests {
             api_key: None,
             www_origin: String::new(),
             thinking_enabled: true,
+            thinking_effort: ThinkingEffort::Medium,
         }
     }
 
@@ -406,6 +416,25 @@ mod tests {
     }
 
     #[test]
+    fn openrouter_thinking_enabled_sends_effort() {
+        let mut config = test_config(LlmProvider::OpenRouter, "https://openrouter.ai/api");
+        config.thinking_enabled = true;
+        config.thinking_effort = ThinkingEffort::High;
+        let body = OpenAiLlmClient::build_body(
+            &config,
+            &ChatCompletionRequest {
+                model: "openrouter/free".into(),
+                messages: vec![],
+                tools: None,
+                tool_choice: None,
+                stream: false,
+                options: LlmRequestOptions::default(),
+            },
+        );
+        assert_eq!(body["reasoning"]["effort"], "high");
+    }
+
+    #[test]
     fn openrouter_thinking_disabled_sends_effort_none() {
         let mut config = test_config(LlmProvider::OpenRouter, "https://openrouter.ai/api");
         config.thinking_enabled = false;
@@ -424,9 +453,10 @@ mod tests {
     }
 
     #[test]
-    fn llama_thinking_enabled_sets_template_kwargs() {
+    fn llama_thinking_enabled_sets_template_kwargs_and_budget() {
         let mut config = test_config(LlmProvider::LlamaCpp, "http://localhost:8080");
         config.thinking_enabled = true;
+        config.thinking_effort = ThinkingEffort::Low;
         let body = OpenAiLlmClient::build_body(
             &config,
             &ChatCompletionRequest {
@@ -439,6 +469,7 @@ mod tests {
             },
         );
         assert_eq!(body["chat_template_kwargs"]["enable_thinking"], true);
+        assert_eq!(body["thinking_budget_tokens"], 1024);
     }
 
     #[test]

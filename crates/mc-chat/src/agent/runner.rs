@@ -606,6 +606,7 @@ mod tests {
             api_key: None,
             www_origin: String::new(),
             thinking_enabled: true,
+            thinking_effort: crate::config::ThinkingEffort::Medium,
         }
     }
 

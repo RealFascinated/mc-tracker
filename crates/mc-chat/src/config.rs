@@ -21,6 +21,41 @@ impl LlmProvider {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ThinkingEffort {
+    Low,
+    Medium,
+    High,
+}
+
+impl ThinkingEffort {
+    pub fn parse(value: &str) -> Result<Self, String> {
+        match value {
+            "low" => Ok(Self::Low),
+            "medium" => Ok(Self::Medium),
+            "high" => Ok(Self::High),
+            other => Err(format!("unknown llm_thinking_effort: {other}")),
+        }
+    }
+
+    pub fn as_api_str(self) -> &'static str {
+        match self {
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+        }
+    }
+
+    pub fn llama_thinking_budget_tokens(self) -> i32 {
+        match self {
+            Self::Low => 1024,
+            Self::Medium => 4096,
+            Self::High => 16384,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct AgentConfig {
     pub llm_base_url: String,
@@ -37,6 +72,7 @@ pub struct AgentConfig {
     pub api_key: Option<String>,
     pub www_origin: String,
     pub thinking_enabled: bool,
+    pub thinking_effort: ThinkingEffort,
 }
 
 impl AgentConfig {

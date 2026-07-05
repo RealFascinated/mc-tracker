@@ -8,7 +8,7 @@ pub mod traits;
 pub mod types;
 
 pub use agent::AgentLoop;
-pub use config::{AgentConfig, LlmProvider};
+pub use config::{AgentConfig, LlmProvider, ThinkingEffort};
 pub use error::ChatError;
 pub use llm::OpenAiLlmClient;
 pub use llm::{ChatMessage, MessageRole};

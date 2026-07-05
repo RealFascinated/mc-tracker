@@ -178,3 +178,7 @@ pub static STRING_LIST: StringListType = StringListType;
 pub static ENUM_LLM_PROVIDER: EnumType = EnumType {
     allowed: &["llama_cpp", "openrouter", "openai_compatible"],
 };
+
+pub static ENUM_LLM_THINKING_EFFORT: EnumType = EnumType {
+    allowed: &["low", "medium", "high"],
+};

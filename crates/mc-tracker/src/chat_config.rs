@@ -4,7 +4,7 @@ use std::time::Duration;
 use crate::insights::InsightsService;
 use crate::manager::ServerManager;
 use mc_chat::tools::ToolRegistry;
-use mc_chat::{AgentConfig, LlmProvider};
+use mc_chat::{AgentConfig, LlmProvider, ThinkingEffort};
 use mc_chat::{AgentLoop, ChatAgent, ChatToolDeps, LlmClient, OpenAiLlmClient};
 use mc_settings::{chat_enabled, SettingKey, SettingsStore};
 
@@ -41,6 +41,7 @@ pub fn agent_config(store: &SettingsStore) -> Result<AgentConfig, String> {
         },
         www_origin: store.cached_str(SettingKey::WwwOrigin),
         thinking_enabled: store.cached_bool(SettingKey::LlmThinkingEnabled),
+        thinking_effort: ThinkingEffort::parse(&store.cached_str(SettingKey::LlmThinkingEffort))?,
     })
 }
 

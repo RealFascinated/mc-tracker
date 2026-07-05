@@ -4,7 +4,9 @@ use cron::Schedule;
 use serde_json::{json, Value};
 
 use crate::derived::validate_www_origin;
-use crate::setting_type::{SettingType, BOOLEAN, ENUM_LLM_PROVIDER, INTEGER, STRING, STRING_LIST};
+use crate::setting_type::{
+    SettingType, BOOLEAN, ENUM_LLM_PROVIDER, ENUM_LLM_THINKING_EFFORT, INTEGER, STRING, STRING_LIST,
+};
 use crate::store::SettingsStore;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -31,10 +33,11 @@ pub enum SettingKey {
     LlmParallelSlots,
     LlmApiKey,
     LlmThinkingEnabled,
+    LlmThinkingEffort,
 }
 
 impl SettingKey {
-    pub const ALL: [Self; 22] = [
+    pub const ALL: [Self; 23] = [
         Self::PingerTimeoutMs,
         Self::PingerRetryAttempts,
         Self::PingerRetryDelayMs,
@@ -57,6 +60,7 @@ impl SettingKey {
         Self::LlmParallelSlots,
         Self::LlmApiKey,
         Self::LlmThinkingEnabled,
+        Self::LlmThinkingEffort,
     ];
 
     pub fn from_key(key: &str) -> Result<Self, String> {
@@ -90,6 +94,7 @@ impl SettingKey {
             Self::LlmParallelSlots => "llm_parallel_slots",
             Self::LlmApiKey => "llm_api_key",
             Self::LlmThinkingEnabled => "llm_thinking_enabled",
+            Self::LlmThinkingEffort => "llm_thinking_effort",
         }
     }
 
@@ -109,6 +114,7 @@ impl SettingKey {
             | Self::LlmTimeoutSecs
             | Self::LlmParallelSlots => &INTEGER,
             Self::LlmProvider => &ENUM_LLM_PROVIDER,
+            Self::LlmThinkingEffort => &ENUM_LLM_THINKING_EFFORT,
             Self::LlmModels => &STRING_LIST,
             _ => &STRING,
         }
@@ -140,6 +146,7 @@ impl SettingKey {
             Self::LlmParallelSlots => json!(2),
             Self::LlmApiKey => json!(""),
             Self::LlmThinkingEnabled => json!(true),
+            Self::LlmThinkingEffort => json!("medium"),
         }
     }
 
@@ -210,6 +217,7 @@ impl SettingKey {
             | Self::DnsCacheTtlMinutes
             | Self::SignUpEnabled
             | Self::LlmThinkingEnabled
+            | Self::LlmThinkingEffort
             | Self::LlmProvider => Ok(()),
         }
     }

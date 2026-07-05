@@ -24,6 +24,7 @@ import {
   llmModelPlaceholder,
   llmProviderShowsApiKey,
   llmProviderShowsParallelSlots,
+  llmProviderSupportsThinkingEffort,
   parseLlmProvider,
 } from "@/lib/admin/llm-provider-ui";
 import { errorMessage } from "@/lib/api/error-message";
@@ -85,6 +86,8 @@ function AdminSettingsPage() {
   const llmProvider = parseLlmProvider(values.llmProvider);
   const showLlmApiKey = llmProviderShowsApiKey(llmProvider);
   const showLlmParallelSlots = llmProviderShowsParallelSlots(llmProvider);
+  const showThinkingEffort =
+    values.llmThinkingEnabled && llmProviderSupportsThinkingEffort(llmProvider);
 
   function currentValues(): SettingsFormValues {
     return draft ?? loaded;
@@ -392,6 +395,30 @@ function AdminSettingsPage() {
               }
             />
           </SettingsField>
+          {showThinkingEffort ? (
+            <SettingsField
+              label="Thinking effort"
+              htmlFor="llm-thinking-effort"
+              hint={
+                llmProvider === "openrouter"
+                  ? "OpenRouter reasoning.effort — higher uses more reasoning tokens."
+                  : "llama.cpp thinking_budget_tokens — caps reasoning length per request."
+              }
+            >
+              <select
+                id="llm-thinking-effort"
+                className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+                value={values.llmThinkingEffort}
+                onChange={(event) =>
+                  updateString("llmThinkingEffort", event.target.value)
+                }
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </SettingsField>
+          ) : null}
           {showLlmApiKey ? (
             <SettingsField
               label="API key"

@@ -17,6 +17,12 @@ export function llmProviderShowsParallelSlots(
   return provider === "llama_cpp";
 }
 
+export function llmProviderSupportsThinkingEffort(
+  provider: LlmProviderId,
+): boolean {
+  return provider === "llama_cpp" || provider === "openrouter";
+}
+
 export function llmBaseUrlPlaceholder(provider: LlmProviderId): string {
   switch (provider) {
     case "openrouter":

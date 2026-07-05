@@ -5,6 +5,8 @@ export type LlmModelEntry = {
   value: string;
 };
 
+export type ThinkingEffortId = "low" | "medium" | "high";
+
 export type SettingsFormValues = {
   pingerTimeoutMs: number;
   pingerRetryAttempts: number;
@@ -27,6 +29,7 @@ export type SettingsFormValues = {
   llmProvider: string;
   llmParallelSlots: number;
   llmThinkingEnabled: boolean;
+  llmThinkingEffort: ThinkingEffortId;
   llmApiKeyConfigured: boolean;
 };
 
@@ -55,6 +58,7 @@ const FIELD_KEYS: Record<
   llmProvider: "llm_provider",
   llmParallelSlots: "llm_parallel_slots",
   llmThinkingEnabled: "llm_thinking_enabled",
+  llmThinkingEffort: "llm_thinking_effort",
 };
 
 function valueFromItem(
@@ -112,6 +116,9 @@ export function settingsListToFormValues(
     llmThinkingEnabled: get("llm_thinking_enabled")
       ? (valueFromItem(get("llm_thinking_enabled")!) as boolean)
       : true,
+    llmThinkingEffort: (get("llm_thinking_effort")
+      ? (valueFromItem(get("llm_thinking_effort")!) as string)
+      : "medium") as ThinkingEffortId,
     llmApiKeyConfigured: apiKeyConfigured,
   };
 }
