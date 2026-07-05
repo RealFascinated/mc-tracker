@@ -27,6 +27,7 @@ pub fn compact_search(response: ServersSearchResponse) -> Value {
 
 fn compact_server_list_item(server: &ServerListItemResponse) -> Value {
     json!({
+        "id": server.id,
         "name": server.name,
         "host": server.host,
         "port": effective_server_port(server.port, &server.server_type),
@@ -504,7 +505,7 @@ mod tests {
             false,
         );
         let item = &value["servers"][0];
-        assert!(item.get("id").is_none());
+        assert_eq!(item["id"], "id-Hypixel");
         assert!(item.get("peaks").is_none());
         assert_eq!(item["port"], 25565);
         assert_eq!(item["name"], "Hypixel");

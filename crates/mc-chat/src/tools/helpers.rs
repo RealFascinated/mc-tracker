@@ -21,11 +21,12 @@ pub fn schema_empty() -> serde_json::Value {
     serde_json::json!({ "type": "object", "properties": {} })
 }
 
-pub fn schema_optional_search() -> serde_json::Value {
+pub fn schema_optional_search_limit() -> serde_json::Value {
     serde_json::json!({
         "type": "object",
         "properties": {
-            "search": { "type": "string" }
+            "search": { "type": "string" },
+            "limit": { "type": "integer" }
         }
     })
 }
