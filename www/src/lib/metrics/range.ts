@@ -88,9 +88,9 @@ const METRIC_RANGE_OPTION_DEFS = [
     lookbackSeconds: 365 * DAY_SECONDS,
   },
   {
-    value: "2y",
-    label: "Last 2 years",
-    shortLabel: "2y",
+    value: "10y",
+    label: "Last 10 years",
+    shortLabel: "10y",
     group: "years",
     lookbackSeconds: METRIC_WINDOW_MAX_SPAN_SECONDS,
   },

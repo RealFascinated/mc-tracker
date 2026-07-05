@@ -32,7 +32,7 @@ impl MetricQueryWindow {
         }
         if span > step_policy::max_span() {
             return Err(MetricsError::InvalidWindow(
-                "metric window must be at most 2 years".into(),
+                "metric window must be at most 10 years".into(),
             ));
         }
 
@@ -119,7 +119,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_rejects_span_longer_than_two_years() {
+    fn parse_rejects_span_longer_than_ten_years() {
         let to = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()

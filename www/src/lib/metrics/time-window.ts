@@ -63,7 +63,7 @@ export function validateMetricEpochWindow(
   }
 
   if (span > METRIC_WINDOW_MAX_SPAN_SECONDS) {
-    return "Range must be at most 2 years.";
+    return "Range must be at most 10 years.";
   }
 
   return undefined;

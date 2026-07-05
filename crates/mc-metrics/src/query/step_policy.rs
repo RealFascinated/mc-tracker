@@ -3,9 +3,11 @@ use std::time::Duration;
 const MAX_POINTS: u64 = 800;
 const MIN_STEP: Duration = Duration::from_secs(15);
 const MIN_SPAN: Duration = Duration::from_secs(5 * 60);
-const MAX_SPAN: Duration = Duration::from_secs(730 * 24 * 60 * 60);
-const NICE_STEP_SECONDS: [u64; 12] = [
-    15, 30, 60, 120, 300, 900, 1800, 3600, 7200, 21600, 86400, 172800,
+const MAX_SPAN_YEARS: u64 = 10;
+const MAX_SPAN: Duration = Duration::from_secs(MAX_SPAN_YEARS * 365 * 24 * 60 * 60);
+const NICE_STEP_SECONDS: [u64; 15] = [
+    15, 30, 60, 120, 300, 900, 1800, 3600, 7200, 21600, 86400, 172800, 604_800, 1_209_600,
+    2_592_000,
 ];
 
 pub fn min_span() -> Duration {
@@ -91,10 +93,7 @@ mod tests {
     }
 
     #[test]
-    fn step_for_max_span_uses_largest_nice_interval() {
-        assert_eq!(
-            step_for(max_span()),
-            Duration::from_secs(SECONDS_PER_DAY_U64)
-        );
+    fn step_for_max_span_uses_weekly_interval() {
+        assert_eq!(step_for(max_span()), Duration::from_secs(604_800));
     }
 }
