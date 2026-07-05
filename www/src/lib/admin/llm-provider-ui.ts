@@ -1,5 +1,27 @@
 export type LlmProviderId = "llama_cpp" | "openrouter" | "openai_compatible";
 
+export const LLM_PROVIDER_OPTIONS: ReadonlyArray<{
+  value: LlmProviderId;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "llama_cpp",
+    label: "llama.cpp",
+    description: "Local OpenAI-compatible server",
+  },
+  {
+    value: "openrouter",
+    label: "OpenRouter",
+    description: "Cloud models with automatic fallback",
+  },
+  {
+    value: "openai_compatible",
+    label: "OpenAI-compatible",
+    description: "Any API that follows the OpenAI chat format",
+  },
+];
+
 export function parseLlmProvider(value: string): LlmProviderId {
   if (value === "openrouter" || value === "openai_compatible") {
     return value;

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { MessageCircleIcon } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import {
   DEFAULT_SUGGESTIONS,
   pickRotatingSuggestions,
@@ -32,28 +33,26 @@ export function ChatSuggestions({
   const visibleCount = isFollowUp
     ? FOLLOW_UP_SUGGESTION_COUNT
     : EMPTY_SUGGESTION_COUNT;
-  const [offset, setOffset] = useState(() =>
+  const [offset] = useState(() =>
     Math.floor(Math.random() * allSuggestions.length),
   );
-
-  useEffect(() => {
-    setOffset(Math.floor(Math.random() * allSuggestions.length));
-  }, [rotationKey, allSuggestions.length]);
 
   const suggestions = useMemo(
     () => pickRotatingSuggestions(allSuggestions, visibleCount, offset),
     [allSuggestions, visibleCount, offset],
   );
   const chips = suggestions.map((suggestion, index) => (
-    <button
-      key={`${offset}-${index}-${suggestion}`}
+    <Button
+      key={`${rotationKey}-${offset}-${index}-${suggestion}`}
       type="button"
+      variant="outline"
+      size="sm"
       disabled={disabled}
       onClick={() => onPick(suggestion)}
-      className="rounded-soft border border-border bg-card px-3 py-1.5 text-center text-xs text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+      className="h-auto whitespace-normal rounded-soft border-border bg-card px-3 py-1.5 text-center text-xs font-normal hover:bg-muted dark:border-border dark:bg-card dark:hover:bg-muted"
     >
       {suggestion}
-    </button>
+    </Button>
   ));
 
   if (isFollowUp) {

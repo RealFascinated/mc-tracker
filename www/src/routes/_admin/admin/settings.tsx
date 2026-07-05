@@ -6,11 +6,18 @@ import { toast } from "sonner";
 
 import {
   SettingsField,
-  SettingsGroup,
+  SettingsFieldGrid,
+  SettingsSection,
+  SettingsSubsection,
 } from "@/components/admin/settings-fields";
+import { PageHeader } from "@/components/layout/page-header";
 import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import {
   dirtySettingPatches,
@@ -20,6 +27,7 @@ import type { SettingsFormValues } from "@/lib/admin/settings-form";
 import { patchAdminSetting } from "@/lib/api/admin/settings";
 import { adminSettingsQueryOptions } from "@/lib/api/admin/settings.queries";
 import {
+  LLM_PROVIDER_OPTIONS,
   llmBaseUrlPlaceholder,
   llmModelPlaceholder,
   llmProviderShowsApiKey,
@@ -163,15 +171,15 @@ function AdminSettingsPage() {
   }
 
   return (
-    <form id="admin-settings-form" onSubmit={handleSubmit}>
-      <div className="settings-page">
-        <div className="settings-panel-header">
-          <div className="min-w-0">
-            <h1 className="settings-panel-title">Settings</h1>
-            <p className="settings-panel-description">
-              Configure how the tracker runs.
-            </p>
-          </div>
+    <form
+      id="admin-settings-form"
+      onSubmit={handleSubmit}
+      className="space-y-6"
+    >
+      <PageHeader
+        title="Settings"
+        description="Configure how the tracker runs — metrics, pinging, chat, and access."
+        actions={
           <Button
             type="submit"
             variant="brand"
@@ -179,95 +187,110 @@ function AdminSettingsPage() {
           >
             {saveMutation.isPending ? "Saving…" : "Save changes"}
           </Button>
-        </div>
+        }
+      />
 
-        <SettingsGroup title="Metrics">
-          <SettingsField
-            label="Push cron"
-            htmlFor="metrics-push-cron"
-            hint="Six-field cron with seconds. Every 15 seconds is */15 * * * * *."
-          >
-            <Input
-              id="metrics-push-cron"
-              value={values.metricsPushCron}
-              onChange={(event) =>
-                updateString("metricsPushCron", event.target.value)
-              }
-              placeholder="*/15 * * * * *"
-              spellCheck={false}
-              className="font-mono"
-            />
-          </SettingsField>
-          <SettingsField
-            label="VM URL"
-            htmlFor="victoriametrics-url"
-            hint="VictoriaMetrics ingest endpoint used for metric pushes."
-          >
-            <Input
-              id="victoriametrics-url"
-              value={values.victoriametricsUrl}
-              onChange={(event) =>
-                updateString("victoriametricsUrl", event.target.value)
-              }
-              placeholder="http://localhost:8428"
-              spellCheck={false}
-              className="font-mono"
-            />
-          </SettingsField>
-        </SettingsGroup>
+      <div className="flex flex-col gap-6">
+        <SettingsSection
+          title="Metrics"
+          description="Where player-count samples are pushed and how often."
+        >
+          <SettingsFieldGrid>
+            <SettingsField
+              label="Push cron"
+              htmlFor="metrics-push-cron"
+              hint="Six-field cron with seconds. Every 15 seconds is */15 * * * * *."
+            >
+              <Input
+                id="metrics-push-cron"
+                value={values.metricsPushCron}
+                onChange={(event) =>
+                  updateString("metricsPushCron", event.target.value)
+                }
+                placeholder="*/15 * * * * *"
+                spellCheck={false}
+                className="font-mono"
+              />
+            </SettingsField>
+            <SettingsField
+              label="VictoriaMetrics URL"
+              htmlFor="victoriametrics-url"
+              hint="Ingest endpoint used for metric pushes."
+            >
+              <Input
+                id="victoriametrics-url"
+                value={values.victoriametricsUrl}
+                onChange={(event) =>
+                  updateString("victoriametricsUrl", event.target.value)
+                }
+                placeholder="http://localhost:8428"
+                spellCheck={false}
+                className="font-mono"
+              />
+            </SettingsField>
+          </SettingsFieldGrid>
+        </SettingsSection>
 
-        <SettingsGroup title="Pinger">
-          <SettingsField
-            label="Timeout (ms)"
-            htmlFor="pinger-timeout-ms"
-            hint="Maximum wait time per ping attempt."
-          >
-            <Input
-              id="pinger-timeout-ms"
-              type="number"
-              min={1}
-              value={values.pingerTimeoutMs}
-              onChange={(event) =>
-                updateNumber("pingerTimeoutMs", event.target.value)
-              }
-              inputMode="numeric"
-            />
-          </SettingsField>
-          <SettingsField
-            label="Retry attempts"
-            htmlFor="pinger-retry-attempts"
-            hint="How many times to retry after a failed ping."
-          >
-            <Input
-              id="pinger-retry-attempts"
-              type="number"
-              min={1}
-              value={values.pingerRetryAttempts}
-              onChange={(event) =>
-                updateNumber("pingerRetryAttempts", event.target.value)
-              }
-              inputMode="numeric"
-            />
-          </SettingsField>
-          <SettingsField
-            label="Retry delay (ms)"
-            htmlFor="pinger-retry-delay-ms"
-            hint="Pause between retry attempts."
-          >
-            <Input
-              id="pinger-retry-delay-ms"
-              type="number"
-              min={0}
-              value={values.pingerRetryDelayMs}
-              onChange={(event) =>
-                updateNumber("pingerRetryDelayMs", event.target.value)
-              }
-              inputMode="numeric"
-            />
-          </SettingsField>
-        </SettingsGroup>
+        <SettingsSection
+          title="Pinger"
+          description="How server status checks are timed and retried."
+        >
+          <SettingsFieldGrid columns={3}>
+            <SettingsField
+              label="Timeout"
+              htmlFor="pinger-timeout-ms"
+              hint="Maximum wait per ping attempt, in milliseconds."
+            >
+              <Input
+                id="pinger-timeout-ms"
+                type="number"
+                min={1}
+                value={values.pingerTimeoutMs}
+                onChange={(event) =>
+                  updateNumber("pingerTimeoutMs", event.target.value)
+                }
+                inputMode="numeric"
+              />
+            </SettingsField>
+            <SettingsField
+              label="Retry attempts"
+              htmlFor="pinger-retry-attempts"
+              hint="Retries after a failed ping."
+            >
+              <Input
+                id="pinger-retry-attempts"
+                type="number"
+                min={1}
+                value={values.pingerRetryAttempts}
+                onChange={(event) =>
+                  updateNumber("pingerRetryAttempts", event.target.value)
+                }
+                inputMode="numeric"
+              />
+            </SettingsField>
+            <SettingsField
+              label="Retry delay"
+              htmlFor="pinger-retry-delay-ms"
+              hint="Pause between retries, in milliseconds."
+            >
+              <Input
+                id="pinger-retry-delay-ms"
+                type="number"
+                min={0}
+                value={values.pingerRetryDelayMs}
+                onChange={(event) =>
+                  updateNumber("pingerRetryDelayMs", event.target.value)
+                }
+                inputMode="numeric"
+              />
+            </SettingsField>
+          </SettingsFieldGrid>
+        </SettingsSection>
 
-        <SettingsGroup title="DNS cache">
+        <SettingsSection
+          title="DNS cache"
+          description="Reduce DNS lookups by caching resolved hostnames."
+        >
           <SettingsField
             label="DNS cache enabled"
             htmlFor="dns-cache-enabled"
@@ -283,9 +306,10 @@ function AdminSettingsPage() {
             />
           </SettingsField>
           <SettingsField
-            label="TTL (minutes)"
+            label="TTL"
             htmlFor="dns-cache-ttl-minutes"
-            hint="How long cached DNS entries remain valid."
+            hint="How long cached DNS entries remain valid, in minutes."
+            className="max-w-xs"
           >
             <Input
               id="dns-cache-ttl-minutes"
@@ -299,55 +323,112 @@ function AdminSettingsPage() {
               disabled={!values.dnsCacheEnabled}
             />
           </SettingsField>
-        </SettingsGroup>
+        </SettingsSection>
 
-        <SettingsGroup title="Chat / LLM">
-          <SettingsField
-            label="Provider"
-            htmlFor="llm-provider"
-            hint="llama.cpp for local inference; OpenRouter for cloud models."
+        <SettingsSection
+          title="Chat / LLM"
+          description="AI assistant connection, models, and agent limits. Leave base URL empty to disable chat."
+        >
+          <SettingsSubsection
+            title="Connection"
+            description="Provider, endpoint, and credentials."
           >
-            <select
-              id="llm-provider"
-              className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
-              value={values.llmProvider}
-              onChange={(event) =>
-                updateString("llmProvider", event.target.value)
-              }
+            <SettingsField
+              label="Provider"
+              htmlFor="llm-provider"
+              hint="Determines default URLs, auth, and provider-specific options."
             >
-              <option value="llama_cpp">llama.cpp (local)</option>
-              <option value="openrouter">OpenRouter</option>
-              <option value="openai_compatible">OpenAI-compatible</option>
-            </select>
-          </SettingsField>
-          <SettingsField
-            label="LLM base URL"
-            htmlFor="llm-base-url"
-            hint="OpenAI-compatible API base. Leave empty to disable chat."
-          >
-            <Input
-              id="llm-base-url"
-              value={values.llmBaseUrl}
-              onChange={(event) =>
-                updateString("llmBaseUrl", event.target.value)
-              }
-              placeholder={llmBaseUrlPlaceholder(llmProvider)}
-              spellCheck={false}
-              className="font-mono"
-            />
-          </SettingsField>
-          <SettingsField
-            label="Models"
-            htmlFor="llm-models-0"
-            hint={
+              <NativeSelect
+                id="llm-provider"
+                className="w-full"
+                value={values.llmProvider}
+                onChange={(event) =>
+                  updateString("llmProvider", event.target.value)
+                }
+              >
+                {LLM_PROVIDER_OPTIONS.map((option) => (
+                  <NativeSelectOption key={option.value} value={option.value}>
+                    {option.label} — {option.description}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </SettingsField>
+            <SettingsField
+              label="Base URL"
+              htmlFor="llm-base-url"
+              hint="OpenAI-compatible API base. Chat is disabled when empty."
+            >
+              <Input
+                id="llm-base-url"
+                value={values.llmBaseUrl}
+                onChange={(event) =>
+                  updateString("llmBaseUrl", event.target.value)
+                }
+                placeholder={llmBaseUrlPlaceholder(llmProvider)}
+                spellCheck={false}
+                className="font-mono"
+              />
+            </SettingsField>
+            {showLlmApiKey ? (
+              <SettingsField
+                label="API key"
+                htmlFor="llm-api-key"
+                hint={
+                  llmProvider === "openrouter"
+                    ? "Required for OpenRouter. Set-only — leave blank to keep the current key."
+                    : "Bearer token for the API. Set-only — leave blank to keep the current key."
+                }
+              >
+                <Input
+                  id="llm-api-key"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder={
+                    loaded.llmApiKeyConfigured ? "********" : undefined
+                  }
+                  value={apiKeyDraft ?? ""}
+                  onChange={(event) => setApiKeyDraft(event.target.value)}
+                  spellCheck={false}
+                  className="max-w-md"
+                />
+              </SettingsField>
+            ) : null}
+            {showLlmParallelSlots ? (
+              <SettingsField
+                label="Parallel slots"
+                htmlFor="llm-parallel-slots"
+                hint="llama.cpp slot affinity; match your server --parallel value."
+                className="max-w-xs"
+              >
+                <Input
+                  id="llm-parallel-slots"
+                  type="number"
+                  min={1}
+                  value={values.llmParallelSlots}
+                  onChange={(event) =>
+                    updateNumber("llmParallelSlots", event.target.value)
+                  }
+                  inputMode="numeric"
+                />
+              </SettingsField>
+            ) : null}
+          </SettingsSubsection>
+
+          <SettingsSubsection
+            title="Models"
+            description={
               llmProvider === "openrouter"
-                ? "Tried in order. First is primary; OpenRouter falls back if a model fails."
-                : "Model names sent to the LLM API. First entry is primary."
+                ? "Tried in order. OpenRouter falls back automatically if a model fails."
+                : "Model names sent to the API. The first entry is primary."
             }
+            bordered
           >
             <div className="space-y-2">
               {values.llmModels.map((entry, index) => (
                 <div key={entry.id} className="flex items-center gap-2">
+                  <span className="w-20 shrink-0 text-xs font-medium text-muted-foreground">
+                    {index === 0 ? "Primary" : `Fallback ${index}`}
+                  </span>
                   <Input
                     id={index === 0 ? "llm-models-0" : undefined}
                     value={entry.value}
@@ -374,173 +455,193 @@ function AdminSettingsPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="w-full"
                 onClick={addLlmModel}
               >
                 <Plus className="size-4" />
                 Add model
               </Button>
             </div>
-          </SettingsField>
-          <SettingsField
-            label="Thinking"
-            htmlFor="llm-thinking-enabled"
-            hint="Request extended reasoning from the model when supported. Shown in chat as collapsible thinking."
-          >
-            <Switch
-              id="llm-thinking-enabled"
-              checked={values.llmThinkingEnabled}
-              onCheckedChange={(checked) =>
-                updateBoolean("llmThinkingEnabled", checked)
-              }
-            />
-          </SettingsField>
-          {showThinkingEffort ? (
             <SettingsField
-              label="Thinking effort"
-              htmlFor="llm-thinking-effort"
-              hint={
-                llmProvider === "openrouter"
-                  ? "OpenRouter reasoning.effort — higher uses more reasoning tokens."
-                  : "llama.cpp thinking_budget_tokens — caps reasoning length per request."
-              }
+              label="Thinking"
+              htmlFor="llm-thinking-enabled"
+              hint="Enable model reasoning when supported. Shown in chat as a collapsible block."
+              switchControl
             >
-              <select
-                id="llm-thinking-effort"
-                className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
-                value={values.llmThinkingEffort}
-                onChange={(event) =>
-                  updateString("llmThinkingEffort", event.target.value)
+              <Switch
+                id="llm-thinking-enabled"
+                checked={values.llmThinkingEnabled}
+                onCheckedChange={(checked) =>
+                  updateBoolean("llmThinkingEnabled", checked)
                 }
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </SettingsField>
-          ) : null}
-          {showLlmApiKey ? (
-            <SettingsField
-              label="API key"
-              htmlFor="llm-api-key"
-              hint={
-                llmProvider === "openrouter"
-                  ? "Required for OpenRouter. Set-only — leave blank to keep the current key."
-                  : "Bearer token for the API. Set-only — leave blank to keep the current key."
-              }
-            >
-              <Input
-                id="llm-api-key"
-                type="password"
-                autoComplete="new-password"
-                placeholder={
-                  loaded.llmApiKeyConfigured ? "********" : undefined
-                }
-                value={apiKeyDraft ?? ""}
-                onChange={(event) => setApiKeyDraft(event.target.value)}
-                spellCheck={false}
               />
             </SettingsField>
-          ) : null}
-          <SettingsField
-            label="Max tool rounds"
-            htmlFor="llm-max-tool-rounds"
-            hint="Maximum tool-call loops per chat turn."
+            {showThinkingEffort ? (
+              <SettingsField
+                label="Thinking effort"
+                htmlFor="llm-thinking-effort"
+                hint={
+                  llmProvider === "openrouter"
+                    ? "OpenRouter reasoning.effort — higher uses more reasoning tokens."
+                    : "llama.cpp thinking_budget_tokens — caps reasoning length per request."
+                }
+                className="max-w-xs"
+              >
+                <NativeSelect
+                  id="llm-thinking-effort"
+                  className="w-full"
+                  value={values.llmThinkingEffort}
+                  onChange={(event) =>
+                    updateString("llmThinkingEffort", event.target.value)
+                  }
+                >
+                  <NativeSelectOption value="low">Low</NativeSelectOption>
+                  <NativeSelectOption value="medium">Medium</NativeSelectOption>
+                  <NativeSelectOption value="high">High</NativeSelectOption>
+                </NativeSelect>
+              </SettingsField>
+            ) : null}
+          </SettingsSubsection>
+
+          <SettingsSubsection
+            title="Agent limits"
+            description="Tool loops, timeouts, and per-request token caps."
+            bordered
           >
-            <Input
-              id="llm-max-tool-rounds"
-              type="number"
-              min={1}
-              value={values.llmMaxToolRounds}
-              onChange={(event) =>
-                updateNumber("llmMaxToolRounds", event.target.value)
-              }
-            />
-          </SettingsField>
-          <SettingsField
-            label="Max turn pairs in prompt"
-            htmlFor="llm-context-max-turns"
-            hint="Soft cap on user/assistant pairs included in the LLM prompt."
-          >
-            <Input
-              id="llm-context-max-turns"
-              type="number"
-              min={1}
-              value={values.llmContextMaxTurns}
-              onChange={(event) =>
-                updateNumber("llmContextMaxTurns", event.target.value)
-              }
-            />
-          </SettingsField>
-          <SettingsField
-            label="Context max tokens"
-            htmlFor="llm-context-max"
-            hint={
-              llmProvider === "llama_cpp"
-                ? "Match your llama.cpp --ctx-size."
-                : "Model context window size used for budgeting."
-            }
-          >
-            <Input
-              id="llm-context-max"
-              type="number"
-              min={1}
-              value={values.llmContextMax}
-              onChange={(event) =>
-                updateNumber("llmContextMax", event.target.value)
-              }
-            />
-          </SettingsField>
-          <SettingsField
-            label="Context reserve tokens"
-            htmlFor="llm-context-reserve"
-            hint="Tokens reserved for the model completion."
-          >
-            <Input
-              id="llm-context-reserve"
-              type="number"
-              min={1}
-              value={values.llmContextReserve}
-              onChange={(event) =>
-                updateNumber("llmContextReserve", event.target.value)
-              }
-            />
-          </SettingsField>
-          <SettingsField
-            label="Timeout (seconds)"
-            htmlFor="llm-timeout-secs"
-            hint="Maximum time for a single chat turn."
-          >
-            <Input
-              id="llm-timeout-secs"
-              type="number"
-              min={1}
-              value={values.llmTimeoutSecs}
-              onChange={(event) =>
-                updateNumber("llmTimeoutSecs", event.target.value)
-              }
-            />
-          </SettingsField>
-          {showLlmParallelSlots ? (
+            <SettingsFieldGrid columns={3}>
+              <SettingsField
+                label="Max tool rounds"
+                htmlFor="llm-max-tool-rounds"
+                hint="Maximum tool-call loops per chat turn."
+              >
+                <Input
+                  id="llm-max-tool-rounds"
+                  type="number"
+                  min={1}
+                  value={values.llmMaxToolRounds}
+                  onChange={(event) =>
+                    updateNumber("llmMaxToolRounds", event.target.value)
+                  }
+                  inputMode="numeric"
+                />
+              </SettingsField>
+              <SettingsField
+                label="Turn timeout"
+                htmlFor="llm-timeout-secs"
+                hint="Maximum time for a single chat turn, in seconds."
+              >
+                <Input
+                  id="llm-timeout-secs"
+                  type="number"
+                  min={1}
+                  value={values.llmTimeoutSecs}
+                  onChange={(event) =>
+                    updateNumber("llmTimeoutSecs", event.target.value)
+                  }
+                  inputMode="numeric"
+                />
+              </SettingsField>
+              <SettingsField
+                label="Tool max tokens"
+                htmlFor="llm-tool-max-tokens"
+                hint="Token cap for intermediate tool-call completions."
+              >
+                <Input
+                  id="llm-tool-max-tokens"
+                  type="number"
+                  min={1}
+                  value={values.llmToolMaxTokens}
+                  onChange={(event) =>
+                    updateNumber("llmToolMaxTokens", event.target.value)
+                  }
+                  inputMode="numeric"
+                />
+              </SettingsField>
+            </SettingsFieldGrid>
             <SettingsField
-              label="Parallel slots"
-              htmlFor="llm-parallel-slots"
-              hint="llama.cpp slot affinity; match your server --parallel value."
+              label="Final max tokens"
+              htmlFor="llm-final-max-tokens"
+              hint="Token cap for the final assistant message."
+              className="max-w-xs"
             >
               <Input
-                id="llm-parallel-slots"
+                id="llm-final-max-tokens"
                 type="number"
                 min={1}
-                value={values.llmParallelSlots}
+                value={values.llmFinalMaxTokens}
                 onChange={(event) =>
-                  updateNumber("llmParallelSlots", event.target.value)
+                  updateNumber("llmFinalMaxTokens", event.target.value)
                 }
+                inputMode="numeric"
               />
             </SettingsField>
-          ) : null}
-        </SettingsGroup>
+          </SettingsSubsection>
 
-        <SettingsGroup title="Access">
+          <SettingsSubsection
+            title="Context window"
+            description="How much conversation history is included in each prompt."
+            bordered
+          >
+            <SettingsFieldGrid columns={3}>
+              <SettingsField
+                label="Max turn pairs"
+                htmlFor="llm-context-max-turns"
+                hint="Soft cap on user/assistant pairs in the prompt."
+              >
+                <Input
+                  id="llm-context-max-turns"
+                  type="number"
+                  min={1}
+                  value={values.llmContextMaxTurns}
+                  onChange={(event) =>
+                    updateNumber("llmContextMaxTurns", event.target.value)
+                  }
+                  inputMode="numeric"
+                />
+              </SettingsField>
+              <SettingsField
+                label="Context max tokens"
+                htmlFor="llm-context-max"
+                hint={
+                  llmProvider === "llama_cpp"
+                    ? "Match your llama.cpp --ctx-size."
+                    : "Model context window used for budgeting."
+                }
+              >
+                <Input
+                  id="llm-context-max"
+                  type="number"
+                  min={1}
+                  value={values.llmContextMax}
+                  onChange={(event) =>
+                    updateNumber("llmContextMax", event.target.value)
+                  }
+                  inputMode="numeric"
+                />
+              </SettingsField>
+              <SettingsField
+                label="Reserve tokens"
+                htmlFor="llm-context-reserve"
+                hint="Tokens reserved for the model completion. Must be less than context max."
+              >
+                <Input
+                  id="llm-context-reserve"
+                  type="number"
+                  min={1}
+                  value={values.llmContextReserve}
+                  onChange={(event) =>
+                    updateNumber("llmContextReserve", event.target.value)
+                  }
+                  inputMode="numeric"
+                />
+              </SettingsField>
+            </SettingsFieldGrid>
+          </SettingsSubsection>
+        </SettingsSection>
+
+        <SettingsSection
+          title="Access"
+          description="Public URL and account registration."
+        >
           <SettingsField
             label="WWW origin"
             htmlFor="www-origin"
@@ -570,7 +671,7 @@ function AdminSettingsPage() {
               }
             />
           </SettingsField>
-        </SettingsGroup>
+        </SettingsSection>
       </div>
     </form>
   );

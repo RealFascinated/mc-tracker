@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
   TooltipContent,
@@ -34,16 +35,13 @@ function ContextUsageTooltip({ usage }: { usage: ChatTokenUsage }) {
         </p>
       </div>
 
-      <progress
-        className={cn(
-          "bg-muted h-1.5 w-full overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:rounded-full",
-          hot
-            ? "[&::-webkit-progress-value]:bg-destructive [&::-moz-progress-bar]:bg-destructive"
-            : "[&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary",
-        )}
+      <Progress
         value={pct}
-        max={100}
         aria-label="Context window usage"
+        className={cn(
+          "h-1.5 rounded-full",
+          hot && "[&_[data-slot=progress-indicator]]:bg-destructive",
+        )}
       />
 
       <dl className="grid gap-1.5 text-[11px] leading-tight">

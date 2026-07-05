@@ -18,6 +18,7 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -222,6 +223,7 @@ export function TrackerChatWidget() {
                         >
                           {messages.length === 0 ? (
                             <ChatSuggestions
+                              key={`${sessionId}:0`}
                               disabled={isStreaming || quotaExceeded}
                               onPick={pickSuggestion}
                               rotationKey={`${sessionId}:0`}
@@ -255,6 +257,7 @@ export function TrackerChatWidget() {
                   followUpSuggestionsExpanded ? (
                     <div className="px-3 pt-2">
                       <ChatSuggestions
+                        key={`${sessionId}:${messages.length}`}
                         variant="follow-up"
                         disabled={quotaExceeded}
                         onPick={pickSuggestion}
@@ -303,7 +306,7 @@ export function TrackerChatWidget() {
                         </TooltipContent>
                       </Tooltip>
                     ) : null}
-                    <textarea
+                    <Textarea
                       ref={inputRef}
                       value={input}
                       aria-label="Chat message"
@@ -319,7 +322,7 @@ export function TrackerChatWidget() {
                         quotaExceeded ? "Weekly limit reached" : "Message…"
                       }
                       disabled={isStreaming || quotaExceeded}
-                      className="monitor-input h-10! min-h-10 max-h-24 flex-1 resize-none overflow-y-auto px-3 py-0 text-sm leading-10"
+                      className="h-10! min-h-10 max-h-24 flex-1 resize-none overflow-y-auto px-3 py-0 text-sm leading-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden focus-visible:border-border focus-visible:ring-0"
                     />
                     <Button
                       type="button"

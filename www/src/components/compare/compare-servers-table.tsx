@@ -20,10 +20,7 @@ import type { ServersCompareResponse } from "@/lib/api/compare";
 import type { ServerListItem, ServerSearchItem } from "@/lib/api/servers";
 import { serverQueryOptions } from "@/lib/api/servers.queries";
 import type { PartialError, TimeseriesSummaryResponse } from "@/lib/api/types";
-import {
-  formatServerPlatformLabel,
-  serverPlatformBadgeClassName,
-} from "@/lib/api/platform";
+import { ServerPlatformBadge } from "@/components/dashboard/server-platform-badge";
 import { MAX_COMPARE_SERVERS, MIN_COMPARE_SERVERS } from "@/lib/compare/ids";
 import {
   formatDecimal,
@@ -69,6 +66,19 @@ function errorForServer(
       (entry) => entry.target.kind === "server" && entry.target.id === id,
     ) ?? null
   );
+}
+
+async function copyCompareLink() {
+  try {
+    await navigator.clipboard.writeText(window.location.href);
+    toast.success("Compare link copied");
+  } catch {
+    toast.error("Could not copy link");
+  }
+}
+
+function CompareStatCell({ value }: { value: string }) {
+  return <span className="tabular-nums">{value}</span>;
 }
 
 export function CompareServersTable({
@@ -177,15 +187,6 @@ export function CompareServersTable({
     onIdsChange(ids.filter((id) => id !== serverId));
   };
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success("Compare link copied");
-    } catch {
-      toast.error("Could not copy link");
-    }
-  };
-
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder((order) => (order === "asc" ? "desc" : "asc"));
@@ -209,10 +210,6 @@ export function CompareServersTable({
         ? `Add ${MIN_COMPARE_SERVERS - ids.length} more to compare.`
         : `${ids.length} of ${MAX_COMPARE_SERVERS} servers selected`;
 
-  const statCell = (value: string) => (
-    <span className="tabular-nums">{value}</span>
-  );
-
   return (
     <DashboardCard className="overflow-visible">
       <DashboardCardHeader
@@ -223,7 +220,7 @@ export function CompareServersTable({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => void copyLink()}
+            onClick={() => void copyCompareLink()}
             disabled={ids.length < MIN_COMPARE_SERVERS}
           >
             <Link2 className="size-3.5" aria-hidden />
@@ -329,13 +326,7 @@ export function CompareServersTable({
                             <div className="truncate font-medium">
                               {server.name}
                             </div>
-                            <span
-                              className={serverPlatformBadgeClassName(
-                                server.type,
-                              )}
-                            >
-                              {formatServerPlatformLabel(server.type)}
-                            </span>
+                            <ServerPlatformBadge platform={server.type} />
                           </div>
                         </div>
                       ) : (
@@ -343,41 +334,61 @@ export function CompareServersTable({
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {statCell(formatPlayers(server?.playersOnline ?? null))}
+                      <CompareStatCell
+                        value={formatPlayers(server?.playersOnline ?? null)}
+                      />
                     </TableCell>
                     <TableCell className="text-right">
-                      {row.loading && ids.length >= MIN_COMPARE_SERVERS
-                        ? statCell("…")
-                        : statCell(formatPlayers(row.summary?.start ?? null))}
+                      {row.loading && ids.length >= MIN_COMPARE_SERVERS ? (
+                        <CompareStatCell value="…" />
+                      ) : (
+                        <CompareStatCell
+                          value={formatPlayers(row.summary?.start ?? null)}
+                        />
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {row.loading && ids.length >= MIN_COMPARE_SERVERS
-                        ? statCell("…")
-                        : statCell(formatPlayers(row.summary?.end ?? null))}
+                      {row.loading && ids.length >= MIN_COMPARE_SERVERS ? (
+                        <CompareStatCell value="…" />
+                      ) : (
+                        <CompareStatCell
+                          value={formatPlayers(row.summary?.end ?? null)}
+                        />
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {row.loading && ids.length >= MIN_COMPARE_SERVERS
-                        ? statCell("…")
-                        : statCell(
-                            formatDelta(
-                              row.summary?.start ?? null,
-                              row.summary?.end ?? null,
-                            ),
+                      {row.loading && ids.length >= MIN_COMPARE_SERVERS ? (
+                        <CompareStatCell value="…" />
+                      ) : (
+                        <CompareStatCell
+                          value={formatDelta(
+                            row.summary?.start ?? null,
+                            row.summary?.end ?? null,
                           )}
+                        />
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {row.loading && ids.length >= MIN_COMPARE_SERVERS
-                        ? statCell("…")
-                        : statCell(
+                      {row.loading && ids.length >= MIN_COMPARE_SERVERS ? (
+                        <CompareStatCell value="…" />
+                      ) : (
+                        <CompareStatCell
+                          value={
                             row.summary?.changePct == null
                               ? "—"
-                              : formatPercentValue(row.summary.changePct),
-                          )}
+                              : formatPercentValue(row.summary.changePct)
+                          }
+                        />
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {row.loading && ids.length >= MIN_COMPARE_SERVERS
-                        ? statCell("…")
-                        : statCell(formatPlayers(row.summary?.avg ?? null))}
+                      {row.loading && ids.length >= MIN_COMPARE_SERVERS ? (
+                        <CompareStatCell value="…" />
+                      ) : (
+                        <CompareStatCell
+                          value={formatPlayers(row.summary?.avg ?? null)}
+                        />
+                      )}
                     </TableCell>
                     <TableCell>
                       <button

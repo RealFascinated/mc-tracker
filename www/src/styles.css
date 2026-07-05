@@ -323,54 +323,6 @@
 }
 
 @layer components {
-  .monitor-input {
-    display: block;
-    width: 100%;
-    height: 2rem;
-    padding: 0.375rem 0.75rem;
-    font-size: 0.875rem;
-    color: var(--foreground);
-    background: var(--input);
-    border: 0;
-    border-radius: 0.125rem;
-    box-shadow:
-      inset 4px 0 0 transparent,
-      inset 0 0 0 2px var(--border);
-    outline: none;
-    transition: box-shadow 150ms;
-  }
-
-  .monitor-input::placeholder {
-    color: var(--muted-foreground);
-    opacity: 0.5;
-  }
-
-  .monitor-input:focus-visible {
-    box-shadow:
-      inset 4px 0 0 var(--ring),
-      inset 0 0 0 2px var(--border);
-    outline: none;
-  }
-
-  .monitor-input:disabled,
-  .monitor-input:read-only {
-    cursor: not-allowed;
-    opacity: 0.5;
-    box-shadow: none;
-  }
-
-  .monitor-input[aria-invalid="true"] {
-    box-shadow:
-      inset 4px 0 0 var(--error),
-      inset 0 0 0 2px var(--border);
-  }
-
-  .monitor-input[type="datetime-local"] {
-    min-height: 0;
-    min-width: 0;
-    padding-block: 0;
-  }
-
   .metric-chart-grid-container {
     container-type: inline-size;
     width: 100%;
@@ -652,52 +604,8 @@
     @apply grid gap-4 sm:grid-cols-2;
   }
 
-  .settings-page {
-    @apply w-full;
-  }
-
-  .settings-panel-header {
-    @apply mb-8 flex flex-wrap items-start justify-between gap-4;
-  }
-
-  .settings-panel-title {
-    @apply text-2xl font-semibold tracking-tight text-foreground;
-  }
-
-  .settings-panel-description {
-    @apply mt-1 max-w-2xl text-sm text-muted-foreground;
-  }
-
-  .settings-group {
-    @apply mb-10 last:mb-0;
-  }
-
-  .settings-group-title {
-    @apply mb-2 text-base font-semibold text-foreground;
-  }
-
   .settings-fields {
-    @apply flex flex-col;
-  }
-
-  .settings-field {
-    @apply flex items-center justify-between gap-6 border-b border-border py-4;
-  }
-
-  .settings-field-label {
-    @apply flex min-w-0 items-center gap-2 text-sm text-muted-foreground;
-  }
-
-  .settings-field-info {
-    @apply text-warning/70 transition-colors hover:text-warning;
-  }
-
-  .settings-field-control {
-    @apply w-56 shrink-0;
-  }
-
-  .settings-field-control--switch {
-    @apply flex w-auto shrink-0 justify-end;
+    @apply flex flex-col gap-3;
   }
 
   .site-header {
@@ -776,11 +684,11 @@
   }
 
   .site-header-nav-button {
-    @apply max-sm:size-9 max-sm:px-0;
+    @apply h-8 max-sm:w-8 max-sm:px-0;
   }
 
   .site-header-inner--with-toolbar .site-header-nav-button {
-    @apply size-9 px-0 lg:size-auto lg:px-3;
+    @apply h-8 w-8 px-0 lg:w-auto lg:px-3;
   }
 
 
@@ -865,11 +773,11 @@
   }
 
   .dashboard-time-range-picker-group-label {
-    @apply mb-1 px-2 text-[0.625rem] font-semibold tracking-[0.08em] text-muted-foreground/80 uppercase;
+    @apply mb-1 px-3 text-[0.625rem] font-semibold tracking-[0.08em] text-muted-foreground/80 uppercase;
   }
 
   .dashboard-time-range-picker-option {
-    @apply flex w-full items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-muted-foreground transition-colors outline-none;
+    @apply -mx-3 flex w-full items-center justify-between gap-2 rounded-none px-3 py-1.5 text-left text-sm text-muted-foreground transition-colors outline-none;
     @apply hover:bg-muted hover:text-foreground;
   }
 
@@ -893,16 +801,12 @@
     @apply relative;
   }
 
-  .dashboard-time-range-picker-input-wrap .monitor-input {
+  .dashboard-time-range-picker-input-wrap [data-slot="input"] {
     @apply w-full pr-9;
   }
 
   .dashboard-time-range-picker-input-icon {
     @apply pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-muted-foreground;
-  }
-
-  .dashboard-time-range-picker-error {
-    @apply text-xs text-destructive;
   }
 
   .dashboard-time-range-picker-apply {
@@ -1095,7 +999,7 @@
   }
 
   .dashboard-search-input {
-    @apply h-8 w-full py-1 pr-8 pl-8 text-sm;
+    @apply h-8 w-full py-1 text-sm;
   }
 
   .dashboard-search-clear {
@@ -1103,7 +1007,7 @@
   }
 
   .dashboard-search-suggestions {
-    @apply absolute top-[calc(100%+0.25rem)] right-0 left-0 z-50 max-h-72 overflow-y-auto rounded-soft border border-border bg-popover p-1 shadow-md;
+    @apply absolute top-[calc(100%+0.25rem)] right-0 left-0 z-50 max-h-72 overflow-y-auto rounded-soft border border-border bg-popover shadow-md;
   }
 
   .dashboard-search-suggestions-list {
@@ -1115,11 +1019,11 @@
   }
 
   .dashboard-search-suggestion {
-    @apply flex w-full items-center gap-2 rounded-snug px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent;
+    @apply flex w-full items-center gap-2 rounded-none px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-muted;
   }
 
   .dashboard-search-suggestion-active {
-    @apply bg-accent;
+    @apply bg-muted;
   }
 
   .dashboard-search-suggestion-copy {
@@ -1206,20 +1110,6 @@
 
   .entity-metrics-title-row {
     @apply flex min-w-0 items-center gap-2;
-  }
-
-  .server-platform-badge {
-    display: inline-flex;
-    height: 1.125rem;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    padding-inline: 0.375rem;
-    border-radius: var(--radius-snug);
-    font-size: 0.625rem;
-    font-weight: 600;
-    line-height: 1;
-    letter-spacing: 0.04em;
   }
 
   .server-platform-badge-java {

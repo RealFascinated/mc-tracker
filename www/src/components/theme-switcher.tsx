@@ -22,7 +22,7 @@ export function ThemeSwitcher({ className }: { className?: string }) {
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size="default"
           className={cn(
             "site-header-nav-button text-muted-foreground hover:bg-transparent hover:text-monitor dark:hover:bg-transparent dark:hover:text-warning",
             className,

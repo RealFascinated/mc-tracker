@@ -6,11 +6,8 @@ import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-li
 import { ServerFavicon } from "@/components/dashboard/server-favicon";
 import type { ServerListItem } from "@/lib/api/servers";
 import { formatServerHost } from "@/lib/api/servers";
+import { ServerPlatformBadge } from "@/components/dashboard/server-platform-badge";
 import { asnDetailSearch, asnLabelOptional } from "@/lib/api/asns";
-import {
-  formatServerPlatformLabel,
-  serverPlatformBadgeClassName,
-} from "@/lib/api/platform";
 import { cn } from "cnfast";
 
 type ServerIdentityHeaderProps = {
@@ -61,9 +58,7 @@ export function ServerIdentityHeader({
           <div className="min-w-0">
             <div className="entity-metrics-title-row">
               {linkToDetail ? linkedNameContent : nameContent}
-              <span className={serverPlatformBadgeClassName(server.type)}>
-                {formatServerPlatformLabel(server.type)}
-              </span>
+              <ServerPlatformBadge platform={server.type} />
             </div>
             <div className="entity-metrics-subtitle">
               {address}

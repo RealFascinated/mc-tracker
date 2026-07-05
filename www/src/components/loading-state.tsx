@@ -1,5 +1,4 @@
-import { Loader2 } from "lucide-react";
-
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "cnfast";
 
 type LoadingStateProps = {
@@ -22,10 +21,7 @@ function LoadingState({
         className,
       )}
     >
-      <Loader2
-        className="size-4 animate-spin text-monitor dark:text-warning"
-        aria-hidden
-      />
+      <Spinner className="text-monitor dark:text-warning" />
       <span>{message}</span>
     </output>
   );

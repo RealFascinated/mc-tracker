@@ -140,7 +140,7 @@ export function DashboardSearchInput({ className }: DashboardSearchInputProps) {
         }
         aria-autocomplete="list"
         autoComplete="off"
-        className="dashboard-search-input"
+        className="dashboard-search-input pl-8 pr-8"
       />
       {value ? (
         <button

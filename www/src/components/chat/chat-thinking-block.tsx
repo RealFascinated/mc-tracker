@@ -1,6 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { MessageScrollerItem } from "@/components/ui/message-scroller";
 import { cn } from "cnfast";
 
@@ -17,13 +22,10 @@ export function ChatThinkingBlock({
   defaultExpanded: boolean;
 }) {
   const hasContent = part.content.trim().length > 0;
-  const [expanded, setExpanded] = useState(defaultExpanded);
-
-  useEffect(() => {
-    if (!part.streaming) {
-      setExpanded(false);
-    }
-  }, [part.streaming]);
+  const [manualExpanded, setManualExpanded] = useState<boolean | null>(null);
+  const expanded = part.streaming
+    ? (manualExpanded ?? defaultExpanded)
+    : (manualExpanded ?? false);
 
   if (!hasContent && part.streaming) {
     return (
@@ -42,20 +44,20 @@ export function ChatThinkingBlock({
   return (
     <MessageScrollerItem messageId={`${messageId}:${part.id}`}>
       <div className="flex w-full min-w-0 justify-start">
-        <div className="max-w-[88%] min-w-0">
-          <button
-            type="button"
-            onClick={() => setExpanded((current) => !current)}
-            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs"
-          >
+        <Collapsible
+          open={expanded}
+          onOpenChange={setManualExpanded}
+          className="max-w-[88%] min-w-0"
+        >
+          <CollapsibleTrigger className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs">
             {expanded ? (
               <ChevronDownIcon className="size-3.5 shrink-0" />
             ) : (
               <ChevronRightIcon className="size-3.5 shrink-0" />
             )}
             {part.streaming ? "Thinking…" : "Thought"}
-          </button>
-          {expanded ? (
+          </CollapsibleTrigger>
+          <CollapsibleContent>
             <p
               className={cn(
                 "text-muted-foreground mt-1 text-xs whitespace-pre-wrap",
@@ -64,8 +66,8 @@ export function ChatThinkingBlock({
             >
               {part.content}
             </p>
-          ) : null}
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </MessageScrollerItem>
   );

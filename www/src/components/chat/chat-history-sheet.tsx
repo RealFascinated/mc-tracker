@@ -3,15 +3,33 @@ import { HistoryIcon, MessageSquareTextIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -50,12 +68,12 @@ function HistoryLoadingSkeleton() {
       {Array.from({ length: 4 }, (_, index) => (
         <li
           key={index}
-          className="bg-muted/40 flex animate-pulse gap-3 rounded-soft border border-border px-4 py-3.5"
+          className="flex gap-3 rounded-soft border border-border px-4 py-3.5"
         >
-          <div className="bg-muted size-9 shrink-0 rounded-soft" />
+          <Skeleton className="size-9 shrink-0 rounded-soft" />
           <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
-            <div className="bg-muted h-3.5 w-4/5 rounded-sm" />
-            <div className="bg-muted h-3 w-1/3 rounded-sm" />
+            <Skeleton className="h-3.5 w-4/5 rounded-sm" />
+            <Skeleton className="h-3 w-1/3 rounded-sm" />
           </div>
         </li>
       ))}
@@ -153,28 +171,26 @@ export function ChatHistorySheet({
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
             {isPending ? <HistoryLoadingSkeleton /> : null}
             {isError ? (
-              <div className="rounded-soft border border-destructive/30 bg-destructive/5 px-4 py-6 text-center">
-                <p className="text-destructive text-sm font-medium">
-                  Failed to load history
-                </p>
-                <p className="text-muted-foreground mt-1 text-xs">
+              <Alert variant="destructive" className="rounded-soft">
+                <AlertTitle>Failed to load history</AlertTitle>
+                <AlertDescription>
                   Check your connection and try again.
-                </p>
-              </div>
+                </AlertDescription>
+              </Alert>
             ) : null}
             {!isPending && !isError && sessionCount === 0 ? (
-              <div className="flex flex-col items-center gap-3 rounded-soft border border-dashed border-border px-6 py-12 text-center">
-                <MessageSquareTextIcon className="text-muted-foreground size-10 stroke-1" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">
-                    No conversations yet
-                  </p>
-                  <p className="text-muted-foreground max-w-xs text-xs leading-relaxed">
+              <Empty className="rounded-soft border border-dashed border-border">
+                <EmptyHeader>
+                  <EmptyMedia>
+                    <MessageSquareTextIcon className="text-muted-foreground size-10 stroke-1" />
+                  </EmptyMedia>
+                  <EmptyTitle>No conversations yet</EmptyTitle>
+                  <EmptyDescription>
                     Chats you finish will show up here so you can pick up where
                     you left off.
-                  </p>
-                </div>
-              </div>
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             ) : null}
             {!isPending && !isError && sessionCount > 0 ? (
               <ul className="flex flex-col gap-2.5">
@@ -215,9 +231,9 @@ export function ChatHistorySheet({
                                 {formatTimeAgo(session.updatedAt)}
                               </time>
                               {isActive ? (
-                                <span className="bg-primary/15 text-primary rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+                                <Badge className="h-5 rounded-full px-2 text-[10px] font-semibold tracking-wide uppercase">
                                   Current
-                                </span>
+                                </Badge>
                               ) : null}
                             </span>
                           </span>
@@ -257,7 +273,7 @@ export function ChatHistorySheet({
         </DialogContent>
       </Dialog>
 
-      <Dialog
+      <AlertDialog
         open={pendingDelete !== null}
         onOpenChange={(nextOpen) => {
           if (!nextOpen && !deleting) {
@@ -265,10 +281,10 @@ export function ChatHistorySheet({
           }
         }}
       >
-        <DialogContent className="sm:max-w-sm" showCloseButton>
-          <DialogHeader>
-            <DialogTitle>Delete conversation?</DialogTitle>
-            <DialogDescription>
+        <AlertDialogContent className="rounded-soft sm:max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
               {pendingDelete ? (
                 <>
                   <span className="text-foreground font-medium">
@@ -277,17 +293,10 @@ export function ChatHistorySheet({
                   will be permanently removed. This cannot be undone.
                 </>
               ) : null}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={deleting}
-              onClick={() => setPendingDelete(null)}
-            >
-              Cancel
-            </Button>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
             <Button
               type="button"
               variant="destructive"
@@ -296,9 +305,9 @@ export function ChatHistorySheet({
             >
               {deleting ? "Deleting…" : "Delete"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

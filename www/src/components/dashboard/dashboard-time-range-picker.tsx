@@ -4,9 +4,12 @@ import { useReducer, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover } from "@/components/ui/popover-root";
-import { PopoverContent } from "@/components/ui/popover-content";
-import { PopoverTrigger } from "@/components/ui/popover-trigger";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   datetimeLocalValueToEpoch,
   epochToDatetimeLocalValue,
@@ -253,9 +256,9 @@ export function DashboardTimeRangePicker({
                 </div>
               </div>
               {customDraft.customError ? (
-                <p className="dashboard-time-range-picker-error" role="alert">
-                  {customDraft.customError}
-                </p>
+                <Alert variant="destructive" className="rounded-snug">
+                  <AlertDescription>{customDraft.customError}</AlertDescription>
+                </Alert>
               ) : null}
             </div>
             <Button

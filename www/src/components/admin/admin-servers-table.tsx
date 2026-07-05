@@ -34,10 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { AdminServer } from "@/lib/api/admin/servers";
-import {
-  formatServerPlatformLabel,
-  serverPlatformBadgeClassName,
-} from "@/lib/api/platform";
+import { ServerPlatformBadge } from "@/components/dashboard/server-platform-badge";
 import type { ServerPlatform } from "@/lib/api/platform";
 import { formatMediumDateTime } from "@/lib/formatter";
 import { cn } from "cnfast";
@@ -108,13 +105,7 @@ export function AdminServersTable({
         accessorKey: "type",
         header: "Type",
         cell: ({ row }) => (
-          <span
-            className={serverPlatformBadgeClassName(
-              row.original.type as ServerPlatform,
-            )}
-          >
-            {formatServerPlatformLabel(row.original.type as ServerPlatform)}
-          </span>
+          <ServerPlatformBadge platform={row.original.type as ServerPlatform} />
         ),
       },
       {

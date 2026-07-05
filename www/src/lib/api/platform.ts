@@ -18,12 +18,6 @@ export function formatServerPlatformLabel(platform: ServerPlatform): string {
   return platform === "PE" ? "Bedrock" : "Java";
 }
 
-export function serverPlatformBadgeClassName(platform: ServerPlatform): string {
-  return platform === "PE"
-    ? "server-platform-badge server-platform-badge-bedrock"
-    : "server-platform-badge server-platform-badge-java";
-}
-
 export function parseServerPlatformFilterParam(
   value: unknown,
 ): ServerPlatformFilter | undefined {

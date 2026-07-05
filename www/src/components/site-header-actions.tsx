@@ -55,7 +55,7 @@ function SiteHeaderUserMenu({ iconOnly = false }: SiteHeaderUserMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          size="sm"
+          size="default"
           className="site-header-nav-button gap-1.5"
           aria-label="Account menu"
         >
@@ -129,7 +129,7 @@ function SiteHeaderActions({ iconOnly = false }: { iconOnly?: boolean }) {
         <>
           <Button
             variant="outline"
-            size="sm"
+            size="default"
             asChild
             className="site-header-nav-button"
           >
@@ -147,7 +147,7 @@ function SiteHeaderActions({ iconOnly = false }: { iconOnly?: boolean }) {
           </Button>
           <Button
             variant="outline"
-            size="sm"
+            size="default"
             asChild
             className="site-header-nav-button"
           >

@@ -22,10 +22,10 @@ export function ScrollToTopButton() {
   return (
     <Button
       type="button"
-      variant="secondary"
+      variant="outline"
       size="icon-lg"
       className={cn(
-        "fixed right-4 bottom-[calc(1rem+3rem+0.5rem)] z-50 size-12 rounded-full shadow-lg ring-2 ring-background transition-[opacity,transform]",
+        "fixed right-4 bottom-[calc(1rem+3rem+0.5rem)] z-50 size-12 rounded-full border-border bg-card text-foreground shadow-lg ring-2 ring-background transition-[opacity,transform] hover:bg-card-hover dark:border-border dark:bg-card dark:hover:bg-card-hover",
         !visible && "pointer-events-none scale-0 opacity-0",
       )}
       aria-label="Scroll to top"

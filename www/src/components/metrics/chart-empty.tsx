@@ -1,3 +1,4 @@
+import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import { cn } from "cnfast";
 
 type Props = {
@@ -8,15 +9,11 @@ type Props = {
 
 function ChartEmpty({ message, className, height = 220 }: Props) {
   return (
-    <div
-      className={cn(
-        "flex w-full items-center justify-center text-center text-xs text-muted-foreground",
-        className,
-      )}
-      style={{ height }}
-    >
-      {message}
-    </div>
+    <Empty className={cn("border-0 p-0", className)} style={{ height }}>
+      <EmptyHeader>
+        <EmptyDescription>{message}</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
 }
 
