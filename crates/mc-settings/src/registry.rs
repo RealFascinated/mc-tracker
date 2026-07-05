@@ -4,7 +4,7 @@ use cron::Schedule;
 use serde_json::{json, Value};
 
 use crate::derived::validate_www_origin;
-use crate::setting_type::{SettingType, BOOLEAN, ENUM_LLM_PROVIDER, INTEGER, STRING};
+use crate::setting_type::{SettingType, BOOLEAN, ENUM_LLM_PROVIDER, INTEGER, STRING, STRING_LIST};
 use crate::store::SettingsStore;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -19,7 +19,7 @@ pub enum SettingKey {
     SignUpEnabled,
     WwwOrigin,
     LlmBaseUrl,
-    LlmModel,
+    LlmModels,
     LlmMaxToolRounds,
     LlmContextMaxTurns,
     LlmToolMaxTokens,
@@ -30,10 +30,11 @@ pub enum SettingKey {
     LlmProvider,
     LlmParallelSlots,
     LlmApiKey,
+    LlmThinkingEnabled,
 }
 
 impl SettingKey {
-    pub const ALL: [Self; 21] = [
+    pub const ALL: [Self; 22] = [
         Self::PingerTimeoutMs,
         Self::PingerRetryAttempts,
         Self::PingerRetryDelayMs,
@@ -44,7 +45,7 @@ impl SettingKey {
         Self::SignUpEnabled,
         Self::WwwOrigin,
         Self::LlmBaseUrl,
-        Self::LlmModel,
+        Self::LlmModels,
         Self::LlmMaxToolRounds,
         Self::LlmContextMaxTurns,
         Self::LlmToolMaxTokens,
@@ -55,6 +56,7 @@ impl SettingKey {
         Self::LlmProvider,
         Self::LlmParallelSlots,
         Self::LlmApiKey,
+        Self::LlmThinkingEnabled,
     ];
 
     pub fn from_key(key: &str) -> Result<Self, String> {
@@ -76,7 +78,7 @@ impl SettingKey {
             Self::SignUpEnabled => "sign_up_enabled",
             Self::WwwOrigin => "www_origin",
             Self::LlmBaseUrl => "llm_base_url",
-            Self::LlmModel => "llm_model",
+            Self::LlmModels => "llm_models",
             Self::LlmMaxToolRounds => "llm_max_tool_rounds",
             Self::LlmContextMaxTurns => "llm_context_max_turns",
             Self::LlmToolMaxTokens => "llm_tool_max_tokens",
@@ -87,12 +89,13 @@ impl SettingKey {
             Self::LlmProvider => "llm_provider",
             Self::LlmParallelSlots => "llm_parallel_slots",
             Self::LlmApiKey => "llm_api_key",
+            Self::LlmThinkingEnabled => "llm_thinking_enabled",
         }
     }
 
     pub fn type_(self) -> &'static dyn SettingType {
         match self {
-            Self::DnsCacheEnabled | Self::SignUpEnabled => &BOOLEAN,
+            Self::DnsCacheEnabled | Self::SignUpEnabled | Self::LlmThinkingEnabled => &BOOLEAN,
             Self::PingerTimeoutMs
             | Self::PingerRetryAttempts
             | Self::PingerRetryDelayMs
@@ -106,6 +109,7 @@ impl SettingKey {
             | Self::LlmTimeoutSecs
             | Self::LlmParallelSlots => &INTEGER,
             Self::LlmProvider => &ENUM_LLM_PROVIDER,
+            Self::LlmModels => &STRING_LIST,
             _ => &STRING,
         }
     }
@@ -122,7 +126,9 @@ impl SettingKey {
             Self::SignUpEnabled => json!(false),
             Self::WwwOrigin => json!(""),
             Self::LlmBaseUrl => json!(""),
-            Self::LlmModel => json!("default"),
+            Self::LlmModels => {
+                json!(["openrouter/free", "deepseek/deepseek-v4-flash"])
+            }
             Self::LlmMaxToolRounds => json!(8),
             Self::LlmContextMaxTurns => json!(10),
             Self::LlmToolMaxTokens => json!(1024),
@@ -133,6 +139,7 @@ impl SettingKey {
             Self::LlmProvider => json!("llama_cpp"),
             Self::LlmParallelSlots => json!(2),
             Self::LlmApiKey => json!(""),
+            Self::LlmThinkingEnabled => json!(true),
         }
     }
 
@@ -196,12 +203,13 @@ impl SettingKey {
                 Ok(())
             }
             Self::LlmBaseUrl
-            | Self::LlmModel
+            | Self::LlmModels
             | Self::LlmApiKey
             | Self::DnsCacheEnabled
             | Self::PingerRetryDelayMs
             | Self::DnsCacheTtlMinutes
             | Self::SignUpEnabled
+            | Self::LlmThinkingEnabled
             | Self::LlmProvider => Ok(()),
         }
     }

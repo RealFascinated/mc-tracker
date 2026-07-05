@@ -84,6 +84,14 @@ function ContextUsageTooltip({ usage }: { usage: ChatTokenUsage }) {
             </dd>
           </div>
         ) : null}
+        {usage.reasoningTokens != null && usage.reasoningTokens > 0 ? (
+          <div className="flex items-baseline justify-between gap-4">
+            <dt className="text-muted-foreground">Reasoning</dt>
+            <dd className="text-popover-foreground tabular-nums">
+              {formatTokenCountFull(usage.reasoningTokens)}
+            </dd>
+          </div>
+        ) : null}
       </dl>
     </div>
   );

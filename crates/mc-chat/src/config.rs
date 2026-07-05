@@ -24,7 +24,7 @@ impl LlmProvider {
 #[derive(Debug, Clone)]
 pub struct AgentConfig {
     pub llm_base_url: String,
-    pub llm_model: String,
+    pub llm_models: Vec<String>,
     pub max_tool_rounds: u32,
     pub context_max_turns: u32,
     pub tool_max_tokens: u32,
@@ -35,6 +35,8 @@ pub struct AgentConfig {
     pub provider: LlmProvider,
     pub parallel_slots: u32,
     pub api_key: Option<String>,
+    pub www_origin: String,
+    pub thinking_enabled: bool,
 }
 
 impl AgentConfig {
@@ -44,5 +46,13 @@ impl AgentConfig {
 
     pub fn base_url(&self) -> &str {
         self.llm_base_url.trim_end_matches('/')
+    }
+
+    pub fn primary_model(&self) -> &str {
+        self.llm_models
+            .first()
+            .map(String::as_str)
+            .filter(|model| !model.is_empty())
+            .unwrap_or("default")
     }
 }

@@ -10,6 +10,8 @@ pub struct ChatTokenUsage {
     pub cached_tokens: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cache_write_tokens: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reasoning_tokens: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -28,6 +30,9 @@ pub enum ChatStreamEvent {
         name: String,
     },
     Delta {
+        content: String,
+    },
+    ReasoningDelta {
         content: String,
     },
     Done {

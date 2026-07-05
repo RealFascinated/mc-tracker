@@ -1,3 +1,4 @@
+import { Minus, Plus } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -110,12 +111,42 @@ function AdminSettingsPage() {
   }
 
   function updateBoolean(
-    key: "dnsCacheEnabled" | "signUpEnabled",
+    key: "dnsCacheEnabled" | "signUpEnabled" | "llmThinkingEnabled",
     checked: boolean,
   ) {
     setDraft({
       ...currentValues(),
       [key]: checked,
+    });
+  }
+
+  function updateLlmModel(id: string, value: string) {
+    setDraft({
+      ...currentValues(),
+      llmModels: currentValues().llmModels.map((entry) =>
+        entry.id === id ? { ...entry, value } : entry,
+      ),
+    });
+  }
+
+  function addLlmModel() {
+    setDraft({
+      ...currentValues(),
+      llmModels: [
+        ...currentValues().llmModels,
+        { id: crypto.randomUUID(), value: "" },
+      ],
+    });
+  }
+
+  function removeLlmModel(id: string) {
+    const current = currentValues().llmModels;
+    if (current.length <= 1) {
+      return;
+    }
+    setDraft({
+      ...currentValues(),
+      llmModels: current.filter((entry) => entry.id !== id),
     });
   }
 
@@ -303,16 +334,62 @@ function AdminSettingsPage() {
             />
           </SettingsField>
           <SettingsField
-            label="Model"
-            htmlFor="llm-model"
-            hint="Model name sent to the LLM API."
+            label="Models"
+            htmlFor="llm-models-0"
+            hint={
+              llmProvider === "openrouter"
+                ? "Tried in order. First is primary; OpenRouter falls back if a model fails."
+                : "Model names sent to the LLM API. First entry is primary."
+            }
           >
-            <Input
-              id="llm-model"
-              value={values.llmModel}
-              onChange={(event) => updateString("llmModel", event.target.value)}
-              placeholder={llmModelPlaceholder(llmProvider)}
-              spellCheck={false}
+            <div className="space-y-2">
+              {values.llmModels.map((entry, index) => (
+                <div key={entry.id} className="flex items-center gap-2">
+                  <Input
+                    id={index === 0 ? "llm-models-0" : undefined}
+                    value={entry.value}
+                    onChange={(event) =>
+                      updateLlmModel(entry.id, event.target.value)
+                    }
+                    placeholder={llmModelPlaceholder(llmProvider)}
+                    spellCheck={false}
+                    className="font-mono"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Remove model"
+                    disabled={values.llmModels.length <= 1}
+                    onClick={() => removeLlmModel(entry.id)}
+                  >
+                    <Minus className="size-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={addLlmModel}
+              >
+                <Plus className="size-4" />
+                Add model
+              </Button>
+            </div>
+          </SettingsField>
+          <SettingsField
+            label="Thinking"
+            htmlFor="llm-thinking-enabled"
+            hint="Request extended reasoning from the model when supported. Shown in chat as collapsible thinking."
+          >
+            <Switch
+              id="llm-thinking-enabled"
+              checked={values.llmThinkingEnabled}
+              onCheckedChange={(checked) =>
+                updateBoolean("llmThinkingEnabled", checked)
+              }
             />
           </SettingsField>
           {showLlmApiKey ? (

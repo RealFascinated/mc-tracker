@@ -39,6 +39,7 @@ export function TrackerChatWidget() {
   const { isLoading, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [enterAnimationDone, setEnterAnimationDone] = useState(false);
   const [followUpSuggestionsExpanded, setFollowUpSuggestionsExpanded] =
     useState(true);
   const {
@@ -64,11 +65,13 @@ export function TrackerChatWidget() {
   const {
     size: chatWindowSize,
     isResizable,
+    isResizing,
     onResizePointerDown,
   } = useChatWindowSize();
 
   const openChat = useCallback(() => {
     setMounted(true);
+    setEnterAnimationDone(false);
     setOpen(true);
   }, []);
 
@@ -78,20 +81,28 @@ export function TrackerChatWidget() {
   }, [cancelStream]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      closeChat();
+    if (isResizing) {
+      setEnterAnimationDone(true);
     }
-  }, [isAuthenticated, closeChat]);
+  }, [isResizing]);
+
+  const panelOpen = open && isAuthenticated;
 
   useEffect(() => {
-    if (!open || !isAuthenticated) {
+    if (!isAuthenticated) {
+      cancelStream();
+    }
+  }, [isAuthenticated, cancelStream]);
+
+  useEffect(() => {
+    if (!panelOpen) {
       return;
     }
     const id = requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
     return () => cancelAnimationFrame(id);
-  }, [open, isAuthenticated, inputRef]);
+  }, [panelOpen, inputRef]);
 
   if (isLoading) {
     return null;
@@ -101,17 +112,27 @@ export function TrackerChatWidget() {
     <>
       {mounted ? (
         <div
-          data-state={open ? "open" : "closed"}
           style={{
             width: chatWindowSize.width,
             height: chatWindowSize.height,
           }}
           className={cn(
-            "fixed right-4 bottom-4 z-50 origin-bottom-right duration-200",
-            "data-[state=closed]:pointer-events-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-2 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:fill-mode-forwards",
+            "fixed right-4 bottom-4 z-50 origin-bottom-right",
+            isResizing && "transition-none",
+            !isResizing &&
+              panelOpen &&
+              !enterAnimationDone &&
+              "duration-200 animate-in fade-in-0 slide-in-from-bottom-2 zoom-in-95",
+            !isResizing &&
+              !panelOpen &&
+              "pointer-events-none duration-200 animate-out fade-out-0 zoom-out-95 fill-mode-forwards",
           )}
           onAnimationEnd={(event) => {
-            if (event.target !== event.currentTarget || open) {
+            if (event.target !== event.currentTarget) {
+              return;
+            }
+            if (panelOpen) {
+              setEnterAnimationDone(true);
               return;
             }
             event.currentTarget.style.opacity = "0";
@@ -120,189 +141,193 @@ export function TrackerChatWidget() {
           }}
         >
           <DashboardCard className="flex h-full flex-col border-monitor/25 shadow-2xl ring-1 ring-black/10 dark:border-warning/30 dark:ring-white/10">
-          {isResizable ? (
-            <button
-              type="button"
-              aria-label="Resize chat window"
-              className="absolute top-0 left-0 z-10 size-4 cursor-nwse-resize touch-none border-0 bg-transparent p-0"
-              onPointerDown={onResizePointerDown}
-            />
-          ) : null}
-          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
-            <div className="min-w-0">
-              <h2 className="truncate text-sm font-bold text-foreground">
-                Tracker Assistant
-              </h2>
-              <p className="text-muted-foreground text-xs">
-                Player counts, trends, and peaks
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              {isAuthenticated && tokenUsage ? (
-                <ContextUsage usage={tokenUsage} />
-              ) : null}
-              {isAuthenticated ? (
-                <>
-                  <ChatHistorySheet onLoadSession={loadSession} />
-                  <Tooltip>
-                    <TooltipTrigger asChild>
+            {isResizable ? (
+              <button
+                type="button"
+                aria-label="Resize chat window"
+                className="absolute top-0 left-0 z-10 size-4 cursor-nwse-resize touch-none border-0 bg-transparent p-0"
+                onPointerDown={onResizePointerDown}
+              />
+            ) : null}
+            <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
+              <div className="min-w-0">
+                <h2 className="truncate text-sm font-bold text-foreground">
+                  Tracker Assistant
+                </h2>
+                <p className="text-muted-foreground text-xs">
+                  Player counts, trends, and peaks
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                {isAuthenticated && tokenUsage ? (
+                  <ContextUsage usage={tokenUsage} />
+                ) : null}
+                {isAuthenticated ? (
+                  <>
+                    <ChatHistorySheet onLoadSession={loadSession} />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label="New chat"
+                          disabled={!canStartNewChat}
+                          onClick={startNewChat}
+                        >
+                          <MessageSquarePlusIcon />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={6}>
+                        New chat
+                      </TooltipContent>
+                    </Tooltip>
+                  </>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Close chat"
+                  onClick={closeChat}
+                >
+                  <XIcon />
+                </Button>
+              </div>
+            </header>
+
+            {!isAuthenticated ? (
+              <ChatAuthGate />
+            ) : (
+              <>
+                <div className="min-h-0 flex-1">
+                  <MessageScrollerProvider
+                    autoScroll
+                    defaultScrollPosition="last-anchor"
+                    scrollPreviousItemPeek={48}
+                  >
+                    <MessageScroller className="min-h-0 flex-1">
+                      <MessageScrollerViewport>
+                        <MessageScrollerContent
+                          aria-busy={isStreaming}
+                          className="gap-3 p-4"
+                        >
+                          {messages.length === 0 ? (
+                            <ChatSuggestions
+                              disabled={isStreaming || quotaExceeded}
+                              onPick={pickSuggestion}
+                              rotationKey={`${sessionId}:0`}
+                              serverName={serverContext?.serverName}
+                            />
+                          ) : (
+                            messages.map((message) => (
+                              <ChatBubble
+                                key={message.id}
+                                message={message}
+                                toolStatus={toolStatus}
+                                isStreaming={isStreaming}
+                              />
+                            ))
+                          )}
+                        </MessageScrollerContent>
+                      </MessageScrollerViewport>
+                      <MessageScrollerButton />
+                    </MessageScroller>
+                  </MessageScrollerProvider>
+                </div>
+
+                <div className="shrink-0 border-t border-border">
+                  {truncatedNotice ? (
+                    <p className="text-muted-foreground border-b border-border px-4 py-2 text-xs">
+                      Older messages were omitted from the model context. Full
+                      history is still saved.
+                    </p>
+                  ) : null}
+                  {messages.length > 0 &&
+                  !isStreaming &&
+                  followUpSuggestionsExpanded ? (
+                    <div className="px-3 pt-2">
+                      <ChatSuggestions
+                        variant="follow-up"
+                        disabled={quotaExceeded}
+                        onPick={pickSuggestion}
+                        rotationKey={`${sessionId}:${messages.length}`}
+                        serverName={serverContext?.serverName}
+                      />
+                    </div>
+                  ) : null}
+                  {chatQuota ? (
+                    <div className="px-3 pt-2">
+                      <QuotaUsage quota={chatQuota} />
+                    </div>
+                  ) : null}
+                  <div className="flex items-center gap-2 p-3">
+                    {messages.length > 0 && !isStreaming ? (
                       <Button
                         type="button"
                         variant="ghost"
-                        size="icon-sm"
-                        aria-label="New chat"
-                        disabled={!canStartNewChat}
-                        onClick={startNewChat}
+                        size="icon"
+                        className="size-10 shrink-0 text-muted-foreground"
+                        aria-label={
+                          followUpSuggestionsExpanded
+                            ? "Hide suggestions"
+                            : "Show suggestions"
+                        }
+                        aria-expanded={followUpSuggestionsExpanded}
+                        onClick={() =>
+                          setFollowUpSuggestionsExpanded((current) => !current)
+                        }
                       >
-                        <MessageSquarePlusIcon />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={6}>
-                      New chat
-                    </TooltipContent>
-                  </Tooltip>
-                </>
-              ) : null}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Close chat"
-                onClick={closeChat}
-              >
-                <XIcon />
-              </Button>
-            </div>
-          </header>
-
-          {!isAuthenticated ? (
-            <ChatAuthGate />
-          ) : (
-            <>
-              <div className="min-h-0 flex-1">
-                <MessageScrollerProvider
-                  autoScroll
-                  defaultScrollPosition="last-anchor"
-                  scrollPreviousItemPeek={48}
-                >
-                  <MessageScroller className="min-h-0 flex-1">
-                    <MessageScrollerViewport>
-                      <MessageScrollerContent
-                        aria-busy={isStreaming}
-                        className="gap-3 p-4"
-                      >
-                        {messages.length === 0 ? (
-                          <ChatSuggestions
-                            disabled={isStreaming || quotaExceeded}
-                            onPick={pickSuggestion}
-                            rotationKey={`${sessionId}:0`}
-                            serverName={serverContext?.serverName}
-                          />
+                        {followUpSuggestionsExpanded ? (
+                          <ChevronDownIcon />
                         ) : (
-                          messages.map((message) => (
-                            <ChatBubble
-                              key={message.id}
-                              message={message}
-                              toolStatus={toolStatus}
-                              isStreaming={isStreaming}
-                            />
-                          ))
+                          <ChevronUpIcon />
                         )}
-                      </MessageScrollerContent>
-                    </MessageScrollerViewport>
-                    <MessageScrollerButton />
-                  </MessageScroller>
-                </MessageScrollerProvider>
-              </div>
-
-              <div className="shrink-0 border-t border-border">
-                {truncatedNotice ? (
-                  <p className="text-muted-foreground border-b border-border px-4 py-2 text-xs">
-                    Older messages were omitted from the model context. Full
-                    history is still saved.
-                  </p>
-                ) : null}
-                {messages.length > 0 &&
-                !isStreaming &&
-                followUpSuggestionsExpanded ? (
-                  <div className="px-3 pt-2">
-                    <ChatSuggestions
-                      variant="follow-up"
-                      disabled={quotaExceeded}
-                      onPick={pickSuggestion}
-                      rotationKey={`${sessionId}:${messages.length}`}
-                      serverName={serverContext?.serverName}
+                      </Button>
+                    ) : null}
+                    <textarea
+                      ref={inputRef}
+                      value={input}
+                      aria-label="Chat message"
+                      onChange={(event) => setInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                          event.preventDefault();
+                          void sendMessage();
+                        }
+                      }}
+                      rows={1}
+                      placeholder={
+                        quotaExceeded ? "Weekly limit reached" : "Message…"
+                      }
+                      disabled={isStreaming || quotaExceeded}
+                      className="monitor-input h-10! min-h-10 max-h-24 flex-1 resize-none overflow-y-auto px-3 py-0 text-sm leading-10"
                     />
-                  </div>
-                ) : null}
-                {chatQuota ? (
-                  <div className="px-3 pt-2">
-                    <QuotaUsage quota={chatQuota} />
-                  </div>
-                ) : null}
-                <div className="flex items-center gap-2 p-3">
-                  {messages.length > 0 && !isStreaming ? (
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant={isStreaming ? "destructive" : "brand"}
                       size="icon"
-                      className="size-10 shrink-0 text-muted-foreground"
+                      className="size-10 shrink-0"
+                      disabled={
+                        !isStreaming && (quotaExceeded || !input.trim())
+                      }
                       aria-label={
-                        followUpSuggestionsExpanded
-                          ? "Hide suggestions"
-                          : "Show suggestions"
+                        isStreaming ? "Stop response" : "Send message"
                       }
-                      aria-expanded={followUpSuggestionsExpanded}
-                      onClick={() =>
-                        setFollowUpSuggestionsExpanded((current) => !current)
-                      }
-                    >
-                      {followUpSuggestionsExpanded ? (
-                        <ChevronDownIcon />
-                      ) : (
-                        <ChevronUpIcon />
-                      )}
-                    </Button>
-                  ) : null}
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    aria-label="Chat message"
-                    onChange={(event) => setInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" && !event.shiftKey) {
-                        event.preventDefault();
+                      onClick={() => {
+                        if (isStreaming) {
+                          cancelStream();
+                          return;
+                        }
                         void sendMessage();
-                      }
-                    }}
-                    rows={1}
-                    placeholder={
-                      quotaExceeded ? "Weekly limit reached" : "Message…"
-                    }
-                    disabled={isStreaming || quotaExceeded}
-                    className="monitor-input h-10! min-h-10 max-h-24 flex-1 resize-none overflow-y-auto px-3 py-0 text-sm leading-10"
-                  />
-                  <Button
-                    type="button"
-                    variant={isStreaming ? "destructive" : "brand"}
-                    size="icon"
-                    className="size-10 shrink-0"
-                    disabled={!isStreaming && (quotaExceeded || !input.trim())}
-                    aria-label={isStreaming ? "Stop response" : "Send message"}
-                    onClick={() => {
-                      if (isStreaming) {
-                        cancelStream();
-                        return;
-                      }
-                      void sendMessage();
-                    }}
-                  >
-                    {isStreaming ? <SquareIcon /> : <SendIcon />}
-                  </Button>
+                      }}
+                    >
+                      {isStreaming ? <SquareIcon /> : <SendIcon />}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
           </DashboardCard>
         </div>
       ) : null}
@@ -313,10 +338,10 @@ export function TrackerChatWidget() {
         size="icon-lg"
         className={cn(
           "fixed right-4 bottom-4 z-50 size-12 rounded-full shadow-lg ring-2 ring-background transition-all duration-200",
-          open && "pointer-events-none scale-0 opacity-0",
+          panelOpen && "pointer-events-none scale-0 opacity-0",
         )}
         aria-label="Open chat"
-        aria-hidden={open}
+        aria-hidden={panelOpen}
         onClick={openChat}
       >
         <MessageCircleIcon className="size-5" />

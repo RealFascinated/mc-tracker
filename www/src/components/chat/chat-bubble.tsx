@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { ChatMarkdown } from "@/components/chat/chat-markdown";
 import { MessageScrollerItem } from "@/components/ui/message-scroller";
 import { cn } from "cnfast";
@@ -17,8 +19,20 @@ export function ChatBubble({
   isStreaming: boolean;
 }) {
   const isUser = message.role === "user";
+  const hasReasoning = (message.reasoning?.trim().length ?? 0) > 0;
+  const hasContent = message.content.trim().length > 0;
+  const reasoningOnly = hasReasoning && !hasContent;
+  const contentKey = message.content;
+  const [reasoningExpandedFor, setReasoningExpandedFor] = useState<
+    string | null
+  >(null);
+  const showReasoning =
+    reasoningOnly || (hasReasoning && reasoningExpandedFor === contentKey);
   const pending =
-    message.id === STREAMING_ID && !message.content && isStreaming;
+    message.id === STREAMING_ID &&
+    !message.content &&
+    !message.reasoning &&
+    isStreaming;
   const toolCalls = message.toolCalls ?? [];
   const activeTool =
     message.id === STREAMING_ID && isStreaming ? toolStatus : null;
@@ -50,8 +64,34 @@ export function ChatBubble({
           ) : (
             <>
               <ToolCallList toolCalls={toolCalls} activeTool={null} />
+              {hasReasoning && hasContent ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setReasoningExpandedFor((current) =>
+                      current === contentKey ? null : contentKey,
+                    )
+                  }
+                  className="text-muted-foreground hover:text-foreground mb-2 text-xs underline-offset-2 hover:underline"
+                >
+                  {reasoningExpandedFor === contentKey
+                    ? "Hide thinking"
+                    : "Show thinking"}
+                </button>
+              ) : null}
+              {showReasoning && message.reasoning ? (
+                <p className="text-muted-foreground mb-2 text-xs italic whitespace-pre-wrap">
+                  {message.reasoning}
+                </p>
+              ) : null}
               {message.content ? (
                 <ChatMarkdown content={message.content} />
+              ) : reasoningOnly ? (
+                isStreaming ? (
+                  <ThinkingIndicator />
+                ) : null
+              ) : isStreaming && message.id === STREAMING_ID ? (
+                <ThinkingIndicator />
               ) : (
                 <p className="text-muted-foreground text-xs italic">
                   No response generated.

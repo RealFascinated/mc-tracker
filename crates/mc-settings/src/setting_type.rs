@@ -132,9 +132,48 @@ impl SettingType for EnumType {
     }
 }
 
+pub struct StringListType;
+
+impl SettingType for StringListType {
+    fn name(&self) -> &'static str {
+        "STRING_LIST"
+    }
+
+    fn validate(&self, value: &Value) -> Result<(), String> {
+        let Some(items) = value.as_array() else {
+            return Err("expected array value".into());
+        };
+        if items.is_empty() {
+            return Err("expected at least one entry".into());
+        }
+        for item in items {
+            let Some(text) = item.as_str() else {
+                return Err("expected string array".into());
+            };
+            if text.trim().is_empty() {
+                return Err("entries must not be empty".into());
+            }
+        }
+        Ok(())
+    }
+
+    fn parse_stored(&self, raw: &str) -> Result<Value, String> {
+        let value: Value =
+            serde_json::from_str(raw).map_err(|err| format!("invalid JSON array: {err}"))?;
+        self.validate(&value)?;
+        Ok(value)
+    }
+
+    fn serialize_stored(&self, value: &Value) -> Result<String, String> {
+        self.validate(value)?;
+        serde_json::to_string(value).map_err(|err| err.to_string())
+    }
+}
+
 pub static BOOLEAN: BooleanType = BooleanType;
 pub static STRING: StringType = StringType;
 pub static INTEGER: IntegerType = IntegerType;
+pub static STRING_LIST: StringListType = StringListType;
 
 pub static ENUM_LLM_PROVIDER: EnumType = EnumType {
     allowed: &["llama_cpp", "openrouter", "openai_compatible"],

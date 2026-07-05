@@ -1,5 +1,10 @@
 import type { SettingItem } from "@/lib/api/admin/settings";
 
+export type LlmModelEntry = {
+  id: string;
+  value: string;
+};
+
 export type SettingsFormValues = {
   pingerTimeoutMs: number;
   pingerRetryAttempts: number;
@@ -11,7 +16,7 @@ export type SettingsFormValues = {
   signUpEnabled: boolean;
   wwwOrigin: string;
   llmBaseUrl: string;
-  llmModel: string;
+  llmModels: LlmModelEntry[];
   llmMaxToolRounds: number;
   llmContextMaxTurns: number;
   llmToolMaxTokens: number;
@@ -21,10 +26,14 @@ export type SettingsFormValues = {
   llmTimeoutSecs: number;
   llmProvider: string;
   llmParallelSlots: number;
+  llmThinkingEnabled: boolean;
   llmApiKeyConfigured: boolean;
 };
 
-const FIELD_KEYS: Record<keyof SettingsFormValues, string> = {
+const FIELD_KEYS: Record<
+  Exclude<keyof SettingsFormValues, "llmApiKeyConfigured">,
+  string
+> = {
   pingerTimeoutMs: "pinger_timeout_ms",
   pingerRetryAttempts: "pinger_retry_attempts",
   pingerRetryDelayMs: "pinger_retry_delay_ms",
@@ -35,7 +44,7 @@ const FIELD_KEYS: Record<keyof SettingsFormValues, string> = {
   signUpEnabled: "sign_up_enabled",
   wwwOrigin: "www_origin",
   llmBaseUrl: "llm_base_url",
-  llmModel: "llm_model",
+  llmModels: "llm_models",
   llmMaxToolRounds: "llm_max_tool_rounds",
   llmContextMaxTurns: "llm_context_max_turns",
   llmToolMaxTokens: "llm_tool_max_tokens",
@@ -45,11 +54,25 @@ const FIELD_KEYS: Record<keyof SettingsFormValues, string> = {
   llmTimeoutSecs: "llm_timeout_secs",
   llmProvider: "llm_provider",
   llmParallelSlots: "llm_parallel_slots",
-  llmApiKeyConfigured: "llm_api_key",
+  llmThinkingEnabled: "llm_thinking_enabled",
 };
 
-function valueFromItem(item: SettingItem): boolean | number | string {
+function valueFromItem(
+  item: SettingItem,
+): boolean | number | string | string[] {
   return item.value;
+}
+
+function parseStringList(item: SettingItem | undefined): LlmModelEntry[] {
+  if (!item || !Array.isArray(item.value)) {
+    return [{ id: crypto.randomUUID(), value: "default" }];
+  }
+  return item.value
+    .filter(
+      (value): value is string =>
+        typeof value === "string" && value.trim().length > 0,
+    )
+    .map((value) => ({ id: crypto.randomUUID(), value }));
 }
 
 export function settingsListToFormValues(
@@ -76,7 +99,7 @@ export function settingsListToFormValues(
     signUpEnabled: valueFromItem(get("sign_up_enabled")!) as boolean,
     wwwOrigin: valueFromItem(get("www_origin")!) as string,
     llmBaseUrl: valueFromItem(get("llm_base_url")!) as string,
-    llmModel: valueFromItem(get("llm_model")!) as string,
+    llmModels: parseStringList(get("llm_models")),
     llmMaxToolRounds: valueFromItem(get("llm_max_tool_rounds")!) as number,
     llmContextMaxTurns: valueFromItem(get("llm_context_max_turns")!) as number,
     llmToolMaxTokens: valueFromItem(get("llm_tool_max_tokens")!) as number,
@@ -86,8 +109,27 @@ export function settingsListToFormValues(
     llmTimeoutSecs: valueFromItem(get("llm_timeout_secs")!) as number,
     llmProvider: valueFromItem(get("llm_provider")!) as string,
     llmParallelSlots: valueFromItem(get("llm_parallel_slots")!) as number,
+    llmThinkingEnabled: get("llm_thinking_enabled")
+      ? (valueFromItem(get("llm_thinking_enabled")!) as boolean)
+      : true,
     llmApiKeyConfigured: apiKeyConfigured,
   };
+}
+
+function valuesEqual(
+  field: Exclude<keyof SettingsFormValues, "llmApiKeyConfigured">,
+  loaded: SettingsFormValues,
+  draft: SettingsFormValues,
+): boolean {
+  if (field === "llmModels") {
+    const toModels = (models: LlmModelEntry[]) =>
+      models.map((model) => model.value.trim()).filter(Boolean);
+    return (
+      JSON.stringify(toModels(loaded.llmModels)) ===
+      JSON.stringify(toModels(draft.llmModels))
+    );
+  }
+  return loaded[field] === draft[field];
 }
 
 export function dirtySettingPatches(
@@ -97,13 +139,14 @@ export function dirtySettingPatches(
 ): Array<{ key: string; value: unknown }> {
   const patches: Array<{ key: string; value: unknown }> = [];
   for (const field of Object.keys(FIELD_KEYS) as Array<
-    keyof SettingsFormValues
+    Exclude<keyof SettingsFormValues, "llmApiKeyConfigured">
   >) {
-    if (field === "llmApiKeyConfigured") {
-      continue;
-    }
-    if (loaded[field] !== draft[field]) {
-      patches.push({ key: FIELD_KEYS[field], value: draft[field] });
+    if (!valuesEqual(field, loaded, draft)) {
+      const value =
+        field === "llmModels"
+          ? draft.llmModels.map((model) => model.value.trim()).filter(Boolean)
+          : draft[field];
+      patches.push({ key: FIELD_KEYS[field], value });
     }
   }
   if (apiKeyDraft !== null) {

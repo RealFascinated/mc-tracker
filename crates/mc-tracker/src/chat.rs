@@ -156,6 +156,7 @@ async fn post_chat(
     let request = AgentChatRequest {
         message: body.message,
         session_id: Some(body.session_id.to_string()),
+        end_user_id: Some(user.id.to_string()),
         history: turns_to_messages(&turns),
         context_server: body.context_server,
     };
@@ -186,6 +187,11 @@ async fn post_chat(
                         .await
                         .is_err()
                     {
+                        break;
+                    }
+                }
+                Ok(event @ ChatStreamEvent::ReasoningDelta { .. }) => {
+                    if tx.send(Ok(event)).await.is_err() {
                         break;
                     }
                 }

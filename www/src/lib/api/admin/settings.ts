@@ -2,8 +2,8 @@ import { apiFetch } from "@/lib/api/client";
 
 export type SettingItem = {
   key: string;
-  type: "BOOLEAN" | "STRING" | "INTEGER" | "ENUM";
-  value: boolean | number | string;
+  type: "BOOLEAN" | "STRING" | "INTEGER" | "ENUM" | "STRING_LIST";
+  value: boolean | number | string | string[];
   updatedAt?: string;
 };
 

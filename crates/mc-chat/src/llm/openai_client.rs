@@ -61,13 +61,24 @@ impl OpenAiLlmClient {
             body["stream_options"] = json!({ "include_usage": true });
         }
 
+        apply_thinking(config, &mut body);
+
         match config.provider {
             LlmProvider::OpenRouter => {
+                if config.llm_models.len() > 1 {
+                    body["models"] = json!(config.llm_models);
+                }
                 if automatic_cache_control(&request.model) {
                     body["cache_control"] = json!({ "type": "ephemeral" });
                 }
                 if let Some(session_id) = &request.options.session_id {
                     body["session_id"] = json!(session_id);
+                }
+                if let Some(user_id) = &request.options.end_user_id {
+                    body["user"] = json!(user_id);
+                }
+                if request.tools.is_some() {
+                    body["provider"] = json!({ "require_parameters": true });
                 }
             }
             LlmProvider::LlamaCpp => {
@@ -85,6 +96,17 @@ impl OpenAiLlmClient {
         body
     }
 
+    fn apply_openrouter_headers(
+        config: &AgentConfig,
+        mut req: reqwest::RequestBuilder,
+    ) -> reqwest::RequestBuilder {
+        let origin = config.www_origin.trim();
+        if !origin.is_empty() {
+            req = req.header("HTTP-Referer", origin);
+        }
+        req.header("X-OpenRouter-Title", "mc-tracker")
+    }
+
     fn apply_auth(
         config: &AgentConfig,
         mut req: reqwest::RequestBuilder,
@@ -95,28 +117,11 @@ impl OpenAiLlmClient {
         req
     }
 
-    fn apply_session_header(
-        config: &AgentConfig,
-        req: reqwest::RequestBuilder,
-        session_id: Option<&str>,
-    ) -> reqwest::RequestBuilder {
-        if config.provider == LlmProvider::OpenRouter {
-            if let Some(session_id) = session_id {
-                req.header("x-session-id", session_id)
-            } else {
-                req
-            }
-        } else {
-            req
-        }
-    }
-
     async fn send_sync(
         &self,
         config: &AgentConfig,
         request: ChatCompletionRequest,
     ) -> Result<ChatCompletionResponse, ChatError> {
-        let session_id = request.options.session_id.clone();
         let body = Self::build_body(config, &request);
         let req = self
             .client
@@ -124,7 +129,11 @@ impl OpenAiLlmClient {
             .timeout(config.timeout)
             .json(&body);
         let req = Self::apply_auth(config, req);
-        let req = Self::apply_session_header(config, req, session_id.as_deref());
+        let req = if config.provider == LlmProvider::OpenRouter {
+            Self::apply_openrouter_headers(config, req)
+        } else {
+            req
+        };
         let response = req
             .send()
             .await
@@ -187,6 +196,24 @@ fn automatic_cache_control(model: &str) -> bool {
     model.starts_with("anthropic/")
 }
 
+fn apply_thinking(config: &AgentConfig, body: &mut serde_json::Value) {
+    match config.provider {
+        LlmProvider::OpenRouter => {
+            body["reasoning"] = if config.thinking_enabled {
+                json!({ "enabled": true })
+            } else {
+                json!({ "effort": "none" })
+            };
+        }
+        LlmProvider::LlamaCpp => {
+            body["chat_template_kwargs"] = json!({
+                "enable_thinking": config.thinking_enabled
+            });
+        }
+        LlmProvider::OpenAiCompatible => {}
+    }
+}
+
 #[async_trait]
 impl LlmClient for OpenAiLlmClient {
     fn provider(&self, config: &AgentConfig) -> LlmProvider {
@@ -246,7 +273,6 @@ impl LlmClient for OpenAiLlmClient {
         request: ChatCompletionRequest,
     ) -> Result<Pin<Box<dyn Stream<Item = Result<ChatCompletionChunk, ChatError>> + Send>>, ChatError>
     {
-        let session_id = request.options.session_id.clone();
         let body = Self::build_body(config, &request);
         let req = self
             .client
@@ -254,7 +280,11 @@ impl LlmClient for OpenAiLlmClient {
             .timeout(config.timeout)
             .json(&body);
         let req = Self::apply_auth(config, req);
-        let req = Self::apply_session_header(config, req, session_id.as_deref());
+        let req = if config.provider == LlmProvider::OpenRouter {
+            Self::apply_openrouter_headers(config, req)
+        } else {
+            req
+        };
         let response = req
             .send()
             .await
@@ -326,7 +356,7 @@ mod tests {
     fn test_config(provider: LlmProvider, base_url: &str) -> AgentConfig {
         AgentConfig {
             llm_base_url: base_url.into(),
-            llm_model: "test".into(),
+            llm_models: vec!["test".into()],
             max_tool_rounds: 8,
             context_max_turns: 10,
             tool_max_tokens: 1024,
@@ -337,6 +367,8 @@ mod tests {
             provider,
             parallel_slots: 2,
             api_key: None,
+            www_origin: String::new(),
+            thinking_enabled: true,
         }
     }
 
@@ -355,6 +387,31 @@ mod tests {
             },
         );
         assert_eq!(body["stream_options"]["include_usage"], true);
+    }
+
+    #[test]
+    fn openrouter_request_includes_models_fallback_list() {
+        let mut config = test_config(LlmProvider::OpenRouter, "https://openrouter.ai/api");
+        config.llm_models = vec![
+            "openrouter/free".into(),
+            "deepseek/deepseek-v4-flash".into(),
+        ];
+        let body = OpenAiLlmClient::build_body(
+            &config,
+            &ChatCompletionRequest {
+                model: "openrouter/free".into(),
+                messages: vec![],
+                tools: None,
+                tool_choice: None,
+                stream: false,
+                options: LlmRequestOptions::default(),
+            },
+        );
+        assert_eq!(body["model"], "openrouter/free");
+        assert_eq!(
+            body["models"],
+            json!(["openrouter/free", "deepseek/deepseek-v4-flash"])
+        );
     }
 
     #[test]
@@ -399,5 +456,81 @@ mod tests {
         assert_eq!(body["cache_prompt"], true);
         assert!(body["id_slot"].is_number());
         assert!(body.get("cache_control").is_none());
+    }
+
+    #[test]
+    fn openrouter_request_includes_user_and_provider_require_parameters() {
+        let config = test_config(LlmProvider::OpenRouter, "https://openrouter.ai/api");
+        let body = OpenAiLlmClient::build_body(
+            &config,
+            &ChatCompletionRequest {
+                model: "openrouter/free".into(),
+                messages: vec![],
+                tools: Some(vec![]),
+                tool_choice: None,
+                stream: false,
+                options: LlmRequestOptions {
+                    end_user_id: Some("user-123".into()),
+                    ..Default::default()
+                },
+            },
+        );
+        assert_eq!(body["user"], "user-123");
+        assert_eq!(body["provider"]["require_parameters"], true);
+    }
+
+    #[test]
+    fn openrouter_thinking_disabled_sends_effort_none() {
+        let mut config = test_config(LlmProvider::OpenRouter, "https://openrouter.ai/api");
+        config.thinking_enabled = false;
+        let body = OpenAiLlmClient::build_body(
+            &config,
+            &ChatCompletionRequest {
+                model: "openrouter/free".into(),
+                messages: vec![],
+                tools: None,
+                tool_choice: None,
+                stream: false,
+                options: LlmRequestOptions::default(),
+            },
+        );
+        assert_eq!(body["reasoning"]["effort"], "none");
+    }
+
+    #[test]
+    fn llama_thinking_enabled_sets_template_kwargs() {
+        let mut config = test_config(LlmProvider::LlamaCpp, "http://localhost:8080");
+        config.thinking_enabled = true;
+        let body = OpenAiLlmClient::build_body(
+            &config,
+            &ChatCompletionRequest {
+                model: "default".into(),
+                messages: vec![],
+                tools: None,
+                tool_choice: None,
+                stream: false,
+                options: LlmRequestOptions::default(),
+            },
+        );
+        assert_eq!(body["chat_template_kwargs"]["enable_thinking"], true);
+    }
+
+    #[test]
+    fn openrouter_headers_include_referer_and_title() {
+        let mut config = test_config(LlmProvider::OpenRouter, "https://openrouter.ai/api");
+        config.www_origin = "https://tracker.example.com".into();
+        let req = OpenAiLlmClient::apply_openrouter_headers(
+            &config,
+            Client::new().post("https://openrouter.ai/api/v1/chat/completions"),
+        );
+        let built = req.build().unwrap();
+        assert_eq!(
+            built.headers().get("HTTP-Referer").unwrap(),
+            "https://tracker.example.com"
+        );
+        assert_eq!(
+            built.headers().get("X-OpenRouter-Title").unwrap(),
+            "mc-tracker"
+        );
     }
 }

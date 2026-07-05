@@ -9,6 +9,7 @@ use tokio_util::sync::CancellationToken;
 pub struct AgentChatRequest {
     pub message: String,
     pub session_id: Option<String>,
+    pub end_user_id: Option<String>,
     pub history: Vec<ChatMessage>,
     pub context_server: Option<ChatContextServer>,
 }

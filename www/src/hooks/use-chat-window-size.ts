@@ -50,6 +50,8 @@ export function useChatWindowSize() {
     ...localStorageJsonOptions(parseChatWindowSize),
   });
   const [isResizable, setIsResizable] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [dragSize, setDragSize] = useState<ChatWindowSize | null>(null);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -84,8 +86,11 @@ export function useChatWindowSize() {
       const startWidth = size.width;
       const startHeight = size.height;
 
+      setIsResizing(true);
+      setDragSize({ width: startWidth, height: startHeight });
+
       const onMove = (moveEvent: PointerEvent) => {
-        setSize(
+        setDragSize(
           clampChatWindowSize({
             width: startWidth - (moveEvent.clientX - startX),
             height: startHeight - (moveEvent.clientY - startY),
@@ -99,6 +104,13 @@ export function useChatWindowSize() {
         document.removeEventListener("pointercancel", onEnd);
         document.body.style.removeProperty("user-select");
         document.body.style.removeProperty("cursor");
+        setDragSize((current) => {
+          if (current) {
+            setSize(current);
+          }
+          return null;
+        });
+        setIsResizing(false);
       };
 
       document.body.style.userSelect = "none";
@@ -111,8 +123,9 @@ export function useChatWindowSize() {
   );
 
   return {
-    size,
+    size: dragSize ?? size,
     isResizable,
+    isResizing,
     onResizePointerDown,
   };
 }

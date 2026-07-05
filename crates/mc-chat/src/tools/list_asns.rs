@@ -3,9 +3,7 @@ use async_trait::async_trait;
 use crate::error::ChatError;
 use crate::tools::compact::compact_asns_list;
 use crate::tools::constants::LIST_CAP;
-use crate::tools::helpers::{
-    optional_search, schema_optional_search_limit, tool_def, truncate,
-};
+use crate::tools::helpers::{optional_search, schema_optional_search_limit, tool_def, truncate};
 use crate::traits::{ChatTool, ChatToolDeps};
 
 pub struct ListAsnsTool;

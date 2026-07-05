@@ -64,6 +64,7 @@ export function useChatSession() {
       }
       const hasContent =
         streaming.content.trim().length > 0 ||
+        (streaming.reasoning?.trim().length ?? 0) > 0 ||
         (streaming.toolCalls?.length ?? 0) > 0;
       const withoutStreaming = current.filter(
         (message) => message.id !== STREAMING_ID,
@@ -170,6 +171,19 @@ export function useChatSession() {
                 current.map((message) =>
                   message.id === STREAMING_ID
                     ? { ...message, content: message.content + event.content }
+                    : message,
+                ),
+              );
+              break;
+            case "reasoningDelta":
+              setToolStatus(null);
+              setMessages((current) =>
+                current.map((message) =>
+                  message.id === STREAMING_ID
+                    ? {
+                        ...message,
+                        reasoning: (message.reasoning ?? "") + event.content,
+                      }
                     : message,
                 ),
               );

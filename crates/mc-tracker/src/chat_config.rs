@@ -24,7 +24,7 @@ pub fn agent_config(store: &SettingsStore) -> Result<AgentConfig, String> {
     let api_key = store.cached_str(SettingKey::LlmApiKey);
     Ok(AgentConfig {
         llm_base_url: store.cached_str(SettingKey::LlmBaseUrl),
-        llm_model: store.cached_str(SettingKey::LlmModel),
+        llm_models: store.cached_string_list(SettingKey::LlmModels),
         max_tool_rounds: store.cached_u32(SettingKey::LlmMaxToolRounds),
         context_max_turns: store.cached_u32(SettingKey::LlmContextMaxTurns),
         tool_max_tokens: store.cached_u32(SettingKey::LlmToolMaxTokens),
@@ -39,6 +39,8 @@ pub fn agent_config(store: &SettingsStore) -> Result<AgentConfig, String> {
         } else {
             Some(api_key)
         },
+        www_origin: store.cached_str(SettingKey::WwwOrigin),
+        thinking_enabled: store.cached_bool(SettingKey::LlmThinkingEnabled),
     })
 }
 

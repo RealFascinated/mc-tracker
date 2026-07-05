@@ -8,14 +8,24 @@ pub use derived::{
     victoriametrics_import_url, LLM_API_KEY_MASK, VITE_DEV_ORIGIN,
 };
 pub use registry::{validate_metrics_push_cron, SettingKey, SettingSideEffects};
-pub use setting_type::{BooleanType, EnumType, IntegerType, SettingType, StringType};
+pub use setting_type::{
+    BooleanType, EnumType, IntegerType, SettingType, StringListType, StringType,
+};
 pub use store::{SettingItem, SettingsError, SettingsStore, SharedSettingsStore};
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use serde_json::json;
-    use setting_type::{BooleanType, IntegerType, SettingType};
+    use setting_type::{BooleanType, IntegerType, SettingType, StringListType};
+
+    #[test]
+    fn string_list_type_round_trips() {
+        let value = json!(["openrouter/free", "deepseek/deepseek-v4-flash"]);
+        StringListType.validate(&value).unwrap();
+        let stored = StringListType.serialize_stored(&value).unwrap();
+        assert_eq!(StringListType.parse_stored(&stored).unwrap(), value);
+    }
 
     #[test]
     fn boolean_type_validates_and_round_trips() {

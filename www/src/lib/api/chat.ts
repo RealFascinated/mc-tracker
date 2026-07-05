@@ -22,12 +22,14 @@ export type ChatTokenUsage = {
   contextMax: number;
   cachedTokens?: number;
   cacheWriteTokens?: number;
+  reasoningTokens?: number;
 };
 
 export type ChatStreamEvent =
   | { type: "toolStart"; name: string }
   | { type: "toolDone"; name: string }
   | { type: "delta"; content: string }
+  | { type: "reasoningDelta"; content: string }
   | {
       type: "done";
       toolCalls?: ChatToolCallRecord[];

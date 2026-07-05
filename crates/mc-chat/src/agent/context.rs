@@ -68,7 +68,7 @@ async fn truncate_to_token_budget(
     config: &AgentConfig,
     messages: &mut Vec<ChatMessage>,
 ) -> bool {
-    let model = config.llm_model.as_str();
+    let model = config.primary_model();
     let budget = config.context_max.saturating_sub(config.context_reserve);
     let mut truncated = false;
 

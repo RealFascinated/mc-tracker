@@ -24,6 +24,7 @@ impl MessageRole {
 pub struct LlmRequestOptions {
     /// OpenRouter sticky routing + llama.cpp slot affinity (hashed from this value).
     pub session_id: Option<String>,
+    pub end_user_id: Option<String>,
     pub max_tokens: Option<u32>,
     pub parse_tool_calls: bool,
 }
@@ -114,6 +115,12 @@ pub struct PromptTokensDetails {
 }
 
 #[derive(Debug, Clone, Copy, Default, Deserialize, Serialize)]
+pub struct CompletionTokensDetails {
+    #[serde(default)]
+    pub reasoning_tokens: u32,
+}
+
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize)]
 pub struct CompletionUsage {
     #[serde(default)]
     pub prompt_tokens: u32,
@@ -123,6 +130,8 @@ pub struct CompletionUsage {
     pub total_tokens: u32,
     #[serde(default)]
     pub prompt_tokens_details: Option<PromptTokensDetails>,
+    #[serde(default)]
+    pub completion_tokens_details: Option<CompletionTokensDetails>,
 }
 
 impl CompletionUsage {
@@ -138,6 +147,13 @@ impl CompletionUsage {
             acc_details.cache_write_tokens = acc_details
                 .cache_write_tokens
                 .max(details.cache_write_tokens);
+        }
+        if let Some(details) = self.completion_tokens_details {
+            let acc_details = acc
+                .completion_tokens_details
+                .get_or_insert_with(Default::default);
+            acc_details.reasoning_tokens =
+                acc_details.reasoning_tokens.max(details.reasoning_tokens);
         }
     }
 }
@@ -198,6 +214,8 @@ pub struct ChatCompletionDelta {
     pub content: Option<String>,
     #[serde(default)]
     pub tool_calls: Option<Vec<StreamToolCallDelta>>,
+    #[serde(default)]
+    pub reasoning: Option<String>,
     #[serde(default)]
     pub reasoning_content: Option<String>,
 }

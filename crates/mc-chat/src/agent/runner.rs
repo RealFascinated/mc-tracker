@@ -32,6 +32,7 @@ pub async fn run_unified_agent(
     validate_request(&request)?;
     let started = Instant::now();
     let session_id = session_id_for_llm(request.session_id.as_deref());
+    let end_user_id = request.end_user_id.clone();
     let tool_defs = tools.definitions();
     let (mut messages, context_truncated) =
         ContextBuilder::build_prompt_messages(llm.as_ref(), &config, &request.history, &request)
@@ -59,6 +60,7 @@ pub async fn run_unified_agent(
             &messages,
             &tool_defs,
             session_id.clone(),
+            end_user_id.clone(),
             started,
             config.timeout,
             &tx,
@@ -119,6 +121,7 @@ pub async fn run_unified_agent(
                 &messages,
                 &tool_defs,
                 session_id.clone(),
+                end_user_id.clone(),
                 &mut usage,
             )
             .await?
@@ -157,6 +160,7 @@ async fn stream_with_tools(
     messages: &[ChatMessage],
     tool_defs: &[crate::llm::types::ToolDefinition],
     session_id: Option<String>,
+    end_user_id: Option<String>,
     started: Instant,
     timeout: Duration,
     tx: &mpsc::Sender<Result<ChatStreamEvent, ChatError>>,
@@ -167,13 +171,14 @@ async fn stream_with_tools(
         .chat_completion_stream(
             config,
             ChatCompletionRequest {
-                model: config.llm_model.clone(),
+                model: config.primary_model().to_string(),
                 messages: messages.to_vec(),
                 tools: Some(tool_defs.to_vec()),
                 tool_choice: Some(ToolChoice::Auto),
                 stream: true,
                 options: LlmRequestOptions {
                     session_id,
+                    end_user_id,
                     max_tokens: Some(config.final_max_tokens),
                     parse_tool_calls: false,
                 },
@@ -182,8 +187,11 @@ async fn stream_with_tools(
         .await?;
 
     let mut content = String::new();
+    let mut reasoning = String::new();
     let mut tool_acc: BTreeMap<u32, crate::agent::stream::PartialStreamToolCall> = BTreeMap::new();
     let mut finish_reason = None;
+    let mut streamed_content = false;
+    let mut streamed_reasoning = false;
 
     while let Some(chunk) = stream.next().await {
         if cancel.is_cancelled() {
@@ -198,10 +206,24 @@ async fn stream_with_tools(
             if let Some(reason) = choice.finish_reason {
                 finish_reason = Some(reason);
             }
-            if let Some(piece) = choice.delta.content {
+            if let Some(piece) = choice.delta.content.as_ref() {
                 if !piece.is_empty() {
-                    content.push_str(&piece);
-                    let _ = tx.send(Ok(ChatStreamEvent::Delta { content: piece })).await;
+                    content.push_str(piece);
+                    streamed_content = true;
+                    let _ = tx
+                        .send(Ok(ChatStreamEvent::Delta {
+                            content: piece.clone(),
+                        }))
+                        .await;
+                }
+            }
+            if let Some(piece) = reasoning_delta_piece(&choice.delta) {
+                if config.thinking_enabled {
+                    reasoning.push_str(&piece);
+                    streamed_reasoning = true;
+                    let _ = tx
+                        .send(Ok(ChatStreamEvent::ReasoningDelta { content: piece }))
+                        .await;
                 }
             }
             if let Some(deltas) = choice.delta.tool_calls {
@@ -210,9 +232,33 @@ async fn stream_with_tools(
         }
     }
 
-    let streamed = !content.is_empty();
     let tool_calls = finalize_stream_tool_calls(tool_acc);
-    Ok((content, streamed, tool_calls, finish_reason))
+    if tool_calls.is_some() {
+        let streamed = streamed_content || streamed_reasoning;
+        return Ok((content, streamed, tool_calls, finish_reason));
+    }
+
+    let text = if !content.trim().is_empty() {
+        content
+    } else {
+        reasoning
+    };
+    let streamed = streamed_content || streamed_reasoning;
+    Ok((text, streamed, None, finish_reason))
+}
+
+fn reasoning_delta_piece(delta: &crate::llm::types::ChatCompletionDelta) -> Option<String> {
+    if let Some(piece) = &delta.reasoning {
+        if !piece.is_empty() {
+            return Some(piece.clone());
+        }
+    }
+    if let Some(piece) = &delta.reasoning_content {
+        if !piece.is_empty() {
+            return Some(piece.clone());
+        }
+    }
+    None
 }
 
 async fn recovery_tool_calls(
@@ -221,19 +267,21 @@ async fn recovery_tool_calls(
     messages: &[ChatMessage],
     tool_defs: &[crate::llm::types::ToolDefinition],
     session_id: Option<String>,
+    end_user_id: Option<String>,
     usage: &mut CompletionUsage,
 ) -> Result<Option<Vec<ToolCall>>, ChatError> {
     let response = llm
         .chat_completion(
             config,
             ChatCompletionRequest {
-                model: config.llm_model.clone(),
+                model: config.primary_model().to_string(),
                 messages: messages.to_vec(),
                 tools: Some(tool_defs.to_vec()),
                 tool_choice: Some(ToolChoice::Auto),
                 stream: false,
                 options: LlmRequestOptions {
                     session_id,
+                    end_user_id,
                     max_tokens: Some(config.tool_max_tokens),
                     parse_tool_calls: true,
                 },
@@ -274,6 +322,10 @@ async fn emit_done(
 
     let truncated = context_truncated || finish_reason == Some(FinishReason::Length);
     let cache_details = usage.prompt_tokens_details;
+    let reasoning_tokens = usage
+        .completion_tokens_details
+        .map(|d| d.reasoning_tokens)
+        .filter(|count| *count > 0);
 
     let _ = tx
         .send(Ok(ChatStreamEvent::Done {
@@ -282,8 +334,11 @@ async fn emit_done(
                 prompt_tokens: usage.prompt_tokens,
                 completion_tokens: usage.completion_tokens,
                 context_max: config.context_max,
-                cached_tokens: cache_details.map(|d| d.cached_tokens),
-                cache_write_tokens: cache_details.map(|d| d.cache_write_tokens),
+                cached_tokens: cache_details.map(|d| d.cached_tokens).filter(|c| *c > 0),
+                cache_write_tokens: cache_details
+                    .map(|d| d.cache_write_tokens)
+                    .filter(|c| *c > 0),
+                reasoning_tokens,
             }),
             truncated,
             finish_reason: finish_reason.map(|r| r.as_str().to_string()),
@@ -341,10 +396,15 @@ fn log_context_usage(session_id: Option<&str>, context_max: u32, usage: &Complet
     } else {
         0.0
     };
+    let cache_details = usage.prompt_tokens_details;
+    let reasoning_tokens = usage.completion_tokens_details.map(|d| d.reasoning_tokens);
     tracing::info!(
         session_id,
         prompt_tokens = prompt,
         completion_tokens = usage.completion_tokens,
+        cached_tokens = cache_details.map(|d| d.cached_tokens),
+        cache_write_tokens = cache_details.map(|d| d.cache_write_tokens),
+        reasoning_tokens,
         context_max,
         context_used_pct = format!("{pct:.1}%"),
         "chat context usage"
@@ -551,7 +611,7 @@ mod tests {
     fn test_config() -> AgentConfig {
         AgentConfig {
             llm_base_url: "http://localhost".into(),
-            llm_model: "test".into(),
+            llm_models: vec!["test".into()],
             max_tool_rounds: 4,
             context_max_turns: 10,
             tool_max_tokens: 256,
@@ -562,6 +622,8 @@ mod tests {
             provider: LlmProvider::OpenAiCompatible,
             parallel_slots: 1,
             api_key: None,
+            www_origin: String::new(),
+            thinking_enabled: true,
         }
     }
 
@@ -595,6 +657,7 @@ mod tests {
         let request = AgentChatRequest {
             message: "hi".into(),
             session_id: None,
+            end_user_id: None,
             history: vec![],
             context_server: None,
         };
@@ -643,6 +706,7 @@ mod tests {
         let request = AgentChatRequest {
             message: "hi".into(),
             session_id: None,
+            end_user_id: None,
             history: vec![],
             context_server: None,
         };
@@ -681,6 +745,7 @@ mod tests {
         let request = AgentChatRequest {
             message: "hi".into(),
             session_id: None,
+            end_user_id: None,
             history: vec![],
             context_server: None,
         };

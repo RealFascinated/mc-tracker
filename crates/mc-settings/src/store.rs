@@ -294,6 +294,34 @@ impl SettingsStore {
             })
             .unwrap_or_else(|| key.default_value().as_str().unwrap_or("").to_string())
     }
+
+    pub fn cached_string_list(&self, key: SettingKey) -> Vec<String> {
+        let cached = self
+            .cache
+            .try_read()
+            .ok()
+            .and_then(|cache| cache.get(key.key()).map(|entry| entry.value.clone()));
+        if let Some(value) = cached {
+            if let Some(items) = value.as_array() {
+                let models: Vec<String> = items
+                    .iter()
+                    .filter_map(|item| item.as_str().map(str::to_owned))
+                    .collect();
+                if !models.is_empty() {
+                    return models;
+                }
+            }
+        }
+        key.default_value()
+            .as_array()
+            .map(|items| {
+                items
+                    .iter()
+                    .filter_map(|item| item.as_str().map(str::to_owned))
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
 }
 
 pub type SharedSettingsStore = Arc<SettingsStore>;

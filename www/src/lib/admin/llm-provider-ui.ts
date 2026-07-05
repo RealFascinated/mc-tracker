@@ -31,7 +31,7 @@ export function llmBaseUrlPlaceholder(provider: LlmProviderId): string {
 export function llmModelPlaceholder(provider: LlmProviderId): string {
   switch (provider) {
     case "openrouter":
-      return "anthropic/claude-sonnet-4";
+      return "openrouter/free";
     case "openai_compatible":
       return "gpt-4o-mini";
     default:
