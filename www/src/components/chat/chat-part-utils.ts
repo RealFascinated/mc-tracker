@@ -18,31 +18,16 @@ export function finalizeParts(parts: ChatPart[]): ChatPart[] {
   );
 }
 
-function lastToolIndex(parts: ChatPart[]): number {
-  for (let index = parts.length - 1; index >= 0; index -= 1) {
-    if (parts[index].kind === "tool") {
-      return index;
-    }
-  }
-  return -1;
+export function closeStreamingReasoning(parts: ChatPart[]): ChatPart[] {
+  return parts.map((part) =>
+    part.kind === "reasoning" && part.streaming
+      ? { ...part, streaming: false }
+      : part,
+  );
 }
 
 export function visibleAssistantParts(parts: ChatPart[]): ChatPart[] {
-  const lastTool = lastToolIndex(parts);
-  let reasoningIndex = -1;
-  for (let index = parts.length - 1; index >= 0; index -= 1) {
-    const part = parts[index];
-    if (part.kind !== "reasoning") {
-      continue;
-    }
-    if (lastTool === -1 || index > lastTool) {
-      reasoningIndex = index;
-      break;
-    }
-  }
-  return parts.filter(
-    (part, index) => part.kind !== "reasoning" || index === reasoningIndex,
-  );
+  return parts;
 }
 
 export function appendReasoningDelta(
@@ -56,9 +41,7 @@ export function appendReasoningDelta(
       { ...last, content: last.content + content },
     ];
   }
-  const base = parts.some((part) => part.kind === "tool")
-    ? parts.filter((part) => part.kind !== "reasoning")
-    : parts;
+  const base = closeStreamingReasoning(parts);
   return [
     ...base,
     {
@@ -72,7 +55,7 @@ export function appendReasoningDelta(
 
 export function appendToolStart(parts: ChatPart[], name: string): ChatPart[] {
   return [
-    ...parts,
+    ...closeStreamingReasoning(parts),
     {
       id: crypto.randomUUID(),
       kind: "tool",
@@ -104,11 +87,7 @@ export function appendTextDelta(
   parts: ChatPart[],
   content: string,
 ): ChatPart[] {
-  const closed = parts.map((part) =>
-    part.kind === "reasoning" && part.streaming
-      ? { ...part, streaming: false }
-      : part,
-  );
+  const closed = closeStreamingReasoning(parts);
   const last = closed.at(-1);
   if (last?.kind === "text" && last.streaming) {
     return [

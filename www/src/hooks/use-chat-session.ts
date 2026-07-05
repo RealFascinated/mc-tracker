@@ -16,6 +16,7 @@ import {
   appendToolStart,
   assistantHasVisibleContent,
   assistantTextFromParts,
+  closeStreamingReasoning,
   finalizeParts,
   markToolDone,
   turnsToAssistantParts,
@@ -231,6 +232,11 @@ export function useChatSession() {
               break;
             case "usage":
               setTokenUsage(event.usage);
+              setMessages((current) =>
+                updateStreamingMessage(current, (parts) =>
+                  closeStreamingReasoning(parts),
+                ),
+              );
               break;
             case "error":
               throw new ChatStreamError(event.message, 0);
