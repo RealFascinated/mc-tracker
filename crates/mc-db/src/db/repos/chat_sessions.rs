@@ -14,6 +14,50 @@ use super::{db_err, get_conn};
 
 const PREVIEW_MAX_LEN: usize = 80;
 
+#[derive(Debug, Clone, Copy)]
+pub struct ChatSessionUsage {
+    pub tokens_used: u64,
+    pub last_prompt_tokens: u32,
+}
+
+pub async fn get_usage(pool: &DbPool, session_id: Uuid) -> Result<ChatSessionUsage, DbError> {
+    let mut conn = get_conn(pool).await?;
+    let row: (i64, i32) = chat_sessions::table
+        .filter(chat_sessions::id.eq(session_id))
+        .select((
+            chat_sessions::tokens_used,
+            chat_sessions::last_prompt_tokens,
+        ))
+        .first(&mut conn)
+        .await
+        .map_err(db_err)?;
+    Ok(ChatSessionUsage {
+        tokens_used: row.0 as u64,
+        last_prompt_tokens: row.1 as u32,
+    })
+}
+
+pub async fn add_turn_tokens(
+    pool: &DbPool,
+    session_id: Uuid,
+    turn_total_tokens: u32,
+    last_prompt_tokens: u32,
+) -> Result<u64, DbError> {
+    let mut conn = get_conn(pool).await?;
+    let added = turn_total_tokens as i64;
+    let updated: i64 =
+        diesel::update(chat_sessions::table.filter(chat_sessions::id.eq(session_id)))
+            .set((
+                chat_sessions::tokens_used.eq(chat_sessions::tokens_used + added),
+                chat_sessions::last_prompt_tokens.eq(last_prompt_tokens as i32),
+            ))
+            .returning(chat_sessions::tokens_used)
+            .get_result(&mut conn)
+            .await
+            .map_err(db_err)?;
+    Ok(updated as u64)
+}
+
 pub async fn get_or_create_for_user(
     pool: &DbPool,
     user_id: Uuid,
@@ -27,6 +71,8 @@ pub async fn get_or_create_for_user(
             chat_sessions::user_id.eq(user_id),
             chat_sessions::created_at.eq(now),
             chat_sessions::updated_at.eq(now),
+            chat_sessions::tokens_used.eq(0i64),
+            chat_sessions::last_prompt_tokens.eq(0),
         ))
         .on_conflict(chat_sessions::id)
         .do_nothing()

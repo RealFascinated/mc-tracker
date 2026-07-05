@@ -48,7 +48,7 @@ function ContextUsageTooltip({ usage }: { usage: ChatTokenUsage }) {
 
       <dl className="grid gap-1.5 text-[11px] leading-tight">
         <div className="flex items-baseline justify-between gap-4">
-          <dt className="text-muted-foreground">Prompt</dt>
+          <dt className="text-muted-foreground">Context</dt>
           <dd className="text-popover-foreground tabular-nums">
             {formatTokenCountFull(usage.promptTokens)}
             <span className="text-muted-foreground">
@@ -73,22 +73,6 @@ function ContextUsageTooltip({ usage }: { usage: ChatTokenUsage }) {
             <dt className="text-muted-foreground">Response</dt>
             <dd className="text-popover-foreground tabular-nums">
               {formatTokenCountFull(usage.completionTokens)}
-            </dd>
-          </div>
-        ) : null}
-        {usage.cacheWriteTokens != null && usage.cacheWriteTokens > 0 ? (
-          <div className="flex items-baseline justify-between gap-4">
-            <dt className="text-muted-foreground">Cache write</dt>
-            <dd className="text-popover-foreground tabular-nums">
-              {formatTokenCountFull(usage.cacheWriteTokens)}
-            </dd>
-          </div>
-        ) : null}
-        {usage.reasoningTokens != null && usage.reasoningTokens > 0 ? (
-          <div className="flex items-baseline justify-between gap-4">
-            <dt className="text-muted-foreground">Reasoning</dt>
-            <dd className="text-popover-foreground tabular-nums">
-              {formatTokenCountFull(usage.reasoningTokens)}
             </dd>
           </div>
         ) : null}

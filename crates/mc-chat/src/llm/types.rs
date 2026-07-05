@@ -172,12 +172,24 @@ pub struct ChatCompletionChoice {
     pub finish_reason: Option<FinishReason>,
 }
 
+#[derive(Debug, Clone, Copy, Default, Deserialize)]
+pub struct ChatCompletionChunkTimings {
+    #[serde(default)]
+    pub cache_n: u32,
+    #[serde(default)]
+    pub prompt_n: u32,
+    #[serde(default)]
+    pub predicted_n: u32,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct ChatCompletionChunk {
     #[serde(default)]
     pub choices: Vec<ChatCompletionChunkChoice>,
     #[serde(default)]
     pub usage: Option<CompletionUsage>,
+    #[serde(default)]
+    pub timings: Option<ChatCompletionChunkTimings>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

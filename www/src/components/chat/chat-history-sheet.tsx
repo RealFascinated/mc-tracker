@@ -22,6 +22,10 @@ type ChatHistorySheetProps = {
   onLoadSession: (
     sessionId: string,
     turns: Awaited<ReturnType<typeof fetchChatSession>>["turns"],
+    sessionUsage: Pick<
+      Awaited<ReturnType<typeof fetchChatSession>>,
+      "tokensUsed" | "lastPromptTokens" | "contextMax"
+    >,
   ) => void;
 };
 
@@ -37,7 +41,11 @@ export function ChatHistorySheet({ onLoadSession }: ChatHistorySheetProps) {
   async function handleSelect(sessionId: string) {
     try {
       const detail = await fetchChatSession(sessionId);
-      onLoadSession(detail.sessionId, detail.turns);
+      onLoadSession(detail.sessionId, detail.turns, {
+        tokensUsed: detail.tokensUsed,
+        lastPromptTokens: detail.lastPromptTokens,
+        contextMax: detail.contextMax,
+      });
       setOpen(false);
     } catch (err) {
       toast.error(errorMessage(err));

@@ -20,6 +20,8 @@ export type ChatTokenUsage = {
   promptTokens: number;
   completionTokens: number;
   contextMax: number;
+  turnTotalTokens: number;
+  sessionTotalTokens: number;
   cachedTokens?: number;
   cacheWriteTokens?: number;
   reasoningTokens?: number;
@@ -30,6 +32,7 @@ export type ChatStreamEvent =
   | { type: "toolDone"; name: string }
   | { type: "delta"; content: string }
   | { type: "reasoningDelta"; content: string }
+  | { type: "usage"; usage: ChatTokenUsage }
   | {
       type: "done";
       toolCalls?: ChatToolCallRecord[];
@@ -61,6 +64,9 @@ export type ChatSessionTurn = {
 export type ChatSessionDetailResponse = {
   sessionId: string;
   turns: ChatSessionTurn[];
+  tokensUsed: number;
+  lastPromptTokens: number;
+  contextMax: number;
 };
 
 export class ChatStreamError extends Error {

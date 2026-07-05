@@ -10,7 +10,7 @@ use mc_chat::config::{AgentConfig, LlmProvider};
 use mc_chat::error::ChatError;
 use mc_chat::llm::types::{
     ChatCompletionChunk, ChatCompletionChunkChoice, ChatCompletionDelta, ChatCompletionRequest,
-    ChatCompletionResponse, ChatMessage, FinishReason,
+    ChatCompletionResponse, FinishReason,
 };
 use mc_chat::traits::LlmClient;
 
@@ -53,30 +53,6 @@ impl LlmClient for MockLlmClient {
         LlmProvider::OpenAiCompatible
     }
 
-    async fn count_tokens(
-        &self,
-        _config: &AgentConfig,
-        _model: &str,
-        text: &str,
-    ) -> Result<u32, ChatError> {
-        Ok((text.len() / 3).max(1) as u32)
-    }
-
-    async fn count_messages_tokens(
-        &self,
-        config: &AgentConfig,
-        model: &str,
-        messages: &[ChatMessage],
-    ) -> Result<u32, ChatError> {
-        let mut total = 0u32;
-        for message in messages {
-            if let Some(content) = &message.content {
-                total += self.count_tokens(config, model, content).await?;
-            }
-        }
-        Ok(total)
-    }
-
     async fn chat_completion(
         &self,
         _config: &AgentConfig,
@@ -115,6 +91,7 @@ pub fn text_chunk(content: &str, finish: Option<FinishReason>) -> ChatCompletion
             finish_reason: finish,
         }],
         usage: None,
+        timings: None,
     }
 }
 
@@ -125,5 +102,6 @@ pub fn length_finish_chunk() -> ChatCompletionChunk {
             finish_reason: Some(FinishReason::Length),
         }],
         usage: None,
+        timings: None,
     }
 }

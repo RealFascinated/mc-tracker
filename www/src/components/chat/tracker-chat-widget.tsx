@@ -266,27 +266,38 @@ export function TrackerChatWidget() {
                   ) : null}
                   <div className="flex items-center gap-2 p-3">
                     {messages.length > 0 && !isStreaming ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-10 shrink-0 text-muted-foreground"
-                        aria-label={
-                          followUpSuggestionsExpanded
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-10 shrink-0 text-muted-foreground"
+                            aria-label={
+                              followUpSuggestionsExpanded
+                                ? "Hide suggestions"
+                                : "Show suggestions"
+                            }
+                            aria-expanded={followUpSuggestionsExpanded}
+                            onClick={() =>
+                              setFollowUpSuggestionsExpanded(
+                                (current) => !current,
+                              )
+                            }
+                          >
+                            {followUpSuggestionsExpanded ? (
+                              <ChevronDownIcon />
+                            ) : (
+                              <ChevronUpIcon />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" sideOffset={6}>
+                          {followUpSuggestionsExpanded
                             ? "Hide suggestions"
-                            : "Show suggestions"
-                        }
-                        aria-expanded={followUpSuggestionsExpanded}
-                        onClick={() =>
-                          setFollowUpSuggestionsExpanded((current) => !current)
-                        }
-                      >
-                        {followUpSuggestionsExpanded ? (
-                          <ChevronDownIcon />
-                        ) : (
-                          <ChevronUpIcon />
-                        )}
-                      </Button>
+                            : "Show suggestions"}
+                        </TooltipContent>
+                      </Tooltip>
                     ) : null}
                     <textarea
                       ref={inputRef}

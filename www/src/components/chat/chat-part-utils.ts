@@ -2,7 +2,10 @@ import type { ChatMessage, ChatPart } from "@/components/chat/chat-types";
 
 export function assistantTextFromParts(parts: ChatPart[]): string {
   return parts
-    .filter((part): part is Extract<ChatPart, { kind: "text" }> => part.kind === "text")
+    .filter(
+      (part): part is Extract<ChatPart, { kind: "text" }> =>
+        part.kind === "text",
+    )
     .map((part) => part.content)
     .join("");
 }
@@ -42,7 +45,10 @@ export function visibleAssistantParts(parts: ChatPart[]): ChatPart[] {
   );
 }
 
-export function appendReasoningDelta(parts: ChatPart[], content: string): ChatPart[] {
+export function appendReasoningDelta(
+  parts: ChatPart[],
+  content: string,
+): ChatPart[] {
   const last = parts.at(-1);
   if (last?.kind === "reasoning" && last.streaming) {
     return [
@@ -79,7 +85,11 @@ export function appendToolStart(parts: ChatPart[], name: string): ChatPart[] {
 export function markToolDone(parts: ChatPart[], name: string): ChatPart[] {
   for (let index = parts.length - 1; index >= 0; index -= 1) {
     const part = parts[index];
-    if (part.kind === "tool" && part.status === "running" && part.name === name) {
+    if (
+      part.kind === "tool" &&
+      part.status === "running" &&
+      part.name === name
+    ) {
       return [
         ...parts.slice(0, index),
         { ...part, status: "done" },
@@ -90,16 +100,24 @@ export function markToolDone(parts: ChatPart[], name: string): ChatPart[] {
   return parts;
 }
 
-export function appendTextDelta(parts: ChatPart[], content: string): ChatPart[] {
-  const last = parts.at(-1);
+export function appendTextDelta(
+  parts: ChatPart[],
+  content: string,
+): ChatPart[] {
+  const closed = parts.map((part) =>
+    part.kind === "reasoning" && part.streaming
+      ? { ...part, streaming: false }
+      : part,
+  );
+  const last = closed.at(-1);
   if (last?.kind === "text" && last.streaming) {
     return [
-      ...parts.slice(0, -1),
+      ...closed.slice(0, -1),
       { ...last, content: last.content + content },
     ];
   }
   return [
-    ...parts,
+    ...closed,
     {
       id: crypto.randomUUID(),
       kind: "text",
@@ -114,11 +132,13 @@ export function assistantHasVisibleContent(message: ChatMessage): boolean {
     return true;
   }
   const parts = message.parts ?? [];
-  return parts.some(
-    (part) =>
-      (part.kind === "text" || part.kind === "reasoning") &&
-      part.content.trim().length > 0,
-  ) || parts.some((part) => part.kind === "tool");
+  return (
+    parts.some(
+      (part) =>
+        (part.kind === "text" || part.kind === "reasoning") &&
+        part.content.trim().length > 0,
+    ) || parts.some((part) => part.kind === "tool")
+  );
 }
 
 export function turnsToAssistantParts(

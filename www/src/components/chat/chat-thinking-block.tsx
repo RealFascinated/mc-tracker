@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 
 import { MessageScrollerItem } from "@/components/ui/message-scroller";
@@ -18,6 +18,12 @@ export function ChatThinkingBlock({
 }) {
   const hasContent = part.content.trim().length > 0;
   const [expanded, setExpanded] = useState(defaultExpanded);
+
+  useEffect(() => {
+    if (!part.streaming) {
+      setExpanded(false);
+    }
+  }, [part.streaming]);
 
   if (!hasContent && part.streaming) {
     return (

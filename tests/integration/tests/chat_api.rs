@@ -6,7 +6,7 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::response::Response;
 use futures::Stream;
-use mc_api_types::ChatStreamEvent;
+use mc_api_types::{ChatStreamEvent, ChatTokenUsage};
 use mc_chat::{AgentChatRequest, AgentConfig, ChatAgent, ChatError};
 use mc_db::UserRole;
 use tokio_util::sync::CancellationToken;
@@ -64,6 +64,44 @@ impl ChatAgent for ErrorChatAgent {
         Box::pin(futures::stream::iter(vec![Ok(ChatStreamEvent::Error {
             message: "agent failed".into(),
         })]))
+    }
+}
+
+struct UsageTrackingChatAgent;
+
+impl ChatAgent for UsageTrackingChatAgent {
+    fn chat_stream(
+        &self,
+        request: AgentChatRequest,
+        config: AgentConfig,
+        _cancel: CancellationToken,
+    ) -> Pin<Box<dyn Stream<Item = Result<ChatStreamEvent, ChatError>> + Send>> {
+        let usage = ChatTokenUsage {
+            prompt_tokens: 120,
+            completion_tokens: 30,
+            context_max: config.context_max,
+            turn_total_tokens: 150,
+            session_total_tokens: request.session_tokens_used + 150,
+            cached_tokens: None,
+            cache_write_tokens: None,
+            reasoning_tokens: None,
+        };
+        let events = vec![
+            Ok(ChatStreamEvent::Delta {
+                content: "ok".into(),
+            }),
+            Ok(ChatStreamEvent::Usage {
+                usage: usage.clone(),
+            }),
+            Ok(ChatStreamEvent::Done {
+                tool_calls: vec![],
+                usage: Some(usage),
+                truncated: false,
+                finish_reason: None,
+                quota_used: None,
+            }),
+        ];
+        Box::pin(futures::stream::iter(events))
     }
 }
 
@@ -490,4 +528,69 @@ async fn post_chat_rate_limit_per_user() {
     assert_eq!(status, StatusCode::TOO_MANY_REQUESTS);
     assert_eq!(events[0]["type"], "error");
     assert_eq!(events[0]["message"], "rate limit exceeded");
+}
+
+#[tokio::test]
+async fn session_tokens_persist_and_return_on_load() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+    bootstrap_admin(&pool).await;
+    enable_chat(&pool).await;
+
+    let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
+    let app = build_app_with_chat(
+        pool.clone(),
+        manager,
+        "development",
+        Arc::new(UsageTrackingChatAgent),
+    )
+    .await;
+    let cookie = login_admin(&app).await;
+    let session_id = Uuid::new_v4();
+
+    let (status, events) = post_chat_drained(&app, Some(&cookie), "count me", session_id).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(events.iter().any(|e| e["type"] == "usage"));
+
+    let detail = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(format!("/chat/sessions/{session_id}"))
+                .header("cookie", &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(detail.status(), StatusCode::OK);
+    let body: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(detail.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(body["tokensUsed"], 150);
+    assert_eq!(body["lastPromptTokens"], 120);
+
+    let (status2, _) = post_chat_drained(&app, Some(&cookie), "again", session_id).await;
+    assert_eq!(status2, StatusCode::OK);
+
+    let detail2 = app
+        .oneshot(
+            Request::builder()
+                .uri(format!("/chat/sessions/{session_id}"))
+                .header("cookie", &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let body2: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(detail2.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(body2["tokensUsed"], 300);
 }

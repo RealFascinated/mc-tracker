@@ -12,9 +12,10 @@ use crate::agent::stream::{finalize_stream_tool_calls, merge_stream_tool_calls};
 use crate::agent::tools_exec::execute_tool_calls;
 use crate::config::AgentConfig;
 use crate::error::ChatError;
+use crate::llm::turn_usage::TurnUsageAccumulator;
 use crate::llm::types::{
-    ChatCompletionRequest, ChatMessage, CompletionUsage, FinishReason, LlmRequestOptions,
-    MessageRole, ToolCall, ToolChoice,
+    ChatCompletionRequest, ChatMessage, FinishReason, LlmRequestOptions, MessageRole, ToolCall,
+    ToolChoice,
 };
 use crate::tools::ToolRegistry;
 use crate::traits::{ChatToolDeps, LlmClient};
@@ -35,10 +36,9 @@ pub async fn run_unified_agent(
     let end_user_id = request.end_user_id.clone();
     let tool_defs = tools.definitions();
     let (mut messages, context_truncated) =
-        ContextBuilder::build_prompt_messages(llm.as_ref(), &config, &request.history, &request)
-            .await;
+        ContextBuilder::build_prompt_messages(&config, &request);
     let mut tool_trace = Vec::new();
-    let mut usage = CompletionUsage::default();
+    let mut turn_usage = TurnUsageAccumulator::new(request.session_tokens_used);
     let mut recovery_used = false;
 
     tracing::info!(
@@ -64,10 +64,12 @@ pub async fn run_unified_agent(
             started,
             config.timeout,
             &tx,
-            &mut usage,
+            &mut turn_usage,
             &cancel,
         )
         .await?;
+
+        emit_usage(&tx, &turn_usage, &config).await?;
 
         if let Some(calls) = tool_calls {
             let assistant = ChatMessage {
@@ -100,7 +102,7 @@ pub async fn run_unified_agent(
                 text,
                 streamed,
                 tool_trace,
-                usage,
+                &turn_usage,
                 context_truncated,
                 finish_reason,
                 &config,
@@ -122,10 +124,11 @@ pub async fn run_unified_agent(
                 &tool_defs,
                 session_id.clone(),
                 end_user_id.clone(),
-                &mut usage,
+                &mut turn_usage,
             )
             .await?
             {
+                emit_usage(&tx, &turn_usage, &config).await?;
                 let assistant = ChatMessage {
                     role: MessageRole::Assistant,
                     content: None,
@@ -164,7 +167,7 @@ async fn stream_with_tools(
     started: Instant,
     timeout: Duration,
     tx: &mpsc::Sender<Result<ChatStreamEvent, ChatError>>,
-    usage: &mut CompletionUsage,
+    turn_usage: &mut TurnUsageAccumulator,
     cancel: &CancellationToken,
 ) -> Result<(String, bool, Option<Vec<ToolCall>>, Option<FinishReason>), ChatError> {
     let mut stream = llm
@@ -199,9 +202,7 @@ async fn stream_with_tools(
         }
         check_timeout(started, timeout)?;
         let chunk = chunk?;
-        if let Some(chunk_usage) = chunk.usage {
-            chunk_usage.merge_into(usage);
-        }
+        turn_usage.merge_chunk(&chunk);
         for choice in chunk.choices {
             if let Some(reason) = choice.finish_reason {
                 finish_reason = Some(reason);
@@ -268,7 +269,7 @@ async fn recovery_tool_calls(
     tool_defs: &[crate::llm::types::ToolDefinition],
     session_id: Option<String>,
     end_user_id: Option<String>,
-    usage: &mut CompletionUsage,
+    usage: &mut TurnUsageAccumulator,
 ) -> Result<Option<Vec<ToolCall>>, ChatError> {
     let response = llm
         .chat_completion(
@@ -289,7 +290,7 @@ async fn recovery_tool_calls(
         )
         .await?;
     if let Some(round_usage) = response.usage {
-        round_usage.merge_into(usage);
+        usage.merge_round(&round_usage);
     }
     let choice = response.choices.into_iter().next();
     let Some(choice) = choice else {
@@ -298,13 +299,26 @@ async fn recovery_tool_calls(
     Ok(choice.message.tool_calls.filter(|calls| !calls.is_empty()))
 }
 
+async fn emit_usage(
+    tx: &mpsc::Sender<Result<ChatStreamEvent, ChatError>>,
+    turn_usage: &TurnUsageAccumulator,
+    config: &AgentConfig,
+) -> Result<(), ChatError> {
+    let _ = tx
+        .send(Ok(ChatStreamEvent::Usage {
+            usage: turn_usage.to_chat_token_usage(config),
+        }))
+        .await;
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn emit_done(
     tx: &mpsc::Sender<Result<ChatStreamEvent, ChatError>>,
     assistant_content: String,
     content_already_streamed: bool,
     tool_trace: Vec<ChatToolCallRecord>,
-    usage: CompletionUsage,
+    turn_usage: &TurnUsageAccumulator,
     context_truncated: bool,
     finish_reason: Option<FinishReason>,
     config: &AgentConfig,
@@ -318,28 +332,15 @@ async fn emit_done(
             .await;
     }
 
+    let usage = turn_usage.to_chat_token_usage(config);
     log_context_usage(session_id, config.context_max, &usage);
 
     let truncated = context_truncated || finish_reason == Some(FinishReason::Length);
-    let cache_details = usage.prompt_tokens_details;
-    let reasoning_tokens = usage
-        .completion_tokens_details
-        .map(|d| d.reasoning_tokens)
-        .filter(|count| *count > 0);
 
     let _ = tx
         .send(Ok(ChatStreamEvent::Done {
             tool_calls: tool_trace,
-            usage: Some(mc_api_types::ChatTokenUsage {
-                prompt_tokens: usage.prompt_tokens,
-                completion_tokens: usage.completion_tokens,
-                context_max: config.context_max,
-                cached_tokens: cache_details.map(|d| d.cached_tokens).filter(|c| *c > 0),
-                cache_write_tokens: cache_details
-                    .map(|d| d.cache_write_tokens)
-                    .filter(|c| *c > 0),
-                reasoning_tokens,
-            }),
+            usage: Some(usage),
             truncated,
             finish_reason: finish_reason.map(|r| r.as_str().to_string()),
             quota_used: None,
@@ -389,22 +390,26 @@ fn check_timeout(started: Instant, timeout: Duration) -> Result<(), ChatError> {
     Ok(())
 }
 
-fn log_context_usage(session_id: Option<&str>, context_max: u32, usage: &CompletionUsage) {
+fn log_context_usage(
+    session_id: Option<&str>,
+    context_max: u32,
+    usage: &mc_api_types::ChatTokenUsage,
+) {
     let prompt = usage.prompt_tokens;
     let pct = if context_max > 0 {
         (f64::from(prompt) / f64::from(context_max)) * 100.0
     } else {
         0.0
     };
-    let cache_details = usage.prompt_tokens_details;
-    let reasoning_tokens = usage.completion_tokens_details.map(|d| d.reasoning_tokens);
     tracing::info!(
         session_id,
         prompt_tokens = prompt,
         completion_tokens = usage.completion_tokens,
-        cached_tokens = cache_details.map(|d| d.cached_tokens),
-        cache_write_tokens = cache_details.map(|d| d.cache_write_tokens),
-        reasoning_tokens,
+        turn_total_tokens = usage.turn_total_tokens,
+        session_total_tokens = usage.session_total_tokens,
+        cached_tokens = usage.cached_tokens,
+        cache_write_tokens = usage.cache_write_tokens,
+        reasoning_tokens = usage.reasoning_tokens,
         context_max,
         context_used_pct = format!("{pct:.1}%"),
         "chat context usage"
@@ -549,30 +554,6 @@ mod tests {
             LlmProvider::OpenAiCompatible
         }
 
-        async fn count_tokens(
-            &self,
-            _config: &AgentConfig,
-            _model: &str,
-            text: &str,
-        ) -> Result<u32, ChatError> {
-            Ok((text.len() / 3).max(1) as u32)
-        }
-
-        async fn count_messages_tokens(
-            &self,
-            config: &AgentConfig,
-            model: &str,
-            messages: &[ChatMessage],
-        ) -> Result<u32, ChatError> {
-            let mut total = 0u32;
-            for message in messages {
-                if let Some(content) = &message.content {
-                    total += self.count_tokens(config, model, content).await?;
-                }
-            }
-            Ok(total)
-        }
-
         async fn chat_completion(
             &self,
             _config: &AgentConfig,
@@ -605,6 +586,7 @@ mod tests {
                 finish_reason: finish,
             }],
             usage: None,
+            timings: None,
         }
     }
 
@@ -660,6 +642,8 @@ mod tests {
             end_user_id: None,
             history: vec![],
             context_server: None,
+            session_tokens_used: 0,
+            last_turn_prompt_tokens: None,
         };
         run_unified_agent(
             llm,
@@ -685,6 +669,9 @@ mod tests {
             })
             .expect("done event");
         assert!(!done);
+        assert!(events
+            .iter()
+            .any(|e| matches!(e, ChatStreamEvent::Usage { .. })));
     }
 
     #[tokio::test]
@@ -698,6 +685,7 @@ mod tests {
                         finish_reason: Some(FinishReason::Length),
                     }],
                     usage: None,
+                    timings: None,
                 },
             ]],
             calls: AtomicUsize::new(0),
@@ -709,6 +697,8 @@ mod tests {
             end_user_id: None,
             history: vec![],
             context_server: None,
+            session_tokens_used: 0,
+            last_turn_prompt_tokens: None,
         };
         run_unified_agent(
             llm,
@@ -748,6 +738,8 @@ mod tests {
             end_user_id: None,
             history: vec![],
             context_server: None,
+            session_tokens_used: 0,
+            last_turn_prompt_tokens: None,
         };
         let result = run_unified_agent(
             llm,

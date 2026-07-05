@@ -32,4 +32,7 @@ pub struct ChatSessionTurn {
 pub struct ChatSessionDetailResponse {
     pub session_id: Uuid,
     pub turns: Vec<ChatSessionTurn>,
+    pub tokens_used: u64,
+    pub last_prompt_tokens: u32,
+    pub context_max: u32,
 }

@@ -56,6 +56,8 @@ diesel::table! {
         user_id -> Uuid,
         created_at -> Timestamptz,
         updated_at -> Timestamptz,
+        tokens_used -> BigInt,
+        last_prompt_tokens -> Integer,
     }
 }
 

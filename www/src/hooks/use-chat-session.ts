@@ -99,7 +99,7 @@ export function useChatSession() {
           ...streaming,
           id: crypto.randomUUID(),
           parts,
-          content: assistantTextFromParts(parts) || streaming.content,
+          content: assistantTextFromParts(parts),
         },
       ];
     });
@@ -117,7 +117,15 @@ export function useChatSession() {
   }, [cancelStream]);
 
   const loadSession = useCallback(
-    (id: string, turns: ChatSessionTurn[]) => {
+    (
+      id: string,
+      turns: ChatSessionTurn[],
+      sessionUsage?: {
+        tokensUsed: number;
+        lastPromptTokens: number;
+        contextMax: number;
+      },
+    ) => {
       cancelStream();
       setSessionId(id);
       setTruncatedNotice(false);
@@ -139,7 +147,17 @@ export function useChatSession() {
           };
         }),
       );
-      setTokenUsage(null);
+      if (sessionUsage && sessionUsage.tokensUsed > 0) {
+        setTokenUsage({
+          promptTokens: sessionUsage.lastPromptTokens,
+          completionTokens: 0,
+          contextMax: sessionUsage.contextMax,
+          turnTotalTokens: 0,
+          sessionTotalTokens: sessionUsage.tokensUsed,
+        });
+      } else {
+        setTokenUsage(null);
+      }
       setInput("");
       setIsStreaming(false);
     },
@@ -210,6 +228,9 @@ export function useChatSession() {
                 ),
               );
               break;
+            case "usage":
+              setTokenUsage(event.usage);
+              break;
             case "error":
               throw new ChatStreamError(event.message, 0);
             case "done":
@@ -233,25 +254,7 @@ export function useChatSession() {
                   if (message.id !== STREAMING_ID) {
                     return message;
                   }
-                  let parts = finalizeParts(message.parts ?? []);
-                  const streamedTools = new Set(
-                    parts
-                      .filter((part) => part.kind === "tool")
-                      .map((part) => part.name),
-                  );
-                  for (const tool of event.toolCalls ?? []) {
-                    if (!streamedTools.has(tool.name)) {
-                      parts = [
-                        ...parts,
-                        {
-                          id: crypto.randomUUID(),
-                          kind: "tool",
-                          name: tool.name,
-                          status: "done",
-                        },
-                      ];
-                    }
-                  }
+                  const parts = finalizeParts(message.parts ?? []);
                   return {
                     ...message,
                     id: crypto.randomUUID(),

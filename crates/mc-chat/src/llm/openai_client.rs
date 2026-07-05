@@ -6,12 +6,11 @@ use async_trait::async_trait;
 use futures::{Stream, StreamExt};
 use reqwest::Client;
 use serde_json::json;
-use tracing::warn;
 
 use crate::config::{AgentConfig, LlmProvider};
 use crate::error::ChatError;
 use crate::llm::types::{
-    ChatCompletionChunk, ChatCompletionRequest, ChatCompletionResponse, ChatMessage, ToolChoice,
+    ChatCompletionChunk, ChatCompletionRequest, ChatCompletionResponse, ToolChoice,
 };
 use crate::traits::LlmClient;
 
@@ -148,40 +147,6 @@ impl OpenAiLlmClient {
             .await
             .map_err(|err| ChatError::Llm(err.to_string()))
     }
-
-    async fn tokenize_llama(
-        client: &Client,
-        config: &AgentConfig,
-        text: &str,
-    ) -> Result<u32, ChatError> {
-        let url = format!("{}/tokenize", config.base_url());
-        let req = client
-            .post(&url)
-            .timeout(config.timeout)
-            .json(&json!({ "content": text }));
-        let req = Self::apply_auth(config, req);
-        let response = req
-            .send()
-            .await
-            .map_err(|err| ChatError::Llm(err.to_string()))?;
-        if !response.status().is_success() {
-            return Err(ChatError::Llm("tokenize failed".into()));
-        }
-        #[derive(serde::Deserialize)]
-        struct TokenizeResponse {
-            tokens: Vec<u32>,
-        }
-        let parsed: TokenizeResponse = response
-            .json()
-            .await
-            .map_err(|err| ChatError::Llm(err.to_string()))?;
-        Ok(parsed.tokens.len() as u32)
-    }
-
-    fn estimate_tokens(text: &str) -> u32 {
-        let chars = text.chars().count() as u32;
-        (chars / 3).max(1)
-    }
 }
 
 fn slot_for_session(session_id: &str, parallel_slots: u32) -> i32 {
@@ -218,45 +183,6 @@ fn apply_thinking(config: &AgentConfig, body: &mut serde_json::Value) {
 impl LlmClient for OpenAiLlmClient {
     fn provider(&self, config: &AgentConfig) -> LlmProvider {
         config.provider
-    }
-
-    async fn count_tokens(
-        &self,
-        config: &AgentConfig,
-        _model: &str,
-        text: &str,
-    ) -> Result<u32, ChatError> {
-        if config.provider == LlmProvider::LlamaCpp {
-            match Self::tokenize_llama(&self.client, config, text).await {
-                Ok(count) => return Ok(count),
-                Err(err) => {
-                    warn!(error = %err, "llama tokenize failed, using estimate");
-                }
-            }
-        }
-        Ok(Self::estimate_tokens(text))
-    }
-
-    async fn count_messages_tokens(
-        &self,
-        config: &AgentConfig,
-        model: &str,
-        messages: &[ChatMessage],
-    ) -> Result<u32, ChatError> {
-        let mut total = 0u32;
-        for message in messages {
-            let mut block = message.role.as_str().to_string();
-            if let Some(content) = &message.content {
-                block.push_str(content);
-            }
-            if let Some(calls) = &message.tool_calls {
-                if let Ok(serialized) = serde_json::to_string(calls) {
-                    block.push_str(&serialized);
-                }
-            }
-            total = total.saturating_add(self.count_tokens(config, model, &block).await?);
-        }
-        Ok(total)
     }
 
     async fn chat_completion(

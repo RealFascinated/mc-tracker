@@ -14,7 +14,7 @@ use uuid::Uuid;
 use crate::config::{AgentConfig, LlmProvider};
 use crate::error::ChatError;
 use crate::llm::{
-    ChatCompletionChunk, ChatCompletionRequest, ChatCompletionResponse, ChatMessage, ToolDefinition,
+    ChatCompletionChunk, ChatCompletionRequest, ChatCompletionResponse, ToolDefinition,
 };
 
 pub struct ChatToolDeps {
@@ -103,20 +103,6 @@ pub trait ChatTool: Send + Sync {
 #[async_trait]
 pub trait LlmClient: Send + Sync {
     fn provider(&self, config: &AgentConfig) -> LlmProvider;
-
-    async fn count_tokens(
-        &self,
-        config: &AgentConfig,
-        model: &str,
-        text: &str,
-    ) -> Result<u32, ChatError>;
-
-    async fn count_messages_tokens(
-        &self,
-        config: &AgentConfig,
-        model: &str,
-        messages: &[ChatMessage],
-    ) -> Result<u32, ChatError>;
 
     async fn chat_completion(
         &self,

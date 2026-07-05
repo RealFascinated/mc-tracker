@@ -12,6 +12,8 @@ pub struct AgentChatRequest {
     pub end_user_id: Option<String>,
     pub history: Vec<ChatMessage>,
     pub context_server: Option<ChatContextServer>,
+    pub session_tokens_used: u64,
+    pub last_turn_prompt_tokens: Option<u32>,
 }
 
 pub trait ChatAgent: Send + Sync {

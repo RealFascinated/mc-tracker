@@ -6,6 +6,8 @@ pub struct ChatTokenUsage {
     pub prompt_tokens: u32,
     pub completion_tokens: u32,
     pub context_max: u32,
+    pub turn_total_tokens: u32,
+    pub session_total_tokens: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cached_tokens: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -34,6 +36,9 @@ pub enum ChatStreamEvent {
     },
     ReasoningDelta {
         content: String,
+    },
+    Usage {
+        usage: ChatTokenUsage,
     },
     Done {
         #[serde(rename = "toolCalls")]

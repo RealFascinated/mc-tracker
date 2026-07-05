@@ -153,12 +153,32 @@ async fn post_chat(
         }
     };
 
+    let session_usage = match chat_sessions::get_usage(&state.pool, body.session_id).await {
+        Ok(usage) => usage,
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiError::new(
+                    ApiErrorCode::InternalError,
+                    "failed to load session",
+                )),
+            )
+                .into_response();
+        }
+    };
+
     let request = AgentChatRequest {
         message: body.message,
         session_id: Some(body.session_id.to_string()),
         end_user_id: Some(user.id.to_string()),
         history: turns_to_messages(&turns),
         context_server: body.context_server,
+        session_tokens_used: session_usage.tokens_used,
+        last_turn_prompt_tokens: if session_usage.last_prompt_tokens > 0 {
+            Some(session_usage.last_prompt_tokens)
+        } else {
+            None
+        },
     };
 
     let user_message = request.message.clone();
@@ -210,6 +230,11 @@ async fn post_chat(
                         break;
                     }
                 }
+                Ok(event @ ChatStreamEvent::Usage { .. }) => {
+                    if tx.send(Ok(event)).await.is_err() {
+                        break;
+                    }
+                }
                 Ok(mut done @ ChatStreamEvent::Done { .. }) => {
                     if let Err(err) = chat_sessions::append_turn_pair(
                         &pool,
@@ -222,9 +247,26 @@ async fn post_chat(
                     .await
                     {
                         tracing::error!(error = %err, "failed to persist chat turn");
-                    } else if !quota_exempt {
-                        if let Err(err) = chat_messages::record(&pool, user_id).await {
-                            tracing::error!(error = %err, "failed to record chat quota");
+                    } else {
+                        if let ChatStreamEvent::Done {
+                            usage: Some(usage), ..
+                        } = &done
+                        {
+                            if let Err(err) = chat_sessions::add_turn_tokens(
+                                &pool,
+                                session_id,
+                                usage.turn_total_tokens,
+                                usage.prompt_tokens,
+                            )
+                            .await
+                            {
+                                tracing::error!(error = %err, "failed to persist session tokens");
+                            }
+                        }
+                        if !quota_exempt {
+                            if let Err(err) = chat_messages::record(&pool, user_id).await {
+                                tracing::error!(error = %err, "failed to record chat quota");
+                            }
                         }
                     }
                     if let ChatStreamEvent::Done { quota_used, .. } = &mut done {
@@ -331,15 +373,30 @@ async fn get_session(
     if !session_owned(&state, user.id, session_id).await {
         return session_not_found();
     }
+    let settings = state.manager.settings();
+    let context_max = agent_config(&settings)
+        .map(|config| config.context_max)
+        .unwrap_or(16_384);
     match chat_sessions::list_turns(&state.pool, session_id).await {
-        Ok(turns) => (
-            StatusCode::OK,
-            Json(ChatSessionDetailResponse {
-                session_id,
-                turns: turns.into_iter().map(turn_to_dto).collect(),
-            }),
-        )
-            .into_response(),
+        Ok(turns) => {
+            let usage = chat_sessions::get_usage(&state.pool, session_id)
+                .await
+                .unwrap_or(chat_sessions::ChatSessionUsage {
+                    tokens_used: 0,
+                    last_prompt_tokens: 0,
+                });
+            (
+                StatusCode::OK,
+                Json(ChatSessionDetailResponse {
+                    session_id,
+                    turns: turns.into_iter().map(turn_to_dto).collect(),
+                    tokens_used: usage.tokens_used,
+                    last_prompt_tokens: usage.last_prompt_tokens,
+                    context_max,
+                }),
+            )
+                .into_response()
+        }
         Err(_) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ApiError::new(
