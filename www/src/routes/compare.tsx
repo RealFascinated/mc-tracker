@@ -3,14 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { useMemo } from "react";
 
-import { ComparePlayersChart } from "@/components/compare/compare-players-chart";
-import { CompareServersTable } from "@/components/compare/compare-servers-table";
+import { ComparePlayersChart } from "@/components/compare/players-chart";
+import { CompareServersTable } from "@/components/compare/table";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
-import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
-import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
+import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
+import { useMetricTimeWindowLinkSearch } from "@/hooks/metrics/use-metric-time-window-link-search";
 import { serversCompareQueryOptions } from "@/lib/api/compare.queries";
-import { comparePlatformWarning } from "@/lib/compare/platform-warning";
+import { comparePlatformWarning } from "@/lib/api/platform";
 import {
   MIN_COMPARE_SERVERS,
   parseCompareIdsParam,

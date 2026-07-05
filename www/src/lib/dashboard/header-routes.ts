@@ -1,7 +1,7 @@
 const DASHBOARD_HEADER_ROUTES = [
-  { to: "/servers", label: "Servers" },
-  { to: "/asns", label: "ASNs" },
-  { to: "/compare", label: "Compare" },
+  { to: "/servers", label: "Servers", showsSearch: true },
+  { to: "/asns", label: "ASNs", showsSearch: false },
+  { to: "/compare", label: "Compare", showsSearch: false },
 ] as const;
 
 type DashboardHeaderRoute = (typeof DASHBOARD_HEADER_ROUTES)[number]["to"];
@@ -28,11 +28,18 @@ function showsSiteHeaderPageNav(pathname: string): boolean {
   return isDashboardHeaderRoute(pathname) || pathname.startsWith("/admin");
 }
 
+function showsHeaderSearch(pathname: string): boolean {
+  return DASHBOARD_HEADER_ROUTES.some(
+    (route) => route.showsSearch && pathname.startsWith(route.to),
+  );
+}
+
 export {
   activeDashboardHeaderRoute,
   DASHBOARD_HEADER_ROUTE_OPTIONS,
   DASHBOARD_HEADER_ROUTES,
   isDashboardHeaderRoute,
+  showsHeaderSearch,
   showsSiteHeaderPageNav,
 };
 export type { DashboardHeaderRoute };

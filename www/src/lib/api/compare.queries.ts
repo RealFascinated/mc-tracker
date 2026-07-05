@@ -6,7 +6,7 @@ import { MAX_METRIC_POINTS } from "@/lib/metrics/max-points";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 import { metricTimeWindowQueryKey } from "@/lib/metrics/time-window";
 
-export const serversCompareQueryKey = ["servers", "compare"] as const;
+const serversCompareQueryKey = ["servers", "compare"] as const;
 
 export function serversCompareQueryOptions(
   ids: string[],

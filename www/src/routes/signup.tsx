@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { AuthPageShell } from "@/components/auth-page-shell";
+import { AuthPageShell } from "@/components/auth/page-shell";
 import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import {

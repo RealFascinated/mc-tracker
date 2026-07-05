@@ -1,6 +1,7 @@
 import { MetricStat } from "@/components/dashboard/stats/metric-stat";
 import { staggeredSlideUpDelay } from "@/components/motion/slide-up-animation.constants";
 import { SlideUpAnimation } from "@/components/motion/slide-up-animation";
+import { SERVER_PLATFORM_OPTIONS } from "@/lib/api/platform";
 import type { PlayersSummaryBase } from "@/lib/api/types";
 
 type DashboardStatsRowProps = {
@@ -17,12 +18,11 @@ export function DashboardStatsRow({ summary }: DashboardStatsRowProps) {
     { label: "Online now", value: summary.totalPlayers, highlight: true },
     { label: "Peak 24h", value: summary.peaks.players24h },
     { label: "Peak 7d", value: summary.peaks.players7d },
-    { label: "Java", value: summary.playersPc, labelClassName: "text-chart-4" },
-    {
-      label: "Bedrock",
-      value: summary.playersPe,
-      labelClassName: "text-chart-3",
-    },
+    ...SERVER_PLATFORM_OPTIONS.map((platform) => ({
+      label: platform.label,
+      value: summary[platform.summaryField],
+      labelClassName: platform.statsLabelClassName,
+    })),
     { label: "Tracked servers", value: summary.trackedServers },
   ];
 

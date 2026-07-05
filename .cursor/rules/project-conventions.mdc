@@ -15,16 +15,46 @@ Stack: **React 19**, **TypeScript** (strict), **TanStack Start/Router**, **TanSt
 | Area | Location |
 |------|----------|
 | Routes | `src/routes/` — TanStack file-based routing (`routeTree.gen.ts` is generated) |
-| UI primitives | `src/components/ui/` — shadcn components |
-| App components | `src/components/` |
+| UI primitives | `src/components/ui/` — shadcn components; compound widgets in subfolders (`collapsible/`, `native-select/`) |
+| App components | `src/components/` — grouped by domain, then role (see **File organization**) |
 | API client | `src/lib/api/client.ts` + domain modules (`servers.ts`, `admin/`, etc.) |
 | Query options | `src/lib/api/*.queries.ts` — React Query `queryOptions` factories |
 | Auth | `src/lib/auth/` — context, session helpers, validation |
 | Metrics / charts | `src/lib/metrics/` — range, series, chart config, uPlot theme |
 | Utilities | `src/lib/` |
-| Hooks | `src/hooks/` |
+| Hooks | `src/hooks/` — domain subfolders (`chat/`, `metrics/`, `timeseries/`) |
 | Global styles / theme | `src/styles.css` |
 | Path alias | `@/*` → `src/*` |
+
+## File organization
+
+**Group by domain folder, then role — not flat prefix-heavy filenames.**
+
+- Put related files in a subfolder and drop the redundant prefix from each filename.
+  - `admin/settings/access-section.tsx`, not `admin/admin-settings-access-section.tsx`
+  - `chat/widget/widget.tsx`, not `chat/tracker-chat-widget.tsx`
+- Split large domains by role when it helps navigation:
+  - `components/admin/settings/`, `admin/servers/`
+  - `components/chat/widget/`, `chat/panel/`, `chat/turns/`, `chat/lib/`
+  - `components/dashboard/cards/`, `controls/`, `server/` (+ existing `charts/`, `grids/`, `stats/`)
+- Match existing subfolder patterns before inventing new ones. Read the sibling tree first.
+- **No barrel re-exports** — do not add `index.ts` / `index.tsx` files that only `export { … } from "./…"`.
+  - Import the source file directly: `@/components/ui/collapsible/root`, not `@/components/ui/collapsible`
+  - Exception: TanStack Router route `index.tsx` files and modules that define real code (e.g. `lib/auth/index.ts` with `login`/`logout` implementations).
+- Prefer relative imports within the same feature folder; use `@/` when crossing domains.
+
+```tsx
+// bad — barrel re-export
+export { NativeSelect } from "./select";
+
+// bad — flat prefixed siblings
+components/admin/admin-settings-metrics-section.tsx
+components/admin/admin-settings-dns-section.tsx
+
+// good — grouped, short names, direct imports
+import { NativeSelect } from "@/components/ui/native-select/select";
+import { MetricsSettingsSection } from "@/components/admin/settings/metrics-section";
+```
 
 ## Integration points
 

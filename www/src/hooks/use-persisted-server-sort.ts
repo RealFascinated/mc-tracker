@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
 
-import type { SearchNavigate } from "@/hooks/use-metric-time-window-controls";
+import type { SearchNavigate } from "@/hooks/metrics/use-metric-time-window-controls";
 import {
   DEFAULT_SERVER_SORT,
   parseStoredServerSort,

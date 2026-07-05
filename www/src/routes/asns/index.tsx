@@ -6,7 +6,7 @@ import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { LoadingState } from "@/components/loading-state";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
-import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
+import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
 import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
 import { asnsQueryOptions } from "@/lib/api/asns.queries";
 import { serversQueryOptions } from "@/lib/api/servers.queries";

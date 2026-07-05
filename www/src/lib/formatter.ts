@@ -3,65 +3,65 @@ const MONTH_SECONDS = DAY_SECONDS * 28;
 const YEAR_SECONDS = DAY_SECONDS * 365;
 const THIRTY_DAYS_MS = 30 * DAY_SECONDS * 1000;
 
-function createDateFormatter(
-  options: Intl.DateTimeFormatOptions,
-): Intl.DateTimeFormat {
-  return new Intl.DateTimeFormat(undefined, options);
-}
-
 const dateTime = {
-  monthDay: createDateFormatter({ month: "short", day: "numeric" }),
-  monthDayYear: createDateFormatter({
+  monthDay: new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }),
+  monthDayYear: new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
   }),
-  month: createDateFormatter({ month: "short" }),
-  monthYear: createDateFormatter({ month: "short", year: "numeric" }),
-  year: createDateFormatter({ year: "numeric" }),
-  time: createDateFormatter({ hour: "numeric", minute: "2-digit" }),
-  timeWithSeconds: createDateFormatter({
+  month: new Intl.DateTimeFormat(undefined, { month: "short" }),
+  monthYear: new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    year: "numeric",
+  }),
+  year: new Intl.DateTimeFormat(undefined, { year: "numeric" }),
+  time: new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  }),
+  timeWithSeconds: new Intl.DateTimeFormat(undefined, {
     hour: "numeric",
     minute: "2-digit",
     second: "2-digit",
   }),
-  time24: createDateFormatter({
+  time24: new Intl.DateTimeFormat(undefined, {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
   }),
-  weekdayMonthDay: createDateFormatter({
+  weekdayMonthDay: new Intl.DateTimeFormat(undefined, {
     weekday: "short",
     month: "short",
     day: "numeric",
   }),
-  weekdayMonthDayYear: createDateFormatter({
+  weekdayMonthDayYear: new Intl.DateTimeFormat(undefined, {
     weekday: "short",
     month: "short",
     day: "numeric",
     year: "numeric",
   }),
-  monthDayTime: createDateFormatter({
+  monthDayTime: new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
   }),
-  monthDayYearTime: createDateFormatter({
+  monthDayYearTime: new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
   }),
-  monthDayTimeWithSeconds: createDateFormatter({
+  monthDayTimeWithSeconds: new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
     second: "2-digit",
   }),
-  monthDayYearTimeWithSeconds: createDateFormatter({
+  monthDayYearTimeWithSeconds: new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -69,11 +69,11 @@ const dateTime = {
     minute: "2-digit",
     second: "2-digit",
   }),
-  mediumDateTime: createDateFormatter({
+  mediumDateTime: new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
   }),
-  quotaReset: createDateFormatter({
+  quotaReset: new Intl.DateTimeFormat(undefined, {
     weekday: "short",
     month: "short",
     day: "numeric",

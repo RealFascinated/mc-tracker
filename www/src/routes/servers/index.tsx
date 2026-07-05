@@ -8,7 +8,7 @@ import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
 import { LoadingState } from "@/components/loading-state";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
-import { useMetricTimeWindowControls } from "@/hooks/use-metric-time-window-controls";
+import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
 import { usePersistedServerSort } from "@/hooks/use-persisted-server-sort";
 import { useSearchParamNavigation } from "@/hooks/use-search-param-navigation";
 import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";

@@ -6,9 +6,9 @@ import {
 } from "@tanstack/react-router";
 
 import { NotFoundPage } from "@/components/not-found-page";
-import { SiteHeader } from "@/components/site-header";
-import { DeferredChatWidget } from "@/components/chat/deferred-chat-widget";
-import { ScrollToTopButton } from "@/components/scroll-to-top-button";
+import { SiteHeader } from "@/components/site/header";
+import { DeferredChatWidget } from "@/components/chat/widget/deferred";
+import { ScrollToTopButton } from "@/components/site/scroll-to-top-button";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth/context";

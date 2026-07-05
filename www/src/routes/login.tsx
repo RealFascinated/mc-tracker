@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-import { AuthForm } from "@/components/auth-form";
-import { AuthPageShell } from "@/components/auth-page-shell";
+import { AuthForm } from "@/components/auth/form";
+import { AuthPageShell } from "@/components/auth/page-shell";
 import { LoadingState } from "@/components/loading-state";
 import {
   Card,

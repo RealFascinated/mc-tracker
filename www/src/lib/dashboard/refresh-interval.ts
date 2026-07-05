@@ -25,7 +25,7 @@ const INTERVAL_BY_VALUE = Object.fromEntries(
   DASHBOARD_REFRESH_INTERVAL_OPTIONS.map((option) => [option.value, option]),
 ) as Record<DashboardRefreshInterval, DashboardRefreshIntervalOption>;
 
-function getDashboardRefreshIntervalOption(
+export function getDashboardRefreshIntervalOption(
   value: DashboardRefreshInterval,
 ): DashboardRefreshIntervalOption {
   return INTERVAL_BY_VALUE[value];

@@ -1,5 +1,5 @@
-import { DashboardCard } from "@/components/dashboard/dashboard-card";
-import { DashboardCardHeader } from "@/components/dashboard/dashboard-card-header";
+import { DashboardCard } from "@/components/dashboard/cards/card";
+import { DashboardCardHeader } from "@/components/dashboard/cards/card-header";
 import { TotalPlayersChart } from "@/components/dashboard/charts/total-players-chart";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";

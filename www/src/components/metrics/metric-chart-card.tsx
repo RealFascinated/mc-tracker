@@ -12,8 +12,8 @@ import {
 } from "@/lib/metrics/series";
 import { resolveChartSeriesColor } from "@/lib/metrics/chart-colors";
 import type { MetricsDataWindow } from "@/lib/metrics/chart-zoom";
-import { useChartHydration } from "@/hooks/use-chart-hydration";
-import { useChartSeriesVisibility } from "@/hooks/use-chart-series-visibility";
+import { useChartHydration } from "@/hooks/metrics/use-chart-hydration";
+import { useChartSeriesVisibility } from "@/hooks/metrics/use-chart-series-visibility";
 import { MetricChart } from "@/components/metrics/metric-chart";
 import { cn } from "cnfast";
 import { useTheme } from "@/hooks/use-theme";

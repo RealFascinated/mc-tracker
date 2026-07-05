@@ -4,7 +4,7 @@ import {
   EntityCardStats,
   EntityMetricsGrid,
 } from "@/components/dashboard/grids/entity-metrics-grid";
-import { useMetricTimeWindowLinkSearch } from "@/hooks/use-metric-time-window-link-search";
+import { useMetricTimeWindowLinkSearch } from "@/hooks/metrics/use-metric-time-window-link-search";
 import type { AsnListItem, AsnTimeseriesResponse } from "@/lib/api/asns";
 import { asnChartSlug, asnDisplayName, asnDetailSearch } from "@/lib/api/asns";
 import { asnTimeseriesQueryOptions } from "@/lib/api/asns.queries";

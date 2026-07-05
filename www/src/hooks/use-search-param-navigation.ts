@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import type { SearchNavigate } from "@/hooks/use-metric-time-window-controls";
+import type { SearchNavigate } from "@/hooks/metrics/use-metric-time-window-controls";
 
 export function useSearchParamNavigation<T extends string>(
   navigate: SearchNavigate,

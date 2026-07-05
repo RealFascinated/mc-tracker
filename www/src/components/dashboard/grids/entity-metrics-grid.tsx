@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import type { EntityPeakStats, TimeseriesResponse } from "@/lib/api/types";
 
-import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { DashboardCard } from "@/components/dashboard/cards/card";
 import { LazyMetricChartBody } from "@/components/dashboard/charts/lazy-metric-chart-body";
 import { resolveLazyMetricChartState } from "@/components/dashboard/charts/lazy-metric-chart-state";
 import { AnimatedStatValue } from "@/components/dashboard/stats/animated-stat-value";

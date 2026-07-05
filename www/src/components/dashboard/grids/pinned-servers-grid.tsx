@@ -19,8 +19,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { GripVertical } from "lucide-react";
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
   useMemo,
   useState,
 } from "react";
@@ -28,8 +28,8 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 
 import { EntityMetricsGrid } from "@/components/dashboard/grids/entity-metrics-grid";
-import { ServerIdentityHeader } from "@/components/dashboard/server-identity-header";
-import { ServerPinButton } from "@/components/dashboard/server-pin-button";
+import { ServerIdentityHeader } from "@/components/dashboard/server/identity-header";
+import { ServerPinButton } from "@/components/dashboard/server/pin-button";
 import { Button } from "@/components/ui/button";
 import { reorderPinnedServers } from "@/lib/api/pinned-servers";
 import { pinnedServersQueryKey } from "@/lib/api/pinned-servers.queries";
@@ -63,7 +63,7 @@ const SortableDragHandleContext = createContext<SortableDragHandleProps | null>(
 );
 
 function SortableDragHandle() {
-  const dragHandle = useContext(SortableDragHandleContext);
+  const dragHandle = use(SortableDragHandleContext);
   if (!dragHandle) {
     return null;
   }

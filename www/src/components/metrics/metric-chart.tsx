@@ -19,10 +19,10 @@ import {
   applyChartXWindow,
   resolveChartXWindow,
 } from "@/lib/metrics/chart-zoom";
-import { useMetricsChartZoom } from "@/hooks/use-metrics-chart-zoom";
+import { useMetricsChartZoom } from "@/hooks/metrics/use-metrics-chart-zoom";
 import { cn } from "cnfast";
 import { useTheme } from "@/hooks/use-theme";
-import { useMetricChartInstance } from "@/hooks/use-metric-chart-instance";
+import { useMetricChartInstance } from "@/hooks/metrics/use-metric-chart-instance";
 
 export type MetricChartMode = "line" | "stack";
 

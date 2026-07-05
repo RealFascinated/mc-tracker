@@ -1,3 +1,6 @@
+import { ArrowDown, ArrowUp, Type, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
 export const SERVER_SORT_STORAGE_KEY = "mc-tracker-server-sort";
 
 export type ServerSortField = "players" | "name";
@@ -17,13 +20,31 @@ export const DEFAULT_SERVER_SORT: ServerSort = {
 export const SERVER_SORT_FIELD_OPTIONS: Array<{
   field: ServerSortField;
   label: string;
+  defaultOrder: SortOrder;
+  icon: LucideIcon;
+  directionIcons: { asc: LucideIcon; desc: LucideIcon };
 }> = [
-  { field: "players", label: "Players" },
-  { field: "name", label: "Name" },
+  {
+    field: "players",
+    label: "Players",
+    defaultOrder: "desc",
+    icon: Users,
+    directionIcons: { asc: ArrowUp, desc: ArrowDown },
+  },
+  {
+    field: "name",
+    label: "Name",
+    defaultOrder: "asc",
+    icon: Type,
+    directionIcons: { asc: ArrowUp, desc: ArrowDown },
+  },
 ];
 
-export function defaultOrderForField(field: ServerSortField): SortOrder {
-  return field === "players" ? "desc" : "asc";
+export function getServerSortFieldOption(field: ServerSortField) {
+  return (
+    SERVER_SORT_FIELD_OPTIONS.find((option) => option.field === field) ??
+    SERVER_SORT_FIELD_OPTIONS[0]
+  );
 }
 
 export function toggleSortOrder(order: SortOrder): SortOrder {
@@ -67,7 +88,7 @@ export function resolveServerSort(search: {
   order?: SortOrder;
 }): ServerSort {
   const field = search.sort ?? DEFAULT_SERVER_SORT.field;
-  const order = search.order ?? defaultOrderForField(field);
+  const order = search.order ?? getServerSortFieldOption(field).defaultOrder;
   return { field, order };
 }
 
@@ -79,7 +100,7 @@ export function serverSortToSearchParams(sort: ServerSort): {
   if (sort.field !== DEFAULT_SERVER_SORT.field) {
     params.sort = sort.field;
   }
-  if (sort.order !== defaultOrderForField(sort.field)) {
+  if (sort.order !== getServerSortFieldOption(sort.field).defaultOrder) {
     params.order = sort.order;
   }
   return params;
