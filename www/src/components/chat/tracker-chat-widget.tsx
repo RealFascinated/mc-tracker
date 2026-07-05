@@ -27,6 +27,7 @@ import { useAuth } from "@/lib/auth/context";
 import { cn } from "cnfast";
 
 import { ChatAuthGate } from "@/components/chat/chat-auth-gate";
+import { ChatAutoScroll } from "@/components/chat/chat-auto-scroll";
 import { ChatHistorySheet } from "@/components/chat/chat-history-sheet";
 import { ChatBubble } from "@/components/chat/chat-bubble";
 import { ChatSuggestions } from "@/components/chat/chat-suggestions";
@@ -203,9 +204,13 @@ export function TrackerChatWidget() {
                 <div className="min-h-0 flex-1">
                   <MessageScrollerProvider
                     autoScroll
-                    defaultScrollPosition="last-anchor"
+                    defaultScrollPosition="end"
                     scrollPreviousItemPeek={48}
                   >
+                    <ChatAutoScroll
+                      messages={messages}
+                      isStreaming={isStreaming}
+                    />
                     <MessageScroller className="min-h-0 flex-1">
                       <MessageScrollerViewport>
                         <MessageScrollerContent
