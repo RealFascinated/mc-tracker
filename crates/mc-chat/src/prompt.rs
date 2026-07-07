@@ -18,6 +18,5 @@ Multi-part questions → one tool call per part. \
 Be concise. Answer only what was asked.";
 
 pub fn system_prompt() -> String {
-    let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
-    format!("{SYSTEM_IDENTITY}\n\n{BEHAVIOR}\n\n{EXECUTION_RULES}\n\nToday is {today} (UTC).")
+    format!("{SYSTEM_IDENTITY}\n\n{BEHAVIOR}\n\n{EXECUTION_RULES}")
 }
