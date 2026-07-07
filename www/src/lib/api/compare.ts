@@ -1,36 +1,32 @@
 import { apiFetch } from "@/lib/api/client";
-import type { ServerListItem } from "@/lib/api/servers";
-import type { PartialError, TimeseriesSummaryResponse } from "@/lib/api/types";
-import { MAX_METRIC_POINTS } from "@/lib/metrics/max-points";
+import type { PartialError, TimeseriesResponse } from "@/lib/api/types";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
-import { metricTimeWindowToSummaryBounds } from "@/lib/metrics/time-window";
+import { metricTimeWindowToEpochWindow } from "@/lib/metrics/time-window";
 
-export type ServersCompareItem = {
-  server: ServerListItem;
-  summary: TimeseriesSummaryResponse;
-};
+export type ServersCompareTimeseriesItem = {
+  id: string;
+  name: string;
+} & TimeseriesResponse;
 
-export type ServersCompareResponse = {
+export type ServersCompareTimeseriesResponse = {
   from: number;
   to: number;
-  servers: ServersCompareItem[];
+  servers: ServersCompareTimeseriesItem[];
   errors: PartialError[];
 };
 
-export function getServersCompareSummary(
+export function getServersCompareTimeseries(
   ids: string[],
   window: MetricTimeWindow,
-  maxPoints = MAX_METRIC_POINTS,
 ) {
-  const { from, to } = metricTimeWindowToSummaryBounds(window);
+  const { from, to } = metricTimeWindowToEpochWindow(window);
   const params = new URLSearchParams({
     ids: ids.join(","),
-    from,
-    to,
-    maxPoints: String(maxPoints),
+    from: String(from),
+    to: String(to),
   });
-  return apiFetch<ServersCompareResponse>(
-    `/servers/compare/summary?${params}`,
+  return apiFetch<ServersCompareTimeseriesResponse>(
+    `/servers/compare/timeseries?${params}`,
     { credentials: "omit" },
   );
 }

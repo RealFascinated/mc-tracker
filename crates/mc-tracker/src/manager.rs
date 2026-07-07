@@ -1,9 +1,8 @@
+mod catalog;
 mod mappers;
-mod metrics;
 mod ping;
 mod push;
 mod search;
-mod timeseries;
 mod tracked;
 
 pub use mappers::admin_server_response;
@@ -35,9 +34,7 @@ use mc_db::model::Server;
 use mc_db::DbPool;
 use mc_dns::{DnsResolver, HickoryDnsResolver};
 use mc_geo::{AsnLookup, GeoService};
-use mc_metrics::{
-    peak_players_24h, peak_players_7d, PlayerCountRegistry, VmPushClient, VmQueryClient,
-};
+use mc_insights::Insights;
 use mc_settings::{SettingKey, SettingsStore};
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -49,9 +46,7 @@ pub struct ServerManager {
     pub(crate) metrics_environment: String,
     pub(crate) dns: RwLock<HickoryDnsResolver>,
     pub(crate) geo: Arc<GeoService>,
-    pub(crate) metrics: RwLock<PlayerCountRegistry>,
-    pub(crate) push_client: RwLock<VmPushClient>,
-    pub(crate) query_client: RwLock<VmQueryClient>,
+    pub(crate) insights: Arc<Insights>,
     pub(crate) vm_auth_token: Option<String>,
     pub(crate) pushing: AtomicBool,
 }
@@ -64,9 +59,9 @@ impl ServerManager {
         geo: Arc<GeoService>,
         vm_auth_token: Option<String>,
         metrics_environment: impl Into<String>,
+        insights: Arc<Insights>,
     ) -> Self {
         let metrics_environment = metrics_environment.into();
-        let vm_url = settings.cached_str(SettingKey::VictoriametricsUrl);
         Self {
             pool,
             servers: RwLock::new(
@@ -76,21 +71,17 @@ impl ServerManager {
                     .collect(),
             ),
             settings: Arc::clone(&settings),
-            metrics_environment: metrics_environment.clone(),
+            metrics_environment,
             dns: RwLock::new(HickoryDnsResolver::new(dns_cache_for(settings.as_ref()))),
             geo,
-            metrics: RwLock::new(PlayerCountRegistry::new(&metrics_environment)),
-            push_client: RwLock::new(VmPushClient::new(
-                mc_settings::victoriametrics_import_url(&vm_url),
-                vm_auth_token.clone(),
-            )),
-            query_client: RwLock::new(VmQueryClient::new(
-                mc_settings::victoriametrics_base_url(&vm_url),
-                vm_auth_token.clone(),
-            )),
+            insights,
             vm_auth_token,
             pushing: AtomicBool::new(false),
         }
+    }
+
+    pub fn insights(&self) -> Arc<Insights> {
+        Arc::clone(&self.insights)
     }
 
     pub fn environment(&self) -> &str {
@@ -165,8 +156,8 @@ impl ServerManager {
     pub async fn servers_summary_response(&self) -> ServersSummaryResponse {
         let summary = self.summary().await;
         let (peak_players24h, peak_players_7d) = tokio::join!(
-            self.query_scalar(peak_players_24h),
-            self.query_scalar(peak_players_7d),
+            self.insights.peak_players_24h(),
+            self.insights.peak_players_7d(),
         );
         ServersSummaryResponse {
             total_players: summary.total_players,
@@ -195,8 +186,8 @@ impl ServerManager {
             .cloned()
             .collect::<Vec<_>>();
 
-        let environment = self.environment();
-        let peaks_24h = self.peaks_24h_by_server_id(environment).await;
+
+        let peaks_24h = self.insights.peaks_24h_by_server_id().await;
 
         let mut servers = Vec::with_capacity(tracked.len());
         for server in tracked {
@@ -234,8 +225,8 @@ impl ServerManager {
             tracked.truncate(limit);
         }
 
-        let environment = self.environment();
-        let peaks_24h = self.peaks_24h_by_server_id(environment).await;
+
+        let peaks_24h = self.insights.peaks_24h_by_server_id().await;
 
         let servers = tracked
             .into_iter()
@@ -286,9 +277,8 @@ impl ServerManager {
         if !server.is_tracking() {
             return None;
         }
-        let environment = self.environment();
         let id_str = id.to_string();
-        let peaks_24h = self.peaks_24h_by_server_id(environment).await;
+        let peaks_24h = self.insights.peaks_24h_by_server_id().await;
 
         Some(server_list_item(&server, peaks_24h.get(&id_str).copied()))
     }
@@ -298,8 +288,8 @@ impl ServerManager {
             return Vec::new();
         }
 
-        let environment = self.environment();
-        let peaks_24h = self.peaks_24h_by_server_id(environment).await;
+
+        let peaks_24h = self.insights.peaks_24h_by_server_id().await;
         let servers = self.servers.read().await;
 
         ids.iter()
@@ -394,11 +384,10 @@ impl ServerManager {
             }
         }
 
-        let environment = self.environment();
         let (peak_players24h, peak_players_7d, peaks_24h) = tokio::join!(
-            self.query_scalar(peak_players_24h),
-            self.query_scalar(peak_players_7d),
-            self.peaks_24h_by_asn_key(environment),
+            self.insights.peak_players_24h(),
+            self.insights.peak_players_7d(),
+            self.insights.peaks_24h_by_asn_key(),
         );
 
         let mut asns = Vec::with_capacity(aggregates.len());
@@ -452,10 +441,9 @@ impl ServerManager {
             asn: asn.to_string(),
             asn_org: asn_org.to_string(),
         };
-        let environment = self.environment();
         let (peaks_24h_by_server, peaks_24h_by_asn) = tokio::join!(
-            self.peaks_24h_by_server_id(environment),
-            self.peaks_24h_by_asn_key(environment),
+            self.insights.peaks_24h_by_server_id(),
+            self.insights.peaks_24h_by_asn_key(),
         );
         let asn_peak_24h = peaks_24h_by_asn.get(&key).copied();
         let entity_peaks =
@@ -549,7 +537,7 @@ mod tests {
     use mc_common::now_ms;
     use mc_db::model::Platform;
     use mc_db::model::Server;
-    use mc_test_support::fixture_geo;
+    use mc_test_support::{fixture_geo, test_insights};
     use std::time::Duration;
 
     fn sample_server() -> Server {
@@ -577,6 +565,7 @@ mod tests {
             fixture_geo(),
             None,
             "development",
+            test_insights("http://127.0.0.1:8428", "development"),
         );
         assert_eq!(manager.summary().await.tracked_servers, 2);
     }
@@ -591,6 +580,7 @@ mod tests {
             fixture_geo(),
             None,
             "development",
+            test_insights("http://127.0.0.1:8428", "development"),
         );
         {
             let mut servers = manager.servers.write().await;
@@ -608,7 +598,15 @@ mod tests {
     async fn append_update_and_remove_server() {
         let settings = SettingsStore::for_testing("development");
         let manager =
-            ServerManager::new(vec![], None, settings, fixture_geo(), None, "development");
+            ServerManager::new(
+                vec![],
+                None,
+                settings,
+                fixture_geo(),
+                None,
+                "development",
+                test_insights("http://127.0.0.1:8428", "development"),
+            );
 
         let server = sample_server();
         let id = server.id;
@@ -651,6 +649,7 @@ mod tests {
             fixture_geo(),
             None,
             "development",
+            test_insights("http://127.0.0.1:8428", "development"),
         );
 
         assert_eq!(manager.summary().await.tracked_servers, 1);
@@ -782,6 +781,7 @@ mod tests {
             fixture_geo(),
             None,
             "development",
+            test_insights("http://127.0.0.1:8428", "development"),
         );
 
         {
@@ -828,6 +828,7 @@ mod tests {
             fixture_geo(),
             None,
             "development",
+            test_insights("http://127.0.0.1:8428", "development"),
         );
 
         {
@@ -879,6 +880,7 @@ mod tests {
             fixture_geo(),
             None,
             "development",
+            test_insights("http://127.0.0.1:8428", "development"),
         );
 
         let response = manager
@@ -910,6 +912,7 @@ mod tests {
             fixture_geo(),
             None,
             "development",
+            test_insights("http://127.0.0.1:8428", "development"),
         );
 
         {
@@ -963,6 +966,7 @@ mod tests {
             fixture_geo(),
             None,
             "development",
+            test_insights("http://127.0.0.1:8428", "development"),
         ));
         let push_loop = spawn_push_loop(manager);
 

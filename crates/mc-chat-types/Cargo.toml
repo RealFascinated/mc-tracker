@@ -1,0 +1,16 @@
+[package]
+name = "mc-chat-types"
+description = "LLM tool DTOs for chat insights (timeseries snapshots, ranks, compare)"
+edition.workspace = true
+version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

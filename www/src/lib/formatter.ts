@@ -4,7 +4,10 @@ const YEAR_SECONDS = DAY_SECONDS * 365;
 const THIRTY_DAYS_MS = 30 * DAY_SECONDS * 1000;
 
 const dateTime = {
-  monthDay: new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }),
+  monthDay: new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  }),
   monthDayYear: new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",

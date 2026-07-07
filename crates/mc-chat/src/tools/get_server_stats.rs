@@ -49,7 +49,7 @@ impl ChatTool for GetServerStatsTool {
                 (
                     *label,
                     result
-                        .map(|summary| summary.summary)
+                        .map(|summary| summary.snapshot)
                         .map_err(|err| err.to_string()),
                 )
             })

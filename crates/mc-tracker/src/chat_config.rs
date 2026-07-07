@@ -1,21 +1,20 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::insights::InsightsService;
-use crate::manager::ServerManager;
-use mc_chat::tools::ToolRegistry;
-use mc_chat::{AgentConfig, LlmProvider, ThinkingEffort};
-use mc_chat::{AgentLoop, ChatAgent, ChatToolDeps, LlmClient, OpenAiLlmClient};
+use mc_chat::{AgentConfig, AgentLoop, ChatAgent, ChatToolDeps, LlmClient, LlmProvider, OpenAiLlmClient, ThinkingEffort, ToolRegistry};
+use mc_insights::InsightsChat;
 use mc_settings::{chat_enabled, SettingKey, SettingsStore};
+
+use crate::manager::ServerManager;
 
 pub fn build_chat_agent(
     manager: Arc<ServerManager>,
-    insights: Arc<InsightsService>,
+    chat_insights: Arc<InsightsChat>,
 ) -> Arc<dyn ChatAgent> {
     let llm: Arc<dyn LlmClient> = Arc::new(OpenAiLlmClient::new());
     let deps = ChatToolDeps {
         tracker: Arc::clone(&manager) as Arc<dyn mc_chat::TrackerRead>,
-        insights: Arc::clone(&insights) as Arc<dyn mc_chat::InsightsRead>,
+        insights: chat_insights,
     };
     Arc::new(AgentLoop::new(llm, ToolRegistry::default_tools(), deps))
 }

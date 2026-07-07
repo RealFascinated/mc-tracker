@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use crate::error::ChatError;
-use crate::tools::compact::compact_timeseries_summary;
+use crate::tools::compact::compact_timeseries_snapshot;
 use crate::tools::helpers::{require_str, schema_time_range, tool_def};
 use crate::traits::{ChatTool, ChatToolDeps};
 
@@ -29,6 +29,6 @@ impl ChatTool for TotalTimeseriesSummaryTool {
         let from = require_str(&args, "from")?;
         let to = require_str(&args, "to")?;
         let summary = deps.insights.total_timeseries_summary(from, to).await?;
-        Ok(compact_timeseries_summary(&summary))
+        Ok(compact_timeseries_snapshot(&summary))
     }
 }

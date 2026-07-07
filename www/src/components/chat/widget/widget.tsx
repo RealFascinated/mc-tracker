@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  MessageCircleIcon,
-} from "lucide-react";
+import { MessageCircleIcon } from "lucide-react";
 
 import { DashboardCard } from "@/components/dashboard/cards/card";
 import { Button } from "@/components/ui/button";

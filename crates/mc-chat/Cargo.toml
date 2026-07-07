@@ -12,9 +12,10 @@ workspace = true
 async-trait = "0.1"
 chrono = { workspace = true }
 futures = "0.3"
-mc-common = { path = "../mc-common" }
 mc-api-types = { path = "../mc-api-types" }
 mc-insights = { path = "../mc-insights" }
+mc-chat-types = { path = "../mc-chat-types" }
+mc-common = { path = "../mc-common" }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
 serde = { workspace = true }
 serde_json = { workspace = true }

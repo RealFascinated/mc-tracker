@@ -8,7 +8,8 @@ use crate::tools::helpers::{
     compare_peer_ids, parse_uuid, require_str, resolve_server_id, tool_def,
 };
 use crate::traits::{ChatTool, ChatToolDeps};
-use mc_insights::DEFAULT_MAX_SUMMARY_POINTS;
+
+const DEFAULT_MAX_SNAPSHOT_POINTS: usize = 90;
 
 pub struct CompareServersTool;
 
@@ -32,7 +33,7 @@ impl ChatTool for CompareServersTool {
                     "server_id": { "type": "string" },
                     "query": { "type": "string" },
                     "peer_count": { "type": "integer" },
-                    "from": { "type": "string" },
+                    "from": { "type": "string", "description": "Range start. Span must be at least 7 days." },
                     "to": { "type": "string" }
                 },
                 "required": ["from", "to"]
@@ -67,7 +68,7 @@ impl ChatTool for CompareServersTool {
 
         let response = deps
             .insights
-            .compare_servers(&ids, from, to, DEFAULT_MAX_SUMMARY_POINTS)
+            .compare_servers(&ids, from, to, DEFAULT_MAX_SNAPSHOT_POINTS)
             .await?;
         Ok(compact_compare_servers(response))
     }

@@ -2,11 +2,7 @@ use mc_search::{matches, score_str, SearchField};
 
 use super::tracked::TrackedServer;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct AsnAggregateKey {
-    pub asn: String,
-    pub asn_org: String,
-}
+pub(crate) type AsnAggregateKey = mc_insights::AsnPeakKey;
 
 #[derive(Debug, Clone)]
 pub(crate) struct AsnAggregate {

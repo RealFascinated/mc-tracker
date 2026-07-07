@@ -277,6 +277,7 @@ mod tests {
             fixture_geo(),
             None,
             "development",
+            mc_test_support::test_insights("http://127.0.0.1:8428", "development"),
         );
 
         let response = manager.admin_servers_list().await;

@@ -1,20 +1,14 @@
 import type { ServerListItem } from "@/lib/api/servers";
-import type { TimeseriesSummaryResponse } from "@/lib/api/types";
+import type { LaneStats } from "@/lib/compare/lane-stats";
 
 export type CompareSortField =
-  | "name"
-  | "now"
-  | "start"
-  | "end"
-  | "delta"
-  | "changePct"
-  | "avg";
+  "name" | "now" | "start" | "end" | "delta" | "changePct" | "avg";
 
 export type CompareSortOrder = "asc" | "desc";
 
 export type CompareSortRow = {
   server: ServerListItem | null;
-  summary: TimeseriesSummaryResponse | null;
+  stats: LaneStats | null;
 };
 
 export const COMPARE_SORT_COLUMNS: Array<{
@@ -43,14 +37,14 @@ export const COMPARE_SORT_COLUMNS: Array<{
     label: "Start",
     headerAlign: "right",
     defaultOrder: "desc",
-    sortValue: (row) => row.summary?.start ?? null,
+    sortValue: (row) => row.stats?.start ?? null,
   },
   {
     field: "end",
     label: "End",
     headerAlign: "right",
     defaultOrder: "desc",
-    sortValue: (row) => row.summary?.end ?? null,
+    sortValue: (row) => row.stats?.end ?? null,
   },
   {
     field: "delta",
@@ -58,10 +52,10 @@ export const COMPARE_SORT_COLUMNS: Array<{
     headerAlign: "right",
     defaultOrder: "desc",
     sortValue: (row) => {
-      if (row.summary?.start == null || row.summary.end == null) {
+      if (row.stats?.start == null || row.stats.end == null) {
         return null;
       }
-      return row.summary.end - row.summary.start;
+      return row.stats.end - row.stats.start;
     },
   },
   {
@@ -69,14 +63,14 @@ export const COMPARE_SORT_COLUMNS: Array<{
     label: "Change %",
     headerAlign: "right",
     defaultOrder: "desc",
-    sortValue: (row) => row.summary?.changePct ?? null,
+    sortValue: (row) => row.stats?.changePct ?? null,
   },
   {
     field: "avg",
     label: "Avg",
     headerAlign: "right",
     defaultOrder: "desc",
-    sortValue: (row) => row.summary?.avg ?? null,
+    sortValue: (row) => row.stats?.avg ?? null,
   },
 ];
 

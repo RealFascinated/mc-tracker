@@ -1,8 +1,11 @@
 use mc_api_types::{
-    AsnDetailResponse, AsnListItemResponse, AsnTimeseriesSummaryResponse, IpLookupResponse,
-    PartialError, ServerListItemResponse, ServerSearchItemResponse,
-    ServerTimeseriesSummaryResponse, ServersCompareResponse, ServersListResponse,
-    ServersSearchResponse, TimeseriesSummaryResponse,
+    AsnDetailResponse, AsnListItemResponse, IpLookupResponse, ServerListItemResponse,
+    ServerSearchItemResponse, ServersListResponse, ServersSearchResponse,
+};
+use mc_chat_types::{
+    ChatAsnTimeseriesSnapshot, ChatAsnsGrowthRankResponse, ChatCompareServersResponse,
+    ChatGrowthRankOrder, ChatPartialError, ChatServerTimeseriesSnapshot,
+    ChatServersGrowthRankResponse, ChatServersPeriodPeakRankResponse, ChatTimeseriesSnapshot,
 };
 use mc_common::{effective_server_port, platform_display_label};
 use serde_json::{json, Value};
@@ -81,45 +84,45 @@ pub fn compact_asns_list(response: mc_api_types::AsnsListResponse, truncated: bo
     })
 }
 
-pub fn compact_timeseries_summary(summary: &TimeseriesSummaryResponse) -> Value {
+pub fn compact_timeseries_snapshot(snapshot: &ChatTimeseriesSnapshot) -> Value {
     json!({
-        "start": summary.start,
-        "end": summary.end,
-        "min": summary.min,
-        "max": summary.max,
-        "avg": summary.avg,
-        "changePct": summary.change_pct,
-        "trend": summary.trend,
-        "seriesKey": summary.series_key,
-        "points": summary.points.iter().map(|point| {
-            json!([point.timestamp, point.value])
+        "start": snapshot.start,
+        "end": snapshot.end,
+        "min": snapshot.min,
+        "max": snapshot.max,
+        "avg": snapshot.avg,
+        "changePct": snapshot.change_pct,
+        "trend": snapshot.trend,
+        "seriesKey": snapshot.series_key,
+        "points": snapshot.points.iter().map(|point| {
+            json!({ "timestamp": point.timestamp, "value": point.value })
         }).collect::<Vec<_>>(),
     })
 }
 
-pub fn compact_timeseries_metrics(summary: &TimeseriesSummaryResponse) -> Value {
+pub fn compact_timeseries_metrics(snapshot: &ChatTimeseriesSnapshot) -> Value {
     json!({
-        "from": summary.from,
-        "to": summary.to,
-        "start": summary.start,
-        "end": summary.end,
-        "min": summary.min,
-        "max": summary.max,
-        "avg": summary.avg,
-        "changePct": summary.change_pct,
-        "trend": summary.trend,
+        "from": snapshot.from,
+        "to": snapshot.to,
+        "start": snapshot.start,
+        "end": snapshot.end,
+        "min": snapshot.min,
+        "max": snapshot.max,
+        "avg": snapshot.avg,
+        "changePct": snapshot.change_pct,
+        "trend": snapshot.trend,
     })
 }
 
 pub fn compact_server_stats(
     server: &ServerListItemResponse,
-    trends: &[(&str, Result<TimeseriesSummaryResponse, String>)],
+    trends: &[(&str, Result<ChatTimeseriesSnapshot, String>)],
 ) -> Value {
     let trend_values: Value = trends
         .iter()
         .map(|(label, result)| {
             let value = match result {
-                Ok(summary) => compact_timeseries_metrics(summary),
+                Ok(snapshot) => compact_timeseries_metrics(snapshot),
                 Err(error) => json!({ "error": error }),
             };
             (label.to_string(), value)
@@ -132,9 +135,9 @@ pub fn compact_server_stats(
     value
 }
 
-pub fn compact_server_timeseries_summary(response: ServerTimeseriesSummaryResponse) -> Value {
-    let ServerTimeseriesSummaryResponse { id, name, summary } = response;
-    let mut value = compact_timeseries_summary(&summary);
+pub fn compact_server_timeseries_summary(response: ChatServerTimeseriesSnapshot) -> Value {
+    let ChatServerTimeseriesSnapshot { id, name, snapshot } = response;
+    let mut value = compact_timeseries_snapshot(&snapshot);
     if let Value::Object(ref mut map) = value {
         map.insert("id".into(), json!(id));
         map.insert("name".into(), json!(name));
@@ -142,13 +145,13 @@ pub fn compact_server_timeseries_summary(response: ServerTimeseriesSummaryRespon
     value
 }
 
-pub fn compact_asn_timeseries_summary(response: AsnTimeseriesSummaryResponse) -> Value {
-    let AsnTimeseriesSummaryResponse {
+pub fn compact_asn_timeseries_summary(response: ChatAsnTimeseriesSnapshot) -> Value {
+    let ChatAsnTimeseriesSnapshot {
         asn,
         asn_org,
-        summary,
+        snapshot,
     } = response;
-    let mut value = compact_timeseries_summary(&summary);
+    let mut value = compact_timeseries_snapshot(&snapshot);
     if let Value::Object(ref mut map) = value {
         map.insert("asn".into(), json!(asn));
         map.insert("asnOrg".into(), json!(asn_org));
@@ -182,19 +185,19 @@ pub fn compact_asn_search(response: &mc_api_types::AsnSearchResponse) -> Value {
     })
 }
 
-pub fn compact_compare_servers(response: ServersCompareResponse) -> Value {
+pub fn compact_compare_servers(response: ChatCompareServersResponse) -> Value {
     json!({
         "from": response.from,
         "to": response.to,
         "servers": response.servers.iter().map(|item| {
-            let mut value = compact_timeseries_summary(&item.summary);
+            let mut value = compact_timeseries_snapshot(&item.snapshot);
             if let Value::Object(ref mut map) = value {
-                map.insert("id".into(), json!(item.server.id));
-                map.insert("name".into(), json!(item.server.name));
+                map.insert("id".into(), json!(item.id));
+                map.insert("name".into(), json!(item.name));
             }
             value
         }).collect::<Vec<_>>(),
-        "errors": compact_partial_errors(&response.errors),
+        "errors": compact_chat_partial_errors(&response.errors),
     })
 }
 
@@ -229,9 +232,7 @@ pub fn compact_servers_all_time_peak(servers: &[ServerListItemResponse]) -> Valu
     })
 }
 
-pub fn compact_servers_period_peak_rank(
-    response: mc_api_types::ServersPeriodPeakRankResponse,
-) -> Value {
+pub fn compact_servers_period_peak_rank(response: ChatServersPeriodPeakRankResponse) -> Value {
     json!({
         "from": response.from,
         "to": response.to,
@@ -243,7 +244,7 @@ pub fn compact_servers_period_peak_rank(
                 "avg": server.avg,
             })
         }).collect::<Vec<_>>(),
-        "errors": compact_partial_errors(&response.errors),
+        "errors": compact_chat_partial_errors(&response.errors),
     })
 }
 
@@ -297,10 +298,10 @@ pub fn compact_tracker_summary(summary: &mc_api_types::ServersSummaryResponse) -
     compact_players_summary(summary)
 }
 
-pub fn compact_servers_growth_rank(response: mc_api_types::ServersGrowthRankResponse) -> Value {
+pub fn compact_servers_growth_rank(response: ChatServersGrowthRankResponse) -> Value {
     let order = match response.order {
-        mc_api_types::GrowthRankOrder::Gainers => "gainers",
-        mc_api_types::GrowthRankOrder::Losers => "losers",
+        ChatGrowthRankOrder::Gainers => "gainers",
+        ChatGrowthRankOrder::Losers => "losers",
     };
     json!({
         "from": response.from,
@@ -316,14 +317,14 @@ pub fn compact_servers_growth_rank(response: mc_api_types::ServersGrowthRankResp
                 "trend": server.trend,
             })
         }).collect::<Vec<_>>(),
-        "errors": compact_partial_errors(&response.errors),
+        "errors": compact_chat_partial_errors(&response.errors),
     })
 }
 
-pub fn compact_asns_growth_rank(response: mc_api_types::AsnsGrowthRankResponse) -> Value {
+pub fn compact_asns_growth_rank(response: ChatAsnsGrowthRankResponse) -> Value {
     let order = match response.order {
-        mc_api_types::GrowthRankOrder::Gainers => "gainers",
-        mc_api_types::GrowthRankOrder::Losers => "losers",
+        ChatGrowthRankOrder::Gainers => "gainers",
+        ChatGrowthRankOrder::Losers => "losers",
     };
     json!({
         "from": response.from,
@@ -339,11 +340,11 @@ pub fn compact_asns_growth_rank(response: mc_api_types::AsnsGrowthRankResponse) 
                 "trend": asn.trend,
             })
         }).collect::<Vec<_>>(),
-        "errors": compact_partial_errors(&response.errors),
+        "errors": compact_chat_partial_errors(&response.errors),
     })
 }
 
-fn compact_partial_errors(errors: &[PartialError]) -> Vec<Value> {
+fn compact_chat_partial_errors(errors: &[ChatPartialError]) -> Vec<Value> {
     errors
         .iter()
         .map(|error| {
@@ -418,9 +419,10 @@ fn compact_asns_summary(summary: &mc_api_types::AsnsSummaryResponse) -> Value {
 
 #[cfg(test)]
 mod tests {
+    use mc_chat_types::{ChatPoint, ChatTimeseriesSnapshot, ChatTrend};
+
     use mc_api_types::{
         EntityPeakStats, PeakPlayersRecord, ServerListItemResponse, ServersListResponse,
-        SummaryPoint, TimeseriesSummaryResponse, TrendDirection,
     };
 
     use super::*;
@@ -447,8 +449,8 @@ mod tests {
     }
 
     #[test]
-    fn compact_timeseries_summary_includes_points() {
-        let summary = TimeseriesSummaryResponse {
+    fn compact_timeseries_snapshot_includes_object_points() {
+        let snapshot = ChatTimeseriesSnapshot {
             from: 1,
             to: 2,
             series_key: "playersOnline".into(),
@@ -458,22 +460,22 @@ mod tests {
             min: Some(10.0),
             max: Some(12.0),
             change_pct: Some(20.0),
-            trend: TrendDirection::Growing,
+            trend: ChatTrend::Growing,
             points: vec![
-                SummaryPoint {
+                ChatPoint {
                     timestamp: 1,
                     value: 10.0,
                 },
-                SummaryPoint {
+                ChatPoint {
                     timestamp: 2,
                     value: 12.0,
                 },
             ],
         };
-        let value = compact_timeseries_summary(&summary);
+        let value = compact_timeseries_snapshot(&snapshot);
         assert_eq!(value["seriesKey"], "playersOnline");
-        assert_eq!(value["points"][0], json!([1, 10.0]));
-        assert_eq!(value["points"][1], json!([2, 12.0]));
+        assert_eq!(value["points"][0]["timestamp"], 1);
+        assert_eq!(value["points"][0]["value"], 10.0);
     }
 
     #[test]

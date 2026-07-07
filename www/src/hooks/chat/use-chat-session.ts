@@ -302,7 +302,9 @@ export function useChatSession() {
           setQuotaUsed(chatQuota.limit);
         }
         setMessages((current) => {
-          const streaming = current.find((message) => message.id === STREAMING_ID);
+          const streaming = current.find(
+            (message) => message.id === STREAMING_ID,
+          );
           const withoutStreaming = current.filter(
             (message) => message.id !== STREAMING_ID,
           );
@@ -332,14 +334,7 @@ export function useChatSession() {
         abortRef.current = null;
       }
     },
-    [
-      cancelStream,
-      messages,
-      serverContext,
-      sessionId,
-      chatQuota,
-      refreshUser,
-    ],
+    [cancelStream, messages, serverContext, sessionId, chatQuota, refreshUser],
   );
 
   const sendMessage = useCallback(async () => {

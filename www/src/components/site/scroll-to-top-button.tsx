@@ -16,7 +16,11 @@ function getScrollVisible() {
 }
 
 export function ScrollToTopButton() {
-  const visible = useSyncExternalStore(subscribe, getScrollVisible, () => false);
+  const visible = useSyncExternalStore(
+    subscribe,
+    getScrollVisible,
+    () => false,
+  );
 
   return (
     <Button

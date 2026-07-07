@@ -5,11 +5,11 @@ use std::sync::Arc;
 
 use mc_db::{DbPool, PoolSettings};
 use mc_geo::GeoService;
-use mc_settings::SettingsStore;
+use mc_insights::Insights;
+use mc_settings::{victoriametrics_base_url, victoriametrics_import_url, SettingsStore};
 use mc_tracker::api::{router, AppState};
 use mc_tracker::auth::{AuthContext, LoginRateLimiter, SessionManager};
 use mc_tracker::chat::ChatRateLimiter;
-use mc_tracker::insights::InsightsService;
 use mc_tracker::manager::ServerManager;
 use serde_json::json;
 use testcontainers::runners::AsyncRunner;
@@ -39,6 +39,15 @@ pub fn load_api_fixture(name: &str) -> serde_json::Value {
         .unwrap_or_else(|err| panic!("read fixture {}: {err}", path.display()));
     serde_json::from_str(&text)
         .unwrap_or_else(|err| panic!("parse fixture {}: {err}", path.display()))
+}
+
+pub fn test_insights(vm_base_url: &str, environment: &str) -> Arc<Insights> {
+    Arc::new(Insights::new(
+        victoriametrics_base_url(vm_base_url),
+        victoriametrics_import_url(vm_base_url),
+        None,
+        environment,
+    ))
 }
 
 pub async fn start_postgres() -> (PostgresContainer, String) {
@@ -117,12 +126,12 @@ async fn build_app_with_options(
         AppState {
             pool: pool.clone(),
             manager: Arc::clone(&manager),
+            insights: manager.insights(),
             geo: fixture_geo(),
             auth: AuthContext {
                 sessions,
                 rate_limiter: LoginRateLimiter::new(),
             },
-            insights: Arc::new(InsightsService::with_defaults(Arc::clone(&manager))),
             chat,
             chat_rate_limiter: Arc::new(ChatRateLimiter::new()),
         },
@@ -147,6 +156,7 @@ pub async fn manager_with_vm_url_env(
         .await
         .unwrap();
 
+    let insights = test_insights(vm_base_url, deployment_environment);
     Arc::new(ServerManager::new(
         vec![],
         Some(pool.clone()),
@@ -154,6 +164,7 @@ pub async fn manager_with_vm_url_env(
         fixture_geo(),
         None,
         deployment_environment,
+        insights,
     ))
 }
 
@@ -200,6 +211,7 @@ pub async fn create_user(pool: &DbPool, username: &str, password: &str, role: mc
 
 pub async fn manager_from_pool(pool: &DbPool, deployment_environment: &str) -> Arc<ServerManager> {
     let settings = settings_store(pool, deployment_environment).await;
+    let insights = test_insights("http://127.0.0.1:8428", deployment_environment);
     Arc::new(ServerManager::new(
         vec![],
         None,
@@ -207,6 +219,7 @@ pub async fn manager_from_pool(pool: &DbPool, deployment_environment: &str) -> A
         fixture_geo(),
         None,
         deployment_environment,
+        insights,
     ))
 }
 

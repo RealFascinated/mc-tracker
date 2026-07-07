@@ -6,12 +6,14 @@ use mc_db::{
     db::repos::servers, ensure_admin_user, setup_database, BootstrapConfig, DbContext, PoolSettings,
 };
 use mc_geo::{GeoConfig, GeoService};
-use mc_settings::SettingsStore;
+use mc_insights::{Insights, InsightsChat, ServerCatalog};
+use mc_settings::{
+    victoriametrics_base_url, victoriametrics_import_url, SettingKey, SettingsStore,
+};
 use mc_tracker::api::{router, AppState};
 use mc_tracker::auth::{AuthContext, LoginRateLimiter, SessionManager};
 use mc_tracker::chat::ChatRateLimiter;
 use mc_tracker::chat_config::{build_chat_agent, chat_enabled_for};
-use mc_tracker::insights::InsightsService;
 use mc_tracker::manager::{spawn_push_loop, ServerManager};
 use tokio::signal;
 use tracing::info;
@@ -99,22 +101,33 @@ async fn main() -> anyhow::Result<()> {
     geo.spawn_refresh_scheduler();
 
     let server_count = server_list.len();
+    let vm_url = settings.cached_str(SettingKey::VictoriametricsUrl);
+    let insights = Arc::new(Insights::new(
+        victoriametrics_base_url(&vm_url),
+        victoriametrics_import_url(&vm_url),
+        config.victoriametrics_auth_token.clone(),
+        &config.environment,
+    ));
     let manager = Arc::new(ServerManager::new(
         server_list,
         Some(pool.clone()),
-        settings,
+        Arc::clone(&settings),
         Arc::clone(&geo),
         config.victoriametrics_auth_token.clone(),
         &config.environment,
+        Arc::clone(&insights),
     ));
 
     let push_loop = spawn_push_loop(Arc::clone(&manager));
 
-    let insights = Arc::new(InsightsService::with_defaults(Arc::clone(&manager)));
+    let chat_insights = Arc::new(InsightsChat::new(
+        Arc::clone(&insights),
+        Arc::clone(&manager) as Arc<dyn ServerCatalog>,
+    ));
 
     let chat = Some(build_chat_agent(
         Arc::clone(&manager),
-        Arc::clone(&insights),
+        Arc::clone(&chat_insights),
     ));
 
     let bind_addr: SocketAddr = "0.0.0.0:3000".parse().expect("hardcoded API bind address");
@@ -132,9 +145,9 @@ async fn main() -> anyhow::Result<()> {
         AppState {
             pool: pool.clone(),
             manager: Arc::clone(&manager),
+            insights: Arc::clone(&insights),
             geo,
             auth,
-            insights,
             chat,
             chat_rate_limiter: Arc::new(ChatRateLimiter::new()),
         },

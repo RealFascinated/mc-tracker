@@ -15,22 +15,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { ServersCompareResponse } from "@/lib/api/compare";
+import type { ServersCompareTimeseriesResponse } from "@/lib/api/compare";
 import type { ServerListItem, ServerSearchItem } from "@/lib/api/servers";
 import { serverQueryOptions } from "@/lib/api/servers.queries";
-import type { PartialError, TimeseriesSummaryResponse } from "@/lib/api/types";
-import {
-  COMPARE_SORT_COLUMNS,
-  getCompareSortColumn,
-  type CompareSortField,
-  type CompareSortOrder,
-} from "@/lib/compare/sort";
+import type { PartialError } from "@/lib/api/types";
+import type { LaneStats } from "@/lib/compare/lane-stats";
+import { playersOnlineLane, statsFromLane } from "@/lib/compare/lane-stats";
+import type { CompareSortField, CompareSortOrder } from "@/lib/compare/sort";
+import { COMPARE_SORT_COLUMNS, getCompareSortColumn } from "@/lib/compare/sort";
 import { MAX_COMPARE_SERVERS, MIN_COMPARE_SERVERS } from "@/lib/compare/ids";
 
 type CompareRow = {
   id: string;
   server: ServerListItem | null;
-  summary: TimeseriesSummaryResponse | null;
+  stats: LaneStats | null;
   error: PartialError | null;
   loading: boolean;
 };
@@ -38,7 +36,7 @@ type CompareRow = {
 type CompareServersTableProps = {
   ids: string[];
   onIdsChange: (ids: string[]) => void;
-  compareData?: ServersCompareResponse;
+  compareData?: ServersCompareTimeseriesResponse;
   compareLoading?: boolean;
 };
 
@@ -80,20 +78,18 @@ export function CompareServersTable({
 
   const rows = useMemo((): CompareRow[] => {
     return ids.map((id, index) => {
-      const compareItem = compareData?.servers.find(
-        (item) => item.server.id === id,
-      );
+      const compareItem = compareData?.servers.find((item) => item.id === id);
       const error = compareData ? errorForServer(compareData.errors, id) : null;
       const detailQuery = serverQueries[index];
+      const lane = compareItem ? playersOnlineLane(compareItem.series) : null;
 
       return {
         id,
-        server: compareItem?.server ?? detailQuery.data ?? null,
-        summary: compareItem?.summary ?? null,
+        server: detailQuery.data ?? null,
+        stats: lane ? statsFromLane(lane) : null,
         error,
         loading:
-          (detailQuery.isPending && !compareItem?.server) ||
-          (compareLoading && !compareItem && !error),
+          detailQuery.isPending || (compareLoading && !compareItem && !error),
       };
     });
   }, [compareData, compareLoading, ids, serverQueries]);

@@ -23,7 +23,10 @@ export function ServerSortToggle({
       return;
     }
 
-    onValueChange({ field, order: getServerSortFieldOption(field).defaultOrder });
+    onValueChange({
+      field,
+      order: getServerSortFieldOption(field).defaultOrder,
+    });
   }
 
   return (
@@ -34,9 +37,7 @@ export function ServerSortToggle({
     >
       {SERVER_SORT_FIELD_OPTIONS.map((option) => {
         const active = value.field === option.field;
-        const Icon = active
-          ? option.directionIcons[value.order]
-          : option.icon;
+        const Icon = active ? option.directionIcons[value.order] : option.icon;
 
         return (
           <button

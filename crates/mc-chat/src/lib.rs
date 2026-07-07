@@ -13,5 +13,5 @@ pub use error::ChatError;
 pub use llm::OpenAiLlmClient;
 pub use llm::{ChatMessage, MessageRole};
 pub use tools::ToolRegistry;
-pub use traits::{ChatToolDeps, InsightsRead, LlmClient, TrackerRead};
+pub use traits::{ChatToolDeps, LlmClient, TrackerRead};
 pub use types::{AgentChatRequest, ChatAgent};

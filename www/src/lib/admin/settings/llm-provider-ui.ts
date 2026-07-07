@@ -29,7 +29,8 @@ export const LLM_PROVIDER_OPTIONS: ReadonlyArray<LlmProviderOption> = [
     apiKeyHint: "",
     parallelSlotsHint:
       "llama.cpp slot affinity; match your server --parallel value.",
-    modelsDescription: "Model names sent to the API. The first entry is primary.",
+    modelsDescription:
+      "Model names sent to the API. The first entry is primary.",
     thinkingEffortHint:
       "llama.cpp thinking_budget_tokens — caps reasoning length per request.",
     contextMaxHint: "Match your llama.cpp --ctx-size.",
@@ -64,7 +65,8 @@ export const LLM_PROVIDER_OPTIONS: ReadonlyArray<LlmProviderOption> = [
     apiKeyHint:
       "Bearer token for the API. Set-only — leave blank to keep the current key.",
     parallelSlotsHint: "",
-    modelsDescription: "Model names sent to the API. The first entry is primary.",
+    modelsDescription:
+      "Model names sent to the API. The first entry is primary.",
     thinkingEffortHint: "",
     contextMaxHint: "Model context window used for budgeting.",
   },

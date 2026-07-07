@@ -58,7 +58,7 @@ Single binary **`mc-tracker`**: axum REST API + in-process **ServerManager** (pi
 | `mc-db` | Diesel: migrations, schema, repos, settings |
 | `mc-ping` | Java + Bedrock native pingers, DNS |
 | `mc-geo` | MaxMind ASN lookup |
-| `mc-metrics` | VM push registry + PromQL query client |
+| `mc-insights` | VM push, PromQL query, chart + chat insights |
 | `mc-common` | Shared utilities (time, etc.) |
 | `mc-dns` | DNS resolver with cache |
 
@@ -67,7 +67,7 @@ Single binary **`mc-tracker`**: axum REST API + in-process **ServerManager** (pi
 | HTTP | axum — REST only (no scrape endpoint) |
 | Async | tokio |
 | Postgres | diesel + diesel_async; migrations in `mc-db/src/db/migrations/` |
-| Metrics | VictoriaMetrics push + PromQL query (`mc-metrics`) |
+| Metrics | VictoriaMetrics push + PromQL query (`mc-insights`) |
 | Auth | HMAC-signed session cookies; `admin` \| `user` RBAC |
 | Config | env + `app_settings` table (CORS origins, ping interval, etc.) |
 

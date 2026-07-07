@@ -425,12 +425,10 @@ mod tests {
     use async_trait::async_trait;
     use futures::Stream;
     use mc_api_types::{
-        AsnDetailResponse, AsnSearchResponse, AsnTimeseriesSummaryResponse, AsnsGrowthRankResponse,
-        AsnsListResponse, GrowthRankOrder, IpLookupResponse, ServerListItemResponse,
-        ServerTimeseriesSummaryResponse, ServersCompareResponse, ServersGrowthRankResponse,
-        ServersListResponse, ServersSearchResponse, ServersSummaryResponse,
-        TimeseriesSummaryResponse,
+        AsnDetailResponse, AsnSearchResponse, AsnsListResponse, IpLookupResponse,
+        ServerListItemResponse, ServersListResponse, ServersSearchResponse, ServersSummaryResponse,
     };
+    use mc_insights::{Insights, InsightsChat, ServerCatalog, ServerMeta};
     use tokio::sync::mpsc;
     use uuid::Uuid;
 
@@ -441,7 +439,7 @@ mod tests {
         ChatCompletionResponse,
     };
     use crate::tools::ToolRegistry;
-    use crate::traits::{ChatToolDeps, InsightsRead, LlmClient, TrackerRead};
+    use crate::traits::{ChatToolDeps, LlmClient, TrackerRead};
 
     struct StubTracker;
 
@@ -477,70 +475,43 @@ mod tests {
         }
     }
 
-    struct StubInsights;
+    struct StubCatalog;
 
     #[async_trait]
-    impl InsightsRead for StubInsights {
-        async fn server_timeseries_summary(
-            &self,
-            _id: Uuid,
-            _from: &str,
-            _to: &str,
-        ) -> Result<ServerTimeseriesSummaryResponse, mc_insights::InsightsError> {
-            panic!("unexpected insights call")
+    impl ServerCatalog for StubCatalog {
+        fn environment(&self) -> &str {
+            "test"
         }
-        async fn total_timeseries_summary(
-            &self,
-            _from: &str,
-            _to: &str,
-        ) -> Result<TimeseriesSummaryResponse, mc_insights::InsightsError> {
-            panic!("unexpected insights call")
+
+        async fn server_is_tracked(&self, _id: Uuid) -> bool {
+            panic!("unexpected catalog call")
         }
-        async fn asn_timeseries_summary(
-            &self,
-            _asn: &str,
-            _asn_org: &str,
-            _from: &str,
-            _to: &str,
-        ) -> Result<AsnTimeseriesSummaryResponse, mc_insights::InsightsError> {
-            panic!("unexpected insights call")
+
+        async fn server_detail(&self, _id: Uuid) -> Option<ServerMeta> {
+            panic!("unexpected catalog call")
         }
-        async fn rank_servers_by_growth(
-            &self,
-            _from: &str,
-            _to: &str,
-            _limit: u32,
-            _order: GrowthRankOrder,
-        ) -> Result<ServersGrowthRankResponse, mc_insights::InsightsError> {
-            panic!("unexpected insights call")
+
+        async fn list_server_ids(&self) -> Vec<Uuid> {
+            panic!("unexpected catalog call")
         }
-        async fn rank_servers_by_period_peak(
-            &self,
-            _from: &str,
-            _to: &str,
-            _limit: u32,
-        ) -> Result<mc_api_types::ServersPeriodPeakRankResponse, mc_insights::InsightsError>
-        {
-            panic!("unexpected insights call")
+
+        async fn asn_is_tracked(&self, _asn: &str, _asn_org: &str) -> bool {
+            panic!("unexpected catalog call")
         }
-        async fn rank_asns_by_growth(
-            &self,
-            _from: &str,
-            _to: &str,
-            _limit: u32,
-            _order: GrowthRankOrder,
-        ) -> Result<AsnsGrowthRankResponse, mc_insights::InsightsError> {
-            panic!("unexpected insights call")
+
+        async fn list_asn_keys(&self) -> Vec<(String, String)> {
+            panic!("unexpected catalog call")
         }
-        async fn compare_servers(
-            &self,
-            _ids: &[Uuid],
-            _from: &str,
-            _to: &str,
-            _max_points: usize,
-        ) -> Result<ServersCompareResponse, mc_insights::InsightsError> {
-            panic!("unexpected insights call")
-        }
+    }
+
+    fn test_insights_chat() -> Arc<InsightsChat> {
+        let insights = Arc::new(Insights::new(
+            "http://127.0.0.1:8428",
+            "http://127.0.0.1:8428/api/v1/import/prometheus",
+            None,
+            "test",
+        ));
+        Arc::new(InsightsChat::new(insights, Arc::new(StubCatalog)))
     }
 
     struct ScriptLlm {
@@ -613,7 +584,7 @@ mod tests {
     fn test_deps() -> ChatToolDeps {
         ChatToolDeps {
             tracker: Arc::new(StubTracker),
-            insights: Arc::new(StubInsights),
+            insights: test_insights_chat(),
         }
     }
 

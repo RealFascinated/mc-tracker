@@ -1,6 +1,6 @@
 [package]
 name = "mc-insights"
-description = "Time-range parsing and timeseries trend summarization"
+description = "VictoriaMetrics I/O, dashboard timeseries, and chat insights"
 edition.workspace = true
 version.workspace = true
 publish = false
@@ -9,12 +9,21 @@ publish = false
 workspace = true
 
 [dependencies]
+async-trait = "0.1"
 chrono = { workspace = true }
+futures = "0.3"
 mc-api-types = { path = "../mc-api-types" }
+mc-chat-types = { path = "../mc-chat-types" }
 mc-common = { path = "../mc-common" }
-mc-metrics = { path = "../mc-metrics" }
-serde = { workspace = true }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+urlencoding = "2"
+uuid = { workspace = true }
 
 [dev-dependencies]
-serde_json = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+wiremock = "0.6"

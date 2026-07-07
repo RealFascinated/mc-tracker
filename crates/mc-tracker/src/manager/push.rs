@@ -7,7 +7,7 @@ use chrono::Utc;
 use cron::Schedule;
 use futures::future::join_all;
 use mc_db::db::repos::servers;
-use mc_metrics::PlayerCountEntry;
+use mc_insights::PlayerCountEntry;
 use tokio::sync::watch;
 use tokio::task::JoinHandle;
 use tracing::{info, warn};
@@ -201,8 +201,7 @@ impl ServerManager {
             }
         }
 
-        let mut metrics = self.metrics.write().await;
-        metrics.reset();
+        let mut entries = Vec::new();
         for server in self
             .servers
             .read()
@@ -213,7 +212,7 @@ impl ServerManager {
             let Some(players_online) = server.players_online else {
                 continue;
             };
-            metrics.set(PlayerCountEntry {
+            entries.push(PlayerCountEntry {
                 id: server.config.id.to_string(),
                 name: server.config.name.clone(),
                 server_type: server.config.platform.as_str().to_string(),
@@ -222,11 +221,8 @@ impl ServerManager {
                 value: players_online as f64,
             });
         }
-        let body = metrics.encode();
-        drop(metrics);
 
-        let client = self.push_client.read().await;
-        client.push(&body).await?;
+        self.insights.push_player_counts(&entries).await?;
 
         Ok(())
     }

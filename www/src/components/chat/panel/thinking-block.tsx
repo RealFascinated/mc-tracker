@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 
-import {
-  Collapsible,
-} from "@/components/ui/collapsible/root";
+import { Collapsible } from "@/components/ui/collapsible/root";
 import { CollapsibleContent } from "@/components/ui/collapsible/content";
 import { CollapsibleTrigger } from "@/components/ui/collapsible/trigger";
 import { MessageScrollerItem } from "@/components/ui/message-scroller";

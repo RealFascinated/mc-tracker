@@ -1,8 +1,5 @@
 import type { ComponentProps } from "react";
-import {
-  MessageSquarePlusIcon,
-  XIcon,
-} from "lucide-react";
+import { MessageSquarePlusIcon, XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {

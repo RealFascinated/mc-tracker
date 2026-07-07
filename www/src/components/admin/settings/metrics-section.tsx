@@ -1,8 +1,4 @@
-import {
-  SettingsField,
-  SettingsFieldGrid,
-  SettingsSection,
-} from "./fields";
+import { SettingsField, SettingsFieldGrid, SettingsSection } from "./fields";
 import type { AdminSettingsSectionProps } from "./section-props";
 import { Input } from "@/components/ui/input";
 

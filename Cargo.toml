@@ -2,16 +2,16 @@
 resolver = "2"
 members = [
     "crates/mc-api-types",
+    "crates/mc-chat-types",
     "crates/mc-common",
     "crates/mc-db",
     "crates/mc-settings",
     "crates/mc-test-support",
     "crates/mc-dns",
     "crates/mc-geo",
-    "crates/mc-metrics",
+    "crates/mc-insights",
     "crates/mc-ping",
     "crates/mc-search",
-    "crates/mc-insights",
     "crates/mc-chat",
     "crates/mc-tracker",
     "tests/integration",
@@ -33,6 +33,7 @@ rust-version = "1.85"
 anyhow = "1"
 bitflags = "2"
 chrono = { version = "0.4", features = ["serde"] }
+mc-chat-types = { path = "crates/mc-chat-types" }
 cron = "0.17"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

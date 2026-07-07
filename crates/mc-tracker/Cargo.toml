@@ -32,12 +32,12 @@ futures = "0.3"
 hmac = "0.12"
 mc-api-types = { path = "../mc-api-types" }
 mc-chat = { path = "../mc-chat" }
+mc-chat-types = { path = "../mc-chat-types" }
 mc-common = { path = "../mc-common" }
 mc-db = { path = "../mc-db" }
 mc-dns = { path = "../mc-dns" }
 mc-geo = { path = "../mc-geo" }
 mc-insights = { path = "../mc-insights" }
-mc-metrics = { path = "../mc-metrics" }
 mc-ping = { path = "../mc-ping" }
 mc-search = { path = "../mc-search" }
 mc-settings = { path = "../mc-settings" }

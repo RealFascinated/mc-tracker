@@ -4,7 +4,7 @@ pub mod user_flags;
 
 pub use chat_session::{ChatSessionSummary, ChatTurnRow};
 pub use pinned_server::PinnedServer;
-pub use user_flags::{chat_quota_exempt, UserFlags};
+pub use user_flags::{can_manage_servers, chat_quota_exempt, UserFlags};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

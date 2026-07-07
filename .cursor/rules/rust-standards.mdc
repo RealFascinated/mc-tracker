@@ -25,7 +25,7 @@ Within a module file, typical order:
 
 ## Errors
 
-- Use `thiserror` for library error enums (`mc-db`, `mc-ping`, `mc-metrics`, etc.) or `anyhow` at the binary boundary — match existing code.
+- Use `thiserror` for library error enums (`mc-db`, `mc-ping`, `mc-insights`, etc.) or `anyhow` at the binary boundary — match existing code.
 - Wrap errors with context: `.context("vm: push player count")?` or `map_err`.
 - Return `Result` from services; map to HTTP responses in handlers — don't log-and-ignore.
 

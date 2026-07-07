@@ -1,7 +1,4 @@
-import {
-  SettingsField,
-  SettingsSubsection,
-} from "../fields";
+import { SettingsField, SettingsSubsection } from "../fields";
 import type { AdminSettingsSectionProps } from "../section-props";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select/select";

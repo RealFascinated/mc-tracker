@@ -21,25 +21,6 @@ pub(crate) fn dns_cache_for(store: &SettingsStore) -> Option<DnsCache> {
         })
 }
 
-pub(crate) fn label_value(
-    labels: &serde_json::Map<String, serde_json::Value>,
-    key: &str,
-) -> Option<String> {
-    labels
-        .get(key)
-        .and_then(|value| value.as_str())
-        .map(str::to_owned)
-}
-
-pub(crate) fn asn_key_from_labels(
-    labels: &serde_json::Map<String, serde_json::Value>,
-) -> Option<AsnAggregateKey> {
-    Some(AsnAggregateKey {
-        asn: label_value(labels, mc_metrics::labels::ASN)?,
-        asn_org: label_value(labels, mc_metrics::labels::ASN_ORG).unwrap_or_default(),
-    })
-}
-
 pub(crate) fn peak_players_record(
     players: Option<u32>,
     timestamp: Option<i64>,

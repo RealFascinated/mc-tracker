@@ -7,8 +7,9 @@ import { DashboardRangeToggle } from "@/components/dashboard/controls/range-togg
 import { LoadingState } from "@/components/loading-state";
 import { ChartEmpty } from "@/components/metrics/chart-empty";
 import { MetricChartView } from "@/components/metrics/metric-chart-view";
-import type { ServersCompareItem } from "@/lib/api/compare";
+import type { ServersCompareTimeseriesItem } from "@/lib/api/compare";
 import { totalTimeseriesQueryOptions } from "@/lib/api/servers.queries";
+import { playersOnlineLane, pointsFromLane } from "@/lib/compare/lane-stats";
 import {
   appendTotalTimeseries,
   buildCompareChartDefinition,
@@ -21,7 +22,7 @@ import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 type ChartScale = "absolute" | "indexed";
 
 type ComparePlayersChartProps = {
-  servers: ServersCompareItem[];
+  servers: ServersCompareTimeseriesItem[];
   window: MetricTimeWindow;
   from: number;
   to: number;
@@ -45,11 +46,19 @@ export function ComparePlayersChart({
 
   const seriesInput = useMemo(
     () =>
-      servers.map((item) => ({
-        key: `server_${item.server.id}`,
-        label: item.server.name,
-        points: item.summary.points,
-      })),
+      servers.flatMap((item) => {
+        const lane = playersOnlineLane(item.series);
+        if (!lane) {
+          return [];
+        }
+        return [
+          {
+            key: `server_${item.id}`,
+            label: item.name,
+            points: pointsFromLane(lane),
+          },
+        ];
+      }),
     [servers],
   );
 

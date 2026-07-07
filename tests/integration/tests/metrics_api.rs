@@ -5,7 +5,7 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use chrono::Utc;
 use mc_db::model::{Platform, Server};
-use mc_metrics::{min_span, peak_players_24h, peak_players_7d, player_count_series};
+use mc_insights::{min_span, peak_players_24h, peak_players_7d, player_count_series};
 use tower::ServiceExt;
 use uuid::Uuid;
 use wiremock::matchers::{method, query_param};
@@ -34,7 +34,7 @@ fn sample_server(id: Uuid) -> Server {
 async fn mount_vm_mocks(vm: &MockServer, server_id: Uuid) {
     let peak_24h = peak_players_24h("production");
     let peak_7d = peak_players_7d("production");
-    let peak_24h_by_server = mc_metrics::peak_players_24h_by_server("production");
+    let peak_24h_by_server = mc_insights::peak_players_24h_by_server("production");
     let fine_series = player_count_series("production", &server_id.to_string());
 
     Mock::given(method("GET"))

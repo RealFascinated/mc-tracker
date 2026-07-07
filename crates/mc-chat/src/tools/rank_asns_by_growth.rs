@@ -35,8 +35,8 @@ impl ChatTool for RankAsnsByGrowthTool {
             .unwrap_or(DEFAULT_RANK_LIMIT as u64) as u32;
         let limit = limit.clamp(1, MAX_RANK_LIMIT);
         let order = match args.get("order").and_then(|v| v.as_str()) {
-            Some("losers") => mc_api_types::GrowthRankOrder::Losers,
-            _ => mc_api_types::GrowthRankOrder::Gainers,
+            Some("losers") => mc_chat_types::ChatGrowthRankOrder::Losers,
+            _ => mc_chat_types::ChatGrowthRankOrder::Gainers,
         };
         let response = deps
             .insights

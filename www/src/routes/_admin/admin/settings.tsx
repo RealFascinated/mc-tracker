@@ -7,10 +7,10 @@ import { AdminSettingsFormSections } from "@/components/admin/settings/form-sect
 import { PageHeader } from "@/components/layout/page-header";
 import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
+import type { SettingsFormValues } from "@/lib/admin/settings/form";
 import {
   dirtySettingPatches,
   settingsListToFormValues,
-  type SettingsFormValues,
 } from "@/lib/admin/settings/form";
 import { patchAdminSetting } from "@/lib/api/admin/settings";
 import { adminSettingsQueryOptions } from "@/lib/api/admin/settings.queries";
@@ -175,7 +175,7 @@ function AdminSettingsPage() {
         updateLlmModel={updateLlmModel}
         addLlmModel={addLlmModel}
         removeLlmModel={removeLlmModel}
-      /> 
+      />
     </form>
   );
 }

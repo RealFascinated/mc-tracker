@@ -54,7 +54,9 @@ export const SERVER_PLATFORM_FILTER_OPTIONS: Array<{
   })),
 ];
 
-export function getServerPlatform(platform: ServerPlatform): ServerPlatformOption {
+export function getServerPlatform(
+  platform: ServerPlatform,
+): ServerPlatformOption {
   return (
     SERVER_PLATFORM_OPTIONS.find((option) => option.value === platform) ??
     SERVER_PLATFORM_OPTIONS[0]

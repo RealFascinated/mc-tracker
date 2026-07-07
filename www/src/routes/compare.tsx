@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { useMemo } from "react";
 
@@ -10,6 +10,7 @@ import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/metrics/use-metric-time-window-link-search";
 import { serversCompareQueryOptions } from "@/lib/api/compare.queries";
+import { serverQueryOptions } from "@/lib/api/servers.queries";
 import { comparePlatformWarning } from "@/lib/api/platform";
 import {
   MIN_COMPARE_SERVERS,
@@ -67,10 +68,20 @@ function ComparePage() {
     enabled: canCompare,
   });
 
+  const serverDetailQueries = useQueries({
+    queries: serverIds.map((id) => serverQueryOptions(id)),
+  });
+
   const platformWarning = useMemo(
     () =>
-      comparePlatformWarning(data?.servers.map((item) => item.server) ?? []),
-    [data?.servers],
+      comparePlatformWarning(
+        serverDetailQueries
+          .map((query) => query.data)
+          .filter(
+            (server): server is NonNullable<typeof server> => server != null,
+          ),
+      ),
+    [serverDetailQueries],
   );
 
   return (

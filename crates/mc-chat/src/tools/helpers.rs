@@ -45,8 +45,8 @@ pub fn schema_time_range() -> serde_json::Value {
     serde_json::json!({
         "type": "object",
         "properties": {
-            "from": { "type": "string" },
-            "to": { "type": "string" }
+            "from": { "type": "string", "description": "Range start (e.g. 30d, unix epoch, YYYY-MM-DD). Span must be at least 7 days." },
+            "to": { "type": "string", "description": "Range end (e.g. now, unix epoch, YYYY-MM-DD)" }
         },
         "required": ["from", "to"]
     })
@@ -56,7 +56,7 @@ pub fn schema_time_range_rank() -> serde_json::Value {
     serde_json::json!({
         "type": "object",
         "properties": {
-            "from": { "type": "string" },
+            "from": { "type": "string", "description": "Range start. Span must be at least 7 days." },
             "to": { "type": "string" },
             "limit": { "type": "integer" },
             "order": { "type": "string", "enum": ["gainers", "losers"] }
@@ -69,7 +69,7 @@ pub fn schema_time_range_limit() -> serde_json::Value {
     serde_json::json!({
         "type": "object",
         "properties": {
-            "from": { "type": "string" },
+            "from": { "type": "string", "description": "Range start. Span must be at least 7 days." },
             "to": { "type": "string" },
             "limit": { "type": "integer" }
         },
@@ -83,7 +83,7 @@ pub fn schema_server_time_range() -> serde_json::Value {
         "properties": {
             "server_id": { "type": "string" },
             "query": { "type": "string" },
-            "from": { "type": "string" },
+            "from": { "type": "string", "description": "Range start. Span must be at least 7 days." },
             "to": { "type": "string" }
         },
         "required": ["from", "to"]

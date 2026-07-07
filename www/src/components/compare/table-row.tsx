@@ -5,7 +5,7 @@ import { ServerPlatformBadge } from "@/components/dashboard/server/platform-badg
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { PartialError } from "@/lib/api/types";
 import type { ServerListItem } from "@/lib/api/servers";
-import type { TimeseriesSummaryResponse } from "@/lib/api/types";
+import type { LaneStats } from "@/lib/compare/lane-stats";
 import {
   formatDecimal,
   formatPercentValue,
@@ -28,7 +28,7 @@ function CompareStatCell({ value }: { value: string }) {
 export type CompareTableRowData = {
   id: string;
   server: ServerListItem | null;
-  summary: TimeseriesSummaryResponse | null;
+  stats: LaneStats | null;
   error: PartialError | null;
   loading: boolean;
 };
@@ -101,14 +101,14 @@ export function CompareServerTableRow({
         {showLoading ? (
           <CompareStatCell value="…" />
         ) : (
-          <CompareStatCell value={formatPlayers(row.summary?.start ?? null)} />
+          <CompareStatCell value={formatPlayers(row.stats?.start ?? null)} />
         )}
       </TableCell>
       <TableCell className="text-right">
         {showLoading ? (
           <CompareStatCell value="…" />
         ) : (
-          <CompareStatCell value={formatPlayers(row.summary?.end ?? null)} />
+          <CompareStatCell value={formatPlayers(row.stats?.end ?? null)} />
         )}
       </TableCell>
       <TableCell className="text-right">
@@ -117,8 +117,8 @@ export function CompareServerTableRow({
         ) : (
           <CompareStatCell
             value={formatDelta(
-              row.summary?.start ?? null,
-              row.summary?.end ?? null,
+              row.stats?.start ?? null,
+              row.stats?.end ?? null,
             )}
           />
         )}
@@ -129,9 +129,9 @@ export function CompareServerTableRow({
         ) : (
           <CompareStatCell
             value={
-              row.summary?.changePct == null
+              row.stats?.changePct == null
                 ? "—"
-                : formatPercentValue(row.summary.changePct)
+                : formatPercentValue(row.stats.changePct)
             }
           />
         )}
@@ -140,7 +140,7 @@ export function CompareServerTableRow({
         {showLoading ? (
           <CompareStatCell value="…" />
         ) : (
-          <CompareStatCell value={formatPlayers(row.summary?.avg ?? null)} />
+          <CompareStatCell value={formatPlayers(row.stats?.avg ?? null)} />
         )}
       </TableCell>
       <TableCell>

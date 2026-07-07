@@ -1,9 +1,6 @@
 import { Minus, Plus } from "lucide-react";
 
-import {
-  SettingsField,
-  SettingsSubsection,
-} from "../fields";
+import { SettingsField, SettingsSubsection } from "../fields";
 import type { AdminSettingsSectionProps } from "../section-props";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

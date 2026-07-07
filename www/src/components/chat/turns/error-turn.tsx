@@ -1,6 +1,11 @@
 import { AlertCircleIcon, RotateCcwIcon } from "lucide-react";
 
-import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { MessageScrollerItem } from "@/components/ui/message-scroller";
 
