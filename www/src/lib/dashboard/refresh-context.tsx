@@ -1,5 +1,5 @@
 import { useQueryClient, useIsFetching } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import {
@@ -36,10 +36,27 @@ function DashboardRefreshProvider({ children }: { children: ReactNode }) {
     },
   );
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const [epochAnchor, setEpochAnchor] = useState(() =>
+    Math.floor(Date.now() / 1000),
+  );
 
   const refreshIntervalMs = dashboardRefreshIntervalToMs(refreshInterval);
 
+  const bumpEpochAnchor = useCallback(() => {
+    setEpochAnchor(Math.floor(Date.now() / 1000));
+  }, []);
+
+  useEffect(() => {
+    if (refreshIntervalMs === false) {
+      return;
+    }
+
+    const intervalId = window.setInterval(bumpEpochAnchor, refreshIntervalMs);
+    return () => window.clearInterval(intervalId);
+  }, [refreshIntervalMs, bumpEpochAnchor]);
+
   const refreshAll = useCallback(async () => {
+    bumpEpochAnchor();
     setIsManualRefreshing(true);
     try {
       await Promise.all([
@@ -62,7 +79,7 @@ function DashboardRefreshProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsManualRefreshing(false);
     }
-  }, [queryClient]);
+  }, [bumpEpochAnchor, queryClient]);
 
   const isQueryRefreshing =
     useIsFetching({
@@ -79,8 +96,10 @@ function DashboardRefreshProvider({ children }: { children: ReactNode }) {
       setRefreshInterval,
       refreshAll,
       isRefreshing: isManualRefreshing || isQueryRefreshing,
+      epochAnchor,
     }),
     [
+      epochAnchor,
       isManualRefreshing,
       isQueryRefreshing,
       refreshAll,

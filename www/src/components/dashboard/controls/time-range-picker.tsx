@@ -1,5 +1,5 @@
 import { Calendar, Check, ChevronDown, Clock3 } from "lucide-react";
-import { useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
 import {
   datetimeLocalValueToEpoch,
   epochToDatetimeLocalValue,
@@ -33,11 +34,14 @@ type DashboardTimeRangePickerProps = {
   className?: string;
 };
 
-function draftFromWindow(window: MetricTimeWindow): {
+function draftFromWindow(
+  window: MetricTimeWindow,
+  now: number,
+): {
   from: string;
   to: string;
 } {
-  const { from, to } = metricTimeWindowToEpochWindow(window);
+  const { from, to } = metricTimeWindowToEpochWindow(window, now);
   return {
     from: epochToDatetimeLocalValue(from),
     to: epochToDatetimeLocalValue(to),
@@ -51,7 +55,7 @@ type CustomDraftState = {
 };
 
 type CustomDraftAction =
-  | { type: "reset"; window: MetricTimeWindow }
+  | { type: "reset"; window: MetricTimeWindow; now: number }
   | { type: "set-from"; value: string }
   | { type: "set-to"; value: string }
   | { type: "set-error"; error: string };
@@ -62,7 +66,7 @@ function customDraftReducer(
 ): CustomDraftState {
   switch (action.type) {
     case "reset": {
-      const draft = draftFromWindow(action.window);
+      const draft = draftFromWindow(action.window, action.now);
       return { from: draft.from, to: draft.to, customError: undefined };
     }
     case "set-from":
@@ -86,15 +90,24 @@ export function DashboardTimeRangePicker({
   onCustomChange,
   className,
 }: DashboardTimeRangePickerProps) {
+  const { epochAnchor } = useDashboardRefresh();
   const [open, setOpen] = useState(false);
   const [customDraft, dispatchCustomDraft] = useReducer(
     customDraftReducer,
     emptyCustomDraft,
   );
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    dispatchCustomDraft({ type: "reset", window, now: epochAnchor });
+  }, [open, window, epochAnchor]);
+
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) {
-      dispatchCustomDraft({ type: "reset", window });
+      dispatchCustomDraft({ type: "reset", window, now: epochAnchor });
     }
     setOpen(nextOpen);
   };

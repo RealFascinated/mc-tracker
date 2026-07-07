@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { ReactNode } from "react";
 
+import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
 import { MetricsChartSyncProvider } from "@/lib/metrics/metrics-chart-sync-provider";
 import { MetricsChartZoomProvider } from "@/lib/metrics/metrics-chart-zoom-provider";
 import type { MetricsDataWindow } from "@/lib/metrics/chart-zoom";
@@ -20,9 +21,10 @@ export function MetricChartsScope({
   zoomDisabled = false,
   children,
 }: MetricChartsScopeProps) {
+  const { epochAnchor } = useDashboardRefresh();
   const dataWindow = useMemo(
-    (): MetricsDataWindow => metricTimeWindowToEpochWindow(window),
-    [window],
+    (): MetricsDataWindow => metricTimeWindowToEpochWindow(window, epochAnchor),
+    [window, epochAnchor],
   );
 
   return (

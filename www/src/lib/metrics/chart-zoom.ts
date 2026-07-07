@@ -51,13 +51,9 @@ function shouldNavigateChartZoom(
 /** X-axis bounds from the URL time selection (not API query metadata). */
 export function resolveChartXWindow(
   window: MetricTimeWindow,
+  now = Math.floor(Date.now() / 1000),
 ): MetricsDataWindow {
-  if (window.kind === "custom") {
-    const to = Math.min(window.to, Math.floor(Date.now() / 1000));
-    return { from: window.from, to };
-  }
-
-  return metricTimeWindowToEpochWindow(window);
+  return metricTimeWindowToEpochWindow(window, now);
 }
 
 export function applyChartXWindow(

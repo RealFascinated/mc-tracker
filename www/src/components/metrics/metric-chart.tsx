@@ -20,6 +20,7 @@ import {
   resolveChartXWindow,
 } from "@/lib/metrics/chart-zoom";
 import { useMetricsChartZoom } from "@/hooks/metrics/use-metrics-chart-zoom";
+import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
 import { cn } from "cnfast";
 import { useTheme } from "@/hooks/use-theme";
 import { useMetricChartInstance } from "@/hooks/metrics/use-metric-chart-instance";
@@ -97,6 +98,7 @@ function MetricChart({
   const hiddenSeriesRef = useRef(hiddenSeries);
   const sourceIndicesRef = useRef(sourceIndices);
   const chartZoom = useMetricsChartZoom();
+  const { epochAnchor } = useDashboardRefresh();
   const { resolvedTheme } = useTheme();
   const applySeriesVisibilityRef = useRef<(chart: uPlot) => void>(() => {});
   const syncUnitInsetsRef = useRef<(chart: uPlot) => void>(() => {});
@@ -148,8 +150,8 @@ function MetricChart({
     if (!timeWindow) {
       return undefined;
     }
-    return resolveChartXWindow(timeWindow);
-  }, [timeWindow]);
+    return resolveChartXWindow(timeWindow, epochAnchor);
+  }, [timeWindow, epochAnchor]);
 
   const unitLabels = useMemo(() => {
     const axisLabels: Array<{ id: string; side: string; label: string }> = [];

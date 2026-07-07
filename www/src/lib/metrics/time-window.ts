@@ -109,18 +109,20 @@ export function metricTimeWindowFromSearch(
   };
 }
 
-export function metricTimeWindowToEpochWindow(window: MetricTimeWindow): {
+export function metricTimeWindowToEpochWindow(
+  window: MetricTimeWindow,
+  now = Math.floor(Date.now() / 1000),
+): {
   from: number;
   to: number;
 } {
   if (window.kind === "custom") {
-    const to = Math.min(window.to, Math.floor(Date.now() / 1000));
+    const to = Math.min(window.to, now);
     return { from: window.from, to };
   }
 
-  const to = Math.floor(Date.now() / 1000);
-  const from = to - METRIC_RANGE_LOOKBACK_SECONDS[window.range];
-  return { from, to };
+  const from = now - METRIC_RANGE_LOOKBACK_SECONDS[window.range];
+  return { from, to: now };
 }
 
 export function metricTimeWindowToSummaryBounds(window: MetricTimeWindow): {
