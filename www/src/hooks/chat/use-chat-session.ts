@@ -53,7 +53,7 @@ export function useChatSession() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const chatQuota = useMemo((): ChatQuota | null => {
-    if (!user || chatQuotaExempt(user.role, user.flags) || !user.chatQuota) {
+    if (!user || chatQuotaExempt(user.flags) || !user.chatQuota) {
       return null;
     }
     return { ...user.chatQuota, used: quotaUsed ?? user.chatQuota.used };

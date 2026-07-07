@@ -12,6 +12,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth/context";
+import { adminLandingPath } from "@/lib/auth/require-admin";
+import { canManageServers } from "@/lib/user-flags";
 import { pageTitle } from "@/lib/page-title";
 import { privatePageHead } from "@/lib/embed-meta";
 
@@ -27,7 +29,11 @@ function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && user) {
-      void navigate({ to: user.role === "admin" ? "/admin" : "/account" });
+      void navigate({
+        to: canManageServers(user.flags)
+          ? adminLandingPath(user)
+          : "/account",
+      });
     }
   }, [isLoading, user, navigate]);
 

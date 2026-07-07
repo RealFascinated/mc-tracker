@@ -21,7 +21,7 @@ use tower_http::cors::{AllowOrigin, CorsLayer};
 use uuid::Uuid;
 
 use crate::admin;
-use crate::auth::{require_admin, AuthContext};
+use crate::auth::{require_admin, require_manage_servers, AuthContext};
 use crate::chat::ChatRateLimiter;
 use crate::manager::ServerManager;
 use crate::settings_api::to_settings_list;
@@ -98,9 +98,18 @@ pub fn router(
         .merge(crate::pinned_servers::router())
         .nest("/auth", crate::auth::router())
         .nest(
+            "/admin/servers",
+            admin::servers_router().route_layer(middleware::from_fn_with_state(
+                state.clone(),
+                require_manage_servers,
+            )),
+        )
+        .nest(
             "/admin",
-            admin::router()
-                .route_layer(middleware::from_fn_with_state(state.clone(), require_admin)),
+            admin::restricted_router().route_layer(middleware::from_fn_with_state(
+                state.clone(),
+                require_admin,
+            )),
         );
 
     #[cfg(feature = "embedded-ui")]

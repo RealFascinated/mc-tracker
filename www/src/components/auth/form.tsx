@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { errorMessage } from "@/lib/api/error-message";
 import { login } from "@/lib/auth";
 import { useAuth } from "@/lib/auth/context";
+import { adminLandingPath } from "@/lib/auth/require-admin";
 import { validateCredentials } from "@/lib/auth/validation";
+import { canManageServers } from "@/lib/user-flags";
 
 function AuthForm() {
   const navigate = useNavigate();
@@ -35,7 +37,9 @@ function AuthForm() {
       setUser(result.user);
       toast.success(`Signed in as ${result.user.username}`);
       await navigate({
-        to: result.user.role === "admin" ? "/admin" : "/account",
+        to: canManageServers(result.user.flags)
+          ? adminLandingPath(result.user)
+          : "/account",
       });
     } catch (error) {
       toast.error(errorMessage(error));

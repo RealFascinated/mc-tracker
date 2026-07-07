@@ -17,8 +17,10 @@ import { Label } from "@/components/ui/label";
 import { errorMessage } from "@/lib/api/error-message";
 import { signup } from "@/lib/auth";
 import { useAuth } from "@/lib/auth/context";
+import { adminLandingPath } from "@/lib/auth/require-admin";
 import { useSignupEnabled } from "@/lib/auth/signup-enabled";
 import { validateCredentials } from "@/lib/auth/validation";
+import { canManageServers } from "@/lib/user-flags";
 import { pageTitle } from "@/lib/page-title";
 import { privatePageHead } from "@/lib/embed-meta";
 
@@ -38,7 +40,11 @@ function SignupPage() {
 
   useEffect(() => {
     if (!isLoading && user) {
-      void navigate({ to: user.role === "admin" ? "/admin" : "/account" });
+      void navigate({
+        to: canManageServers(user.flags)
+          ? adminLandingPath(user)
+          : "/account",
+      });
     }
   }, [isLoading, user, navigate]);
 

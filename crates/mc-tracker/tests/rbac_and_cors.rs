@@ -211,6 +211,47 @@ async fn demoted_admin_loses_admin_access_on_next_request() {
 }
 
 #[tokio::test]
+async fn manage_servers_flag_allows_server_routes_only() {
+    let (_postgres, app, _manager, pool) = test_app().await;
+    common::create_user(&pool, "operator", "operatorpass", UserRole::User).await;
+    let user = mc_db::db::repos::users::get_by_username(&pool, "operator")
+        .await
+        .unwrap();
+    mc_db::db::repos::users::update_flags(&pool, user.id, mc_db::UserFlags::MANAGE_SERVERS)
+        .await
+        .unwrap();
+    let cookie = common::login_as(&app, "operator", "operatorpass").await;
+
+    let servers = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/admin/servers")
+                .header("cookie", &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(servers.status(), StatusCode::OK);
+
+    for uri in ["/admin/settings", "/admin/users"] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(uri)
+                    .header("cookie", &cookie)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::FORBIDDEN, "GET {uri}");
+    }
+}
+
+#[tokio::test]
 async fn admin_can_list_users_and_patch_flags() {
     let (_postgres, app, _manager, pool) = test_app().await;
     common::create_user(&pool, "vip", "pass", UserRole::User).await;

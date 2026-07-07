@@ -12,6 +12,7 @@ import {
   dirtySettingPatches,
   settingsListToFormValues,
 } from "@/lib/admin/settings/form";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { patchAdminSetting } from "@/lib/api/admin/settings";
 import { adminSettingsQueryOptions } from "@/lib/api/admin/settings.queries";
 import { errorMessage } from "@/lib/api/error-message";
@@ -19,6 +20,7 @@ import { pageTitle } from "@/lib/page-title";
 import { privatePageHead } from "@/lib/embed-meta";
 
 export const Route = createFileRoute("/_admin/admin/settings")({
+  beforeLoad: () => requireAdmin(),
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(adminSettingsQueryOptions()),
   head: () => privatePageHead(pageTitle("Admin settings")),

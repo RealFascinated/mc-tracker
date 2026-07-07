@@ -22,11 +22,18 @@ use crate::settings_api::{to_setting_response, to_settings_list};
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/servers", get(list_servers).post(create_server))
-        .route(
-            "/servers/{id}",
-            get(get_server).patch(update_server).delete(delete_server),
-        )
+        .merge(servers_router())
+        .merge(restricted_router())
+}
+
+pub fn servers_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(list_servers).post(create_server))
+        .route("/{id}", get(get_server).patch(update_server).delete(delete_server))
+}
+
+pub fn restricted_router() -> Router<AppState> {
+    Router::new()
         .route("/settings", get(get_settings))
         .route("/settings/{key}", patch(patch_setting))
         .route("/users", get(list_users))

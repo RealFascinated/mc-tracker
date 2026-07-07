@@ -35,8 +35,10 @@ import { formatMediumDateTime } from "@/lib/formatter";
 import { pageTitle } from "@/lib/page-title";
 import { privatePageHead } from "@/lib/embed-meta";
 import { hasFlag, setFlag, USER_FLAGS } from "@/lib/user-flags";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 export const Route = createFileRoute("/_admin/admin/users")({
+  beforeLoad: () => requireAdmin(),
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(adminUsersQueryOptions()),
   head: () => privatePageHead(pageTitle("Admin users")),
@@ -167,7 +169,7 @@ function EditFlagsDialog({
           <div className="settings-fields">
             {user.role === "admin" ? (
               <p className="text-muted-foreground text-sm">
-                Admins already have unlimited chat via their role.
+                Admins automatically have all flags.
               </p>
             ) : null}
 

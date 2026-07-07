@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { logout } from "@/lib/auth";
 import { useAuth } from "@/lib/auth/context";
+import { adminLandingPath } from "@/lib/auth/require-admin";
+import { canManageServers } from "@/lib/user-flags";
 import { cn } from "cnfast";
 
 type SiteHeaderUserMenuProps = {
@@ -95,11 +97,11 @@ function SiteHeaderUserMenu({ iconOnly = false }: SiteHeaderUserMenuProps) {
             Account
           </Link>
         </DropdownMenuItem>
-        {user.role === "admin" ? (
+        {canManageServers(user.flags) ? (
           <DropdownMenuItem asChild>
-            <Link to="/admin">
+            <Link to={adminLandingPath(user)}>
               <Shield className="size-4" aria-hidden />
-              Admin
+              {user.role === "admin" ? "Admin" : "Manage servers"}
             </Link>
           </DropdownMenuItem>
         ) : null}

@@ -320,7 +320,7 @@ async fn me_includes_chat_quota_for_users_not_admins() {
     )
     .unwrap();
     assert!(admin_body.get("chatQuota").is_none());
-    assert_eq!(admin_body["flags"], 0);
+    assert_eq!(admin_body["flags"], mc_db::UserFlags::all().to_db());
 }
 
 #[tokio::test]

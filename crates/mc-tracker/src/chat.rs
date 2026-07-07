@@ -100,7 +100,7 @@ async fn post_chat(
         return sse_error(StatusCode::TOO_MANY_REQUESTS, "rate limit exceeded");
     }
 
-    let quota_exempt = chat_quota_exempt(user.role, user.flags);
+    let quota_exempt = chat_quota_exempt(user.flags);
     if !quota_exempt {
         let since = calendar_week_start_utc(chrono::Utc::now());
         let used = match chat_messages::count_since(&state.pool, user.id, since).await {

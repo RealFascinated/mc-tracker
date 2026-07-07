@@ -6,7 +6,7 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 use mc_api_types::{ApiError, ApiErrorCode};
 use mc_db::db::repos::users;
-use mc_db::model::{can_manage_servers, UserFlags, UserRole};
+use mc_db::model::{can_manage_servers, effective_flags, UserFlags, UserRole};
 use uuid::Uuid;
 
 use super::session::COOKIE_NAME;
@@ -50,6 +50,24 @@ pub async fn require_admin(
     next.run(request).await
 }
 
+pub async fn require_manage_servers(
+    State(state): State<AppState>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let (parts, body) = request.into_parts();
+    let user = match authenticate_request(&parts, &state).await {
+        Ok(user) => user,
+        Err(response) => return response,
+    };
+    if !can_manage_servers(user.flags) {
+        return forbidden();
+    }
+    let mut request = Request::from_parts(parts, body);
+    request.extensions_mut().insert(user);
+    next.run(request).await
+}
+
 pub(crate) async fn authenticate_request(
     parts: &Parts,
     state: &AppState,
@@ -68,7 +86,7 @@ pub(crate) async fn authenticate_request(
         id: user.id,
         username: user.username,
         role: user.role,
-        flags: user.flags,
+        flags: effective_flags(user.role, user.flags),
         token,
     })
 }

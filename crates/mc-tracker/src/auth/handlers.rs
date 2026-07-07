@@ -89,7 +89,7 @@ async fn me(
         ..
     }: AuthUser,
 ) -> Result<Json<MeResponse>, Response> {
-    let chat_quota = if chat_quota_exempt(role, flags) {
+    let chat_quota = if chat_quota_exempt(flags) {
         None
     } else {
         Some(quota_for_user(&state.pool, id).await.map_err(|_| {

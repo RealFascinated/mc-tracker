@@ -21,12 +21,20 @@ impl UserFlags {
     }
 }
 
-pub fn chat_quota_exempt(role: UserRole, flags: UserFlags) -> bool {
-    role == UserRole::Admin || flags.contains(UserFlags::UNLIMITED_CHAT)
+pub fn effective_flags(role: UserRole, flags: UserFlags) -> UserFlags {
+    if role == UserRole::Admin {
+        UserFlags::all()
+    } else {
+        flags
+    }
 }
 
-pub fn can_manage_servers(role: UserRole, flags: UserFlags) -> bool {
-    role == UserRole::Admin || flags.contains(UserFlags::MANAGE_SERVERS)
+pub fn chat_quota_exempt(flags: UserFlags) -> bool {
+    flags.contains(UserFlags::UNLIMITED_CHAT)
+}
+
+pub fn can_manage_servers(flags: UserFlags) -> bool {
+    flags.contains(UserFlags::MANAGE_SERVERS)
 }
 
 #[cfg(test)]
@@ -40,35 +48,43 @@ mod tests {
     }
 
     #[test]
-    fn chat_quota_exempt_for_admin() {
-        assert!(chat_quota_exempt(UserRole::Admin, UserFlags::empty()));
+    fn effective_flags_grants_all_for_admin() {
+        assert_eq!(
+            effective_flags(UserRole::Admin, UserFlags::empty()),
+            UserFlags::all()
+        );
+    }
+
+    #[test]
+    fn effective_flags_preserves_user_flags() {
+        let flags = UserFlags::MANAGE_SERVERS;
+        assert_eq!(effective_flags(UserRole::User, flags), flags);
     }
 
     #[test]
     fn chat_quota_exempt_for_flagged_user() {
-        assert!(chat_quota_exempt(UserRole::User, UserFlags::UNLIMITED_CHAT));
+        assert!(chat_quota_exempt(UserFlags::UNLIMITED_CHAT));
     }
 
     #[test]
-    fn chat_quota_not_exempt_for_regular_user() {
-        assert!(!chat_quota_exempt(UserRole::User, UserFlags::empty()));
-    }
-
-    #[test]
-    fn can_manage_servers_for_admin() {
-        assert!(can_manage_servers(UserRole::Admin, UserFlags::empty()));
+    fn chat_quota_not_exempt_without_flag() {
+        assert!(!chat_quota_exempt(UserFlags::empty()));
     }
 
     #[test]
     fn can_manage_servers_for_flagged_user() {
-        assert!(can_manage_servers(
-            UserRole::User,
-            UserFlags::MANAGE_SERVERS
-        ));
+        assert!(can_manage_servers(UserFlags::MANAGE_SERVERS));
     }
 
     #[test]
-    fn cannot_manage_servers_for_regular_user() {
-        assert!(!can_manage_servers(UserRole::User, UserFlags::empty()));
+    fn cannot_manage_servers_without_flag() {
+        assert!(!can_manage_servers(UserFlags::empty()));
+    }
+
+    #[test]
+    fn admin_effective_flags_include_all_permissions() {
+        let flags = effective_flags(UserRole::Admin, UserFlags::empty());
+        assert!(chat_quota_exempt(flags));
+        assert!(can_manage_servers(flags));
     }
 }
