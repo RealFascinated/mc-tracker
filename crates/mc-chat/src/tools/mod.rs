@@ -3,6 +3,7 @@ mod compact;
 mod compare_servers;
 mod constants;
 mod get_asn;
+mod get_current_time;
 mod get_server;
 mod get_server_stats;
 mod get_tracker_summary;

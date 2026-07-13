@@ -8,8 +8,8 @@ import type { ChatDisplayPrefs } from "@/components/chat/lib/types";
 const CHAT_DISPLAY_PREFS_STORAGE_KEY = "chat-display-prefs";
 
 const DEFAULT_CHAT_DISPLAY_PREFS: ChatDisplayPrefs = {
-  showToolCalls: true,
-  showReasoning: true,
+  showToolCalls: false,
+  showReasoning: false,
 };
 
 function parseChatDisplayPrefs(raw: unknown): ChatDisplayPrefs | null {

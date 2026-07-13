@@ -7,6 +7,7 @@ use crate::traits::ChatTool;
 use super::asn_timeseries_summary::AsnTimeseriesSummaryTool;
 use super::compare_servers::CompareServersTool;
 use super::get_asn::GetAsnTool;
+use super::get_current_time::GetCurrentTimeTool;
 use super::get_server::GetServerTool;
 use super::get_server_stats::GetServerStatsTool;
 use super::get_tracker_summary::GetTrackerSummaryTool;
@@ -35,6 +36,7 @@ impl ToolRegistry {
             Arc::new(GetServerTool),
             Arc::new(GetServerStatsTool),
             Arc::new(GetTrackerSummaryTool),
+            Arc::new(GetCurrentTimeTool),
             Arc::new(GetAsnTool),
             Arc::new(LookupIpTool),
             Arc::new(ServerTimeseriesSummaryTool),

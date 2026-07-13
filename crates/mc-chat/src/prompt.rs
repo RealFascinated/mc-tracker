@@ -12,6 +12,7 @@ Multiple matches → list and ask user to pick. Ambiguous name → search_server
 Top-N or ranking questions → use a rank_* tool, not loops of per-entity calls.";
 
 const EXECUTION_RULES: &str = "\
+Relative or calendar time questions → call get_current_time first, then use time-range tools. \
 Time bounds: now, Nd (7d, 30d), this month, YYYY-MM-DD, or unix epoch — max ~10 years. \
 State date ranges in plain dates, not relative terms. \
 Multi-part questions → one tool call per part. \
