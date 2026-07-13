@@ -10,71 +10,73 @@ import { cn } from "cnfast";
 
 import { formatLocaleInteger } from "@/lib/formatter";
 
+const sectionLabelClass =
+  "text-[10px] font-semibold uppercase tracking-widest text-muted-foreground";
+
+function TokenRow({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-popover-foreground tabular-nums">
+        {formatLocaleInteger(value)}
+      </dd>
+    </div>
+  );
+}
+
 function ContextUsageTooltip({ usage }: { usage: ChatTokenUsage }) {
   const ratio = Math.min(usage.promptTokens / usage.contextMax, 1);
   const pct = Math.round(ratio * 100);
   const hot = ratio >= 0.85;
-  const cached = usage.cachedTokens ?? 0;
-  const hasCache = cached > 0;
-  const cachePct =
-    hasCache && usage.promptTokens > 0
-      ? Math.round((cached / usage.promptTokens) * 100)
-      : null;
+  const reasoning = usage.reasoningTokens ?? 0;
+  const generation = Math.max(usage.completionTokens - reasoning, 0);
 
   return (
-    <div className="grid w-52 gap-2.5">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="text-popover-foreground font-medium">Context window</p>
-        <p
+    <div className="w-56">
+      <div className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className={sectionLabelClass}>Context window</p>
+            <p className="mt-1 text-sm tabular-nums text-popover-foreground">
+              {formatLocaleInteger(usage.promptTokens)}
+              <span className="text-muted-foreground">
+                {" / "}
+                {formatLocaleInteger(usage.contextMax)}
+              </span>
+            </p>
+          </div>
+          <p
+            className={cn(
+              "shrink-0 text-lg font-semibold tabular-nums",
+              hot ? "text-destructive" : "text-success",
+            )}
+          >
+            {pct}%
+          </p>
+        </div>
+
+        <Progress
+          value={pct}
+          aria-label="Context window usage"
           className={cn(
-            "text-sm font-semibold tabular-nums",
-            hot ? "text-destructive" : "text-popover-foreground",
+            "mt-2.5 h-1.5 rounded-full bg-muted/80 **:data-[slot=progress-indicator]:rounded-full",
+            hot
+              ? "**:data-[slot=progress-indicator]:bg-destructive"
+              : "**:data-[slot=progress-indicator]:bg-success",
           )}
-        >
-          {pct}%
-        </p>
+        />
       </div>
 
-      <Progress
-        value={pct}
-        aria-label="Context window usage"
-        className={cn(
-          "h-1.5 rounded-full",
-          hot && "[&_[data-slot=progress-indicator]]:bg-destructive",
-        )}
-      />
+      <div className="border-t border-border" />
 
-      <dl className="grid gap-1.5 text-[11px] leading-tight">
-        <div className="flex items-baseline justify-between gap-4">
-          <dt className="text-muted-foreground">Context</dt>
-          <dd className="text-popover-foreground tabular-nums">
-            {formatLocaleInteger(usage.promptTokens)}
-            <span className="text-muted-foreground">
-              {" "}
-              / {formatLocaleInteger(usage.contextMax)}
-            </span>
-          </dd>
-        </div>
-        {hasCache ? (
-          <div className="flex items-baseline justify-between gap-4">
-            <dt className="text-muted-foreground">Cached</dt>
-            <dd className="text-popover-foreground tabular-nums">
-              {formatLocaleInteger(cached)}
-              {cachePct != null ? (
-                <span className="text-muted-foreground"> ({cachePct}%)</span>
-              ) : null}
-            </dd>
-          </div>
-        ) : null}
-        {usage.completionTokens > 0 ? (
-          <div className="flex items-baseline justify-between gap-4">
-            <dt className="text-muted-foreground">Response</dt>
-            <dd className="text-popover-foreground tabular-nums">
-              {formatLocaleInteger(usage.completionTokens)}
-            </dd>
-          </div>
-        ) : null}
-      </dl>
+      <div className="pt-3">
+        <p className={cn(sectionLabelClass, "mb-2")}>Tokens</p>
+        <dl className="grid gap-1.5 text-xs leading-tight">
+          <TokenRow label="Prompt" value={usage.promptTokens} />
+          <TokenRow label="Generation" value={generation} />
+          <TokenRow label="Reasoning" value={reasoning} />
+        </dl>
+      </div>
     </div>
   );
 }
@@ -101,7 +103,9 @@ export function ContextUsage({
           type="button"
           variant="ghost"
           size="icon-sm"
-          className={cn(hot ? "text-destructive" : "text-muted-foreground")}
+          className={cn(
+            hot ? "text-destructive" : "text-success",
+          )}
           aria-label={`Context ${pct}% used`}
         >
           <svg
@@ -137,7 +141,7 @@ export function ContextUsage({
       <TooltipContent
         side={tooltipSide}
         sideOffset={6}
-        className="max-w-none flex-col items-stretch gap-0 px-3 py-2.5"
+        className="max-w-none flex-col items-stretch gap-0 px-4 py-3.5"
       >
         <ContextUsageTooltip usage={usage} />
       </TooltipContent>

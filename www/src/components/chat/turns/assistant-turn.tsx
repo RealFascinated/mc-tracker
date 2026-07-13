@@ -6,16 +6,19 @@ import { ChatThinkingBlock } from "@/components/chat/panel/thinking-block";
 import { ChatToolCallRow } from "@/components/chat/turns/tool-call-row";
 import { ThinkingIndicator } from "@/components/chat/panel/thinking-indicator";
 import { STREAMING_ID } from "@/components/chat/lib/types";
-import type { ChatMessage } from "@/components/chat/lib/types";
+import type { ChatMessage, ChatDisplayPrefs } from "@/components/chat/lib/types";
 
 export function ChatAssistantTurn({
   message,
   isStreaming,
+  displayPrefs,
 }: {
   message: ChatMessage;
   isStreaming: boolean;
+  displayPrefs: ChatDisplayPrefs;
 }) {
-  const parts = visibleAssistantParts(message.parts ?? []);
+  const allParts = message.parts ?? [];
+  const parts = visibleAssistantParts(allParts, displayPrefs);
   const isStreamingTurn = message.id === STREAMING_ID && isStreaming;
   const hasTextPart = parts.some((part) => part.kind === "text");
 
@@ -85,9 +88,8 @@ export function ChatAssistantTurn({
         }
       })}
       {isStreamingTurn &&
-      parts.length > 0 &&
-      parts.at(-1)?.kind !== "text" &&
-      parts.at(-1)?.kind !== "reasoning" ? (
+      allParts.length > 0 &&
+      allParts.at(-1)?.kind === "tool" ? (
         <MessageScrollerItem messageId={`${message.id}:waiting`}>
           <div className="flex w-full min-w-0 justify-start">
             <ThinkingIndicator />

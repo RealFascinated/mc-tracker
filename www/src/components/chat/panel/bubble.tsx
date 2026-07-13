@@ -3,15 +3,17 @@ import { cn } from "cnfast";
 
 import { ChatAssistantTurn } from "@/components/chat/turns/assistant-turn";
 import { ChatErrorTurn } from "@/components/chat/turns/error-turn";
-import type { ChatMessage } from "@/components/chat/lib/types";
+import type { ChatMessage, ChatDisplayPrefs } from "@/components/chat/lib/types";
 
 export function ChatBubble({
   message,
   isStreaming,
+  displayPrefs,
   onRetry,
 }: {
   message: ChatMessage;
   isStreaming: boolean;
+  displayPrefs: ChatDisplayPrefs;
   onRetry?: (prompt: string) => void;
 }) {
   if (message.role === "error") {
@@ -25,7 +27,13 @@ export function ChatBubble({
   }
 
   if (message.role === "assistant") {
-    return <ChatAssistantTurn message={message} isStreaming={isStreaming} />;
+    return (
+      <ChatAssistantTurn
+        message={message}
+        isStreaming={isStreaming}
+        displayPrefs={displayPrefs}
+      />
+    );
   }
 
   return (

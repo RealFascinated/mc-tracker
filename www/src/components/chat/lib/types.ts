@@ -1,5 +1,10 @@
 export const STREAMING_ID = "streaming";
 
+export type ChatDisplayPrefs = {
+  showToolCalls: boolean;
+  showReasoning: boolean;
+};
+
 export type ChatReasoningPart = {
   id: string;
   kind: "reasoning";

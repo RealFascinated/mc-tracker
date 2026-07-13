@@ -19,6 +19,7 @@ Thumbs.db
 *.swp
 *.swo
 *~
+.kilo
 
 # Legacy Node / Bun (old code)
 node_modules/

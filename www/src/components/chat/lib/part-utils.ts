@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatPart } from "@/components/chat/lib/types";
+import type { ChatMessage, ChatPart, ChatDisplayPrefs } from "@/components/chat/lib/types";
 
 export function assistantTextFromParts(parts: ChatPart[]): string {
   return parts
@@ -26,8 +26,23 @@ export function closeStreamingReasoning(parts: ChatPart[]): ChatPart[] {
   );
 }
 
-export function visibleAssistantParts(parts: ChatPart[]): ChatPart[] {
-  return parts;
+export function visibleAssistantParts(
+  parts: ChatPart[],
+  prefs?: ChatDisplayPrefs,
+): ChatPart[] {
+  if (!prefs) {
+    return parts;
+  }
+
+  return parts.filter((part) => {
+    if (part.kind === "tool" && !prefs.showToolCalls) {
+      return false;
+    }
+    if (part.kind === "reasoning" && !prefs.showReasoning) {
+      return false;
+    }
+    return true;
+  });
 }
 
 export function appendReasoningDelta(

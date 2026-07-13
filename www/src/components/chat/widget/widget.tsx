@@ -20,6 +20,7 @@ import { ChatSuggestions } from "../panel/suggestions";
 import { TrackerChatComposer } from "./composer";
 import { TrackerChatHeader } from "./header";
 import { useChatSession } from "@/hooks/chat/use-chat-session";
+import { useChatDisplayPrefs } from "@/hooks/chat/use-chat-display-prefs";
 import { useChatWindowSize } from "@/hooks/chat/use-chat-window-size";
 
 export function TrackerChatWidget() {
@@ -29,6 +30,8 @@ export function TrackerChatWidget() {
   const [enterAnimationDone, setEnterAnimationDone] = useState(false);
   const [followUpSuggestionsExpanded, setFollowUpSuggestionsExpanded] =
     useState(true);
+  const { prefs: displayPrefs, setShowToolCalls, setShowReasoning } =
+    useChatDisplayPrefs();
   const {
     messages,
     input,
@@ -141,6 +144,9 @@ export function TrackerChatWidget() {
               tokenUsage={tokenUsage}
               sessionId={sessionId}
               canStartNewChat={canStartNewChat}
+              displayPrefs={displayPrefs}
+              onShowToolCallsChange={setShowToolCalls}
+              onShowReasoningChange={setShowReasoning}
               onLoadSession={loadSession}
               onDeleteActiveSession={startNewChat}
               onStartNewChat={startNewChat}
@@ -181,6 +187,7 @@ export function TrackerChatWidget() {
                                 key={message.id}
                                 message={message}
                                 isStreaming={isStreaming}
+                                displayPrefs={displayPrefs}
                                 onRetry={retryMessage}
                               />
                             ))
