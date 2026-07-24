@@ -109,7 +109,7 @@ export const METRIC_RANGE_LOOKBACK_SECONDS = Object.fromEntries(
   ]),
 ) as Record<MetricTimeRange, number>;
 
-export const DEFAULT_METRIC_TIME_RANGE = "24h" satisfies MetricTimeRange;
+export const DEFAULT_METRIC_TIME_RANGE = "7d" satisfies MetricTimeRange;
 
 export type MetricRangeOption = {
   value: MetricTimeRange;
