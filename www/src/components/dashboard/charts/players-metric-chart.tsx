@@ -10,7 +10,10 @@ import {
   timeseriesToMetric,
 } from "@/lib/api/metric-timeseries";
 import type { VisibleTimeseriesQueryOptions } from "@/lib/api/visible-timeseries-options";
+import type { MonitoredServerEvent } from "@/lib/api/monitored-server-events";
 import type { TimeseriesResponse } from "@/lib/api/types";
+import { serverEventsToAnnotations } from "@/lib/metrics/chart-event-annotations";
+import type { ChartEventAnnotation } from "@/lib/metrics/chart-event-annotations";
 import type { ChartDefinition } from "@/lib/metrics/charts/types";
 import {
   DASHBOARD_CHART_PROPS,
@@ -20,7 +23,10 @@ import {
 
 type PlayersMetricChartProps = {
   def: ChartDefinition;
-  timeseriesOptions: VisibleTimeseriesQueryOptions<TimeseriesResponse>;
+  timeseriesOptions: VisibleTimeseriesQueryOptions<
+    TimeseriesResponse & { events?: MonitoredServerEvent[] }
+  >;
+  eventAnnotations?: ChartEventAnnotation[];
   enabled?: boolean;
   height?: number;
   loadingMessage?: string;
@@ -29,6 +35,7 @@ type PlayersMetricChartProps = {
 export function PlayersMetricChart({
   def,
   timeseriesOptions,
+  eventAnnotations: eventAnnotationsProp,
   enabled = true,
   height = 360,
   loadingMessage = "Loading player history…",
@@ -44,6 +51,16 @@ export function PlayersMetricChart({
     () => (data ? timeseriesToMetric(data) : null),
     [data],
   );
+
+  const eventAnnotations = useMemo(() => {
+    if (eventAnnotationsProp) {
+      return eventAnnotationsProp;
+    }
+    if (!data?.events?.length) {
+      return undefined;
+    }
+    return serverEventsToAnnotations(data.events);
+  }, [data, eventAnnotationsProp]);
 
   if (!hasBeenVisible && !data) {
     return <div ref={ref} style={{ height }} aria-hidden />;
@@ -72,6 +89,7 @@ export function PlayersMetricChart({
         emptyMessage={DASHBOARD_CHART_EMPTY_MESSAGE}
         className="h-full"
         hydrateWhen={hasBeenVisible}
+        eventAnnotations={eventAnnotations}
         {...DASHBOARD_CHART_PROPS}
       />
       {showLoading ? (

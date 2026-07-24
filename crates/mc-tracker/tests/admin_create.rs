@@ -203,3 +203,86 @@ async fn patch_admin_server_pause_and_resume() {
     assert_eq!(resume.status(), StatusCode::OK);
     assert_eq!(manager.summary().await.tracked_servers, 1);
 }
+
+
+#[tokio::test]
+async fn admin_server_lifecycle_records_monitored_events() {
+    let (_postgres, database_url) = common::start_postgres().await;
+    let pool = common::setup_pool(&database_url).await;
+    common::bootstrap_admin(&pool).await;
+
+    let manager = common::manager_from_pool(&pool, "development").await;
+    let app = common::build_app(pool.clone(), Arc::clone(&manager)).await;
+    let cookie = common::login_admin(&app).await;
+
+    let create = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/admin/servers")
+                .header("cookie", &cookie)
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"name":"Mineplex","host":"mineplex.com","port":null,"type":"PC"}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create.status(), StatusCode::CREATED);
+    let created: serde_json::Value = serde_json::from_slice(
+        &axum::body::to_bytes(create.into_body(), usize::MAX)
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    let server_id = created["id"].as_str().unwrap();
+    let server_uuid = uuid::Uuid::parse_str(server_id).unwrap();
+
+    let pause = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PATCH")
+                .uri(format!("/admin/servers/{server_id}"))
+                .header("cookie", &cookie)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"paused":true}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(pause.status(), StatusCode::OK);
+
+    let delete = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri(format!("/admin/servers/{server_id}"))
+                .header("cookie", &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(delete.status(), StatusCode::NO_CONTENT);
+
+    let events = mc_db::db::repos::monitored_server_events::list_between(
+        &pool,
+        chrono::DateTime::parse_from_rfc3339("2000-01-01T00:00:00Z")
+            .unwrap()
+            .with_timezone(&chrono::Utc),
+        chrono::Utc::now() + chrono::Duration::days(1),
+    )
+    .await
+    .unwrap();
+
+    let types: Vec<_> = events
+        .iter()
+        .filter(|event| event.server_id == server_uuid)
+        .map(|event| event.event_type.as_str())
+        .collect();
+    assert_eq!(types, vec!["added", "paused", "removed"]);
+}

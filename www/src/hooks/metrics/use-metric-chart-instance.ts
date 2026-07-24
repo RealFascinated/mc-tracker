@@ -26,6 +26,8 @@ import {
   unregisterMetricsChartSync,
 } from "@/lib/metrics/chart-sync";
 import { useMetricsChartZoom } from "@/hooks/metrics/use-metrics-chart-zoom";
+import { createEventAnnotationDrawHook } from "@/lib/metrics/chart-event-annotations";
+import type { ChartEventAnnotation } from "@/lib/metrics/chart-event-annotations";
 import {
   buildUPlotOptions,
   chartLayoutForWidth,
@@ -74,6 +76,7 @@ type UseMetricChartInstanceParams = {
     ((a: TooltipSortEntry, b: TooltipSortEntry) => number) | undefined;
   setLayoutDensity: Dispatch<SetStateAction<"normal" | "compact">>;
   inlineLegend?: boolean;
+  eventAnnotationsRef?: RefObject<ChartEventAnnotation[] | undefined>;
 };
 
 function useMetricChartInstance({
@@ -117,6 +120,7 @@ function useMetricChartInstance({
   tooltipSort,
   setLayoutDensity,
   inlineLegend = false,
+  eventAnnotationsRef,
 }: UseMetricChartInstanceParams) {
   const chartZoom = useMetricsChartZoom();
   const syncKey = useMetricsChartSyncKey() ?? undefined;
@@ -201,6 +205,13 @@ function useMetricChartInstance({
     const zoom = chartZoomRef.current;
     if (xDrag && zoom) {
       hooks.setSelect = [createChartZoomSelectHook(zoom.getZoomContext)];
+    }
+    if (eventAnnotationsRef) {
+      hooks.draw = [
+        createEventAnnotationDrawHook(
+          () => eventAnnotationsRef.current ?? [],
+        ),
+      ];
     }
     if (showTooltip && tooltip) {
       hooks.setCursor = [

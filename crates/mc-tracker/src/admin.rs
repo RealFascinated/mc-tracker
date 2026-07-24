@@ -9,6 +9,8 @@ use mc_api_types::{
     PatchSettingRequest, PatchUserFlagsRequest, PatchUserFlagsResponse, SettingsListResponse,
     UpdateServerRequest,
 };
+use mc_db::db::repos::monitored_server_events::{self, NewMonitoredServerEvent};
+use mc_db::model::MonitoredServerEventType;
 use mc_db::db::repos::servers::{self, NewServer, UpdateServer};
 use mc_db::db::repos::users;
 use mc_db::error::DbError;
@@ -37,6 +39,33 @@ pub fn restricted_router() -> Router<AppState> {
         .route("/settings/{key}", patch(patch_setting))
         .route("/users", get(list_users))
         .route("/users/{id}/flags", patch(patch_user_flags))
+}
+
+
+async fn record_server_event(
+    pool: &mc_db::DbPool,
+    server_id: Uuid,
+    server_name: &str,
+    event_type: MonitoredServerEventType,
+) {
+    if let Err(err) = monitored_server_events::insert(
+        pool,
+        NewMonitoredServerEvent {
+            server_id,
+            server_name,
+            event_type,
+            occurred_at: None,
+        },
+    )
+    .await
+    {
+        tracing::warn!(
+            error = %err,
+            ?event_type,
+            server_name,
+            "failed to record monitored server event"
+        );
+    }
 }
 
 async fn list_servers(State(state): State<AppState>) -> Json<AdminServersListResponse> {
@@ -71,6 +100,13 @@ async fn create_server(
     .await
     {
         Ok(server) => {
+            record_server_event(
+                &state.pool,
+                server.id,
+                &server.name,
+                MonitoredServerEventType::Added,
+            )
+            .await;
             state.manager.append_server(server.clone()).await;
             (StatusCode::CREATED, Json(state.manager.admin_server_response_for(&server).await)).into_response()
         }
@@ -110,6 +146,11 @@ async fn update_server(
         None => None,
     };
 
+    let existing = match servers::get(&state.pool, id).await {
+        Ok(server) => server,
+        Err(err) => return map_db_error(err),
+    };
+
     match servers::update(
         &state.pool,
         id,
@@ -124,6 +165,21 @@ async fn update_server(
     .await
     {
         Ok(server) => {
+            if let Some(paused) = body.paused {
+                if paused != existing.paused {
+                    record_server_event(
+                        &state.pool,
+                        server.id,
+                        &server.name,
+                        if paused {
+                            MonitoredServerEventType::Paused
+                        } else {
+                            MonitoredServerEventType::Unpaused
+                        },
+                    )
+                    .await;
+                }
+            }
             if !state.manager.update_server_config(server.clone()).await {
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -141,6 +197,19 @@ async fn update_server(
 }
 
 async fn delete_server(State(state): State<AppState>, Path(id): Path<Uuid>) -> Response {
+    let server = match servers::get(&state.pool, id).await {
+        Ok(server) => server,
+        Err(err) => return map_db_error(err),
+    };
+
+    record_server_event(
+        &state.pool,
+        server.id,
+        &server.name,
+        MonitoredServerEventType::Removed,
+    )
+    .await;
+
     match servers::delete(&state.pool, id).await {
         Ok(deleted) if deleted => {
             state.manager.remove_server(id).await;

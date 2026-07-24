@@ -8,6 +8,7 @@ import type { ServerListItem } from "@/lib/api/servers";
 import { formatServerHost } from "@/lib/api/servers";
 import { ServerHostCopy } from "@/components/dashboard/server/host-copy";
 import { ServerPlatformBadge } from "@/components/dashboard/server/platform-badge";
+import { AsnHoverPreview } from "@/components/dashboard/server/asn-hover-preview";
 import { asnDetailSearch, asnLabelOptional } from "@/lib/api/asns";
 import { cn } from "cnfast";
 
@@ -71,14 +72,25 @@ export function ServerIdentityHeader({
                 <>
                   {" · "}
                   {server.asn ? (
-                    <Link
-                      to="/asns/$asn"
-                      params={{ asn: server.asn }}
-                      search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
-                      className="link-underline-animate link-underline-animate--primary hover:text-monitor dark:hover:text-warning"
-                    >
-                      {asnName}
-                    </Link>
+                    layout === "card" ? (
+                      <AsnHoverPreview
+                        asn={server.asn}
+                        asnOrg={server.asnOrg}
+                        label={asnName}
+                      />
+                    ) : (
+                      <Link
+                        to="/asns/$asn"
+                        params={{ asn: server.asn }}
+                        search={asnDetailSearch(
+                          server.asnOrg,
+                          timeWindowSearch,
+                        )}
+                        className="link-underline-animate link-underline-animate--primary hover:text-monitor dark:hover:text-warning"
+                      >
+                        {asnName}
+                      </Link>
+                    )
                   ) : (
                     asnName
                   )}

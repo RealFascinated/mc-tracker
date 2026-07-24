@@ -3,6 +3,7 @@ import { Maximize2 } from "lucide-react";
 import type { RefObject } from "react";
 
 import type { BuiltChartConfig } from "@/lib/metrics/build-chart-config";
+import type { ChartEventAnnotation } from "@/lib/metrics/chart-event-annotations";
 import type { TooltipSortEntry } from "@/lib/metrics/charts/types";
 import type { MetricChartMode } from "@/components/metrics/metric-chart";
 import {
@@ -44,6 +45,7 @@ type MetricChartCardProps = {
   tooltipColumnSize?: number;
   tooltipSort?: (a: TooltipSortEntry, b: TooltipSortEntry) => number;
   queryWindow?: MetricsDataWindow;
+  eventAnnotations?: ChartEventAnnotation[];
 };
 
 const FULLSCREEN_CHART_MIN_HEIGHT = 480;
@@ -161,6 +163,7 @@ type MetricChartPanelProps = {
   seriesFills?: Array<boolean | undefined>;
   queryWindow?: MetricsDataWindow;
   inlineLegend?: boolean;
+  eventAnnotations?: ChartEventAnnotation[];
 };
 
 function MetricChartPanel({
@@ -179,6 +182,7 @@ function MetricChartPanel({
   seriesFills,
   queryWindow,
   inlineLegend = false,
+  eventAnnotations,
 }: MetricChartPanelProps) {
   const seriesAxisIds = built
     ? built.sourceIndices.map((index) => config.series[index]?.axis ?? "left")
@@ -209,6 +213,7 @@ function MetricChartPanel({
             seriesFills={seriesFills}
             queryWindow={queryWindow}
             inlineLegend={inlineLegend}
+            eventAnnotations={eventAnnotations}
           />
         ) : (
           <div
@@ -249,6 +254,7 @@ function MetricChartPanel({
             seriesFills={seriesFills}
             queryWindow={queryWindow}
             inlineLegend={inlineLegend}
+            eventAnnotations={eventAnnotations}
           />
         ) : null}
       </div>
@@ -269,6 +275,7 @@ function MetricChartCard({
   tooltipColumnSize,
   tooltipSort,
   queryWindow,
+  eventAnnotations,
 }: MetricChartCardProps) {
   const chartHeight = height ?? 260;
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
@@ -432,6 +439,7 @@ function MetricChartCard({
           seriesFills={builtSeriesFills}
           queryWindow={queryWindow}
           inlineLegend={inlineLegend}
+          eventAnnotations={eventAnnotations}
         />
       </div>
 

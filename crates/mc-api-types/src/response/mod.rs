@@ -6,6 +6,7 @@ pub mod chat_stream;
 pub mod error;
 pub mod health;
 pub mod insights;
+pub mod monitored_server_events;
 pub mod pinned_servers;
 pub mod servers;
 pub mod settings;
@@ -26,6 +27,7 @@ pub use self::chat_session::{
 pub use self::chat_stream::{ChatStreamEvent, ChatTokenUsage, ChatToolCallRecord};
 pub use self::error::{ApiError, ApiErrorCode, ErrorTarget, PartialError};
 pub use self::health::HealthResponse;
+pub use self::monitored_server_events::MonitoredServerEventResponse;
 pub use self::insights::{ServersCompareTimeseriesItem, ServersCompareTimeseriesResponse};
 pub use self::pinned_servers::PinnedServersListResponse;
 pub use self::servers::{

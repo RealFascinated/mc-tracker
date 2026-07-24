@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+use super::monitored_server_events::MonitoredServerEventResponse;
 use super::timeseries::TimeseriesLanes;
 
 #[derive(Debug, Clone, Serialize)]
@@ -81,4 +82,6 @@ pub struct ServerTimeseriesResponse {
     pub id: String,
     #[serde(flatten)]
     pub timeseries: TimeseriesLanes,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub events: Vec<MonitoredServerEventResponse>,
 }

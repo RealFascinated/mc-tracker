@@ -21,7 +21,7 @@ pub use response::{
     AsnSearchResponse, AsnTimeseriesResponse, AsnsListResponse, AsnsSummaryResponse, ChatQuota,
     ChatSessionDetailResponse, ChatSessionListItem, ChatSessionListResponse, ChatSessionTurn,
     ChatStreamEvent, ChatTokenUsage, ChatToolCallRecord, EntityPeakStats, ErrorTarget,
-    HealthResponse, IpLookupResponse, LoginResponse, MeResponse, PartialError,
+    HealthResponse, IpLookupResponse, LoginResponse, MeResponse, MonitoredServerEventResponse, PartialError,
     PatchUserFlagsResponse, PeakPlayersRecord, PinnedServersListResponse, PlayersPeakSummary,
     ServerListItemResponse, ServerSearchItemResponse, ServerTimeseriesResponse,
     ServersCompareTimeseriesItem, ServersCompareTimeseriesResponse, ServersListResponse,

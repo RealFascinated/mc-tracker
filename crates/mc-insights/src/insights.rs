@@ -150,6 +150,7 @@ impl Insights {
         Ok(ServerTimeseriesResponse {
             id: id.to_string(),
             timeseries: lane_to_timeseries_lanes(&lane, query.window()),
+            events: vec![],
         })
     }
 
@@ -207,6 +208,7 @@ impl Insights {
         Ok(ServerTimeseriesResponse {
             id: "total".to_string(),
             timeseries: lanes,
+            events: vec![],
         })
     }
 

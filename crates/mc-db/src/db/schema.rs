@@ -63,6 +63,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    monitored_server_events (id) {
+        id -> Uuid,
+        server_id -> Uuid,
+        server_name -> Text,
+        event_type -> Text,
+        occurred_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     chat_turns (id) {
         id -> Uuid,
         session_id -> Uuid,
@@ -88,4 +98,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     chat_sessions,
     chat_turns,
     pinned_servers,
+    monitored_server_events,
 );

@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import type uPlot from "uplot";
 import type { RefObject } from "react";
 import "uplot/dist/uPlot.min.css";
@@ -24,6 +24,8 @@ import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
 import { cn } from "cnfast";
 import { useTheme } from "@/hooks/use-theme";
 import { useMetricChartInstance } from "@/hooks/metrics/use-metric-chart-instance";
+import type { ChartEventAnnotation } from "@/lib/metrics/chart-event-annotations";
+import { findNearestChartEventAnnotation } from "@/lib/metrics/chart-event-annotations";
 
 export type MetricChartMode = "line" | "stack";
 
@@ -59,6 +61,7 @@ type MetricChartProps = {
   mountRef?: RefObject<HTMLDivElement | null>;
   /** Legend row sits directly above the plot; use tighter top padding. */
   inlineLegend?: boolean;
+  eventAnnotations?: ChartEventAnnotation[];
 };
 
 const axisUnitClassName =
@@ -89,10 +92,15 @@ function MetricChart({
   fill = false,
   mountRef,
   inlineLegend = false,
+  eventAnnotations,
 }: MetricChartProps) {
   const localContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = mountRef ?? localContainerRef;
   const chartRef = useRef<uPlot | null>(null);
+  const eventAnnotationsRef = useRef(eventAnnotations);
+  eventAnnotationsRef.current = eventAnnotations;
+  const [hoveredAnnotation, setHoveredAnnotation] = useState<ChartEventAnnotation | null>(null);
+  const [annotationTooltip, setAnnotationTooltip] = useState<{ left: number; top: number } | null>(null);
   const seriesFormattersRef = useRef(seriesFormatters);
   const dataRef = useRef(data);
   const hiddenSeriesRef = useRef(hiddenSeries);
@@ -254,7 +262,49 @@ function MetricChart({
     tooltipSort,
     setLayoutDensity,
     inlineLegend,
+    eventAnnotationsRef,
   });
+
+  const handleAnnotationHover = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      const chart = chartRef.current;
+      const annotations = eventAnnotationsRef.current;
+      if (!chart || !annotations?.length) {
+        setHoveredAnnotation(null);
+        setAnnotationTooltip(null);
+        return;
+      }
+
+      const nearest = findNearestChartEventAnnotation(
+        chart,
+        annotations,
+        event.clientX,
+      );
+      if (!nearest) {
+        setHoveredAnnotation(null);
+        setAnnotationTooltip(null);
+        return;
+      }
+
+      const rect = chart.over.getBoundingClientRect();
+      const x = chart.valToPos(nearest.timestamp, "x", true);
+      setHoveredAnnotation(nearest);
+      setAnnotationTooltip({
+        left: rect.left + x,
+        top: rect.top + 8,
+      });
+    },
+    [],
+  );
+
+  const clearAnnotationHover = useCallback(() => {
+    setHoveredAnnotation(null);
+    setAnnotationTooltip(null);
+  }, []);
+
+  useLayoutEffect(() => {
+    chartRef.current?.redraw();
+  }, [eventAnnotations]);
 
   useLayoutEffect(() => {
     const chart = chartRef.current;
@@ -289,6 +339,8 @@ function MetricChart({
         "relative w-full",
         fill ? "flex min-h-0 flex-1 flex-col" : "h-full",
       )}
+      onMouseMove={eventAnnotations?.length ? handleAnnotationHover : undefined}
+      onMouseLeave={eventAnnotations?.length ? clearAnnotationHover : undefined}
     >
       {reserveUnitLabels && leftUnit ? (
         <span className={axisUnitClassName} style={{ left: unitInsets.left }}>
@@ -314,6 +366,14 @@ function MetricChart({
         ref={containerRef}
         className={cn("w-full", fill ? "min-h-0 flex-1" : "h-full")}
       />
+      {hoveredAnnotation && annotationTooltip ? (
+        <div
+          className="pointer-events-none fixed z-50 max-w-[14rem] -translate-x-1/2 rounded-snug border border-border bg-popover px-2 py-1 text-[11px] leading-snug text-popover-foreground shadow-md"
+          style={{ left: annotationTooltip.left, top: annotationTooltip.top }}
+        >
+          {hoveredAnnotation.label}
+        </div>
+      ) : null}
     </div>
   );
 }

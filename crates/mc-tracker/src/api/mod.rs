@@ -10,9 +10,12 @@ use mc_api_types::{
     ApiError, ApiErrorCode, AsnDetailQuery, AsnTimeseriesQuery, AsnsListQuery, AsnsListResponse,
     ErrorTarget, HealthResponse, PartialError, ServersCompareQuery, ServersListQuery,
     ServersListResponse, ServersSearchQuery, ServersSearchResponse, SettingsListResponse,
-    TimeseriesQuery,
+    MonitoredServerEventResponse, TimeseriesQuery,
 };
 use mc_common::constants::limits::MAX_COMPARE_SERVERS;
+use chrono::{TimeZone, Utc};
+use mc_db::db::repos::monitored_server_events;
+use mc_db::model::MonitoredServerEvent;
 use mc_db::DbPool;
 use mc_geo::GeoService;
 use mc_insights::{Insights, InsightsError};
@@ -136,6 +139,41 @@ async fn public_settings(State(state): State<AppState>) -> Json<SettingsListResp
     Json(to_settings_list(items))
 }
 
+
+fn monitored_server_event_response(event: MonitoredServerEvent) -> MonitoredServerEventResponse {
+    MonitoredServerEventResponse {
+        id: event.id.to_string(),
+        server_id: event.server_id.to_string(),
+        server_name: event.server_name,
+        event_type: event.event_type.as_str().to_string(),
+        occurred_at: event.occurred_at.timestamp(),
+    }
+}
+
+async fn monitored_server_events_in_range(
+    pool: &DbPool,
+    from: i64,
+    to: i64,
+) -> Vec<MonitoredServerEventResponse> {
+    let (Some(from_dt), Some(to_dt)) = (
+        Utc.timestamp_opt(from, 0).single(),
+        Utc.timestamp_opt(to, 0).single(),
+    ) else {
+        return Vec::new();
+    };
+
+    match monitored_server_events::list_between(pool, from_dt, to_dt).await {
+        Ok(events) => events
+            .into_iter()
+            .map(monitored_server_event_response)
+            .collect(),
+        Err(err) => {
+            tracing::warn!(error = %err, "failed to load monitored server events");
+            Vec::new()
+        }
+    }
+}
+
 fn trim_search(value: Option<&str>) -> Option<&str> {
     value.map(str::trim).filter(|query| !query.is_empty())
 }
@@ -234,7 +272,11 @@ async fn total_timeseries(
         .total_players_lanes(state.manager.as_ref(), query.from, query.to)
         .await
     {
-        Ok(response) => Json(response).into_response(),
+        Ok(mut response) => {
+            response.events =
+                monitored_server_events_in_range(&state.pool, query.from, query.to).await;
+            Json(response).into_response()
+        }
         Err(err) => map_insights_error(err),
     }
 }

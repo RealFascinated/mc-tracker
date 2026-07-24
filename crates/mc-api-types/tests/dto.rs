@@ -204,3 +204,19 @@ fn servers_list_query_requires_sort_and_order() {
     assert!(serde_json::from_str::<ServersListQuery>(r#"{}"#).is_err());
     assert!(serde_json::from_str::<ServersListQuery>(r#"{"sort":"name"}"#).is_err());
 }
+
+#[test]
+fn monitored_server_event_serializes_camel_case() {
+    let event = mc_api_types::MonitoredServerEventResponse {
+        id: "11111111-1111-1111-1111-111111111111".into(),
+        server_id: "22222222-2222-2222-2222-222222222222".into(),
+        server_name: "Hypixel".into(),
+        event_type: "added".into(),
+        occurred_at: 1_700_000_000,
+    };
+    let json = serde_json::to_string(&event).unwrap();
+    assert_eq!(
+        json,
+        r#"{"id":"11111111-1111-1111-1111-111111111111","serverId":"22222222-2222-2222-2222-222222222222","serverName":"Hypixel","eventType":"added","occurredAt":1700000000}"#
+    );
+}

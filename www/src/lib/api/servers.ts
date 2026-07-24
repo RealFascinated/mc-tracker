@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api/client";
 import type { ServerPlatform } from "@/lib/api/platform";
 import type { ServerSort } from "@/lib/api/server-sort";
+import type { MonitoredServerEvent } from "@/lib/api/monitored-server-events";
 import type {
   EntityPeakStats,
   PlayersSummaryBase,
@@ -31,6 +32,7 @@ export type ServersListResponse = {
 
 export type ServerTimeseriesResponse = TimeseriesResponse & {
   id: string;
+  events?: MonitoredServerEvent[];
 };
 
 export type ServerSearchItem = {
