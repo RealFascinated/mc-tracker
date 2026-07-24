@@ -34,6 +34,8 @@ export type TimeseriesResponse = {
 
 export const TIMESERIES_SERIES_KEYS = {
   playersOnline: "playersOnline",
+  playersJava: "playersJava",
+  playersBedrock: "playersBedrock",
 } as const;
 
 export type ApiErrorCode =

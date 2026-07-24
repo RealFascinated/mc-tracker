@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use mc_api_types::{
     AsnTimeseriesResponse, ServerTimeseriesResponse, ServersCompareTimeseriesResponse,
+    TimeseriesLanes,
 };
 use tokio::sync::RwLock;
 use tracing::warn;
@@ -9,8 +10,8 @@ use uuid::Uuid;
 
 use crate::catalog::{AsnPeakKey, ServerCatalog};
 use crate::core::{
-    compare_servers_chart, fetch_asn_lane, fetch_server_lane, fetch_total_lane, lane_to_timeseries_lanes,
-    parse_chart_epochs, PlayersResolution,
+    compare_servers_chart, fetch_asn_lane, fetch_server_lane, fetch_total_lane,
+    fetch_total_lane_by_type, lane_to_timeseries_lanes, parse_chart_epochs, PlayersResolution,
 };
 use crate::error::InsightsError;
 use crate::metric::{
@@ -159,19 +160,53 @@ impl Insights {
         to: i64,
     ) -> Result<ServerTimeseriesResponse, InsightsError> {
         parse_chart_epochs(from, to)?;
-        let lane =
-            fetch_total_lane(self, catalog, from, to, PlayersResolution::Chart).await?;
+        let resolution = PlayersResolution::Chart;
+
+        let (total_lane, java_lane, bedrock_lane) = tokio::join!(
+            fetch_total_lane(self, catalog, from, to, resolution),
+            fetch_total_lane_by_type(self, catalog, "PC", from, to, resolution),
+            fetch_total_lane_by_type(self, catalog, "PE", from, to, resolution),
+        );
+
         let query = crate::core::build_players_query(
-            PlayersResolution::Chart,
+            resolution,
             catalog.environment(),
             from,
             to,
             None,
             None,
         )?;
+
+        let mut lanes = TimeseriesLanes::new(query.window().from_epoch(), query.window().to_epoch());
+
+        if let Ok(lane) = total_lane {
+            lanes.insert_lane(
+                mc_api_types::timeseries_keys::PLAYERS_ONLINE,
+                lane.step_secs,
+                lane.timestamps.clone(),
+                lane.values.clone(),
+            );
+        }
+        if let Ok(lane) = java_lane {
+            lanes.insert_lane(
+                mc_api_types::timeseries_keys::PLAYERS_JAVA,
+                lane.step_secs,
+                lane.timestamps.clone(),
+                lane.values.clone(),
+            );
+        }
+        if let Ok(lane) = bedrock_lane {
+            lanes.insert_lane(
+                mc_api_types::timeseries_keys::PLAYERS_BEDROCK,
+                lane.step_secs,
+                lane.timestamps.clone(),
+                lane.values.clone(),
+            );
+        }
+
         Ok(ServerTimeseriesResponse {
             id: "total".to_string(),
-            timeseries: lane_to_timeseries_lanes(&lane, query.window()),
+            timeseries: lanes,
         })
     }
 

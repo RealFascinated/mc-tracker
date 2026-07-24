@@ -54,6 +54,22 @@ pub fn total_players_series(environment: &str) -> String {
     total_players_aggregate(environment)
 }
 
+fn total_players_by_type_aggregate(environment: &str, platform_type: &str) -> String {
+    let filtered = vector_selector(
+        METRIC_PLAYER_COUNT,
+        &BTreeMap::from([
+            (labels::TYPE, platform_type),
+            (labels::ENVIRONMENT, environment),
+        ]),
+    );
+    format!(r#"sum(max by (id, type) ({filtered}))"#)
+}
+
+/// `sum(max by (id, type) (minecraft_server_player_count{type="PC",environment="production"}))`
+pub fn total_players_by_type_series(environment: &str, platform_type: &str) -> String {
+    total_players_by_type_aggregate(environment, platform_type)
+}
+
 /// `max_over_time(max by (id, type) (...)[24h:])` — one series per tracked server.
 pub fn peak_players_24h_by_server(environment: &str) -> String {
     format!(

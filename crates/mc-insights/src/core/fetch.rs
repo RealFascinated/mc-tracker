@@ -5,7 +5,7 @@ use crate::error::InsightsError;
 use crate::metric::AlignedLane;
 use crate::Insights;
 
-use super::queries::build_players_query;
+use super::queries::{build_players_query, build_total_players_by_type_query};
 use super::resolution::PlayersResolution;
 use super::snapshot::lane_to_snapshot;
 
@@ -45,6 +45,24 @@ pub async fn fetch_total_lane(
         to,
         None,
         None,
+    )?;
+    insights.lane(&query).await
+}
+
+pub async fn fetch_total_lane_by_type(
+    insights: &Insights,
+    catalog: &dyn ServerCatalog,
+    platform_type: &str,
+    from: i64,
+    to: i64,
+    resolution: PlayersResolution,
+) -> Result<AlignedLane, InsightsError> {
+    let query = build_total_players_by_type_query(
+        resolution,
+        catalog.environment(),
+        platform_type,
+        from,
+        to,
     )?;
     insights.lane(&query).await
 }

@@ -47,4 +47,6 @@ impl TimeseriesLanes {
 
 pub mod keys {
     pub const PLAYERS_ONLINE: &str = "playersOnline";
+    pub const PLAYERS_JAVA: &str = "playersJava";
+    pub const PLAYERS_BEDROCK: &str = "playersBedrock";
 }

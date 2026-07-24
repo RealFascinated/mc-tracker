@@ -19,6 +19,8 @@ export const EMPTY_METRIC_TIME_SERIES: MetricTimeSeries = {
 
 const CHART_SERIES_KEYS: Record<string, string> = {
   [TIMESERIES_SERIES_KEYS.playersOnline]: "players_online",
+  [TIMESERIES_SERIES_KEYS.playersJava]: "players_java",
+  [TIMESERIES_SERIES_KEYS.playersBedrock]: "players_bedrock",
 };
 
 function buildMetricTimeGrid(from: number, to: number, step: number): number[] {

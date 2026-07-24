@@ -4,13 +4,41 @@ use mc_common::constants::time::SECONDS_PER_DAY;
 
 use crate::error::InsightsError;
 use crate::metric::{
-    avg_over_time, player_count_series, players_for_asn_series, total_players_series, VmRangeQuery,
+    avg_over_time, player_count_series, players_for_asn_series, total_players_by_type_series,
+    total_players_series, VmRangeQuery,
 };
 
 use super::resolution::PlayersResolution;
 
 fn daily_step() -> Duration {
     Duration::from_secs(SECONDS_PER_DAY as u64)
+}
+
+pub fn build_total_players_by_type_query(
+    resolution: PlayersResolution,
+    environment: &str,
+    platform_type: &str,
+    from_epoch: i64,
+    to_epoch: i64,
+) -> Result<VmRangeQuery, InsightsError> {
+    let promql = match resolution {
+        PlayersResolution::Chart => total_players_by_type_series(environment, platform_type),
+        PlayersResolution::DailyAverage => {
+            avg_over_time(&total_players_by_type_series(environment, platform_type), "1d")
+        }
+    };
+
+    let mut builder = VmRangeQuery::builder()
+        .promql(promql)
+        .from_epoch(from_epoch)
+        .to_epoch(to_epoch);
+
+    match resolution {
+        PlayersResolution::Chart => builder = builder.chart_step(),
+        PlayersResolution::DailyAverage => builder = builder.step(daily_step()),
+    }
+
+    builder.build().map_err(InsightsError::from)
 }
 
 pub fn build_players_query(

@@ -35,10 +35,24 @@ export const totalPlayersChart: ChartDefinition = {
   series: [
     {
       key: "players_online",
-      label: "Players",
+      label: "Total",
       unit: "count",
       axis: "left",
       fill: true,
+    },
+    {
+      key: "players_java",
+      label: "Java",
+      unit: "count",
+      axis: "left",
+      color: { light: "#3faf87", dark: "#34d399" },
+    },
+    {
+      key: "players_bedrock",
+      label: "Bedrock",
+      unit: "count",
+      axis: "left",
+      color: { light: "#3aadbe", dark: "#22d3ee" },
     },
   ],
   axes: {
