@@ -1,3 +1,4 @@
+import { PLATFORM_CHART_COLORS } from "@/lib/api/platform-colors";
 import type { ChartDefinition, YRangeSpec } from "@/lib/metrics/charts/types";
 
 export function createPlayersChart(
@@ -45,14 +46,14 @@ export const totalPlayersChart: ChartDefinition = {
       label: "Java",
       unit: "count",
       axis: "left",
-      color: { light: "#3faf87", dark: "#34d399" },
+      color: PLATFORM_CHART_COLORS.java,
     },
     {
       key: "players_bedrock",
       label: "Bedrock",
       unit: "count",
       axis: "left",
-      color: { light: "#3aadbe", dark: "#22d3ee" },
+      color: PLATFORM_CHART_COLORS.bedrock,
     },
   ],
   axes: {

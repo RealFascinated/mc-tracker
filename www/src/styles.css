@@ -93,6 +93,8 @@
   --color-card-hover: var(--card-hover);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  --color-platform-java: var(--platform-java);
+  --color-platform-bedrock: var(--platform-bedrock);
   --radius-sm: 0.125rem;
   --radius-md: 0.25rem;
   --radius-lg: 0.5rem;
@@ -180,6 +182,8 @@
   --chart-10: #e08a58;
   --chart-11: #6f7ce0;
   --chart-12: #8aaf5a;
+  --platform-java: #1fad4f;
+  --platform-bedrock: #0b8fd4;
   --radius: 0.125rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #000000;
@@ -226,6 +230,8 @@
   --chart-10: #fb923c;
   --chart-11: #818cf8;
   --chart-12: #a3e635;
+  --platform-java: #63e089;
+  --platform-bedrock: #56cfff;
   --sidebar: #101010;
   --sidebar-foreground: #e5e5e5;
   --sidebar-primary: #fcd452;
@@ -1113,13 +1119,29 @@
   }
 
   .server-platform-badge-java {
-    color: var(--chart-4);
-    background: color-mix(in srgb, var(--chart-4) 16%, transparent);
+    color: var(--platform-java);
+    background: color-mix(in srgb, var(--platform-java) 16%, transparent);
   }
 
   .server-platform-badge-bedrock {
-    color: var(--chart-3);
-    background: color-mix(in srgb, var(--chart-3) 16%, transparent);
+    color: var(--platform-bedrock);
+    background: color-mix(in srgb, var(--platform-bedrock) 16%, transparent);
+  }
+
+  .entity-metrics-card-header .server-platform-badge-java,
+  .server-detail-header .server-platform-badge-java {
+    color: var(--platform-java);
+    background: color-mix(in srgb, var(--platform-java) 34%, transparent);
+    border-color: color-mix(in srgb, var(--platform-java) 58%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--platform-java) 22%, transparent);
+  }
+
+  .entity-metrics-card-header .server-platform-badge-bedrock,
+  .server-detail-header .server-platform-badge-bedrock {
+    color: var(--platform-bedrock);
+    background: color-mix(in srgb, var(--platform-bedrock) 34%, transparent);
+    border-color: color-mix(in srgb, var(--platform-bedrock) 58%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--platform-bedrock) 22%, transparent);
   }
 
   .entity-metrics-subtitle {
