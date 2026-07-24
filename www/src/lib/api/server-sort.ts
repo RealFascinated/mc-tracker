@@ -13,8 +13,8 @@ export type ServerSort = {
 };
 
 export const DEFAULT_SERVER_SORT: ServerSort = {
-  field: "players",
-  order: "desc",
+  field: "name",
+  order: "asc",
 };
 
 export const SERVER_SORT_FIELD_OPTIONS: Array<{
