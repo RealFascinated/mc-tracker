@@ -136,11 +136,12 @@ fn admin_server_response_serializes_camel_case() {
         created_at: "2026-06-30T12:00:00Z".into(),
         updated_at: "2026-06-30T12:00:00Z".into(),
         paused: false,
+        players_online: None,
     })
     .unwrap();
     assert_eq!(
         json,
-        r#"{"id":"b8dd1998-c3c8-4248-905c-52c26092baf5","name":"Hypixel","type":"PC","host":"mc.hypixel.net","port":null,"createdAt":"2026-06-30T12:00:00Z","updatedAt":"2026-06-30T12:00:00Z","paused":false}"#
+        r#"{"id":"b8dd1998-c3c8-4248-905c-52c26092baf5","name":"Hypixel","type":"PC","host":"mc.hypixel.net","port":null,"createdAt":"2026-06-30T12:00:00Z","updatedAt":"2026-06-30T12:00:00Z","paused":false,"playersOnline":null}"#
     );
 }
 

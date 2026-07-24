@@ -110,7 +110,7 @@ pub(crate) fn asn_peak_all_time(
         .max_by_key(|peak| peak.players)
 }
 
-pub fn admin_server_response(server: &Server) -> AdminServerResponse {
+pub fn admin_server_response(server: &Server, players_online: Option<u32>) -> AdminServerResponse {
     AdminServerResponse {
         id: server.id.to_string(),
         name: server.name.clone(),
@@ -120,5 +120,6 @@ pub fn admin_server_response(server: &Server) -> AdminServerResponse {
         created_at: server.created_at.to_rfc3339(),
         updated_at: server.updated_at.to_rfc3339(),
         paused: server.paused,
+        players_online,
     }
 }

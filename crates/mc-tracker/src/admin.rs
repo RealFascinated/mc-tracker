@@ -17,7 +17,6 @@ use mc_settings::{SettingKey, SettingsError};
 use uuid::Uuid;
 
 use crate::api::AppState;
-use crate::manager::admin_server_response;
 use crate::settings_api::{to_setting_response, to_settings_list};
 
 pub fn router() -> Router<AppState> {
@@ -73,7 +72,7 @@ async fn create_server(
     {
         Ok(server) => {
             state.manager.append_server(server.clone()).await;
-            (StatusCode::CREATED, Json(admin_server_response(&server))).into_response()
+            (StatusCode::CREATED, Json(state.manager.admin_server_response_for(&server).await)).into_response()
         }
         Err(err) => map_db_error(err),
     }
@@ -81,7 +80,7 @@ async fn create_server(
 
 async fn get_server(State(state): State<AppState>, Path(id): Path<Uuid>) -> Response {
     match servers::get(&state.pool, id).await {
-        Ok(server) => Json(admin_server_response(&server)).into_response(),
+        Ok(server) => Json(state.manager.admin_server_response_for(&server).await).into_response(),
         Err(err) => map_db_error(err),
     }
 }
@@ -135,7 +134,7 @@ async fn update_server(
                 )
                     .into_response();
             }
-            Json(admin_server_response(&server)).into_response()
+            Json(state.manager.admin_server_response_for(&server).await).into_response()
         }
         Err(err) => map_db_error(err),
     }

@@ -24,7 +24,7 @@ use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use mc_api_types::{
-    AdminServersListResponse, AsnDetailResponse, AsnListItemResponse, AsnSearchResponse,
+    AdminServerResponse, AdminServersListResponse, AsnDetailResponse, AsnListItemResponse, AsnSearchResponse,
     AsnsListResponse, AsnsSummaryResponse, IpLookupResponse, PlayersPeakSummary,
     ServerListItemResponse, ServerSearchItemResponse, ServersListResponse, ServersListSortField,
     ServersSearchResponse, ServersSummaryResponse, SortOrder,
@@ -143,9 +143,20 @@ impl ServerManager {
             .read()
             .await
             .iter()
-            .map(|server| admin_server_response(&server.config))
+            .map(|server| admin_server_response(&server.config, server.players_online))
             .collect();
         AdminServersListResponse { servers }
+    }
+
+    pub async fn admin_server_response_for(&self, config: &Server) -> AdminServerResponse {
+        let players_online = self
+            .servers
+            .read()
+            .await
+            .iter()
+            .find(|server| server.config.id == config.id)
+            .and_then(|server| server.players_online);
+        admin_server_response(config, players_online)
     }
 
     pub async fn summary(&self) -> ServerSummary {

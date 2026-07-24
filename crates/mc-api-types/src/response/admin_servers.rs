@@ -18,4 +18,5 @@ pub struct AdminServerResponse {
     pub created_at: String,
     pub updated_at: String,
     pub paused: bool,
+    pub players_online: Option<u32>,
 }

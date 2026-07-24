@@ -9,6 +9,7 @@ export type AdminServer = {
   createdAt: string;
   updatedAt: string;
   paused: boolean;
+  playersOnline: number | null;
 };
 
 export type AdminServersListResponse = {

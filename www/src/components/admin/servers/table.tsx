@@ -36,7 +36,7 @@ import {
 import type { AdminServer } from "@/lib/api/admin/servers";
 import { ServerPlatformBadge } from "@/components/dashboard/server/platform-badge";
 import type { ServerPlatform } from "@/lib/api/platform";
-import { formatMediumDateTime } from "@/lib/formatter";
+import { formatMediumDateTime, formatPlayers } from "@/lib/formatter";
 import { cn } from "cnfast";
 
 type AdminServersTableProps = {
@@ -135,6 +135,29 @@ export function AdminServersTable({
         cell: ({ row }) => (
           <span className="font-mono tabular-nums">
             {row.original.port ?? "Default"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "playersOnline",
+        header: "Players",
+        sortingFn: (rowA, rowB) => {
+          const a = rowA.original.playersOnline;
+          const b = rowB.original.playersOnline;
+          if (a == null && b == null) {
+            return 0;
+          }
+          if (a == null) {
+            return 1;
+          }
+          if (b == null) {
+            return -1;
+          }
+          return a - b;
+        },
+        cell: ({ row }) => (
+          <span className="font-mono tabular-nums">
+            {formatPlayers(row.original.playersOnline)}
           </span>
         ),
       },
