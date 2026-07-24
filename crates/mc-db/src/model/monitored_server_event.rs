@@ -1,6 +1,8 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+use super::Platform;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MonitoredServerEventType {
     Added,
@@ -35,6 +37,7 @@ pub struct MonitoredServerEvent {
     pub id: Uuid,
     pub server_id: Uuid,
     pub server_name: String,
+    pub server_type: Platform,
     pub event_type: MonitoredServerEventType,
     pub occurred_at: DateTime<Utc>,
 }

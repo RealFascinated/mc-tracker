@@ -25,7 +25,11 @@ import { cn } from "cnfast";
 import { useTheme } from "@/hooks/use-theme";
 import { useMetricChartInstance } from "@/hooks/metrics/use-metric-chart-instance";
 import type { ChartEventAnnotation } from "@/lib/metrics/chart-event-annotations";
-import { findNearestChartEventAnnotation } from "@/lib/metrics/chart-event-annotations";
+import {
+  findNearestChartEventAnnotation,
+  getChartEventAnnotationColor,
+  getChartEventAnnotationTooltipPosition,
+} from "@/lib/metrics/chart-event-annotations";
 
 export type MetricChartMode = "line" | "stack";
 
@@ -62,6 +66,7 @@ type MetricChartProps = {
   /** Legend row sits directly above the plot; use tighter top padding. */
   inlineLegend?: boolean;
   eventAnnotations?: ChartEventAnnotation[];
+  showAnnotations?: boolean;
 };
 
 const axisUnitClassName =
@@ -93,12 +98,15 @@ function MetricChart({
   mountRef,
   inlineLegend = false,
   eventAnnotations,
+  showAnnotations = true,
 }: MetricChartProps) {
   const localContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = mountRef ?? localContainerRef;
   const chartRef = useRef<uPlot | null>(null);
   const eventAnnotationsRef = useRef(eventAnnotations);
+  const showAnnotationsRef = useRef(showAnnotations);
   eventAnnotationsRef.current = eventAnnotations;
+  showAnnotationsRef.current = showAnnotations;
   const [hoveredAnnotation, setHoveredAnnotation] = useState<ChartEventAnnotation | null>(null);
   const [annotationTooltip, setAnnotationTooltip] = useState<{ left: number; top: number } | null>(null);
   const seriesFormattersRef = useRef(seriesFormatters);
@@ -263,12 +271,15 @@ function MetricChart({
     setLayoutDensity,
     inlineLegend,
     eventAnnotationsRef,
+    showAnnotationsRef,
   });
 
   const handleAnnotationHover = useCallback(
     (event: ReactMouseEvent<HTMLDivElement>) => {
       const chart = chartRef.current;
-      const annotations = eventAnnotationsRef.current;
+      const annotations = showAnnotationsRef.current
+        ? eventAnnotationsRef.current
+        : undefined;
       if (!chart || !annotations?.length) {
         setHoveredAnnotation(null);
         setAnnotationTooltip(null);
@@ -286,13 +297,11 @@ function MetricChart({
         return;
       }
 
-      const rect = chart.over.getBoundingClientRect();
-      const x = chart.valToPos(nearest.timestamp, "x", true);
       setHoveredAnnotation(nearest);
-      setAnnotationTooltip({
-        left: rect.left + x,
-        top: rect.top + 8,
-      });
+      setAnnotationTooltip(
+        getChartEventAnnotationTooltipPosition(chart, nearest),
+      );
+      chart.setCursor({ left: -10, top: -10 }, false);
     },
     [],
   );
@@ -303,8 +312,12 @@ function MetricChart({
   }, []);
 
   useLayoutEffect(() => {
+    if (!showAnnotations) {
+      setHoveredAnnotation(null);
+      setAnnotationTooltip(null);
+    }
     chartRef.current?.redraw();
-  }, [eventAnnotations]);
+  }, [showAnnotations]);
 
   useLayoutEffect(() => {
     const chart = chartRef.current;
@@ -339,8 +352,16 @@ function MetricChart({
         "relative w-full",
         fill ? "flex min-h-0 flex-1 flex-col" : "h-full",
       )}
-      onMouseMove={eventAnnotations?.length ? handleAnnotationHover : undefined}
-      onMouseLeave={eventAnnotations?.length ? clearAnnotationHover : undefined}
+      onMouseMove={
+        showAnnotations && eventAnnotations?.length
+          ? handleAnnotationHover
+          : undefined
+      }
+      onMouseLeave={
+        showAnnotations && eventAnnotations?.length
+          ? clearAnnotationHover
+          : undefined
+      }
     >
       {reserveUnitLabels && leftUnit ? (
         <span className={axisUnitClassName} style={{ left: unitInsets.left }}>
@@ -368,8 +389,15 @@ function MetricChart({
       />
       {hoveredAnnotation && annotationTooltip ? (
         <div
-          className="pointer-events-none fixed z-50 max-w-[14rem] -translate-x-1/2 rounded-snug border border-border bg-popover px-2 py-1 text-[11px] leading-snug text-popover-foreground shadow-md"
-          style={{ left: annotationTooltip.left, top: annotationTooltip.top }}
+          className="pointer-events-none fixed z-[60] max-w-[16rem] -translate-x-1/2 -translate-y-1/2 rounded-snug border border-border bg-popover px-2.5 py-1.5 text-xs font-medium leading-snug text-popover-foreground shadow-lg"
+          style={{
+            left: annotationTooltip.left,
+            top: annotationTooltip.top,
+            borderLeftWidth: 3,
+            borderLeftColor: getChartEventAnnotationColor(
+              hoveredAnnotation.eventType,
+            ),
+          }}
         >
           {hoveredAnnotation.label}
         </div>

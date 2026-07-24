@@ -46,6 +46,7 @@ async fn record_server_event(
     pool: &mc_db::DbPool,
     server_id: Uuid,
     server_name: &str,
+    server_type: Platform,
     event_type: MonitoredServerEventType,
 ) {
     if let Err(err) = monitored_server_events::insert(
@@ -53,6 +54,7 @@ async fn record_server_event(
         NewMonitoredServerEvent {
             server_id,
             server_name,
+            server_type,
             event_type,
             occurred_at: None,
         },
@@ -104,6 +106,7 @@ async fn create_server(
                 &state.pool,
                 server.id,
                 &server.name,
+                server.platform,
                 MonitoredServerEventType::Added,
             )
             .await;
@@ -171,6 +174,7 @@ async fn update_server(
                         &state.pool,
                         server.id,
                         &server.name,
+                        server.platform,
                         if paused {
                             MonitoredServerEventType::Paused
                         } else {
@@ -206,6 +210,7 @@ async fn delete_server(State(state): State<AppState>, Path(id): Path<Uuid>) -> R
         &state.pool,
         server.id,
         &server.name,
+        server.platform,
         MonitoredServerEventType::Removed,
     )
     .await;

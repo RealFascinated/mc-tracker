@@ -23,6 +23,7 @@ type MetricChartViewProps = {
   variant?: "card" | "sparkline";
   hydrateWhen?: boolean;
   eventAnnotations?: ChartEventAnnotation[];
+  showAnnotations?: boolean;
 };
 
 function MetricChartView({
@@ -38,6 +39,7 @@ function MetricChartView({
   variant = "card",
   hydrateWhen,
   eventAnnotations,
+  showAnnotations,
 }: MetricChartViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const config = useMemo(() => buildChartConfig(def, data), [def, data]);
@@ -102,6 +104,7 @@ function MetricChartView({
         hydrateWhen={hydrateWhen}
         queryWindow={queryWindow}
         eventAnnotations={eventAnnotations}
+        showAnnotations={showAnnotations}
       />
     </div>
   );

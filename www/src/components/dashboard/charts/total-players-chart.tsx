@@ -13,12 +13,14 @@ type TotalPlayersChartProps = {
   hasServers: boolean;
   window: MetricTimeWindow;
   height?: number;
+  showAnnotations?: boolean;
 };
 
 export function TotalPlayersChart({
   hasServers,
   window,
   height = 300,
+  showAnnotations = false,
 }: TotalPlayersChartProps) {
   const timeseriesOptions = useMemo(
     () => toVisibleTimeseriesOptions(totalTimeseriesQueryOptions(window)),
@@ -42,6 +44,7 @@ export function TotalPlayersChart({
       def={totalPlayersChart}
       timeseriesOptions={timeseriesOptions}
       height={height}
+      showAnnotations={showAnnotations}
     />
   );
 }

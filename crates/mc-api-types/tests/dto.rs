@@ -211,12 +211,13 @@ fn monitored_server_event_serializes_camel_case() {
         id: "11111111-1111-1111-1111-111111111111".into(),
         server_id: "22222222-2222-2222-2222-222222222222".into(),
         server_name: "Hypixel".into(),
+        server_type: "PC".into(),
         event_type: "added".into(),
         occurred_at: 1_700_000_000,
     };
     let json = serde_json::to_string(&event).unwrap();
     assert_eq!(
         json,
-        r#"{"id":"11111111-1111-1111-1111-111111111111","serverId":"22222222-2222-2222-2222-222222222222","serverName":"Hypixel","eventType":"added","occurredAt":1700000000}"#
+        r#"{"id":"11111111-1111-1111-1111-111111111111","serverId":"22222222-2222-2222-2222-222222222222","serverName":"Hypixel","type":"PC","eventType":"added","occurredAt":1700000000}"#
     );
 }

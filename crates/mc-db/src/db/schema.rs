@@ -67,6 +67,7 @@ diesel::table! {
         id -> Uuid,
         server_id -> Uuid,
         server_name -> Text,
+        server_type -> Text,
         event_type -> Text,
         occurred_at -> Timestamptz,
     }

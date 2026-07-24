@@ -145,6 +145,7 @@ fn monitored_server_event_response(event: MonitoredServerEvent) -> MonitoredServ
         id: event.id.to_string(),
         server_id: event.server_id.to_string(),
         server_name: event.server_name,
+        server_type: event.server_type.as_str().to_string(),
         event_type: event.event_type.as_str().to_string(),
         occurred_at: event.occurred_at.timestamp(),
     }

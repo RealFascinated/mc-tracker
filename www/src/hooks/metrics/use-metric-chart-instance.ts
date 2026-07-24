@@ -77,6 +77,7 @@ type UseMetricChartInstanceParams = {
   setLayoutDensity: Dispatch<SetStateAction<"normal" | "compact">>;
   inlineLegend?: boolean;
   eventAnnotationsRef?: RefObject<ChartEventAnnotation[] | undefined>;
+  showAnnotationsRef?: RefObject<boolean>;
 };
 
 function useMetricChartInstance({
@@ -121,6 +122,7 @@ function useMetricChartInstance({
   setLayoutDensity,
   inlineLegend = false,
   eventAnnotationsRef,
+  showAnnotationsRef,
 }: UseMetricChartInstanceParams) {
   const chartZoom = useMetricsChartZoom();
   const syncKey = useMetricsChartSyncKey() ?? undefined;
@@ -209,7 +211,10 @@ function useMetricChartInstance({
     if (eventAnnotationsRef) {
       hooks.draw = [
         createEventAnnotationDrawHook(
-          () => eventAnnotationsRef.current ?? [],
+          () =>
+            showAnnotationsRef?.current
+              ? (eventAnnotationsRef.current ?? [])
+              : [],
         ),
       ];
     }
@@ -231,6 +236,12 @@ function useMetricChartInstance({
             return hiddenSeriesRef.current?.has(sourceIndex) ?? false;
           },
           seriesRenders,
+          getEventAnnotations: eventAnnotationsRef
+            ? () =>
+                showAnnotationsRef?.current
+                  ? (eventAnnotationsRef.current ?? [])
+                  : []
+            : undefined,
         }),
       ];
     }

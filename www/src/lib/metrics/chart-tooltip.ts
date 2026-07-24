@@ -3,6 +3,11 @@ import type uPlot from "uplot";
 import type { ResolvedTheme } from "@/lib/theme/theme-context";
 import type { TooltipSortEntry } from "@/lib/metrics/charts/types";
 import type { ChartSeriesRender } from "@/lib/metrics/series";
+import {
+  CHART_EVENT_ANNOTATION_TOOLTIP_SUPPRESS_PX,
+  findNearestChartEventAnnotation,
+  type ChartEventAnnotation,
+} from "@/lib/metrics/chart-event-annotations";
 import { formatPercentValue, formatTooltipTimestamp } from "@/lib/formatter";
 
 const TOOLTIP_PADDING = 8;
@@ -276,6 +281,7 @@ type CreateCursorTooltipHandlerParams = {
   tooltipSort?: (a: TooltipSortEntry, b: TooltipSortEntry) => number;
   isSeriesHidden?: (seriesIndex: number) => boolean;
   seriesRenders?: Array<ChartSeriesRender>;
+  getEventAnnotations?: () => ChartEventAnnotation[];
 };
 
 export function createCursorTooltipHandler({
@@ -290,6 +296,7 @@ export function createCursorTooltipHandler({
   tooltipSort,
   isSeriesHidden,
   seriesRenders,
+  getEventAnnotations,
 }: CreateCursorTooltipHandlerParams) {
   const useColumnLayout =
     tooltipColumnSize != null && labels.length > tooltipColumnSize;
@@ -298,6 +305,23 @@ export function createCursorTooltipHandler({
     applyChartTooltipTheme(tooltip, getTheme(), useColumnLayout);
     const { idx, left } = u.cursor;
     if (idx == null || left == null) {
+      tooltip.style.display = "none";
+      return;
+    }
+
+    const chartRect = u.root.getBoundingClientRect();
+    const plotLeft = chartRect.left + u.bbox.left;
+    const cursorX = plotLeft + left;
+    const eventAnnotations = getEventAnnotations?.() ?? [];
+    if (
+      eventAnnotations.length > 0 &&
+      findNearestChartEventAnnotation(
+        u,
+        eventAnnotations,
+        cursorX,
+        CHART_EVENT_ANNOTATION_TOOLTIP_SUPPRESS_PX,
+      )
+    ) {
       tooltip.style.display = "none";
       return;
     }
@@ -372,11 +396,8 @@ export function createCursorTooltipHandler({
       `<div class="mb-1 font-medium">${formatTooltipTimestamp(timestamp, rangeSeconds)}</div>` +
       rows.join("");
 
-    const chartRect = u.root.getBoundingClientRect();
-    const plotLeft = chartRect.left + u.bbox.left;
     const plotTop = chartRect.top + u.bbox.top;
     const plotCenterX = plotLeft + u.bbox.width / 2;
-    const cursorX = plotLeft + left;
 
     const viewport = getViewportBounds();
 

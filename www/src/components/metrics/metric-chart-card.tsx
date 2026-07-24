@@ -46,6 +46,7 @@ type MetricChartCardProps = {
   tooltipSort?: (a: TooltipSortEntry, b: TooltipSortEntry) => number;
   queryWindow?: MetricsDataWindow;
   eventAnnotations?: ChartEventAnnotation[];
+  showAnnotations?: boolean;
 };
 
 const FULLSCREEN_CHART_MIN_HEIGHT = 480;
@@ -164,6 +165,7 @@ type MetricChartPanelProps = {
   queryWindow?: MetricsDataWindow;
   inlineLegend?: boolean;
   eventAnnotations?: ChartEventAnnotation[];
+  showAnnotations?: boolean;
 };
 
 function MetricChartPanel({
@@ -183,6 +185,7 @@ function MetricChartPanel({
   queryWindow,
   inlineLegend = false,
   eventAnnotations,
+  showAnnotations,
 }: MetricChartPanelProps) {
   const seriesAxisIds = built
     ? built.sourceIndices.map((index) => config.series[index]?.axis ?? "left")
@@ -214,6 +217,7 @@ function MetricChartPanel({
             queryWindow={queryWindow}
             inlineLegend={inlineLegend}
             eventAnnotations={eventAnnotations}
+            showAnnotations={showAnnotations}
           />
         ) : (
           <div
@@ -255,6 +259,7 @@ function MetricChartPanel({
             queryWindow={queryWindow}
             inlineLegend={inlineLegend}
             eventAnnotations={eventAnnotations}
+            showAnnotations={showAnnotations}
           />
         ) : null}
       </div>
@@ -276,6 +281,7 @@ function MetricChartCard({
   tooltipSort,
   queryWindow,
   eventAnnotations,
+  showAnnotations,
 }: MetricChartCardProps) {
   const chartHeight = height ?? 260;
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
@@ -440,6 +446,7 @@ function MetricChartCard({
           queryWindow={queryWindow}
           inlineLegend={inlineLegend}
           eventAnnotations={eventAnnotations}
+          showAnnotations={showAnnotations}
         />
       </div>
 

@@ -27,6 +27,7 @@ type PlayersMetricChartProps = {
     TimeseriesResponse & { events?: MonitoredServerEvent[] }
   >;
   eventAnnotations?: ChartEventAnnotation[];
+  showAnnotations?: boolean;
   enabled?: boolean;
   height?: number;
   loadingMessage?: string;
@@ -36,6 +37,7 @@ export function PlayersMetricChart({
   def,
   timeseriesOptions,
   eventAnnotations: eventAnnotationsProp,
+  showAnnotations = true,
   enabled = true,
   height = 360,
   loadingMessage = "Loading player history…",
@@ -90,6 +92,7 @@ export function PlayersMetricChart({
         className="h-full"
         hydrateWhen={hasBeenVisible}
         eventAnnotations={eventAnnotations}
+        showAnnotations={showAnnotations}
         {...DASHBOARD_CHART_PROPS}
       />
       {showLoading ? (

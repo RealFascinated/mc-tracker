@@ -4,6 +4,11 @@ import type { MonitoredServerEvent } from "@/lib/api/monitored-server-events";
 import { formatMonitoredServerEventLabel } from "@/lib/api/monitored-server-events";
 import { readCssVar } from "@/lib/css-vars";
 
+/** How close the cursor must be to show the annotation label. */
+export const CHART_EVENT_ANNOTATION_HOVER_THRESHOLD_PX = 24;
+/** Wider zone where the series tooltip yields to annotations. */
+export const CHART_EVENT_ANNOTATION_TOOLTIP_SUPPRESS_PX = 32;
+
 export type ChartEventAnnotation = {
   timestamp: number;
   label: string;
@@ -20,7 +25,7 @@ export function serverEventsToAnnotations(
   }));
 }
 
-function annotationColor(
+export function getChartEventAnnotationColor(
   eventType: ChartEventAnnotation["eventType"],
 ): string {
   switch (eventType) {
@@ -35,23 +40,45 @@ function annotationColor(
   }
 }
 
+/** Plot-relative x in CSS pixels (matches uPlot cursor.left). */
+function getAnnotationPlotX(chart: uPlot, timestamp: number): number {
+  return chart.valToPos(timestamp, "x", false);
+}
+
+function clientXToPlotX(chart: uPlot, clientX: number): number {
+  const chartRect = chart.root.getBoundingClientRect();
+  return clientX - chartRect.left - chart.bbox.left;
+}
+
+export function getChartEventAnnotationTooltipPosition(
+  chart: uPlot,
+  annotation: ChartEventAnnotation,
+): { left: number; top: number } {
+  const chartRect = chart.root.getBoundingClientRect();
+  const plotX = getAnnotationPlotX(chart, annotation.timestamp);
+
+  return {
+    left: chartRect.left + chart.bbox.left + plotX,
+    top: chartRect.top + chart.bbox.top + chart.bbox.height / 2,
+  };
+}
+
 export function findNearestChartEventAnnotation(
   chart: uPlot,
   annotations: ChartEventAnnotation[],
   clientX: number,
-  thresholdPx = 8,
+  thresholdPx = CHART_EVENT_ANNOTATION_HOVER_THRESHOLD_PX,
 ): ChartEventAnnotation | null {
   if (annotations.length === 0) {
     return null;
   }
 
-  const rect = chart.over.getBoundingClientRect();
-  const localX = clientX - rect.left;
+  const localX = clientXToPlotX(chart, clientX);
   let nearest: ChartEventAnnotation | null = null;
   let nearestDistance = thresholdPx;
 
   for (const annotation of annotations) {
-    const x = chart.valToPos(annotation.timestamp, "x", true);
+    const x = getAnnotationPlotX(chart, annotation.timestamp);
     const distance = Math.abs(x - localX);
     if (distance <= nearestDistance) {
       nearest = annotation;
@@ -76,16 +103,18 @@ export function createEventAnnotationDrawHook(
     const bottom = top + chart.bbox.height;
 
     ctx.save();
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 4]);
+    ctx.globalAlpha = 0.9;
 
     for (const annotation of annotations) {
-      const x = chart.valToPos(annotation.timestamp, "x", true);
-      if (x < chart.bbox.left || x > chart.bbox.left + chart.bbox.width) {
+      const plotX = getAnnotationPlotX(chart, annotation.timestamp);
+      if (plotX < 0 || plotX > chart.bbox.width) {
         continue;
       }
 
-      const color = annotationColor(annotation.eventType);
+      const x = chart.valToPos(annotation.timestamp, "x", true);
+      const color = getChartEventAnnotationColor(annotation.eventType);
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
 
@@ -96,12 +125,12 @@ export function createEventAnnotationDrawHook(
 
       ctx.setLineDash([]);
       ctx.beginPath();
-      ctx.moveTo(x, top + 6);
-      ctx.lineTo(x - 4, top);
-      ctx.lineTo(x + 4, top);
+      ctx.moveTo(x, top + 8);
+      ctx.lineTo(x - 6, top);
+      ctx.lineTo(x + 6, top);
       ctx.closePath();
       ctx.fill();
-      ctx.setLineDash([4, 4]);
+      ctx.setLineDash([5, 4]);
     }
 
     ctx.restore();

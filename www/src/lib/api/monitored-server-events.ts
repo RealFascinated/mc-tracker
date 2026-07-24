@@ -1,3 +1,5 @@
+import { getServerPlatform, type ServerPlatform } from "@/lib/api/platform";
+
 export type MonitoredServerEventType =
   | "added"
   | "removed"
@@ -8,6 +10,7 @@ export type MonitoredServerEvent = {
   id: string;
   serverId: string;
   serverName: string;
+  type: ServerPlatform;
   eventType: MonitoredServerEventType;
   occurredAt: number;
 };
@@ -20,7 +23,8 @@ const EVENT_VERBS: Record<MonitoredServerEventType, string> = {
 };
 
 export function formatMonitoredServerEventLabel(
-  event: Pick<MonitoredServerEvent, "eventType" | "serverName">,
+  event: Pick<MonitoredServerEvent, "eventType" | "serverName" | "type">,
 ): string {
-  return `${EVENT_VERBS[event.eventType]}: ${event.serverName}`;
+  const platform = getServerPlatform(event.type).shortLabel;
+  return `${EVENT_VERBS[event.eventType]}: ${event.serverName} (${platform})`;
 }
