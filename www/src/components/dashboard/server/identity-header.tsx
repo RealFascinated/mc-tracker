@@ -64,19 +64,26 @@ export function ServerIdentityHeader({
             </div>
             <div className="entity-metrics-subtitle">
               {layout === "card" ? (
-                <ServerHostCopy host={server.host} port={server.port} />
+                <ServerHostCopy
+                  host={server.host}
+                  port={server.port}
+                  className="entity-metrics-subtitle-host"
+                />
               ) : (
-                address
+                <span className="entity-metrics-subtitle-host">{address}</span>
               )}
               {asnName ? (
                 <>
-                  {" · "}
+                  <span className="entity-metrics-subtitle-sep" aria-hidden="true">
+                    ·
+                  </span>
                   {server.asn ? (
                     layout === "card" ? (
                       <AsnHoverPreview
                         asn={server.asn}
                         asnOrg={server.asnOrg}
                         label={asnName}
+                        className="entity-metrics-subtitle-asn"
                       />
                     ) : (
                       <Link
@@ -86,13 +93,16 @@ export function ServerIdentityHeader({
                           server.asnOrg,
                           timeWindowSearch,
                         )}
-                        className="link-underline-animate link-underline-animate--primary hover:text-monitor dark:hover:text-warning"
+                        className="link-underline-animate link-underline-animate--primary entity-metrics-subtitle-asn hover:text-monitor dark:hover:text-warning"
+                        title={asnName}
                       >
                         {asnName}
                       </Link>
                     )
                   ) : (
-                    asnName
+                    <span className="entity-metrics-subtitle-asn" title={asnName}>
+                      {asnName}
+                    </span>
                   )}
                 </>
               ) : null}

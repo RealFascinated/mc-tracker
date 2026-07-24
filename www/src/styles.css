@@ -1160,7 +1160,23 @@
   }
 
   .entity-metrics-subtitle {
-    @apply mt-0.5 truncate font-mono text-[11px] text-muted-foreground;
+    @apply mt-0.5 flex min-w-0 items-center gap-1 font-mono text-[11px] text-muted-foreground;
+  }
+
+  .entity-metrics-subtitle-host {
+    @apply min-w-0 max-w-[45%] shrink truncate;
+  }
+
+  .entity-metrics-subtitle .server-host-copy.entity-metrics-subtitle-host {
+    @apply max-w-[45%];
+  }
+
+  .entity-metrics-subtitle-sep {
+    @apply shrink-0;
+  }
+
+  .entity-metrics-subtitle-asn {
+    @apply min-w-0 flex-1 truncate;
   }
 
   .server-detail-card {
