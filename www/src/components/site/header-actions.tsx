@@ -6,7 +6,6 @@ import {
   LogOut,
   Shield,
   User,
-  UserPlus,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -135,15 +134,15 @@ function SiteHeaderActions({ iconOnly = false }: { iconOnly?: boolean }) {
             asChild
             className="site-header-nav-button"
           >
-            <Link to="/signup" aria-label="Sign up">
-              <UserPlus
+            <Link to="/login" aria-label="Sign in">
+              <LogIn
                 className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
                 aria-hidden
               />
               <span
                 className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}
               >
-                Sign up
+                Sign in
               </span>
             </Link>
           </Button>
