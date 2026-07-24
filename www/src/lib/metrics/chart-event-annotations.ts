@@ -8,11 +8,18 @@ import { readCssVar } from "@/lib/css-vars";
 export const CHART_EVENT_ANNOTATION_HOVER_THRESHOLD_PX = 24;
 /** Wider zone where the series tooltip yields to annotations. */
 export const CHART_EVENT_ANNOTATION_TOOLTIP_SUPPRESS_PX = 32;
+/** Annotations closer than this are merged into one tooltip. */
+export const CHART_EVENT_ANNOTATION_MERGE_THRESHOLD_PX = 28;
 
 export type ChartEventAnnotation = {
   timestamp: number;
   label: string;
   eventType: MonitoredServerEvent["eventType"];
+};
+
+export type ChartEventAnnotationHover = {
+  annotations: ChartEventAnnotation[];
+  position: { left: number; top: number };
 };
 
 export function serverEventsToAnnotations(
@@ -50,16 +57,101 @@ function clientXToPlotX(chart: uPlot, clientX: number): number {
   return clientX - chartRect.left - chart.bbox.left;
 }
 
-export function getChartEventAnnotationTooltipPosition(
+function chartEventAnnotationViewportPosition(
   chart: uPlot,
-  annotation: ChartEventAnnotation,
+  plotX: number,
 ): { left: number; top: number } {
   const chartRect = chart.root.getBoundingClientRect();
-  const plotX = getAnnotationPlotX(chart, annotation.timestamp);
 
   return {
     left: chartRect.left + chart.bbox.left + plotX,
     top: chartRect.top + chart.bbox.top + chart.bbox.height / 2,
+  };
+}
+
+function clusterNearbyChartEventAnnotations(
+  chart: uPlot,
+  annotations: ChartEventAnnotation[],
+  seed: ChartEventAnnotation,
+  mergeThresholdPx: number,
+): ChartEventAnnotation[] {
+  const plotXByAnnotation = new Map(
+    annotations.map((annotation) => [
+      annotation,
+      getAnnotationPlotX(chart, annotation.timestamp),
+    ]),
+  );
+  const clustered = new Set<ChartEventAnnotation>([seed]);
+  let expanded = true;
+
+  while (expanded) {
+    expanded = false;
+    for (const annotation of annotations) {
+      if (clustered.has(annotation)) {
+        continue;
+      }
+
+      const plotX = plotXByAnnotation.get(annotation)!;
+      for (const member of clustered) {
+        const memberPlotX = plotXByAnnotation.get(member)!;
+        if (Math.abs(plotX - memberPlotX) <= mergeThresholdPx) {
+          clustered.add(annotation);
+          expanded = true;
+          break;
+        }
+      }
+    }
+  }
+
+  return [...clustered].sort((a, b) => a.timestamp - b.timestamp);
+}
+
+/** Nearest annotation within hover range, plus any others close enough to merge. */
+export function findHoveredChartEventAnnotations(
+  chart: uPlot,
+  annotations: ChartEventAnnotation[],
+  clientX: number,
+  hoverThresholdPx = CHART_EVENT_ANNOTATION_HOVER_THRESHOLD_PX,
+  mergeThresholdPx = CHART_EVENT_ANNOTATION_MERGE_THRESHOLD_PX,
+): ChartEventAnnotationHover | null {
+  if (annotations.length === 0) {
+    return null;
+  }
+
+  const localX = clientXToPlotX(chart, clientX);
+  let nearest: ChartEventAnnotation | null = null;
+  let nearestDistance = hoverThresholdPx;
+
+  for (const annotation of annotations) {
+    const distance = Math.abs(
+      getAnnotationPlotX(chart, annotation.timestamp) - localX,
+    );
+    if (distance <= nearestDistance) {
+      nearest = annotation;
+      nearestDistance = distance;
+    }
+  }
+
+  if (!nearest) {
+    return null;
+  }
+
+  const cluster = clusterNearbyChartEventAnnotations(
+    chart,
+    annotations,
+    nearest,
+    mergeThresholdPx,
+  );
+  const averagePlotX =
+    cluster.reduce(
+      (sum, annotation) =>
+        sum + getAnnotationPlotX(chart, annotation.timestamp),
+      0,
+    ) / cluster.length;
+
+  return {
+    annotations: cluster,
+    position: chartEventAnnotationViewportPosition(chart, averagePlotX),
   };
 }
 
@@ -69,24 +161,10 @@ export function findNearestChartEventAnnotation(
   clientX: number,
   thresholdPx = CHART_EVENT_ANNOTATION_HOVER_THRESHOLD_PX,
 ): ChartEventAnnotation | null {
-  if (annotations.length === 0) {
-    return null;
-  }
-
-  const localX = clientXToPlotX(chart, clientX);
-  let nearest: ChartEventAnnotation | null = null;
-  let nearestDistance = thresholdPx;
-
-  for (const annotation of annotations) {
-    const x = getAnnotationPlotX(chart, annotation.timestamp);
-    const distance = Math.abs(x - localX);
-    if (distance <= nearestDistance) {
-      nearest = annotation;
-      nearestDistance = distance;
-    }
-  }
-
-  return nearest;
+  return (
+    findHoveredChartEventAnnotations(chart, annotations, clientX, thresholdPx)
+      ?.annotations[0] ?? null
+  );
 }
 
 export function createEventAnnotationDrawHook(

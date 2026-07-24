@@ -26,9 +26,9 @@ import { useTheme } from "@/hooks/use-theme";
 import { useMetricChartInstance } from "@/hooks/metrics/use-metric-chart-instance";
 import type { ChartEventAnnotation } from "@/lib/metrics/chart-event-annotations";
 import {
-  findNearestChartEventAnnotation,
+  findHoveredChartEventAnnotations,
   getChartEventAnnotationColor,
-  getChartEventAnnotationTooltipPosition,
+  type ChartEventAnnotationHover,
 } from "@/lib/metrics/chart-event-annotations";
 
 export type MetricChartMode = "line" | "stack";
@@ -103,12 +103,13 @@ function MetricChart({
   const localContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = mountRef ?? localContainerRef;
   const chartRef = useRef<uPlot | null>(null);
+  const annotationTooltipRef = useRef<HTMLDivElement>(null);
   const eventAnnotationsRef = useRef(eventAnnotations);
   const showAnnotationsRef = useRef(showAnnotations);
   eventAnnotationsRef.current = eventAnnotations;
   showAnnotationsRef.current = showAnnotations;
-  const [hoveredAnnotation, setHoveredAnnotation] = useState<ChartEventAnnotation | null>(null);
-  const [annotationTooltip, setAnnotationTooltip] = useState<{ left: number; top: number } | null>(null);
+  const [annotationHover, setAnnotationHover] =
+    useState<ChartEventAnnotationHover | null>(null);
   const seriesFormattersRef = useRef(seriesFormatters);
   const dataRef = useRef(data);
   const hiddenSeriesRef = useRef(hiddenSeries);
@@ -281,42 +282,51 @@ function MetricChart({
         ? eventAnnotationsRef.current
         : undefined;
       if (!chart || !annotations?.length) {
-        setHoveredAnnotation(null);
-        setAnnotationTooltip(null);
+        setAnnotationHover(null);
         return;
       }
 
-      const nearest = findNearestChartEventAnnotation(
+      const hover = findHoveredChartEventAnnotations(
         chart,
         annotations,
         event.clientX,
       );
-      if (!nearest) {
-        setHoveredAnnotation(null);
-        setAnnotationTooltip(null);
+      if (!hover) {
+        setAnnotationHover(null);
         return;
       }
 
-      setHoveredAnnotation(nearest);
-      setAnnotationTooltip(
-        getChartEventAnnotationTooltipPosition(chart, nearest),
-      );
+      setAnnotationHover(hover);
       chart.setCursor({ left: -10, top: -10 }, false);
     },
     [],
   );
 
-  const clearAnnotationHover = useCallback(() => {
-    setHoveredAnnotation(null);
-    setAnnotationTooltip(null);
-  }, []);
+  const handleChartMouseLeave = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      const next = event.relatedTarget;
+      if (
+        next instanceof Node &&
+        annotationTooltipRef.current?.contains(next)
+      ) {
+        return;
+      }
+      setAnnotationHover(null);
+    },
+    [],
+  );
 
   useLayoutEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
     if (!showAnnotations) {
-      setHoveredAnnotation(null);
-      setAnnotationTooltip(null);
+      setAnnotationHover(null);
+      chart.setCursor({ left: -10, top: -10 }, false);
     }
-    chartRef.current?.redraw();
+
+    // Repaint only — default redraw() rebuilds x scale/paths and can blank series.
+    chart.redraw(false);
   }, [showAnnotations]);
 
   useLayoutEffect(() => {
@@ -359,7 +369,7 @@ function MetricChart({
       }
       onMouseLeave={
         showAnnotations && eventAnnotations?.length
-          ? clearAnnotationHover
+          ? handleChartMouseLeave
           : undefined
       }
     >
@@ -387,19 +397,34 @@ function MetricChart({
         ref={containerRef}
         className={cn("w-full", fill ? "min-h-0 flex-1" : "h-full")}
       />
-      {hoveredAnnotation && annotationTooltip ? (
+      {annotationHover ? (
         <div
-          className="pointer-events-none fixed z-[60] max-w-[16rem] -translate-x-1/2 -translate-y-1/2 rounded-snug border border-border bg-popover px-2.5 py-1.5 text-xs font-medium leading-snug text-popover-foreground shadow-lg"
+          ref={annotationTooltipRef}
+          className={cn(
+            "fixed z-[60] max-h-48 max-w-[18rem] -translate-x-1/2 -translate-y-1/2 overscroll-contain overflow-y-auto rounded-snug border border-border bg-popover px-2.5 py-1.5 text-xs font-medium leading-snug text-popover-foreground shadow-lg",
+            annotationHover.annotations.length > 1 && "pointer-events-auto",
+          )}
           style={{
-            left: annotationTooltip.left,
-            top: annotationTooltip.top,
-            borderLeftWidth: 3,
-            borderLeftColor: getChartEventAnnotationColor(
-              hoveredAnnotation.eventType,
-            ),
+            left: annotationHover.position.left,
+            top: annotationHover.position.top,
           }}
+          onMouseLeave={() => setAnnotationHover(null)}
         >
-          {hoveredAnnotation.label}
+          <ul className="flex flex-col gap-1">
+            {annotationHover.annotations.map((annotation, index) => (
+              <li
+                key={`${annotation.timestamp}-${annotation.label}-${index}`}
+                className="border-l-[3px] pl-2"
+                style={{
+                  borderLeftColor: getChartEventAnnotationColor(
+                    annotation.eventType,
+                  ),
+                }}
+              >
+                {annotation.label}
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
     </div>
