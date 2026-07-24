@@ -1164,11 +1164,11 @@
   }
 
   .entity-metrics-subtitle-host {
-    @apply min-w-0 max-w-[45%] shrink truncate;
+    @apply shrink-0 whitespace-nowrap;
   }
 
   .entity-metrics-subtitle .server-host-copy.entity-metrics-subtitle-host {
-    @apply max-w-[45%];
+    @apply max-w-none truncate overflow-visible;
   }
 
   .entity-metrics-subtitle-sep {
