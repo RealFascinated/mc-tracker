@@ -122,6 +122,42 @@ async fn cors_allows_vite_origin_in_development() {
 }
 
 #[tokio::test]
+async fn cors_allows_put_for_pinned_server_reorder() {
+    let (_postgres, app, _manager, _pool) = test_app().await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("OPTIONS")
+                .uri("/pinned-servers/order")
+                .header("origin", "http://localhost:5173")
+                .header("access-control-request-method", "PUT")
+                .header("access-control-request-headers", "content-type")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("access-control-allow-origin")
+            .unwrap(),
+        "http://localhost:5173"
+    );
+    assert!(
+        response
+            .headers()
+            .get("access-control-allow-methods")
+            .and_then(|value| value.to_str().ok())
+            .is_some_and(|methods| methods.split(',').any(|method| method.trim() == "PUT")),
+        "expected PUT in access-control-allow-methods, got {:?}",
+        response.headers().get("access-control-allow-methods")
+    );
+}
+
+#[tokio::test]
 async fn cors_blocks_unknown_origin() {
     let (_postgres, app, _manager, _pool) = test_app().await;
 

@@ -66,9 +66,8 @@ export function TrackerChatWidget() {
   }, []);
 
   const closeChat = useCallback(() => {
-    cancelStream();
     setOpen(false);
-  }, [cancelStream]);
+  }, []);
 
   useEffect(() => {
     if (isResizing) {
@@ -76,7 +75,7 @@ export function TrackerChatWidget() {
     }
   }, [isResizing]);
 
-  const panelOpen = open && isAuthenticated;
+  const panelOpen = open;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -85,14 +84,14 @@ export function TrackerChatWidget() {
   }, [isAuthenticated, cancelStream]);
 
   useEffect(() => {
-    if (!panelOpen) {
+    if (!open || !isAuthenticated) {
       return;
     }
     const id = requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
     return () => cancelAnimationFrame(id);
-  }, [panelOpen, inputRef]);
+  }, [open, isAuthenticated, inputRef]);
 
   if (isLoading) {
     return null;
@@ -231,8 +230,11 @@ export function TrackerChatWidget() {
         className={cn(
           "fixed right-4 bottom-4 z-50 size-12 rounded-full shadow-lg ring-2 ring-background transition-all duration-200",
           panelOpen && "pointer-events-none scale-0 opacity-0",
+          isStreaming && !panelOpen && "animate-pulse",
         )}
-        aria-label="Open chat"
+        aria-label={
+          isStreaming && !panelOpen ? "Open chat (responding…)" : "Open chat"
+        }
         aria-hidden={panelOpen}
         onClick={openChat}
       >

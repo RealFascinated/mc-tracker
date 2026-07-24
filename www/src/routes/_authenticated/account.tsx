@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { AccountChatQuotaSection } from "@/components/account/chat-quota-section";
+import { AccountPinnedServersSection } from "@/components/account/pinned-servers-section";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +78,8 @@ function AccountPage() {
           </div>
         </section>
 
+        <AccountChatQuotaSection />
+        <AccountPinnedServersSection />
         <section className="app-shell-section">
           <div className="app-shell-section-header">
             <h2 className="app-shell-section-title">Change password</h2>

@@ -1144,7 +1144,9 @@
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--platform-bedrock) 22%, transparent);
   }
   .server-host-copy {
-    @apply inline max-w-full cursor-pointer truncate border-0 bg-transparent p-0 font-inherit text-inherit transition-colors duration-150;
+    @apply inline max-w-full cursor-pointer truncate border-0 bg-transparent p-0 transition-colors duration-150;
+    font: inherit;
+    color: inherit;
   }
 
   .server-host-copy:hover,
