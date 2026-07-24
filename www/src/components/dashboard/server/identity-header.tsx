@@ -6,6 +6,7 @@ import { useMetricTimeWindowLinkSearch } from "@/hooks/metrics/use-metric-time-w
 import { ServerFavicon } from "@/components/dashboard/server/favicon";
 import type { ServerListItem } from "@/lib/api/servers";
 import { formatServerHost } from "@/lib/api/servers";
+import { ServerHostCopy } from "@/components/dashboard/server/host-copy";
 import { ServerPlatformBadge } from "@/components/dashboard/server/platform-badge";
 import { asnDetailSearch, asnLabelOptional } from "@/lib/api/asns";
 import { cn } from "cnfast";
@@ -61,7 +62,11 @@ export function ServerIdentityHeader({
               <ServerPlatformBadge platform={server.type} />
             </div>
             <div className="entity-metrics-subtitle">
-              {address}
+              {layout === "card" ? (
+                <ServerHostCopy host={server.host} port={server.port} />
+              ) : (
+                address
+              )}
               {asnName ? (
                 <>
                   {" · "}

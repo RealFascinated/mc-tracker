@@ -1143,6 +1143,14 @@
     border-color: color-mix(in srgb, var(--platform-bedrock) 58%, transparent);
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--platform-bedrock) 22%, transparent);
   }
+  .server-host-copy {
+    @apply inline max-w-full cursor-pointer truncate border-0 bg-transparent p-0 font-inherit text-inherit transition-colors duration-150;
+  }
+
+  .server-host-copy:hover,
+  .server-host-copy:focus-visible {
+    @apply text-monitor outline-none dark:text-warning;
+  }
 
   .entity-metrics-subtitle {
     @apply mt-0.5 truncate font-mono text-[11px] text-muted-foreground;
