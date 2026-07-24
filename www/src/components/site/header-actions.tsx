@@ -127,44 +127,24 @@ function SiteHeaderActions({ iconOnly = false }: { iconOnly?: boolean }) {
       {isAuthenticated ? (
         <SiteHeaderUserMenu iconOnly={iconOnly} />
       ) : (
-        <>
-          <Button
-            variant="outline"
-            size="default"
-            asChild
-            className="site-header-nav-button"
-          >
-            <Link to="/login" aria-label="Sign in">
-              <LogIn
-                className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
-                aria-hidden
-              />
-              <span
-                className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}
-              >
-                Sign in
-              </span>
-            </Link>
-          </Button>
-          <Button
-            variant="outline"
-            size="default"
-            asChild
-            className="site-header-nav-button"
-          >
-            <Link to="/login" aria-label="Sign in">
-              <LogIn
-                className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
-                aria-hidden
-              />
-              <span
-                className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}
-              >
-                Sign in
-              </span>
-            </Link>
-          </Button>
-        </>
+        <Button
+          variant="outline"
+          size="default"
+          asChild
+          className="site-header-nav-button"
+        >
+          <Link to="/login" aria-label="Sign in">
+            <LogIn
+              className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
+              aria-hidden
+            />
+            <span
+              className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}
+            >
+              Sign in
+            </span>
+          </Link>
+        </Button>
       )}
     </>
   );

@@ -24,8 +24,8 @@ function activeDashboardHeaderRoute(
   return match?.to ?? "";
 }
 
-function showsSiteHeaderPageNav(pathname: string): boolean {
-  return isDashboardHeaderRoute(pathname) || pathname.startsWith("/admin");
+function showsSiteHeaderPageNav(_pathname: string): boolean {
+  return true;
 }
 
 function showsHeaderSearch(pathname: string): boolean {
