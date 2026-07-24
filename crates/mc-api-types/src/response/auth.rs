@@ -11,7 +11,9 @@ pub struct ChatQuota {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MeResponse {
-    pub username: String,
+    pub email: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
     pub role: String,
     pub flags: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -21,6 +23,8 @@ pub struct MeResponse {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LoginResponse {
-    pub username: String,
+    pub email: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
     pub role: String,
 }

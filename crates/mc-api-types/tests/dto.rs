@@ -1,4 +1,4 @@
-use mc_api_types::request::auth::{ChangePasswordRequest, LoginRequest};
+use mc_api_types::request::auth::{ChangePasswordRequest, DeleteAccountRequest, LoginRequest};
 use mc_api_types::request::servers::{
     CreateServerRequest, ServersListQuery, ServersListSortField, SortOrder, UpdateServerRequest,
 };
@@ -66,6 +66,13 @@ fn login_request_deserializes_camel_case() {
 }
 
 #[test]
+fn delete_account_request_deserializes_camel_case() {
+    let req: DeleteAccountRequest =
+        serde_json::from_str(r#"{"password":"secret"}"#).unwrap();
+    assert_eq!(req.password, "secret");
+}
+
+#[test]
 fn change_password_request_deserializes_camel_case() {
     let req: ChangePasswordRequest =
         serde_json::from_str(r#"{"currentPassword":"old","newPassword":"new"}"#).unwrap();
@@ -76,13 +83,17 @@ fn change_password_request_deserializes_camel_case() {
 #[test]
 fn me_response_serializes_camel_case() {
     let json = serde_json::to_string(&MeResponse {
-        username: "admin".into(),
+        email: "admin@example.com".into(),
+        display_name: Some("Admin".into()),
         role: "admin".into(),
         flags: 0,
         chat_quota: None,
     })
     .unwrap();
-    assert_eq!(json, r#"{"username":"admin","role":"admin","flags":0}"#);
+    assert_eq!(
+        json,
+        r#"{"email":"admin@example.com","displayName":"Admin","role":"admin","flags":0}"#
+    );
 }
 
 #[test]
@@ -136,11 +147,12 @@ fn admin_server_response_serializes_camel_case() {
 #[test]
 fn login_response_serializes_camel_case() {
     let json = serde_json::to_string(&LoginResponse {
-        username: "user".into(),
+        email: "user@example.com".into(),
+        display_name: None,
         role: "user".into(),
     })
     .unwrap();
-    assert_eq!(json, r#"{"username":"user","role":"user"}"#);
+    assert_eq!(json, r#"{"email":"user@example.com","role":"user"}"#);
 }
 
 #[test]

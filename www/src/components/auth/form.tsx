@@ -9,7 +9,8 @@ import { errorMessage } from "@/lib/api/error-message";
 import { login } from "@/lib/auth";
 import { useAuth } from "@/lib/auth/context";
 import { adminLandingPath } from "@/lib/auth/require-admin";
-import { validateCredentials } from "@/lib/auth/validation";
+import { validateLoginCredentials } from "@/lib/auth/validation";
+import { userDisplayName } from "@/lib/auth/user-display";
 import { canManageServers } from "@/lib/user-flags";
 
 function AuthForm() {
@@ -21,7 +22,7 @@ function AuthForm() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const parsed = validateCredentials({ username, password });
+    const parsed = validateLoginCredentials({ username, password });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Invalid credentials");
       return;
@@ -35,7 +36,7 @@ function AuthForm() {
         return;
       }
       setUser(result.user);
-      toast.success(`Signed in as ${result.user.username}`);
+      toast.success(`Signed in as ${userDisplayName(result.user)}`);
       await navigate({
         to: canManageServers(result.user.flags)
           ? adminLandingPath(result.user)
@@ -51,7 +52,7 @@ function AuthForm() {
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       <div className="grid gap-2">
-        <Label htmlFor="username">Username</Label>
+        <Label htmlFor="username">Username or email</Label>
         <Input
           id="username"
           name="username"

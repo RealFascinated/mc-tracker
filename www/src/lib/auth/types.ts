@@ -7,7 +7,8 @@ export type ChatQuota = {
 };
 
 export type User = {
-  username: string;
+  email: string;
+  displayName: string | null;
   role: UserRole;
   flags: number;
   chatQuota?: ChatQuota | null;
@@ -18,6 +19,12 @@ export type Credentials = {
   password: string;
 };
 
-export type LoginResponse = User;
+export type SignupCredentials = {
+  email: string;
+  password: string;
+  displayName?: string;
+};
+
+export type LoginResponse = Pick<User, "email" | "displayName" | "role">;
 
 export type MeResponse = User;

@@ -17,6 +17,21 @@ pub struct ChangePasswordRequest {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SignupRequest {
-    pub username: String,
+    pub email: String,
+    pub password: String,
+    #[serde(default)]
+    pub display_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateProfileRequest {
+    pub email: String,
+    pub display_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteAccountRequest {
     pub password: String,
 }

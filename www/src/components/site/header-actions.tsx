@@ -22,6 +22,7 @@ import {
 import { logout } from "@/lib/auth";
 import { useAuth } from "@/lib/auth/context";
 import { adminLandingPath } from "@/lib/auth/require-admin";
+import { userDisplayName } from "@/lib/auth/user-display";
 import { canManageServers } from "@/lib/user-flags";
 import { cn } from "cnfast";
 
@@ -67,7 +68,7 @@ function SiteHeaderUserMenu({ iconOnly = false }: SiteHeaderUserMenuProps) {
               iconOnly ? "hidden lg:inline" : "hidden sm:inline",
             )}
           >
-            {user.username}
+            {userDisplayName(user)}
           </span>
           <ChevronDown
             className={cn(
@@ -82,7 +83,7 @@ function SiteHeaderUserMenu({ iconOnly = false }: SiteHeaderUserMenuProps) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col gap-0.5">
             <span className="truncate font-medium text-foreground">
-              {user.username}
+              {userDisplayName(user)}
             </span>
             <span className="text-xs capitalize text-muted-foreground">
               {user.role}

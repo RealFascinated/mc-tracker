@@ -81,7 +81,8 @@ function AdminUsersPage() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Username</TableHead>
+            <TableHead>Email</TableHead>
+              <TableHead>Display name</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Created</TableHead>
             <TableHead className="w-[1%]">Flags</TableHead>
@@ -90,7 +91,8 @@ function AdminUsersPage() {
         <TableBody>
           {data.users.map((user) => (
             <TableRow key={user.id}>
-              <TableCell className="font-medium">{user.username}</TableCell>
+              <TableCell className="font-medium">{user.email}</TableCell>
+              <TableCell>{user.displayName ?? "—"}</TableCell>
               <TableCell className="capitalize">{user.role}</TableCell>
               <TableCell>{formatMediumDateTime(user.createdAt)}</TableCell>
               <TableCell>
@@ -158,7 +160,7 @@ function EditFlagsDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {user ? `Flags for ${user.username}` : "User flags"}
+            {user ? `Flags for ${user.displayName ?? user.email}` : "User flags"}
           </DialogTitle>
           <DialogDescription>
             Toggle flags assigned to this account.

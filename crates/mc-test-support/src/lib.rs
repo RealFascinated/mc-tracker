@@ -204,7 +204,7 @@ pub async fn login_admin(app: &axum::Router) -> String {
 }
 
 pub async fn create_user(pool: &DbPool, username: &str, password: &str, role: mc_db::UserRole) {
-    mc_db::db::repos::users::create(pool, username, password, role)
+    mc_db::db::repos::users::create(pool, username, password, role, None)
         .await
         .unwrap();
 }

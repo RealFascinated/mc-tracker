@@ -216,7 +216,8 @@ async fn patch_user_flags(
 fn admin_user_response(user: &User) -> mc_api_types::AdminUser {
     mc_api_types::AdminUser {
         id: user.id.to_string(),
-        username: user.username.clone(),
+        email: user.username.clone(),
+        display_name: user.display_name.clone(),
         role: user.role.as_str().to_string(),
         flags: user.flags.to_db(),
         created_at: user.created_at.to_rfc3339(),

@@ -32,7 +32,7 @@ async fn login_me_logout_flow() {
             .unwrap(),
     )
     .unwrap();
-    assert_eq!(body["username"], "admin");
+    assert_eq!(body["email"], "admin");
     assert_eq!(body["role"], "admin");
 
     let logout = app
@@ -256,3 +256,104 @@ async fn revoked_session_rejected_after_logout() {
         .unwrap();
     assert_eq!(me.status(), StatusCode::UNAUTHORIZED);
 }
+
+#[tokio::test]
+async fn delete_account_removes_user_and_clears_session() {
+    let (_postgres, database_url) = common::start_postgres().await;
+    let pool = common::setup_pool(&database_url).await;
+    common::bootstrap_admin(&pool).await;
+    common::create_user(&pool, "user@example.com", "userpass", mc_db::UserRole::User).await;
+
+    let manager = common::manager_from_pool(&pool, "development").await;
+    let app = common::build_app(pool.clone(), manager).await;
+    let cookie = common::login_as(&app, "user@example.com", "userpass").await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri("/auth/account")
+                .header("cookie", &cookie)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"password":"userpass"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+
+    let me = app
+        .oneshot(
+            Request::builder()
+                .uri("/auth/me")
+                .header("cookie", &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(me.status(), StatusCode::UNAUTHORIZED);
+
+    let err = mc_db::db::repos::users::get_by_username(&pool, "user@example.com")
+        .await
+        .unwrap_err();
+    assert!(matches!(err, mc_db::DbError::NotFound(_)));
+}
+
+#[tokio::test]
+async fn delete_account_rejects_wrong_password() {
+    let (_postgres, database_url) = common::start_postgres().await;
+    let pool = common::setup_pool(&database_url).await;
+    common::bootstrap_admin(&pool).await;
+    common::create_user(&pool, "user@example.com", "userpass", mc_db::UserRole::User).await;
+
+    let manager = common::manager_from_pool(&pool, "development").await;
+    let app = common::build_app(pool, manager).await;
+    let cookie = common::login_as(&app, "user@example.com", "userpass").await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri("/auth/account")
+                .header("cookie", &cookie)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"password":"wrong"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn delete_account_forbids_only_admin() {
+    let (_postgres, database_url) = common::start_postgres().await;
+    let pool = common::setup_pool(&database_url).await;
+    common::bootstrap_admin(&pool).await;
+
+    let manager = common::manager_from_pool(&pool, "development").await;
+    let app = common::build_app(pool.clone(), manager).await;
+    let cookie = common::login_admin(&app).await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri("/auth/account")
+                .header("cookie", &cookie)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"password":"adminpass"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+
+    let admin = mc_db::db::repos::users::get_by_username(&pool, "admin")
+        .await
+        .unwrap();
+    assert_eq!(admin.username, "admin");
+}
+

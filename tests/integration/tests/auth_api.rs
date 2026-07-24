@@ -100,7 +100,7 @@ async fn signup_disabled_in_production_returns_forbidden() {
     let manager = manager_with_vm_url_env(&pool, "http://127.0.0.1:9", "production").await;
     let app = production_app(pool, manager).await;
 
-    let body = serde_json::json!({ "username": "newbie", "password": "secret" });
+    let body = serde_json::json!({ "email": "newbie@example.com", "password": "secret", "displayName": "Newbie" });
     let response = app
         .oneshot(
             Request::builder()
@@ -124,7 +124,7 @@ async fn signup_allowed_in_development_even_when_disabled_in_db() {
     let manager = manager_with_vm_url_env(&pool, "http://127.0.0.1:9", "development").await;
     let app = build_app_with_env(pool, manager, "development").await;
 
-    let body = serde_json::json!({ "username": "devuser", "password": "secret" });
+    let body = serde_json::json!({ "email": "devuser@example.com", "password": "secret" });
     let response = app
         .oneshot(
             Request::builder()
@@ -149,7 +149,7 @@ async fn signup_succeeds_when_enabled_in_production() {
     enable_sign_up(&pool, &manager).await;
     let app = production_app(pool, manager).await;
 
-    let body = serde_json::json!({ "username": "produser", "password": "secret" });
+    let body = serde_json::json!({ "email": "produser@example.com", "password": "secret" });
     let response = app
         .oneshot(
             Request::builder()
@@ -174,7 +174,7 @@ async fn signup_creates_user_and_session() {
     enable_sign_up(&pool, &manager).await;
     let app = production_app(pool, manager).await;
 
-    let body = serde_json::json!({ "username": "newbie", "password": "secret" });
+    let body = serde_json::json!({ "email": "newbie@example.com", "password": "secret", "displayName": "Newbie" });
     let response = app
         .clone()
         .oneshot(
@@ -206,7 +206,7 @@ async fn signup_creates_user_and_session() {
             .unwrap(),
     )
     .unwrap();
-    assert_eq!(login_body["username"], "newbie");
+    assert_eq!(login_body["email"], "newbie@example.com");
     assert_eq!(login_body["role"], "user");
 
     let me = app
@@ -226,7 +226,8 @@ async fn signup_creates_user_and_session() {
             .unwrap(),
     )
     .unwrap();
-    assert_eq!(me_body["username"], "newbie");
+    assert_eq!(me_body["email"], "newbie@example.com");
+    assert_eq!(me_body["displayName"], "Newbie");
     assert_eq!(me_body["role"], "user");
     assert_eq!(me_body["chatQuota"]["used"], 0);
     assert_eq!(me_body["chatQuota"]["limit"], 20);
@@ -234,7 +235,7 @@ async fn signup_creates_user_and_session() {
 }
 
 #[tokio::test]
-async fn signup_duplicate_username_returns_conflict() {
+async fn signup_duplicate_email_returns_conflict() {
     let (_postgres, database_url) = start_postgres().await;
     let pool = setup_pool(&database_url).await;
     bootstrap_admin(&pool).await;
@@ -242,7 +243,7 @@ async fn signup_duplicate_username_returns_conflict() {
     let manager = manager_with_vm_url_env(&pool, "http://127.0.0.1:9", "development").await;
     let app = build_app_with_env(pool, manager, "development").await;
 
-    let body = serde_json::json!({ "username": "newbie", "password": "secret" });
+    let body = serde_json::json!({ "email": "newbie@example.com", "password": "secret", "displayName": "Newbie" });
     let first = app
         .clone()
         .oneshot(

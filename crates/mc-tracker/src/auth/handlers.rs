@@ -1,11 +1,11 @@
 use axum::extract::State;
 use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, patch, post};
+use axum::routing::{delete, get, patch, post};
 use axum::{Json, Router};
 use mc_api_types::{
-    ApiError, ApiErrorCode, ChangePasswordRequest, LoginRequest, LoginResponse, MeResponse,
-    SignupRequest,
+    is_valid_email, ApiError, ApiErrorCode, ChangePasswordRequest, DeleteAccountRequest,
+    LoginRequest, LoginResponse, MeResponse, SignupRequest, UpdateProfileRequest,
 };
 use mc_db::db::repos::users;
 use mc_db::model::{chat_quota_exempt, UserRole};
@@ -23,8 +23,10 @@ pub fn router() -> Router<AppState> {
         .route("/login", post(login))
         .route("/logout", post(logout))
         .route("/me", get(me))
+        .route("/profile", patch(update_profile))
         .route("/signup", post(signup))
         .route("/password", patch(change_password))
+        .route("/account", delete(delete_account))
 }
 
 async fn login(
@@ -81,14 +83,11 @@ async fn logout(State(state): State<AppState>, headers: axum::http::HeaderMap) -
 
 async fn me(
     State(state): State<AppState>,
-    AuthUser {
-        id,
-        username,
-        role,
-        flags,
-        ..
-    }: AuthUser,
+    AuthUser { id, flags, .. }: AuthUser,
 ) -> Result<Json<MeResponse>, Response> {
+    let user = users::get_by_id(&state.pool, id)
+        .await
+        .map_err(|_| invalid_credentials())?;
     let chat_quota = if chat_quota_exempt(flags) {
         None
     } else {
@@ -104,12 +103,7 @@ async fn me(
         })?)
     };
 
-    Ok(Json(MeResponse {
-        username,
-        role: role.as_str().to_string(),
-        flags: flags.to_db(),
-        chat_quota,
-    }))
+    Ok(Json(user_to_me_response(&user, flags, chat_quota)))
 }
 
 async fn signup(
@@ -140,12 +134,28 @@ async fn signup(
             .into_response();
     }
 
-    let username = body.username.trim();
-    if username.is_empty() || body.password.is_empty() {
+    let email = body.email.trim();
+    if email.is_empty() || body.password.is_empty() {
         return invalid_credentials();
     }
+    if !is_valid_email(email) {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiError::new(ApiErrorCode::BadRequest, "invalid email address")),
+        )
+            .into_response();
+    }
 
-    let user = match users::create(&state.pool, username, &body.password, UserRole::User).await {
+    let display_name = normalize_display_name(body.display_name);
+    let user = match users::create(
+        &state.pool,
+        email,
+        &body.password,
+        UserRole::User,
+        display_name.as_deref(),
+    )
+    .await
+    {
         Ok(user) => user,
         Err(mc_db::DbError::Conflict(message)) => {
             return (
@@ -203,6 +213,146 @@ async fn change_password(
     StatusCode::NO_CONTENT.into_response()
 }
 
+async fn update_profile(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(body): Json<UpdateProfileRequest>,
+) -> Response {
+    let db_user = match users::get_by_id(&state.pool, user.id).await {
+        Ok(user) => user,
+        Err(_) => return invalid_credentials(),
+    };
+
+    let email = body.email.trim();
+    if email.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiError::new(ApiErrorCode::BadRequest, "email is required")),
+        )
+            .into_response();
+    }
+
+    if email != db_user.username && !is_valid_email(email) {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiError::new(ApiErrorCode::BadRequest, "invalid email address")),
+        )
+            .into_response();
+    }
+
+    let display_name = normalize_display_name(body.display_name);
+
+    match users::update_profile(
+        &state.pool,
+        user.id,
+        email,
+        display_name.as_deref(),
+    )
+    .await
+    {
+        Ok(updated) => Json(user_to_me_response(
+            &updated,
+            user.flags,
+            None,
+        ))
+        .into_response(),
+        Err(mc_db::DbError::Conflict(message)) => (
+            StatusCode::CONFLICT,
+            Json(ApiError::new(ApiErrorCode::Conflict, message)),
+        )
+            .into_response(),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiError::new(
+                ApiErrorCode::InternalError,
+                "failed to update profile",
+            )),
+        )
+            .into_response(),
+    }
+}
+
+
+async fn delete_account(
+    State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
+    user: AuthUser,
+    Json(body): Json<DeleteAccountRequest>,
+) -> Response {
+    if body.password.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ApiError::new(
+                ApiErrorCode::BadRequest,
+                "password is required",
+            )),
+        )
+            .into_response();
+    }
+
+    let db_user = match users::get_by_id(&state.pool, user.id).await {
+        Ok(user) => user,
+        Err(_) => return invalid_credentials(),
+    };
+
+    if !users::verify_password(&body.password, &db_user.password_hash).unwrap_or(false) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(ApiError::new(
+                ApiErrorCode::Unauthorized,
+                "password is incorrect",
+            )),
+        )
+            .into_response();
+    }
+
+    if db_user.role == UserRole::Admin {
+        let admin_count = match users::count_by_role(&state.pool, UserRole::Admin).await {
+            Ok(count) => count,
+            Err(err) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(ApiError::new(ApiErrorCode::InternalError, err.to_string())),
+                )
+                    .into_response();
+            }
+        };
+        if admin_count <= 1 {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(ApiError::new(
+                    ApiErrorCode::Forbidden,
+                    "cannot delete the only admin account",
+                )),
+            )
+                .into_response();
+        }
+    }
+
+    if let Err(err) = users::delete_by_id(&state.pool, user.id).await {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiError::new(ApiErrorCode::InternalError, err.to_string())),
+        )
+            .into_response();
+    }
+
+    if let Some(cookie_header) = headers
+        .get(header::COOKIE)
+        .and_then(|value| value.to_str().ok())
+    {
+        if let Some(token) = parse_cookie_value(cookie_header, COOKIE_NAME) {
+            state.auth.sessions.revoke_token(&token).await;
+        }
+    }
+
+    (
+        StatusCode::NO_CONTENT,
+        [(header::SET_COOKIE, state.auth.sessions.clear_cookie_value())],
+    )
+        .into_response()
+}
+
 async fn issue_session(state: &AppState, user: &mc_db::User) -> Response {
     let token = match state
         .auth
@@ -222,10 +372,7 @@ async fn issue_session(state: &AppState, user: &mc_db::User) -> Response {
         }
     };
 
-    let response = Json(LoginResponse {
-        username: user.username.clone(),
-        role: user.role.as_str().to_string(),
-    });
+    let response = Json(user_to_login_response(user));
 
     (
         StatusCode::OK,
@@ -233,6 +380,34 @@ async fn issue_session(state: &AppState, user: &mc_db::User) -> Response {
         response,
     )
         .into_response()
+}
+
+fn normalize_display_name(value: Option<String>) -> Option<String> {
+    value
+        .map(|name| name.trim().to_string())
+        .filter(|name| !name.is_empty())
+}
+
+fn user_to_login_response(user: &mc_db::User) -> LoginResponse {
+    LoginResponse {
+        email: user.username.clone(),
+        display_name: user.display_name.clone(),
+        role: user.role.as_str().to_string(),
+    }
+}
+
+fn user_to_me_response(
+    user: &mc_db::User,
+    flags: mc_db::model::UserFlags,
+    chat_quota: Option<mc_api_types::ChatQuota>,
+) -> MeResponse {
+    MeResponse {
+        email: user.username.clone(),
+        display_name: user.display_name.clone(),
+        role: user.role.as_str().to_string(),
+        flags: flags.to_db(),
+        chat_quota,
+    }
 }
 
 fn sign_up_allowed(manager: &ServerManager) -> bool {

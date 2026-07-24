@@ -140,7 +140,7 @@ async fn users_create_and_get() {
     let pool = setup_pool(&database_url).await;
 
     let user =
-        mc_db::db::repos::users::create(&pool, "alice", "password123", mc_db::UserRole::User)
+        mc_db::db::repos::users::create(&pool, "alice", "password123", mc_db::UserRole::User, None)
             .await
             .unwrap();
     assert_eq!(user.username, "alice");
@@ -169,7 +169,7 @@ async fn users_wrong_password_fails_verify() {
     let pool = setup_pool(&database_url).await;
 
     let user =
-        mc_db::db::repos::users::create(&pool, "carol", "correcthorse", mc_db::UserRole::User)
+        mc_db::db::repos::users::create(&pool, "carol", "correcthorse", mc_db::UserRole::User, None)
             .await
             .unwrap();
 
@@ -188,10 +188,10 @@ async fn users_duplicate_username_fails() {
     let (_postgres, database_url) = start_postgres().await;
     let pool = setup_pool(&database_url).await;
 
-    mc_db::db::repos::users::create(&pool, "bob", "pass", mc_db::UserRole::User)
+    mc_db::db::repos::users::create(&pool, "bob", "pass", mc_db::UserRole::User, None)
         .await
         .unwrap();
-    let err = mc_db::db::repos::users::create(&pool, "bob", "pass2", mc_db::UserRole::User)
+    let err = mc_db::db::repos::users::create(&pool, "bob", "pass2", mc_db::UserRole::User, None)
         .await
         .unwrap_err();
     assert!(matches!(err, mc_db::DbError::Conflict(_)));
@@ -223,7 +223,7 @@ async fn bootstrap_ignored_when_users_exist() {
     let (_postgres, database_url) = start_postgres().await;
     let pool = setup_pool(&database_url).await;
 
-    mc_db::db::repos::users::create(&pool, "existing", "pass", mc_db::UserRole::User)
+    mc_db::db::repos::users::create(&pool, "existing", "pass", mc_db::UserRole::User, None)
         .await
         .unwrap();
 
@@ -259,3 +259,24 @@ async fn bootstrap_fails_without_credentials() {
     .unwrap_err();
     assert!(matches!(err, mc_db::DbError::Bootstrap(_)));
 }
+
+#[tokio::test]
+async fn users_delete_by_id_removes_user() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+
+    let user =
+        mc_db::db::repos::users::create(&pool, "delete-me", "pass", mc_db::UserRole::User, None)
+            .await
+            .unwrap();
+
+    mc_db::db::repos::users::delete_by_id(&pool, user.id)
+        .await
+        .unwrap();
+
+    let err = mc_db::db::repos::users::get_by_id(&pool, user.id)
+        .await
+        .unwrap_err();
+    assert!(matches!(err, mc_db::DbError::NotFound(_)));
+}
+

@@ -19,7 +19,8 @@ import { signup } from "@/lib/auth";
 import { useAuth } from "@/lib/auth/context";
 import { adminLandingPath } from "@/lib/auth/require-admin";
 import { useSignupEnabled } from "@/lib/auth/signup-enabled";
-import { validateCredentials } from "@/lib/auth/validation";
+import { validateSignupCredentials } from "@/lib/auth/validation";
+import { userDisplayName } from "@/lib/auth/user-display";
 import { canManageServers } from "@/lib/user-flags";
 import { pageTitle } from "@/lib/page-title";
 import { privatePageHead } from "@/lib/embed-meta";
@@ -34,7 +35,8 @@ function SignupPage() {
   const { user, isLoading, setUser } = useAuth();
   const navigate = useNavigate();
   const { signUpEnabled, isPending: signupConfigPending } = useSignupEnabled();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -58,7 +60,7 @@ function SignupPage() {
       return;
     }
 
-    const parsed = validateCredentials({ username, password });
+    const parsed = validateSignupCredentials({ email, password, displayName });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Invalid credentials");
       return;
@@ -72,7 +74,7 @@ function SignupPage() {
         return;
       }
       setUser(result.user);
-      toast.success(`Welcome, ${result.user.username}`);
+      toast.success(`Welcome, ${userDisplayName(result.user)}`);
       await navigate({ to: "/account" });
     } catch (error) {
       toast.error(errorMessage(error));
@@ -95,13 +97,26 @@ function SignupPage() {
         <CardContent>
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="grid gap-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                name="username"
-                autoComplete="username"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                disabled={!signUpEnabled}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="displayName">Display name</Label>
+              <Input
+                id="displayName"
+                name="displayName"
+                autoComplete="nickname"
+                placeholder="Optional"
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
                 disabled={!signUpEnabled}
               />
             </div>

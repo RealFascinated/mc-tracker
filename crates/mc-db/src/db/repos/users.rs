@@ -15,6 +15,7 @@ use super::{db_err, get_conn};
 type UserRow = (
     Uuid,
     String,
+    Option<String>,
     String,
     String,
     i64,
@@ -25,6 +26,7 @@ type UserRow = (
 const USER_COLUMNS: (
     users::id,
     users::username,
+    users::display_name,
     users::password_hash,
     users::role,
     users::flags,
@@ -33,6 +35,7 @@ const USER_COLUMNS: (
 ) = (
     users::id,
     users::username,
+    users::display_name,
     users::password_hash,
     users::role,
     users::flags,
@@ -44,11 +47,12 @@ fn row_to_user(row: UserRow) -> Result<User, DbError> {
     Ok(User {
         id: row.0,
         username: row.1,
-        password_hash: row.2,
-        role: UserRole::from_db(&row.3).map_err(DbError::InvalidSettings)?,
-        flags: UserFlags::from_db(row.4),
-        created_at: row.5,
-        updated_at: row.6,
+        display_name: row.2,
+        password_hash: row.3,
+        role: UserRole::from_db(&row.4).map_err(DbError::InvalidSettings)?,
+        flags: UserFlags::from_db(row.5),
+        created_at: row.6,
+        updated_at: row.7,
     })
 }
 
@@ -125,6 +129,7 @@ pub async fn create(
     username: &str,
     password: &str,
     role: UserRole,
+    display_name: Option<&str>,
 ) -> Result<User, DbError> {
     let mut conn = get_conn(pool).await?;
     let id = Uuid::new_v4();
@@ -135,6 +140,7 @@ pub async fn create(
         .values((
             users::id.eq(id),
             users::username.eq(username),
+            users::display_name.eq(display_name),
             users::password_hash.eq(&password_hash),
             users::role.eq(role.as_str()),
             users::flags.eq(0_i64),
@@ -151,13 +157,51 @@ pub async fn create(
                     _
                 )
             ) {
-                DbError::Conflict(format!("username already exists: {username}"))
+                DbError::Conflict(format!("email already in use: {username}"))
             } else {
                 db_err(e)
             }
         })?;
 
     get_by_username(pool, username).await
+}
+
+pub async fn update_profile(
+    pool: &DbPool,
+    id: Uuid,
+    email: &str,
+    display_name: Option<&str>,
+) -> Result<User, DbError> {
+    let mut conn = get_conn(pool).await?;
+    let now = Utc::now();
+
+    let updated = diesel::update(users::table.filter(users::id.eq(id)))
+        .set((
+            users::username.eq(email),
+            users::display_name.eq(display_name),
+            users::updated_at.eq(now),
+        ))
+        .execute(&mut conn)
+        .await
+        .map_err(|e| {
+            if matches!(
+                &e,
+                diesel::result::Error::DatabaseError(
+                    diesel::result::DatabaseErrorKind::UniqueViolation,
+                    _
+                )
+            ) {
+                DbError::Conflict(format!("email already in use: {email}"))
+            } else {
+                db_err(e)
+            }
+        })?;
+
+    if updated == 0 {
+        return Err(DbError::NotFound(format!("user {id}")));
+    }
+
+    get_by_id(pool, id).await
 }
 
 pub async fn update_password(pool: &DbPool, id: Uuid, new_password: &str) -> Result<(), DbError> {
@@ -207,6 +251,29 @@ pub async fn update_flags(pool: &DbPool, id: Uuid, flags: UserFlags) -> Result<(
         .map_err(db_err)?;
 
     if updated == 0 {
+        return Err(DbError::NotFound(format!("user {id}")));
+    }
+    Ok(())
+}
+
+pub async fn count_by_role(pool: &DbPool, role: UserRole) -> Result<i64, DbError> {
+    let mut conn = get_conn(pool).await?;
+    users::table
+        .filter(users::role.eq(role.as_str()))
+        .count()
+        .get_result(&mut conn)
+        .await
+        .map_err(db_err)
+}
+
+pub async fn delete_by_id(pool: &DbPool, id: Uuid) -> Result<(), DbError> {
+    let mut conn = get_conn(pool).await?;
+    let deleted = diesel::delete(users::table.filter(users::id.eq(id)))
+        .execute(&mut conn)
+        .await
+        .map_err(db_err)?;
+
+    if deleted == 0 {
         return Err(DbError::NotFound(format!("user {id}")));
     }
     Ok(())

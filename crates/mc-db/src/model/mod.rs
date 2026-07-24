@@ -76,6 +76,7 @@ pub struct Server {
 pub struct User {
     pub id: Uuid,
     pub username: String,
+    pub display_name: Option<String>,
     pub password_hash: String,
     pub role: UserRole,
     pub flags: UserFlags,

@@ -318,7 +318,7 @@ async fn admin_can_list_users_and_patch_flags() {
         .as_array()
         .unwrap()
         .iter()
-        .find(|entry| entry["username"] == "vip")
+        .find(|entry| entry["email"] == "vip")
         .unwrap();
     assert_eq!(vip["flags"], 0);
 

@@ -25,6 +25,7 @@ diesel::table! {
     users (id) {
         id -> Uuid,
         username -> Text,
+        display_name -> Nullable<Text>,
         password_hash -> Text,
         role -> Text,
         flags -> BigInt,

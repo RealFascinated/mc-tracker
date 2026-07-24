@@ -31,6 +31,7 @@ pub async fn ensure_admin_user(pool: &DbPool, config: &BootstrapConfig) -> Resul
         &config.admin_username,
         &config.admin_password,
         UserRole::Admin,
+        None,
     )
     .await?;
     Ok(())

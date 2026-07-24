@@ -2,7 +2,8 @@ import { apiFetch } from "@/lib/api/client";
 
 export type AdminUser = {
   id: string;
-  username: string;
+  email: string;
+  displayName: string | null;
   role: string;
   flags: number;
   createdAt: string;
