@@ -6,6 +6,7 @@ import {
   parseMetricRangeSearchParam,
 } from "@/lib/metrics/range";
 import {
+  formatEpochRangeLabel,
   formatEpochRangeParts,
   formatMonthDay,
   isSameCalendarDay,
@@ -148,8 +149,7 @@ export function formatMetricTimeWindowLabel(window: MetricTimeWindow): string {
     return getMetricRangeOption(window.range).label;
   }
 
-  const { headline } = formatEpochRangeParts(window.from, window.to);
-  return headline;
+  return formatEpochRangeLabel(window.from, window.to);
 }
 
 export function formatMetricTimeWindowShortLabel(
@@ -163,7 +163,8 @@ export function formatMetricTimeWindowShortLabel(
   const endDate = new Date(window.to * 1000);
 
   if (isSameCalendarDay(startDate, endDate)) {
-    return formatMonthDay(startDate);
+    const { span } = formatEpochRangeParts(window.from, window.to);
+    return span ?? formatMonthDay(startDate);
   }
 
   return `${formatMonthDay(startDate)} – ${formatMonthDay(endDate)}`;

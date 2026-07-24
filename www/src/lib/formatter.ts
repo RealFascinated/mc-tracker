@@ -254,6 +254,14 @@ function epochDateParts(epoch: number) {
   return { date, includeYear: includeYear(date) };
 }
 
+export function formatEpochRangeLabel(
+  startEpoch: number,
+  endEpoch: number | null,
+): string {
+  const { headline, span } = formatEpochRangeParts(startEpoch, endEpoch);
+  return span ? `${headline}, ${span}` : headline;
+}
+
 export function formatEpochRangeParts(
   startEpoch: number,
   endEpoch: number | null,

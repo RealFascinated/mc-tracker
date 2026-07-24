@@ -759,7 +759,7 @@
   }
 
   .dashboard-time-range-picker-quick {
-    @apply shrink-0 border-b border-border p-3 sm:w-[11.5rem] sm:border-r sm:border-b-0;
+    @apply shrink-0 border-b border-border p-3 sm:w-[13rem] sm:border-r sm:border-b-0;
   }
 
   .dashboard-time-range-picker-custom {
@@ -778,17 +778,22 @@
     @apply mt-3 flex max-h-[min(20rem,50vh)] flex-col gap-3 overflow-y-auto pr-1;
   }
 
+  .dashboard-time-range-picker-options {
+    @apply flex flex-col gap-0.5;
+  }
+
   .dashboard-time-range-picker-group-label {
-    @apply mb-1 px-3 text-[0.625rem] font-semibold tracking-[0.08em] text-muted-foreground/80 uppercase;
+    @apply mb-1.5 text-[0.6875rem] font-semibold tracking-[0.08em] text-muted-foreground/80 uppercase;
   }
 
   .dashboard-time-range-picker-option {
-    @apply -mx-3 flex w-full items-center justify-between gap-2 rounded-none px-3 py-1.5 text-left text-sm text-muted-foreground transition-colors outline-none;
-    @apply hover:bg-muted hover:text-foreground;
+    @apply flex w-full items-center justify-between gap-2 rounded-snug px-2 py-1 text-left text-[0.8125rem] font-medium text-foreground transition-colors outline-none;
+    @apply dark:text-white;
+    @apply hover:bg-muted hover:text-foreground dark:hover:text-white;
   }
 
   .dashboard-time-range-picker-option--selected {
-    @apply bg-muted text-foreground;
+    @apply bg-muted text-foreground dark:text-white;
   }
 
   .dashboard-time-range-picker-fields {
