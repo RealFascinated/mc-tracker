@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { cn } from "cnfast";
 
 import { PinnedServersGrid } from "@/components/dashboard/grids/pinned-servers-grid";
@@ -36,6 +36,23 @@ import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 
 type ViewMode = "cards" | "table";
 
+const TABLE_SORT_FIELDS = [
+  "name",
+  "players",
+  "peak24h",
+  "peakAllTime",
+  "trend24h",
+  "trend7d",
+  "trend30d",
+] as const;
+
+function parseTableSortFieldParam(value: unknown): SortField | undefined {
+  if (typeof value === "string" && (TABLE_SORT_FIELDS as readonly string[]).includes(value)) {
+    return value as SortField;
+  }
+  return undefined;
+}
+
 type ServersSearch = {
   range?: MetricTimeRange;
   from?: number;
@@ -44,6 +61,8 @@ type ServersSearch = {
   sort?: ServerSortField;
   order?: SortOrder;
   view?: ViewMode;
+  tableSort?: SortField;
+  tableOrder?: SortDirection;
 };
 
 export const Route = createFileRoute("/servers/")({
@@ -53,6 +72,8 @@ export const Route = createFileRoute("/servers/")({
     sort: parseServerSortFieldParam(search.sort),
     order: parseSortOrderParam(search.order),
     view: search.view === "table" ? "table" : undefined,
+    tableSort: parseTableSortFieldParam(search.tableSort),
+    tableOrder: parseSortOrderParam(search.tableOrder),
   }),
   loaderDeps: ({ search }) => ({
     serverSort: resolveServerSort(search),
@@ -77,6 +98,8 @@ function ServersPage() {
     sort: urlSortField,
     order: urlOrder,
     view: urlView,
+    tableSort: urlTableSort,
+    tableOrder: urlTableOrder,
   } = Route.useSearch();
   const navigate = Route.useNavigate();
   const platformFilter: ServerPlatformFilter = urlPlatform ?? "all";
@@ -122,26 +145,32 @@ function ServersPage() {
 
   const setViewMode = useSearchParamNavigation<ViewMode>(navigate, "view", "cards");
 
-  // Table sort state — independent of the card grid serverSort
-  const [tableSortField, setTableSortField] = React.useState<SortField>("name");
-  const [tableSortDirection, setTableSortDirection] = React.useState<SortDirection>("asc");
+  // Table sort — stored in URL search params
+  const tableSortField: SortField = urlTableSort ?? "name";
+  const tableSortDirection: SortDirection = urlTableOrder ??
+    (tableSortField === "name" ? "asc" : "desc");
 
   function handleTableSort(field: SortField) {
+    let newDirection: SortDirection;
     if (field === tableSortField) {
-      setTableSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+      newDirection = tableSortDirection === "asc" ? "desc" : "asc";
     } else {
-      setTableSortField(field);
-      setTableSortDirection(
-        field === "players" ||
-          field === "peak24h" ||
-          field === "peakAllTime" ||
-          field === "trend24h" ||
-          field === "trend7d" ||
-          field === "trend30d"
-          ? "desc"
-          : "asc",
-      );
+      newDirection = (["players", "peak24h", "peakAllTime", "trend24h", "trend7d", "trend30d"] as SortField[]).includes(field)
+        ? "desc"
+        : "asc";
     }
+
+    // Omit params when they match defaults (name + asc) to keep the URL clean
+    const isDefault = field === "name" && newDirection === "asc";
+    void navigate({
+      search: (prev) => ({
+        ...prev,
+        tableSort: isDefault ? undefined : field,
+        tableOrder: isDefault ? undefined : newDirection,
+      }),
+      replace: true,
+      resetScroll: false,
+    });
   }
 
   return (
