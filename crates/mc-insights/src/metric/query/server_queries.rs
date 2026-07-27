@@ -78,12 +78,15 @@ pub fn peak_players_24h_by_server(environment: &str) -> String {
     )
 }
 
-/// Trend percent: `(current / previous - 1) * 100`
+/// Trend percent: `(current_avg / previous_avg - 1) * 100`
 ///
-/// Uses a like-for-like comparison to avoid day-of-week and baseline skew:
-/// - 24h trend: latest 1h vs same hour yesterday (window=1h, offset=24h)
-/// - 7d trend:  latest 24h vs same day last week  (window=24h, offset=7d)
-/// - 30d trend: latest 7d vs same 7d ~month ago  (window=7d, offset=21d)
+/// Both `current` and `previous` use the same `window` duration for a fair
+/// comparison. The `offset` shifts the reference period back in time.
+///
+/// Recommended call patterns (stable daily-average base):
+/// - 24h trend: `avg_trend_by_server(env, "24h", "24h")`
+/// - 7d trend:  `avg_trend_by_server(env, "7d", "7d")`
+/// - 30d trend: `avg_trend_by_server(env, "30d", "30d")`
 pub fn avg_trend_by_server(environment: &str, window: &str, offset: &str) -> String {
     let base = player_count_by_server(environment);
     let current = format!("avg_over_time({base}[{window}:])");

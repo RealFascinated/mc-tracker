@@ -126,17 +126,19 @@ impl Insights {
 
     /// Returns per-server trend percentages for 24h, 7d, and 30d windows.
     ///
-    /// Windows are compared like-for-like to avoid day-of-week skew:
-    /// - 24h trend: latest 1h vs same hour yesterday
-    /// - 7d trend:  latest 24h vs same day last week
-    /// - 30d trend: latest 7d vs same 7d ~month ago
+    /// All trends use daily averages (`avg_over_time(24h)`) as the base unit for
+    /// stability, then compare to the equivalent period in the past:
+    /// - 24h trend: today's daily avg vs yesterday's daily avg
+    /// - 7d trend:  this week's avg vs last week's avg
+    /// - 30d trend: this month's avg vs last month's avg
     ///
-    /// Values outside ±500% are discarded (noisy / low-baseline servers).
+    /// Values outside ±500% are discarded (noisy — typically servers that just
+    /// started tracking or were offline in the reference period).
     pub async fn trends_by_server_id(&self) -> HashMap<String, (Option<f64>, Option<f64>, Option<f64>)> {
         let env = self.environment();
-        let q_24h = avg_trend_by_server(env, "1h", "24h");
-        let q_7d = avg_trend_by_server(env, "24h", "7d");
-        let q_30d = avg_trend_by_server(env, "7d", "21d");
+        let q_24h = avg_trend_by_server(env, "24h", "24h");
+        let q_7d = avg_trend_by_server(env, "7d", "7d");
+        let q_30d = avg_trend_by_server(env, "30d", "30d");
         let (trends_24h, trends_7d, trends_30d) = tokio::join!(
             self.labeled_instant(&q_24h),
             self.labeled_instant(&q_7d),
