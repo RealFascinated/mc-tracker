@@ -11,7 +11,7 @@ export type DashboardRangeOption<T extends string> = {
 };
 
 const dashboardRangeItemClassName =
-  "relative z-10 h-7 min-w-0 rounded-snug px-2.5 text-center text-xs font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning";
+  "relative z-10 h-7 min-w-0 rounded-snug px-2.5 text-center text-xs font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning max-sm:px-1.5 max-sm:text-[11px]";
 
 const dashboardRangeItemFullWidthClassName = "flex-1 px-1.5";
 

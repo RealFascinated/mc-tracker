@@ -219,7 +219,7 @@ function ServersPage() {
                   <SlidingSegmentedControlItem
                     value="cards"
                     className={cn(
-                      "relative z-10 flex h-7 items-center gap-1 rounded-snug px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning",
+                      "relative z-10 flex h-7 items-center gap-1 rounded-snug px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning max-sm:px-1.5 max-sm:text-[11px]",
                       viewMode === "cards"
                         ? "text-monitor dark:text-warning"
                         : "text-muted-foreground hover:text-foreground",
@@ -243,12 +243,13 @@ function ServersPage() {
                       <rect width="7" height="7" x="3" y="14" rx="1" />
                       <rect width="7" height="7" x="14" y="14" rx="1" />
                     </svg>
-                    Cards
+                    <span className="max-sm:hidden">Cards</span>
+                    <span className="sm:hidden" aria-hidden>Grid</span>
                   </SlidingSegmentedControlItem>
                   <SlidingSegmentedControlItem
                     value="table"
                     className={cn(
-                      "relative z-10 flex h-7 items-center gap-1 rounded-snug px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning",
+                      "relative z-10 flex h-7 items-center gap-1 rounded-snug px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning max-sm:px-1.5 max-sm:text-[11px]",
                       viewMode === "table"
                         ? "text-monitor dark:text-warning"
                         : "text-muted-foreground hover:text-foreground",
@@ -279,14 +280,18 @@ function ServersPage() {
             />
 
             <div className={viewMode === "cards" ? "hidden" : "-mt-2"}>
-              <ServersTable
-                servers={filteredServers}
-                pinnedServerIds={pinnedServerIds}
-                showPinButtons={isAuthenticated}
-                sortField={tableSortField}
-                sortDirection={tableSortDirection}
-                onSort={handleTableSort}
-              />
+              <div className="overflow-x-auto scrollbar-hide">
+                <div className="min-w-[40rem]">
+                  <ServersTable
+                    servers={filteredServers}
+                    pinnedServerIds={pinnedServerIds}
+                    showPinButtons={isAuthenticated}
+                    sortField={tableSortField}
+                    sortDirection={tableSortDirection}
+                    onSort={handleTableSort}
+                  />
+                </div>
+              </div>
             </div>
           </MetricChartsScope>
         </main>

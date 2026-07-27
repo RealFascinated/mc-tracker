@@ -44,7 +44,7 @@ export function ServerSortToggle({
             key={option.field}
             type="button"
             className={cn(
-              "inline-flex h-7 items-center gap-1 rounded-snug border px-2 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning",
+              "inline-flex h-7 items-center gap-1 rounded-snug border px-2 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning max-sm:px-1.5 max-sm:text-[11px]",
               active
                 ? "border-monitor text-monitor dark:border-warning dark:text-warning"
                 : "border-border text-muted-foreground hover:text-foreground",
@@ -61,7 +61,7 @@ export function ServerSortToggle({
               className={cn("size-3 shrink-0", !active && "opacity-70")}
               aria-hidden
             />
-            <span>{option.label}</span>
+            <span className="max-sm:hidden">{option.label}</span>
           </button>
         );
       })}

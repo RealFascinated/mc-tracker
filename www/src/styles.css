@@ -1230,6 +1230,47 @@
   .server-detail-page {
     @apply pt-3 sm:pt-3;
   }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (max-width: 39.999rem) {
+    .entity-metrics-section-header {
+      @apply flex-col items-start;
+    }
+
+    .entity-metrics-section-header > .shrink-0 {
+      @apply w-full;
+    }
+
+    .entity-metrics-section-header > .shrink-0 > div {
+      @apply flex-1;
+    }
+
+    .entity-metrics-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .entity-metrics-card {
+      contain-intrinsic-size: auto 300px;
+    }
+  }
+
+  @media (max-width: 47.999rem) {
+    .dashboard-time-controls-segment--range {
+      @apply px-1.5;
+    }
+
+    .dashboard-time-controls-segment--manual {
+      @apply px-1.5;
+    }
+  }
 }
 
 .uplot {
