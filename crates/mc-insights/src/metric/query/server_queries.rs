@@ -78,19 +78,16 @@ pub fn peak_players_24h_by_server(environment: &str) -> String {
     )
 }
 
-fn avg_by_server_raw(environment: &str, window: &str, offset: Option<&str>) -> String {
-    let base = player_count_by_server(environment);
-    let offset_clause = offset
-        .map(|o| format!(" offset {o}"))
-        .unwrap_or_default();
-    format!("avg_over_time({base}[{window}:]){offset_clause}")
-}
-
-/// Trend percent: `(current_avg - previous_avg) / previous_avg * 100`
-/// Compares `window` vs `window` shifted by `offset`.
+/// Trend percent: `(current / previous - 1) * 100`
+///
+/// Uses a like-for-like comparison to avoid day-of-week and baseline skew:
+/// - 24h trend: latest 1h vs same hour yesterday (window=1h, offset=24h)
+/// - 7d trend:  latest 24h vs same day last week  (window=24h, offset=7d)
+/// - 30d trend: latest 7d vs same 7d ~month ago  (window=7d, offset=21d)
 pub fn avg_trend_by_server(environment: &str, window: &str, offset: &str) -> String {
-    let current = avg_by_server_raw(environment, window, None);
-    let previous = avg_by_server_raw(environment, window, Some(offset));
+    let base = player_count_by_server(environment);
+    let current = format!("avg_over_time({base}[{window}:])");
+    let previous = format!("avg_over_time({base}[{window}:] offset {offset})");
     format!("( {current} / {previous} - 1 ) * 100")
 }
 

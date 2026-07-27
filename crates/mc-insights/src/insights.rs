@@ -125,17 +125,27 @@ impl Insights {
     }
 
     /// Returns per-server trend percentages for 24h, 7d, and 30d windows.
-    /// A positive value means the average player count grew over that period.
+    ///
+    /// Windows are compared like-for-like to avoid day-of-week skew:
+    /// - 24h trend: latest 1h vs same hour yesterday
+    /// - 7d trend:  latest 24h vs same day last week
+    /// - 30d trend: latest 7d vs same 7d ~month ago
+    ///
+    /// Values outside ±500% are discarded (noisy / low-baseline servers).
     pub async fn trends_by_server_id(&self) -> HashMap<String, (Option<f64>, Option<f64>, Option<f64>)> {
         let env = self.environment();
-        let q_24h = avg_trend_by_server(env, "24h", "24h");
-        let q_7d = avg_trend_by_server(env, "7d", "7d");
-        let q_30d = avg_trend_by_server(env, "30d", "30d");
+        let q_24h = avg_trend_by_server(env, "1h", "24h");
+        let q_7d = avg_trend_by_server(env, "24h", "7d");
+        let q_30d = avg_trend_by_server(env, "7d", "21d");
         let (trends_24h, trends_7d, trends_30d) = tokio::join!(
             self.labeled_instant(&q_24h),
             self.labeled_instant(&q_7d),
             self.labeled_instant(&q_30d),
         );
+
+        let sanitize = |v: f64| {
+            if v.is_finite() && v.abs() <= 500.0 { Some(v) } else { None }
+        };
 
         let mut all: HashMap<String, (Option<f64>, Option<f64>, Option<f64>)> = HashMap::new();
 
@@ -143,22 +153,19 @@ impl Insights {
             let Some(id) = label_value(&entry.labels, labels::ID) else {
                 continue;
             };
-            let value = if entry.value.is_finite() { Some(entry.value) } else { None };
-            all.entry(id).or_default().0 = value;
+            all.entry(id).or_default().0 = sanitize(entry.value);
         }
         for entry in trends_7d {
             let Some(id) = label_value(&entry.labels, labels::ID) else {
                 continue;
             };
-            let value = if entry.value.is_finite() { Some(entry.value) } else { None };
-            all.entry(id).or_default().1 = value;
+            all.entry(id).or_default().1 = sanitize(entry.value);
         }
         for entry in trends_30d {
             let Some(id) = label_value(&entry.labels, labels::ID) else {
                 continue;
             };
-            let value = if entry.value.is_finite() { Some(entry.value) } else { None };
-            all.entry(id).or_default().2 = value;
+            all.entry(id).or_default().2 = sanitize(entry.value);
         }
 
         all
