@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import type { ReactNode } from "react";
 
 import { ServerSortToggle } from "@/components/dashboard/server/sort-toggle";
 import { ServerPlatformFilterToggle } from "@/components/dashboard/server/platform-filter-toggle";
@@ -29,6 +30,8 @@ type ServerMetricsGridProps = {
   section?: EntityMetricsSectionCopy;
   pinnedServerIds?: ReadonlySet<string>;
   showPinButtons?: boolean;
+  viewToggle?: ReactNode;
+  hideGridContent?: boolean;
 };
 
 function ServerMetricsGridHeader({
@@ -69,12 +72,15 @@ export function ServerMetricsGrid({
   section,
   pinnedServerIds,
   showPinButtons = false,
+  viewToggle,
+  hideGridContent = false,
 }: ServerMetricsGridProps) {
   const hasActivePlatformFilter = platformFilter !== "all";
   const emptyCopy = platformFilterEmptyCopy(platformFilter);
   const headerTrailing = useMemo(
     () => (
       <div className="flex flex-wrap items-center gap-2">
+        {viewToggle}
         <ServerSortToggle value={sort} onValueChange={onSortChange} />
         <ServerPlatformFilterToggle
           value={platformFilter}
@@ -82,7 +88,7 @@ export function ServerMetricsGrid({
         />
       </div>
     ),
-    [onPlatformFilterChange, onSortChange, platformFilter, sort],
+    [onPlatformFilterChange, onSortChange, platformFilter, sort, viewToggle],
   );
   const renderHeader = useCallback(
     (server: ServerListItem) => (
@@ -133,6 +139,7 @@ export function ServerMetricsGrid({
       timeseriesOptions={timeseriesOptions}
       timeseriesEnabled={(server) => server.id.length > 0}
       section={sectionCopy}
+      gridContainerClassName={hideGridContent ? "hidden" : undefined}
     />
   );
 }

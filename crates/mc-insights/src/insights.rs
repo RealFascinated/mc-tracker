@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use std::collections::HashMap;
+
 use mc_api_types::{
     AsnTimeseriesResponse, ServerTimeseriesResponse, ServersCompareTimeseriesResponse,
     TimeseriesLanes,
@@ -15,9 +17,9 @@ use crate::core::{
 };
 use crate::error::InsightsError;
 use crate::metric::{
-    labels, peak_players_24h, peak_players_24h_by_asn, peak_players_24h_by_server, peak_players_7d,
-    LabeledInstantValue, PlayerCountEntry, PlayerCountRegistry, VmPushClient, VmQueryBuilder,
-    VmQueryClient, VmRangeQuery,
+    avg_trend_by_server, labels, peak_players_24h, peak_players_24h_by_asn,
+    peak_players_24h_by_server, peak_players_7d, LabeledInstantValue, PlayerCountEntry,
+    PlayerCountRegistry, VmPushClient, VmQueryBuilder, VmQueryClient, VmRangeQuery,
 };
 use crate::metric::AlignedLane;
 
@@ -120,6 +122,46 @@ impl Insights {
 
     pub async fn peak_players_7d(&self) -> Option<f64> {
         self.scalar(&peak_players_7d(self.environment())).await
+    }
+
+    /// Returns per-server trend percentages for 24h, 7d, and 30d windows.
+    /// A positive value means the average player count grew over that period.
+    pub async fn trends_by_server_id(&self) -> HashMap<String, (Option<f64>, Option<f64>, Option<f64>)> {
+        let env = self.environment();
+        let q_24h = avg_trend_by_server(env, "24h", "24h");
+        let q_7d = avg_trend_by_server(env, "7d", "7d");
+        let q_30d = avg_trend_by_server(env, "30d", "30d");
+        let (trends_24h, trends_7d, trends_30d) = tokio::join!(
+            self.labeled_instant(&q_24h),
+            self.labeled_instant(&q_7d),
+            self.labeled_instant(&q_30d),
+        );
+
+        let mut all: HashMap<String, (Option<f64>, Option<f64>, Option<f64>)> = HashMap::new();
+
+        for entry in trends_24h {
+            let Some(id) = label_value(&entry.labels, labels::ID) else {
+                continue;
+            };
+            let value = if entry.value.is_finite() { Some(entry.value) } else { None };
+            all.entry(id).or_default().0 = value;
+        }
+        for entry in trends_7d {
+            let Some(id) = label_value(&entry.labels, labels::ID) else {
+                continue;
+            };
+            let value = if entry.value.is_finite() { Some(entry.value) } else { None };
+            all.entry(id).or_default().1 = value;
+        }
+        for entry in trends_30d {
+            let Some(id) = label_value(&entry.labels, labels::ID) else {
+                continue;
+            };
+            let value = if entry.value.is_finite() { Some(entry.value) } else { None };
+            all.entry(id).or_default().2 = value;
+        }
+
+        all
     }
 
     pub async fn server_players_lanes(

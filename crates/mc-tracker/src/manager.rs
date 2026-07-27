@@ -198,12 +198,20 @@ impl ServerManager {
             .collect::<Vec<_>>();
 
 
-        let peaks_24h = self.insights.peaks_24h_by_server_id().await;
+        let (peaks_24h, trends) = tokio::join!(
+            self.insights.peaks_24h_by_server_id(),
+            self.insights.trends_by_server_id(),
+        );
 
         let mut servers = Vec::with_capacity(tracked.len());
         for server in tracked {
             let id = server.config.id.to_string();
-            servers.push(server_list_item(&server, peaks_24h.get(&id).copied()));
+            let t = trends.get(&id).copied();
+            servers.push(server_list_item(
+                &server,
+                peaks_24h.get(&id).copied(),
+                t,
+            ));
         }
 
         sort_server_list_items(&mut servers, sort, order);
@@ -243,7 +251,7 @@ impl ServerManager {
             .into_iter()
             .map(|server| {
                 let id = server.config.id.to_string();
-                server_list_item(&server, peaks_24h.get(&id).copied())
+                server_list_item(&server, peaks_24h.get(&id).copied(), None)
             })
             .collect();
 
@@ -291,7 +299,7 @@ impl ServerManager {
         let id_str = id.to_string();
         let peaks_24h = self.insights.peaks_24h_by_server_id().await;
 
-        Some(server_list_item(&server, peaks_24h.get(&id_str).copied()))
+        Some(server_list_item(&server, peaks_24h.get(&id_str).copied(), None))
     }
 
     pub async fn server_list_items_by_ids(&self, ids: &[Uuid]) -> Vec<ServerListItemResponse> {
@@ -309,7 +317,7 @@ impl ServerManager {
                     .iter()
                     .find(|server| server.config.id == *id && server.is_tracking())?;
                 let id_str = id.to_string();
-                Some(server_list_item(server, peaks_24h.get(&id_str).copied()))
+                Some(server_list_item(server, peaks_24h.get(&id_str).copied(), None))
             })
             .collect()
     }
@@ -466,6 +474,7 @@ impl ServerManager {
             servers.push(server_list_item(
                 &server,
                 peaks_24h_by_server.get(&id).copied(),
+                None,
             ));
         }
 

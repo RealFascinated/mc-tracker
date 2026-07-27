@@ -23,6 +23,9 @@ export type ServerListItem = {
   playersOnline: number | null;
   favicon: string | null;
   peaks: EntityPeakStats;
+  trend24h?: number | null;
+  trend7d?: number | null;
+  trend30d?: number | null;
 };
 
 export type ServersListResponse = {

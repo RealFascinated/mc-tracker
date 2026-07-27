@@ -1,6 +1,7 @@
 import type { VisibleTimeseriesQueryOptions } from "@/lib/api/visible-timeseries-options";
 import { Fragment, useMemo } from "react";
 import type { ReactNode } from "react";
+import { cn } from "cnfast";
 
 import type { EntityPeakStats, TimeseriesResponse } from "@/lib/api/types";
 
@@ -54,6 +55,7 @@ export type EntityMetricsGridConfig<
     visibilityKey: string;
     children: ReactNode;
   }) => ReactNode;
+  gridContainerClassName?: string;
 };
 
 type EntityMetricsChartProps<T, TTimeseries extends TimeseriesResponse> = {
@@ -183,6 +185,7 @@ export function EntityMetricsGrid<
   timeseriesEnabled,
   section,
   wrapItem,
+  gridContainerClassName,
 }: EntityMetricsGridConfig<T, TTimeseries>) {
   if (trackedCount === 0) {
     return (
@@ -226,7 +229,12 @@ export function EntityMetricsGrid<
         ) : null}
       </FadeInAnimation>
 
-      <div className="entity-metrics-grid-container">
+      <div
+        className={cn(
+          "entity-metrics-grid-container",
+          gridContainerClassName,
+        )}
+      >
         <div className="entity-metrics-grid">
           {items.map((item) => {
             const visibilityKey = getKey(item);

@@ -78,6 +78,22 @@ pub fn peak_players_24h_by_server(environment: &str) -> String {
     )
 }
 
+fn avg_by_server_raw(environment: &str, window: &str, offset: Option<&str>) -> String {
+    let base = player_count_by_server(environment);
+    let offset_clause = offset
+        .map(|o| format!(" offset {o}"))
+        .unwrap_or_default();
+    format!("avg_over_time({base}[{window}:]){offset_clause}")
+}
+
+/// Trend percent: `(current_avg - previous_avg) / previous_avg * 100`
+/// Compares `window` vs `window` shifted by `offset`.
+pub fn avg_trend_by_server(environment: &str, window: &str, offset: &str) -> String {
+    let current = avg_by_server_raw(environment, window, None);
+    let previous = avg_by_server_raw(environment, window, Some(offset));
+    format!("( {current} / {previous} - 1 ) * 100")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

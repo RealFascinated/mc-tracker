@@ -34,8 +34,10 @@ pub(crate) fn peak_players_record(
 pub(crate) fn server_list_item(
     server: &TrackedServer,
     peak_24h: Option<f64>,
+    trends: Option<(Option<f64>, Option<f64>, Option<f64>)>,
 ) -> ServerListItemResponse {
     let id = server.config.id.to_string();
+    let (trend_24h, trend_7d, trend_30d) = trends.unwrap_or((None, None, None));
     ServerListItemResponse {
         id,
         name: server.config.name.clone(),
@@ -50,6 +52,9 @@ pub(crate) fn server_list_item(
             peak_24h,
             peak_players_record(server.peak_players, server.peak_players_timestamp),
         ),
+        trend_24h,
+        trend_7d,
+        trend_30d,
     }
 }
 

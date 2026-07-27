@@ -1,13 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
+import { cn } from "cnfast";
 
 import { PinnedServersGrid } from "@/components/dashboard/grids/pinned-servers-grid";
 import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-row";
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
+import { ServersTable } from "@/components/dashboard/tables/servers-table";
+import type { SortField, SortDirection } from "@/components/dashboard/tables/servers-table";
 import { LoadingState } from "@/components/loading-state";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
+import { SlidingSegmentedControl, SlidingSegmentedControlItem } from "@/components/ui/sliding-segmented-control";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
 import { usePersistedServerSort } from "@/hooks/use-persisted-server-sort";
 import { useSearchParamNavigation } from "@/hooks/use-search-param-navigation";
@@ -30,6 +34,8 @@ import { pageTitle } from "@/lib/page-title";
 import type { MetricTimeRange } from "@/lib/metrics/range";
 import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 
+type ViewMode = "cards" | "table";
+
 type ServersSearch = {
   range?: MetricTimeRange;
   from?: number;
@@ -37,6 +43,7 @@ type ServersSearch = {
   platform?: ServerPlatformFilter;
   sort?: ServerSortField;
   order?: SortOrder;
+  view?: ViewMode;
 };
 
 export const Route = createFileRoute("/servers/")({
@@ -45,6 +52,7 @@ export const Route = createFileRoute("/servers/")({
     platform: parseServerPlatformFilterParam(search.platform),
     sort: parseServerSortFieldParam(search.sort),
     order: parseSortOrderParam(search.order),
+    view: search.view === "table" ? "table" : undefined,
   }),
   loaderDeps: ({ search }) => ({
     serverSort: resolveServerSort(search),
@@ -68,9 +76,11 @@ function ServersPage() {
     platform: urlPlatform,
     sort: urlSortField,
     order: urlOrder,
+    view: urlView,
   } = Route.useSearch();
   const navigate = Route.useNavigate();
   const platformFilter: ServerPlatformFilter = urlPlatform ?? "all";
+  const viewMode: ViewMode = urlView ?? "cards";
   const { serverSort, setServerSort } = usePersistedServerSort(navigate, {
     sort: urlSortField,
     order: urlOrder,
@@ -110,6 +120,30 @@ function ServersPage() {
   const globalSummary = serversData?.summary;
   const showPageLoading = serversPending && !globalSummary;
 
+  const setViewMode = useSearchParamNavigation<ViewMode>(navigate, "view", "cards");
+
+  // Table sort state — independent of the card grid serverSort
+  const [tableSortField, setTableSortField] = React.useState<SortField>("name");
+  const [tableSortDirection, setTableSortDirection] = React.useState<SortDirection>("asc");
+
+  function handleTableSort(field: SortField) {
+    if (field === tableSortField) {
+      setTableSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setTableSortField(field);
+      setTableSortDirection(
+        field === "players" ||
+          field === "peak24h" ||
+          field === "peakAllTime" ||
+          field === "trend24h" ||
+          field === "trend7d" ||
+          field === "trend30d"
+          ? "desc"
+          : "asc",
+      );
+    }
+  }
+
   return (
     <>
       {showPageLoading ? (
@@ -133,9 +167,10 @@ function ServersPage() {
               window={timeWindow}
             />
 
-            {pinnedServers.length > 0 ? (
+            {viewMode === "cards" && pinnedServers.length > 0 ? (
               <PinnedServersGrid servers={pinnedServers} window={timeWindow} />
             ) : null}
+
             <ServerMetricsGrid
               servers={filteredServers}
               window={timeWindow}
@@ -146,7 +181,84 @@ function ServersPage() {
               trackedServers={serversData.summary.trackedServers}
               pinnedServerIds={pinnedServerIds}
               showPinButtons={isAuthenticated}
+              viewToggle={
+                <SlidingSegmentedControl
+                  value={viewMode}
+                  onValueChange={(v) => setViewMode(v as ViewMode)}
+                  aria-label="View mode"
+                >
+                  <SlidingSegmentedControlItem
+                    value="cards"
+                    className={cn(
+                      "relative z-10 flex h-7 items-center gap-1 rounded-snug px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning",
+                      viewMode === "cards"
+                        ? "text-monitor dark:text-warning"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="size-3.5"
+                      aria-hidden
+                    >
+                      <rect width="7" height="7" x="3" y="3" rx="1" />
+                      <rect width="7" height="7" x="14" y="3" rx="1" />
+                      <rect width="7" height="7" x="3" y="14" rx="1" />
+                      <rect width="7" height="7" x="14" y="14" rx="1" />
+                    </svg>
+                    Cards
+                  </SlidingSegmentedControlItem>
+                  <SlidingSegmentedControlItem
+                    value="table"
+                    className={cn(
+                      "relative z-10 flex h-7 items-center gap-1 rounded-snug px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning",
+                      viewMode === "table"
+                        ? "text-monitor dark:text-warning"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="size-3.5"
+                      aria-hidden
+                    >
+                      <line x1="3" x2="21" y1="6" y2="6" />
+                      <line x1="3" x2="21" y1="12" y2="12" />
+                      <line x1="3" x2="21" y1="18" y2="18" />
+                    </svg>
+                    Table
+                  </SlidingSegmentedControlItem>
+                </SlidingSegmentedControl>
+              }
+              hideGridContent={viewMode === "table"}
             />
+
+            <div className={viewMode === "cards" ? "hidden" : "-mt-2"}>
+              <ServersTable
+                servers={filteredServers}
+                pinnedServerIds={pinnedServerIds}
+                showPinButtons={isAuthenticated}
+                sortField={tableSortField}
+                sortDirection={tableSortDirection}
+                onSort={handleTableSort}
+              />
+            </div>
           </MetricChartsScope>
         </main>
       )}

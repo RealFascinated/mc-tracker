@@ -55,6 +55,9 @@ pub struct ServerListItemResponse {
     pub players_online: Option<u32>,
     pub favicon: Option<String>,
     pub peaks: EntityPeakStats,
+    pub trend_24h: Option<f64>,
+    pub trend_7d: Option<f64>,
+    pub trend_30d: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
