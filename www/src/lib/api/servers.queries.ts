@@ -25,6 +25,7 @@ export function serversQueryOptions(sort: ServerSort = DEFAULT_SERVER_SORT) {
   return queryOptions({
     queryKey: [...serversQueryKey, { sort }] as const,
     queryFn: () => getServers(sort),
+    placeholderData: keepPreviousData,
   });
 }
 
