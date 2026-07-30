@@ -50,7 +50,7 @@ export function ServerIdentityHeader({
           : "entity-metrics-card-header",
       )}
     >
-      <div className="flex items-start gap-2">
+      <div className="flex items-center gap-2">
         <div className="entity-metrics-identity min-w-0 flex-1">
           <ServerFavicon
             name={server.name}
