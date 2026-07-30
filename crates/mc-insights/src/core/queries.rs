@@ -10,8 +10,14 @@ use crate::metric::{
 
 use super::resolution::PlayersResolution;
 
+const SECONDS_PER_WEEK: u64 = 7 * SECONDS_PER_DAY as u64;
+
 fn daily_step() -> Duration {
     Duration::from_secs(SECONDS_PER_DAY as u64)
+}
+
+fn weekly_step() -> Duration {
+    Duration::from_secs(SECONDS_PER_WEEK)
 }
 
 pub fn build_total_players_by_type_query(
@@ -26,6 +32,9 @@ pub fn build_total_players_by_type_query(
         PlayersResolution::DailyAverage => {
             avg_over_time(&total_players_by_type_series(environment, platform_type), "1d")
         }
+        PlayersResolution::WeeklyAverage => {
+            avg_over_time(&total_players_by_type_series(environment, platform_type), "7d")
+        }
     };
 
     let mut builder = VmRangeQuery::builder()
@@ -36,6 +45,7 @@ pub fn build_total_players_by_type_query(
     match resolution {
         PlayersResolution::Chart => builder = builder.chart_step(),
         PlayersResolution::DailyAverage => builder = builder.step(daily_step()),
+        PlayersResolution::WeeklyAverage => builder = builder.step(weekly_step()),
     }
 
     builder.build().map_err(InsightsError::from)
@@ -55,11 +65,17 @@ pub fn build_players_query(
             PlayersResolution::DailyAverage => {
                 avg_over_time(&player_count_series(environment, id), "1d")
             }
+            PlayersResolution::WeeklyAverage => {
+                avg_over_time(&player_count_series(environment, id), "7d")
+            }
         },
         (None, None) => match resolution {
             PlayersResolution::Chart => total_players_series(environment),
             PlayersResolution::DailyAverage => {
                 avg_over_time(&total_players_series(environment), "1d")
+            }
+            PlayersResolution::WeeklyAverage => {
+                avg_over_time(&total_players_series(environment), "7d")
             }
         },
         (None, Some((asn, asn_org))) => match resolution {
@@ -67,6 +83,10 @@ pub fn build_players_query(
             PlayersResolution::DailyAverage => avg_over_time(
                 &players_for_asn_series(environment, asn, asn_org),
                 "1d",
+            ),
+            PlayersResolution::WeeklyAverage => avg_over_time(
+                &players_for_asn_series(environment, asn, asn_org),
+                "7d",
             ),
         },
         _ => {
@@ -84,6 +104,7 @@ pub fn build_players_query(
     match resolution {
         PlayersResolution::Chart => builder = builder.chart_step(),
         PlayersResolution::DailyAverage => builder = builder.step(daily_step()),
+        PlayersResolution::WeeklyAverage => builder = builder.step(weekly_step()),
     }
 
     builder.build().map_err(InsightsError::from)
@@ -127,5 +148,24 @@ mod tests {
             .promql()
             .starts_with("avg_over_time("));
         assert_eq!(query.window().step(), daily_step());
+    }
+
+    #[test]
+    fn weekly_server_query_uses_avg_over_time() {
+        let query = build_players_query(
+            PlayersResolution::WeeklyAverage,
+            "production",
+            1_700_000_000,
+            1_770_000_000,
+            Some("abc"),
+            None,
+        )
+        .unwrap();
+        assert!(query
+            .to_vm_query()
+            .unwrap()
+            .promql()
+            .starts_with("avg_over_time("));
+        assert_eq!(query.window().step(), weekly_step());
     }
 }

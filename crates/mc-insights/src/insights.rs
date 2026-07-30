@@ -179,6 +179,8 @@ impl Insights {
         id: Uuid,
         from: i64,
         to: i64,
+        daily_avg: bool,
+        weekly_avg: bool,
     ) -> Result<ServerTimeseriesResponse, InsightsError> {
         parse_chart_epochs(from, to)?;
         let lane = fetch_server_lane(
@@ -198,9 +200,51 @@ impl Insights {
             Some(&id.to_string()),
             None,
         )?;
+        let mut lanes = lane_to_timeseries_lanes(&lane, query.window());
+
+        if daily_avg {
+            if let Ok(avg_lane) = fetch_server_lane(
+                self,
+                catalog,
+                id,
+                from,
+                to,
+                PlayersResolution::DailyAverage,
+            )
+            .await
+            {
+                lanes.insert_lane(
+                    mc_api_types::timeseries_keys::PLAYERS_DAILY_AVG,
+                    avg_lane.step_secs,
+                    avg_lane.timestamps.clone(),
+                    avg_lane.values.clone(),
+                );
+            }
+        }
+
+        if weekly_avg {
+            if let Ok(avg_lane) = fetch_server_lane(
+                self,
+                catalog,
+                id,
+                from,
+                to,
+                PlayersResolution::WeeklyAverage,
+            )
+            .await
+            {
+                lanes.insert_lane(
+                    mc_api_types::timeseries_keys::PLAYERS_WEEKLY_AVG,
+                    avg_lane.step_secs,
+                    avg_lane.timestamps.clone(),
+                    avg_lane.values.clone(),
+                );
+            }
+        }
+
         Ok(ServerTimeseriesResponse {
             id: id.to_string(),
-            timeseries: lane_to_timeseries_lanes(&lane, query.window()),
+            timeseries: lanes,
             events: vec![],
         })
     }

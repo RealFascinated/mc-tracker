@@ -2,4 +2,5 @@
 pub enum PlayersResolution {
     Chart,
     DailyAverage,
+    WeeklyAverage,
 }

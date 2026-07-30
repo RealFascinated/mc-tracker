@@ -289,7 +289,14 @@ async fn server_timeseries(
 ) -> Response {
     match state
         .insights
-        .server_players_lanes(state.manager.as_ref(), id, query.from, query.to)
+        .server_players_lanes(
+            state.manager.as_ref(),
+            id,
+            query.from,
+            query.to,
+            query.daily_avg,
+            query.weekly_avg,
+        )
         .await
     {
         Ok(response) => Json(response).into_response(),

@@ -23,11 +23,34 @@ export function createPlayersChart(
   };
 }
 
+export type AvgOverlayOptions = {
+  dailyAvg?: boolean;
+  weeklyAvg?: boolean;
+};
+
 export function createServerPlayersChart(
   id: string,
   yRange: YRangeSpec = "auto",
+  avgOverlays?: AvgOverlayOptions,
 ): ChartDefinition {
-  return createPlayersChart(id, yRange);
+  const def = createPlayersChart(id, yRange);
+  if (avgOverlays?.dailyAvg) {
+    def.series.push({
+      key: "players_daily_avg",
+      label: "Daily avg",
+      unit: "count",
+      axis: "left",
+    });
+  }
+  if (avgOverlays?.weeklyAvg) {
+    def.series.push({
+      key: "players_weekly_avg",
+      label: "Weekly avg",
+      unit: "count",
+      axis: "left",
+    });
+  }
+  return def;
 }
 
 export const totalPlayersChart: ChartDefinition = {

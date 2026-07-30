@@ -36,6 +36,8 @@ export const TIMESERIES_SERIES_KEYS = {
   playersOnline: "playersOnline",
   playersJava: "playersJava",
   playersBedrock: "playersBedrock",
+  playersDailyAvg: "playersDailyAvg",
+  playersWeeklyAvg: "playersWeeklyAvg",
 } as const;
 
 export type ApiErrorCode =

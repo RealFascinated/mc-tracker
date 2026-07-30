@@ -49,4 +49,6 @@ pub mod keys {
     pub const PLAYERS_ONLINE: &str = "playersOnline";
     pub const PLAYERS_JAVA: &str = "playersJava";
     pub const PLAYERS_BEDROCK: &str = "playersBedrock";
+    pub const PLAYERS_DAILY_AVG: &str = "playersDailyAvg";
+    pub const PLAYERS_WEEKLY_AVG: &str = "playersWeeklyAvg";
 }

@@ -84,11 +84,19 @@ export function searchServers(search: string, limit = 10) {
   });
 }
 
-export function getServerTimeseries(id: string, from: number, to: number) {
+export function getServerTimeseries(
+  id: string,
+  from: number,
+  to: number,
+  dailyAvg?: boolean,
+  weeklyAvg?: boolean,
+) {
   const params = new URLSearchParams({
     from: String(from),
     to: String(to),
   });
+  if (dailyAvg) params.set("dailyAvg", "true");
+  if (weeklyAvg) params.set("weeklyAvg", "true");
   return apiFetch<ServerTimeseriesResponse>(
     `/servers/${id}/timeseries?${params}`,
     { credentials: "omit" },

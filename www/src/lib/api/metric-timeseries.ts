@@ -21,6 +21,8 @@ const CHART_SERIES_KEYS: Record<string, string> = {
   [TIMESERIES_SERIES_KEYS.playersOnline]: "players_online",
   [TIMESERIES_SERIES_KEYS.playersJava]: "players_java",
   [TIMESERIES_SERIES_KEYS.playersBedrock]: "players_bedrock",
+  [TIMESERIES_SERIES_KEYS.playersDailyAvg]: "players_daily_avg",
+  [TIMESERIES_SERIES_KEYS.playersWeeklyAvg]: "players_weekly_avg",
 };
 
 function buildMetricTimeGrid(from: number, to: number, step: number): number[] {

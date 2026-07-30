@@ -53,16 +53,19 @@ export function serversSearchQueryOptions(search: string, limit = 10) {
 export function serverTimeseriesQueryOptions(
   id: string,
   window: MetricTimeWindow,
+  dailyAvg?: boolean,
+  weeklyAvg?: boolean,
 ) {
   return queryOptions({
     queryKey: [
       ...serversTimeseriesQueryKey,
       id,
       metricTimeWindowQueryKey(window),
+      { dailyAvg, weeklyAvg },
     ] as const,
     queryFn: () => {
       const { from, to } = metricTimeWindowToEpochWindow(window);
-      return getServerTimeseries(id, from, to);
+      return getServerTimeseries(id, from, to, dailyAvg, weeklyAvg);
     },
     enabled: id.length > 0,
   });
