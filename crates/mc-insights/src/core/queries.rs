@@ -1,7 +1,3 @@
-use std::time::Duration;
-
-use mc_common::constants::time::SECONDS_PER_DAY;
-
 use crate::error::InsightsError;
 use crate::metric::{
     avg_over_time, player_count_series, players_for_asn_series, total_players_by_type_series,
@@ -9,16 +5,6 @@ use crate::metric::{
 };
 
 use super::resolution::PlayersResolution;
-
-const SECONDS_PER_WEEK: u64 = 7 * SECONDS_PER_DAY as u64;
-
-fn daily_step() -> Duration {
-    Duration::from_secs(SECONDS_PER_DAY as u64)
-}
-
-fn weekly_step() -> Duration {
-    Duration::from_secs(SECONDS_PER_WEEK)
-}
 
 pub fn build_total_players_by_type_query(
     resolution: PlayersResolution,
@@ -43,9 +29,9 @@ pub fn build_total_players_by_type_query(
         .to_epoch(to_epoch);
 
     match resolution {
-        PlayersResolution::Chart => builder = builder.chart_step(),
-        PlayersResolution::DailyAverage => builder = builder.step(daily_step()),
-        PlayersResolution::WeeklyAverage => builder = builder.step(weekly_step()),
+        PlayersResolution::Chart |
+        PlayersResolution::DailyAverage |
+        PlayersResolution::WeeklyAverage => builder = builder.chart_step(),
     }
 
     builder.build().map_err(InsightsError::from)
@@ -102,9 +88,9 @@ pub fn build_players_query(
         .to_epoch(to_epoch);
 
     match resolution {
-        PlayersResolution::Chart => builder = builder.chart_step(),
-        PlayersResolution::DailyAverage => builder = builder.step(daily_step()),
-        PlayersResolution::WeeklyAverage => builder = builder.step(weekly_step()),
+        PlayersResolution::Chart |
+        PlayersResolution::DailyAverage |
+        PlayersResolution::WeeklyAverage => builder = builder.chart_step(),
     }
 
     builder.build().map_err(InsightsError::from)
@@ -112,32 +98,38 @@ pub fn build_players_query(
 
 #[cfg(test)]
 mod tests {
-    use crate::metric::min_step;
+    use std::time::Duration;
+
+    use crate::metric::query::step_for;
 
     use super::*;
 
     #[test]
     fn chart_server_query() {
+        let from = 1_700_000_000;
+        let to = 1_700_003_600;
         let query = build_players_query(
             PlayersResolution::Chart,
             "production",
-            1_700_000_000,
-            1_700_003_600,
+            from,
+            to,
             Some("abc"),
             None,
         )
         .unwrap();
         assert!(query.to_vm_query().unwrap().promql().contains(r#"id="abc""#));
-        assert_eq!(query.window().step(), min_step());
+        assert_eq!(query.window().step(), step_for(Duration::from_secs((to - from) as u64)));
     }
 
     #[test]
     fn daily_server_query_uses_avg_over_time() {
+        let from = 1_700_000_000;
+        let to = 1_730_000_000;
         let query = build_players_query(
             PlayersResolution::DailyAverage,
             "production",
-            1_700_000_000,
-            1_730_000_000,
+            from,
+            to,
             Some("abc"),
             None,
         )
@@ -147,16 +139,18 @@ mod tests {
             .unwrap()
             .promql()
             .starts_with("avg_over_time("));
-        assert_eq!(query.window().step(), daily_step());
+        assert_eq!(query.window().step(), step_for(Duration::from_secs((to - from) as u64)));
     }
 
     #[test]
     fn weekly_server_query_uses_avg_over_time() {
+        let from = 1_700_000_000;
+        let to = 1_770_000_000;
         let query = build_players_query(
             PlayersResolution::WeeklyAverage,
             "production",
-            1_700_000_000,
-            1_770_000_000,
+            from,
+            to,
             Some("abc"),
             None,
         )
@@ -166,6 +160,6 @@ mod tests {
             .unwrap()
             .promql()
             .starts_with("avg_over_time("));
-        assert_eq!(query.window().step(), weekly_step());
+        assert_eq!(query.window().step(), step_for(Duration::from_secs((to - from) as u64)));
     }
 }

@@ -174,7 +174,11 @@ mod tests {
             .as_secs() as i64;
         let window = MetricQueryWindow::parse(from, to).unwrap();
         assert_eq!(window.step(), step_policy::min_step());
-        assert!(window.to() <= SystemTime::now());
+        let now_epoch = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        assert!(window.to_epoch() <= now_epoch);
     }
 
     #[test]

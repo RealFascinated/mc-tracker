@@ -60,6 +60,7 @@ impl VmRangeQueryBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn step(mut self, step: Duration) -> Self {
         self.chart_step = false;
         self.step = Some(step);

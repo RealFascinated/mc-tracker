@@ -1,7 +1,7 @@
 mod client;
 mod error;
 mod push;
-mod query;
+pub(crate) mod query;
 mod schema;
 
 pub use client::{LabeledInstantValue, VmQueryClient};
