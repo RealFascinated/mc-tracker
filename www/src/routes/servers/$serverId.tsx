@@ -13,7 +13,6 @@ import { NotFoundPage } from "@/components/not-found-page";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/metrics/use-metric-time-window-link-search";
-import { asnDetailSearch } from "@/lib/api/asns";
 import { ensureQueryOrNotFound } from "@/lib/api/ensure-query-or-not-found";
 import { serverQueryOptions } from "@/lib/api/servers.queries";
 import { withDashboardEntityQuery } from "@/lib/dashboard/entity-query";
@@ -89,22 +88,6 @@ function ServerDetailPage() {
       <FadeInAnimation>
         <DashboardCard className="server-detail-card">
           <ServerIdentityHeader server={server} layout="page" />
-          {server.asn ? (
-            <div className="server-detail-body">
-              <p className="text-sm text-muted-foreground">
-                View all servers on this network on the{" "}
-                <Link
-                  to="/asns/$asn"
-                  params={{ asn: server.asn }}
-                  search={asnDetailSearch(server.asnOrg, timeWindowSearch)}
-                  className="link-underline-animate link-underline-animate--primary font-medium text-foreground hover:text-monitor dark:hover:text-warning"
-                >
-                  network page
-                </Link>
-                .
-              </p>
-            </div>
-          ) : null}
         </DashboardCard>
       </FadeInAnimation>
 
