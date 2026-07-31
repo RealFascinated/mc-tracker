@@ -1,11 +1,13 @@
 pub mod chat_session;
 pub mod monitored_server_event;
 pub mod pinned_server;
+pub mod server_suggestion;
 pub mod user_flags;
 
 pub use chat_session::{ChatSessionSummary, ChatTurnRow};
 pub use monitored_server_event::{MonitoredServerEvent, MonitoredServerEventType};
 pub use pinned_server::PinnedServer;
+pub use server_suggestion::{ServerSuggestion, ServerSuggestionStatus};
 pub use user_flags::{can_manage_servers, chat_quota_exempt, effective_flags, UserFlags};
 
 use chrono::{DateTime, Utc};

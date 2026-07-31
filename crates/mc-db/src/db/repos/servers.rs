@@ -104,6 +104,46 @@ pub async fn get(pool: &DbPool, id: Uuid) -> Result<Server, DbError> {
     }
 }
 
+pub async fn find_by_host_port_platform(
+    pool: &DbPool,
+    host: &str,
+    port: Option<i32>,
+    platform: Platform,
+) -> Result<Option<Server>, DbError> {
+    let mut conn = get_conn(pool).await?;
+    let mut query = servers::table
+        .filter(servers::host.eq(host))
+        .filter(servers::platform.eq(platform.as_str()))
+        .into_boxed();
+    match port {
+        Some(port) => query = query.filter(servers::port.eq(port)),
+        None => query = query.filter(servers::port.is_null()),
+    }
+
+    let row = query
+        .select((
+            servers::id,
+            servers::name,
+            servers::host,
+            servers::port,
+            servers::platform,
+            servers::created_at,
+            servers::updated_at,
+            servers::peak_players,
+            servers::peak_players_timestamp,
+            servers::paused,
+        ))
+        .first::<ServerRow>(&mut conn)
+        .await
+        .optional()
+        .map_err(db_err)?;
+
+    match row {
+        Some(row) => row_to_server(row).map(Some),
+        None => Ok(None),
+    }
+}
+
 pub async fn insert(pool: &DbPool, new: NewServer<'_>) -> Result<Server, DbError> {
     let mut conn = get_conn(pool).await?;
     let id = new.id.unwrap_or_else(Uuid::new_v4);

@@ -8,5 +8,6 @@ pub mod chat_quota;
 pub mod embedded;
 pub mod manager;
 pub mod pinned_servers;
+pub mod server_suggestions;
 pub mod settings_api;
 pub mod tracker_read;

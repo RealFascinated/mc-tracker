@@ -79,9 +79,6 @@ function ServerLookupDetails({ server }: { server: McutilsServer }) {
             {formatServerHost(server.hostname, server.port)}
           </p>
         </div>
-        {server.motd.preview ? (
-          <p className="text-sm text-foreground">{server.motd.preview}</p>
-        ) : null}
         <dl className="grid gap-1 text-xs">
           <div className="flex justify-between gap-4">
             <dt className="text-muted-foreground">Players</dt>

@@ -67,8 +67,7 @@ fn login_request_deserializes_camel_case() {
 
 #[test]
 fn delete_account_request_deserializes_camel_case() {
-    let req: DeleteAccountRequest =
-        serde_json::from_str(r#"{"password":"secret"}"#).unwrap();
+    let req: DeleteAccountRequest = serde_json::from_str(r#"{"password":"secret"}"#).unwrap();
     assert_eq!(req.password, "secret");
 }
 
@@ -219,5 +218,60 @@ fn monitored_server_event_serializes_camel_case() {
     assert_eq!(
         json,
         r#"{"id":"11111111-1111-1111-1111-111111111111","serverId":"22222222-2222-2222-2222-222222222222","serverName":"Hypixel","type":"PC","eventType":"added","occurredAt":1700000000}"#
+    );
+}
+
+#[test]
+fn create_server_suggestion_request_deserializes_camel_case() {
+    use mc_api_types::request::server_suggestions::CreateServerSuggestionRequest;
+    let req: CreateServerSuggestionRequest = serde_json::from_str(
+        r#"{"name":"Hypixel","host":"mc.hypixel.net","port":25565,"type":"PC"}"#,
+    )
+    .unwrap();
+    assert_eq!(req.name, "Hypixel");
+    assert_eq!(req.host, "mc.hypixel.net");
+    assert_eq!(req.port, Some(25565));
+    assert_eq!(req.server_type, "PC");
+}
+
+#[test]
+fn approve_server_suggestion_request_deserializes_partial_fields() {
+    use mc_api_types::request::server_suggestions::ApproveServerSuggestionRequest;
+    let req: ApproveServerSuggestionRequest =
+        serde_json::from_str(r#"{"name":"Renamed"}"#).unwrap();
+    assert_eq!(req.name.as_deref(), Some("Renamed"));
+    assert!(req.host.is_none());
+    assert!(req.port.is_none());
+    assert!(req.server_type.is_none());
+
+    let empty: ApproveServerSuggestionRequest = serde_json::from_str(r#"{}"#).unwrap();
+    assert!(empty.name.is_none());
+}
+
+#[test]
+fn server_suggestion_response_serializes_camel_case() {
+    use mc_api_types::request::server_suggestions::ServerSuggestionsListQuery;
+    let query: ServerSuggestionsListQuery =
+        serde_json::from_str(r#"{"status":"pending"}"#).unwrap();
+    assert_eq!(query.status.as_deref(), Some("pending"));
+
+    let response = mc_api_types::ServerSuggestionResponse {
+        id: "11111111-1111-1111-1111-111111111111".into(),
+        name: "Hypixel".into(),
+        host: "mc.hypixel.net".into(),
+        port: None,
+        server_type: "PC".into(),
+        status: "pending".into(),
+        suggested_by: Some(mc_api_types::SuggestionAuthorResponse {
+            id: "22222222-2222-2222-2222-222222222222".into(),
+            name: "alice".into(),
+        }),
+        created_at: "2026-06-30T12:00:00Z".into(),
+        updated_at: "2026-06-30T12:00:00Z".into(),
+    };
+    let json = serde_json::to_string(&response).unwrap();
+    assert_eq!(
+        json,
+        r#"{"id":"11111111-1111-1111-1111-111111111111","name":"Hypixel","host":"mc.hypixel.net","port":null,"type":"PC","status":"pending","suggestedBy":{"id":"22222222-2222-2222-2222-222222222222","name":"alice"},"createdAt":"2026-06-30T12:00:00Z","updatedAt":"2026-06-30T12:00:00Z"}"#
     );
 }

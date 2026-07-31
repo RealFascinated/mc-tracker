@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+import { cn } from "cnfast";
 import { Grid2x2, Rows3 } from "lucide-react";
-import { useMemo } from "react";
 
 import { PinnedServersGrid } from "@/components/dashboard/grids/pinned-servers-grid";
 import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-row";
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
+import { SuggestServerDialog } from "@/components/dashboard/suggest-server-dialog";
 import { ServersTable } from "@/components/dashboard/tables/servers-table";
 import type {
   SortField,
@@ -34,6 +37,7 @@ import { serversQueryOptions } from "@/lib/api/servers.queries";
 import { pinnedServersQueryOptions } from "@/lib/api/pinned-servers.queries";
 import { useAuth } from "@/lib/auth/context";
 import { pageTitle } from "@/lib/page-title";
+import { Button } from "@/components/ui/button";
 import type { MetricTimeRange } from "@/lib/metrics/range";
 import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 
@@ -96,6 +100,7 @@ export const Route = createFileRoute("/servers/")({
 function ServersPage() {
   const { refreshIntervalMs } = useDashboardRefresh();
   const { isAuthenticated } = useAuth();
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const {
     range: searchRange,
     from: searchFrom,
@@ -230,6 +235,90 @@ function ServersPage() {
               pinnedServerIds={pinnedServerIds}
               showPinButtons={isAuthenticated}
               viewToggle={
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="highlighted"
+                    size="sm"
+                    className="rounded-snug"
+                    data-icon-inline-start
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        void navigate({ to: "/login" });
+                        return;
+                      }
+                      setSuggestOpen(true);
+                    }}
+                  >
+                    <Plus />
+                    Suggest a server
+                  </Button>
+                  <SlidingSegmentedControl
+                    value={viewMode}
+                    onValueChange={(v) => setViewMode(v as ViewMode)}
+                    aria-label="View mode"
+                  >
+                    <SlidingSegmentedControlItem
+                      value="cards"
+                      className={cn(
+                        "relative z-10 flex h-7 items-center gap-1 rounded-snug px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning max-sm:px-1.5 max-sm:text-[11px]",
+                        viewMode === "cards"
+                          ? "text-monitor dark:text-warning"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="size-3.5"
+                        aria-hidden
+                      >
+                        <rect width="7" height="7" x="3" y="3" rx="1" />
+                        <rect width="7" height="7" x="14" y="3" rx="1" />
+                        <rect width="7" height="7" x="3" y="14" rx="1" />
+                        <rect width="7" height="7" x="14" y="14" rx="1" />
+                      </svg>
+                      <span className="max-sm:hidden">Cards</span>
+                      <span className="sm:hidden" aria-hidden>
+                        Grid
+                      </span>
+                    </SlidingSegmentedControlItem>
+                    <SlidingSegmentedControlItem
+                      value="table"
+                      className={cn(
+                        "relative z-10 flex h-7 items-center gap-1 rounded-snug px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning max-sm:px-1.5 max-sm:text-[11px]",
+                        viewMode === "table"
+                          ? "text-monitor dark:text-warning"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="size-3.5"
+                        aria-hidden
+                      >
+                        <line x1="3" x2="21" y1="6" y2="6" />
+                        <line x1="3" x2="21" y1="12" y2="12" />
+                        <line x1="3" x2="21" y1="18" y2="18" />
+                      </svg>
+                      Table
+                    </SlidingSegmentedControlItem>
+                  </SlidingSegmentedControl>
+                </div>
                 <SegmentedControl
                   value={viewMode}
                   onValueChange={(v) => setViewMode(v)}
@@ -269,6 +358,8 @@ function ServersPage() {
           </MetricChartsScope>
         </main>
       )}
+
+      <SuggestServerDialog open={suggestOpen} onOpenChange={setSuggestOpen} />
     </>
   );
 }

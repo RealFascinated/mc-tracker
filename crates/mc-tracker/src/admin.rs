@@ -1,36 +1,42 @@
-use axum::extract::Path;
-use axum::extract::State;
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, patch};
+use axum::routing::{get, patch, post};
 use axum::{Json, Router};
 use mc_api_types::{
     AdminServersListResponse, AdminUsersListResponse, ApiError, ApiErrorCode, CreateServerRequest,
-    PatchSettingRequest, PatchUserFlagsRequest, PatchUserFlagsResponse, SettingsListResponse,
+    PatchSettingRequest, PatchUserFlagsRequest, PatchUserFlagsResponse, ServerSuggestionsListQuery,
+    ServerSuggestionsListResponse, SettingsListResponse, SuggestionAuthorResponse,
     UpdateServerRequest,
 };
 use mc_db::db::repos::monitored_server_events::{self, NewMonitoredServerEvent};
-use mc_db::model::MonitoredServerEventType;
+use mc_db::db::repos::server_suggestions;
 use mc_db::db::repos::servers::{self, NewServer, UpdateServer};
 use mc_db::db::repos::users;
 use mc_db::error::DbError;
-use mc_db::model::{Platform, User, UserFlags};
+use mc_db::model::MonitoredServerEventType;
+use mc_db::model::{Platform, ServerSuggestionStatus, User, UserFlags};
 use mc_settings::{SettingKey, SettingsError};
 use uuid::Uuid;
 
 use crate::api::AppState;
+use crate::server_suggestions::{map_db_error as map_suggestion_db_error, suggestion_response};
 use crate::settings_api::{to_setting_response, to_settings_list};
 
 pub fn router() -> Router<AppState> {
     Router::new()
         .merge(servers_router())
         .merge(restricted_router())
+        .merge(server_suggestions_router())
 }
 
 pub fn servers_router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_servers).post(create_server))
-        .route("/{id}", get(get_server).patch(update_server).delete(delete_server))
+        .route(
+            "/{id}",
+            get(get_server).patch(update_server).delete(delete_server),
+        )
 }
 
 pub fn restricted_router() -> Router<AppState> {
@@ -41,6 +47,13 @@ pub fn restricted_router() -> Router<AppState> {
         .route("/users/{id}/flags", patch(patch_user_flags))
 }
 
+pub fn server_suggestions_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(list_server_suggestions))
+        .route("/{id}/approve", post(approve_server_suggestion))
+        .route("/{id}/deny", post(deny_server_suggestion))
+        .route("/{id}", axum::routing::delete(delete_server_suggestion))
+}
 
 async fn record_server_event(
     pool: &mc_db::DbPool,
@@ -111,7 +124,11 @@ async fn create_server(
             )
             .await;
             state.manager.append_server(server.clone()).await;
-            (StatusCode::CREATED, Json(state.manager.admin_server_response_for(&server).await)).into_response()
+            (
+                StatusCode::CREATED,
+                Json(state.manager.admin_server_response_for(&server).await),
+            )
+                .into_response()
         }
         Err(err) => map_db_error(err),
     }
@@ -230,6 +247,196 @@ async fn delete_server(State(state): State<AppState>, Path(id): Path<Uuid>) -> R
             .into_response(),
         Err(err) => map_db_error(err),
     }
+}
+
+async fn list_server_suggestions(
+    State(state): State<AppState>,
+    Query(query): Query<ServerSuggestionsListQuery>,
+) -> Response {
+    let status = match query.status.as_deref().map(ServerSuggestionStatus::from_db) {
+        Some(Ok(status)) => status,
+        Some(Err(message)) => return bad_request(&message),
+        None => ServerSuggestionStatus::Pending,
+    };
+
+    let suggestions = match server_suggestions::list_by_status(&state.pool, status).await {
+        Ok(suggestions) => suggestions,
+        Err(err) => return map_suggestion_db_error(err),
+    };
+
+    let users = match users::list(&state.pool).await {
+        Ok(users) => users,
+        Err(err) => return map_db_error(err),
+    };
+    let author_names: std::collections::HashMap<Uuid, String> = users
+        .into_iter()
+        .map(|user| (user.id, author_name(&user)))
+        .collect();
+
+    Json(ServerSuggestionsListResponse {
+        suggestions: suggestions
+            .iter()
+            .map(|suggestion| {
+                let author =
+                    author_names
+                        .get(&suggestion.user_id)
+                        .map(|name| SuggestionAuthorResponse {
+                            id: suggestion.user_id.to_string(),
+                            name: name.clone(),
+                        });
+                suggestion_response(suggestion, author)
+            })
+            .collect(),
+    })
+    .into_response()
+}
+
+async fn approve_server_suggestion(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+    Json(body): Json<mc_api_types::ApproveServerSuggestionRequest>,
+) -> Response {
+    let suggestion = match server_suggestions::get(&state.pool, id).await {
+        Ok(suggestion) => suggestion,
+        Err(err) => return map_suggestion_db_error(err),
+    };
+
+    if suggestion.status != ServerSuggestionStatus::Pending {
+        return conflict("suggestion is no longer pending");
+    }
+
+    let name = body
+        .name
+        .as_deref()
+        .map(str::trim)
+        .unwrap_or(&suggestion.name);
+    let host = body
+        .host
+        .as_deref()
+        .map(str::trim)
+        .unwrap_or(&suggestion.host);
+    if name.is_empty() || host.is_empty() {
+        return bad_request("name and host cannot be empty");
+    }
+
+    let platform = match body.server_type.as_deref() {
+        Some(value) => match parse_platform(value) {
+            Ok(platform) => platform,
+            Err(message) => return bad_request(&message),
+        },
+        None => suggestion.platform,
+    };
+    let port = body.port.or(suggestion.port);
+
+    let server = match servers::insert(
+        &state.pool,
+        NewServer {
+            id: None,
+            name,
+            host,
+            port,
+            platform,
+        },
+    )
+    .await
+    {
+        Ok(server) => server,
+        Err(err) => return map_db_error(err),
+    };
+
+    record_server_event(
+        &state.pool,
+        server.id,
+        &server.name,
+        server.platform,
+        MonitoredServerEventType::Added,
+    )
+    .await;
+    state.manager.append_server(server.clone()).await;
+
+    match server_suggestions::update(
+        &state.pool,
+        id,
+        server_suggestions::UpdateServerSuggestion {
+            name: Some(name),
+            host: Some(host),
+            port: Some(port),
+            platform: Some(platform),
+            status: Some(ServerSuggestionStatus::Approved),
+        },
+    )
+    .await
+    {
+        Ok(suggestion) => Json(suggestion_response(&suggestion, None)).into_response(),
+        Err(err) => map_suggestion_db_error(err),
+    }
+}
+
+async fn deny_server_suggestion(State(state): State<AppState>, Path(id): Path<Uuid>) -> Response {
+    let suggestion = match server_suggestions::get(&state.pool, id).await {
+        Ok(suggestion) => suggestion,
+        Err(err) => return map_suggestion_db_error(err),
+    };
+
+    if suggestion.status != ServerSuggestionStatus::Pending {
+        return conflict("suggestion is no longer pending");
+    }
+
+    match server_suggestions::update(
+        &state.pool,
+        id,
+        server_suggestions::UpdateServerSuggestion {
+            name: None,
+            host: None,
+            port: None,
+            platform: None,
+            status: Some(ServerSuggestionStatus::Denied),
+        },
+    )
+    .await
+    {
+        Ok(suggestion) => Json(suggestion_response(&suggestion, None)).into_response(),
+        Err(err) => map_suggestion_db_error(err),
+    }
+}
+
+async fn delete_server_suggestion(State(state): State<AppState>, Path(id): Path<Uuid>) -> Response {
+    let suggestion = match server_suggestions::get(&state.pool, id).await {
+        Ok(suggestion) => suggestion,
+        Err(err) => return map_suggestion_db_error(err),
+    };
+
+    if suggestion.status == ServerSuggestionStatus::Approved {
+        return conflict("approved suggestions cannot be removed");
+    }
+
+    match server_suggestions::delete(&state.pool, id).await {
+        Ok(true) => StatusCode::NO_CONTENT.into_response(),
+        Ok(_) => (
+            StatusCode::NOT_FOUND,
+            Json(ApiError::new(
+                ApiErrorCode::NotFound,
+                format!("server suggestion {id}"),
+            )),
+        )
+            .into_response(),
+        Err(err) => map_suggestion_db_error(err),
+    }
+}
+
+fn author_name(user: &User) -> String {
+    user.display_name
+        .clone()
+        .filter(|name| !name.trim().is_empty())
+        .unwrap_or_else(|| user.username.clone())
+}
+
+fn conflict(message: &str) -> Response {
+    (
+        StatusCode::CONFLICT,
+        Json(ApiError::new(ApiErrorCode::Conflict, message)),
+    )
+        .into_response()
 }
 
 async fn get_settings(State(state): State<AppState>) -> Json<SettingsListResponse> {

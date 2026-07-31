@@ -1,5 +1,5 @@
 import { Outlet, createFileRoute } from "@tanstack/react-router";
-import { Server, Settings, Users } from "lucide-react";
+import { Server, Settings, Sparkles, Users } from "lucide-react";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { requireAdminAccess } from "@/lib/auth/require-admin";
@@ -17,6 +17,13 @@ const adminNav = [
     to: "/admin/servers",
     label: "Servers",
     icon: Server,
+    exact: true,
+    adminOnly: false,
+  },
+  {
+    to: "/admin/suggestions",
+    label: "Suggestions",
+    icon: Sparkles,
     exact: true,
     adminOnly: false,
   },

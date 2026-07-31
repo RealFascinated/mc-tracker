@@ -6,14 +6,14 @@ use axum::middleware;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
+use chrono::{TimeZone, Utc};
 use mc_api_types::{
     ApiError, ApiErrorCode, AsnDetailQuery, AsnTimeseriesQuery, AsnsListQuery, AsnsListResponse,
-    ErrorTarget, HealthResponse, PartialError, ServersCompareQuery, ServersListQuery,
-    ServersListResponse, ServersSearchQuery, ServersSearchResponse, SettingsListResponse,
-    MonitoredServerEventResponse, TimeseriesQuery,
+    ErrorTarget, HealthResponse, MonitoredServerEventResponse, PartialError, ServersCompareQuery,
+    ServersListQuery, ServersListResponse, ServersSearchQuery, ServersSearchResponse,
+    SettingsListResponse, TimeseriesQuery,
 };
 use mc_common::constants::limits::MAX_COMPARE_SERVERS;
-use chrono::{TimeZone, Utc};
 use mc_db::db::repos::monitored_server_events;
 use mc_db::model::MonitoredServerEvent;
 use mc_db::DbPool;
@@ -101,6 +101,7 @@ pub fn router(
         .route("/asns/{asn}", get(get_asn))
         .merge(crate::chat::router())
         .merge(crate::pinned_servers::router())
+        .merge(crate::server_suggestions::router())
         .nest("/auth", crate::auth::router())
         .nest(
             "/admin/servers",
@@ -110,11 +111,16 @@ pub fn router(
             )),
         )
         .nest(
-            "/admin",
-            admin::restricted_router().route_layer(middleware::from_fn_with_state(
+            "/admin/server-suggestions",
+            admin::server_suggestions_router().route_layer(middleware::from_fn_with_state(
                 state.clone(),
-                require_admin,
+                require_manage_servers,
             )),
+        )
+        .nest(
+            "/admin",
+            admin::restricted_router()
+                .route_layer(middleware::from_fn_with_state(state.clone(), require_admin)),
         );
 
     #[cfg(feature = "embedded-ui")]
@@ -139,7 +145,6 @@ async fn public_settings(State(state): State<AppState>) -> Json<SettingsListResp
     let items = state.manager.settings().list_public().await;
     Json(to_settings_list(items))
 }
-
 
 fn monitored_server_event_response(event: MonitoredServerEvent) -> MonitoredServerEventResponse {
     MonitoredServerEventResponse {
@@ -257,7 +262,13 @@ async fn asn_timeseries(
     let asn_org = query.asn_org.as_deref().unwrap_or_default();
     match state
         .insights
-        .asn_players_lanes(state.manager.as_ref(), &query.asn, asn_org, query.from, query.to)
+        .asn_players_lanes(
+            state.manager.as_ref(),
+            &query.asn,
+            asn_org,
+            query.from,
+            query.to,
+        )
         .await
     {
         Ok(response) => Json(response).into_response(),
@@ -356,11 +367,7 @@ fn map_insights_error(err: InsightsError) -> Response {
             err.to_string(),
         ),
     };
-    (
-        status,
-        Json(ApiError::new(code, message)),
-    )
-        .into_response()
+    (status, Json(ApiError::new(code, message))).into_response()
 }
 
 #[allow(dead_code)]

@@ -3,6 +3,7 @@ pub mod auth;
 pub mod chat;
 pub mod insights;
 pub mod pinned_servers;
+pub mod server_suggestions;
 pub mod servers;
 pub mod settings;
 pub mod timeseries;
