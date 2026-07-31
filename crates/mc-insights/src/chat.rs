@@ -315,7 +315,11 @@ impl InsightsChat {
         })
     }
 
-    fn parse_range(&self, from: &str, to: &str) -> Result<crate::core::ResolvedTimeRange, InsightsError> {
+    fn parse_range(
+        &self,
+        from: &str,
+        to: &str,
+    ) -> Result<crate::core::ResolvedTimeRange, InsightsError> {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_secs() as i64)

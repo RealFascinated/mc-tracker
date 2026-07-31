@@ -144,7 +144,10 @@ async fn signup(
     if !is_valid_email(email) {
         return (
             StatusCode::BAD_REQUEST,
-            Json(ApiError::new(ApiErrorCode::BadRequest, "invalid email address")),
+            Json(ApiError::new(
+                ApiErrorCode::BadRequest,
+                "invalid email address",
+            )),
         )
             .into_response();
     }
@@ -194,9 +197,12 @@ async fn change_password(
         Err(_) => return invalid_credentials(),
     };
 
-    if !users::verify_password_blocking(body.current_password.clone(), db_user.password_hash.clone())
-        .await
-        .unwrap_or(false)
+    if !users::verify_password_blocking(
+        body.current_password.clone(),
+        db_user.password_hash.clone(),
+    )
+    .await
+    .unwrap_or(false)
     {
         return (
             StatusCode::UNAUTHORIZED,
@@ -241,27 +247,18 @@ async fn update_profile(
     if email != db_user.username && !is_valid_email(email) {
         return (
             StatusCode::BAD_REQUEST,
-            Json(ApiError::new(ApiErrorCode::BadRequest, "invalid email address")),
+            Json(ApiError::new(
+                ApiErrorCode::BadRequest,
+                "invalid email address",
+            )),
         )
             .into_response();
     }
 
     let display_name = normalize_display_name(body.display_name);
 
-    match users::update_profile(
-        &state.pool,
-        user.id,
-        email,
-        display_name.as_deref(),
-    )
-    .await
-    {
-        Ok(updated) => Json(user_to_me_response(
-            &updated,
-            user.flags,
-            None,
-        ))
-        .into_response(),
+    match users::update_profile(&state.pool, user.id, email, display_name.as_deref()).await {
+        Ok(updated) => Json(user_to_me_response(&updated, user.flags, None)).into_response(),
         Err(mc_db::DbError::Conflict(message)) => (
             StatusCode::CONFLICT,
             Json(ApiError::new(ApiErrorCode::Conflict, message)),
@@ -277,7 +274,6 @@ async fn update_profile(
             .into_response(),
     }
 }
-
 
 async fn delete_account(
     State(state): State<AppState>,

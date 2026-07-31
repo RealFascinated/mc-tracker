@@ -38,14 +38,7 @@ pub async fn fetch_total_lane(
     to: i64,
     resolution: PlayersResolution,
 ) -> Result<AlignedLane, InsightsError> {
-    let query = build_players_query(
-        resolution,
-        catalog.environment(),
-        from,
-        to,
-        None,
-        None,
-    )?;
+    let query = build_players_query(resolution, catalog.environment(), from, to, None, None)?;
     insights.lane(&query).await
 }
 
@@ -119,14 +112,8 @@ pub async fn fetch_total_snapshot(
     series_key: &str,
     max_points: usize,
 ) -> Result<mc_chat_types::ChatTimeseriesSnapshot, InsightsError> {
-    let lane = fetch_total_lane(
-        insights,
-        catalog,
-        from,
-        to,
-        PlayersResolution::DailyAverage,
-    )
-    .await?;
+    let lane =
+        fetch_total_lane(insights, catalog, from, to, PlayersResolution::DailyAverage).await?;
     lane_to_snapshot(from, to, series_key, &lane, max_points)
 }
 

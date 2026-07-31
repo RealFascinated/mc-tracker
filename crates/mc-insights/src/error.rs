@@ -26,7 +26,9 @@ impl InsightsError {
             Self::InvalidRange(message) if message == "asn not found" => ChatErrorCode::AsnNotFound,
             Self::InvalidRange(_) => ChatErrorCode::InvalidRange,
             Self::NoData => ChatErrorCode::NoData,
-            Self::Http(_) | Self::VictoriaMetrics(_) | Self::Parse(_) => ChatErrorCode::InvalidRange,
+            Self::Http(_) | Self::VictoriaMetrics(_) | Self::Parse(_) => {
+                ChatErrorCode::InvalidRange
+            }
         }
     }
 

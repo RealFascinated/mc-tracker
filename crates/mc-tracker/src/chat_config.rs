@@ -1,7 +1,10 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use mc_chat::{AgentConfig, AgentLoop, ChatAgent, ChatToolDeps, LlmClient, LlmProvider, OpenAiLlmClient, ThinkingEffort, ToolRegistry};
+use mc_chat::{
+    AgentConfig, AgentLoop, ChatAgent, ChatToolDeps, LlmClient, LlmProvider, OpenAiLlmClient,
+    ThinkingEffort, ToolRegistry,
+};
 use mc_insights::InsightsChat;
 use mc_settings::{chat_enabled, SettingKey, SettingsStore};
 

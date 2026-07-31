@@ -356,4 +356,3 @@ async fn delete_account_forbids_only_admin() {
         .unwrap();
     assert_eq!(admin.username, "admin");
 }
-

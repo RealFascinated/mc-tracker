@@ -24,8 +24,8 @@ use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use mc_api_types::{
-    AdminServerResponse, AdminServersListResponse, AsnDetailResponse, AsnListItemResponse, AsnSearchResponse,
-    AsnsListResponse, AsnsSummaryResponse, IpLookupResponse, PlayersPeakSummary,
+    AdminServerResponse, AdminServersListResponse, AsnDetailResponse, AsnListItemResponse,
+    AsnSearchResponse, AsnsListResponse, AsnsSummaryResponse, IpLookupResponse, PlayersPeakSummary,
     ServerListItemResponse, ServerSearchItemResponse, ServersListResponse, ServersListSortField,
     ServersSearchResponse, ServersSummaryResponse, SortOrder,
 };
@@ -205,11 +205,7 @@ impl ServerManager {
         for server in tracked {
             let id = server.config.id.to_string();
             let t = trends.get(&id).copied();
-            servers.push(server_list_item(
-                server,
-                peaks_24h.get(&id).copied(),
-                t,
-            ));
+            servers.push(server_list_item(server, peaks_24h.get(&id).copied(), t));
         }
 
         sort_server_list_items(&mut servers, sort, order);
@@ -295,7 +291,11 @@ impl ServerManager {
         let id_str = id.to_string();
         let peaks_24h = self.insights.peaks_24h_by_server_id().await;
 
-        Some(server_list_item(&server, peaks_24h.get(&id_str).copied(), None))
+        Some(server_list_item(
+            &server,
+            peaks_24h.get(&id_str).copied(),
+            None,
+        ))
     }
 
     pub async fn server_list_items_by_ids(&self, ids: &[Uuid]) -> Vec<ServerListItemResponse> {
@@ -617,16 +617,15 @@ mod tests {
     #[tokio::test]
     async fn append_update_and_remove_server() {
         let settings = SettingsStore::for_testing("development");
-        let manager =
-            ServerManager::new(
-                vec![],
-                None,
-                settings,
-                fixture_geo(),
-                None,
-                "development",
-                test_insights("http://127.0.0.1:8428", "development"),
-            );
+        let manager = ServerManager::new(
+            vec![],
+            None,
+            settings,
+            fixture_geo(),
+            None,
+            "development",
+            test_insights("http://127.0.0.1:8428", "development"),
+        );
 
         let server = sample_server();
         let id = server.id;

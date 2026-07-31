@@ -19,9 +19,9 @@ pub use server_queries::{
     per_server_players_series, player_count_series, total_players_by_type_series,
     total_players_series,
 };
-pub use step_policy::{max_points, max_span, min_span, min_step};
 #[allow(unused_imports)]
 pub(crate) use step_policy::step_for;
+pub use step_policy::{max_points, max_span, min_span, min_step};
 pub use vm_query::VmQueryBuilder;
 
 pub(crate) use vm_query::VmQuery;

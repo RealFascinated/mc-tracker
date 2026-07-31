@@ -47,15 +47,8 @@ pub async fn compare_servers_chart(
             if !catalog.server_is_tracked(id).await {
                 return Err(InsightsError::InvalidRange("server not found".into()));
             }
-            let lane = fetch_server_lane(
-                insights,
-                catalog,
-                id,
-                from,
-                to,
-                PlayersResolution::Chart,
-            )
-            .await?;
+            let lane = fetch_server_lane(insights, catalog, id, from, to, PlayersResolution::Chart)
+                .await?;
             let query = build_players_query(
                 PlayersResolution::Chart,
                 catalog.environment(),

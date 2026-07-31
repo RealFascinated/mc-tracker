@@ -36,10 +36,7 @@ fn total_players_aggregate(environment: &str) -> String {
 /// `sum by (id) (max by (id, type) (minecraft_server_player_count{environment="..."}))`
 /// Returns one time series per server, labeled by `id`.
 pub fn per_server_players_series(environment: &str) -> String {
-    format!(
-        r#"sum by (id) ({})"#,
-        player_count_by_server(environment)
-    )
+    format!(r#"sum by (id) ({})"#, player_count_by_server(environment))
 }
 
 /// `max_over_time(sum(max by (id, type) (...))[24h:])`

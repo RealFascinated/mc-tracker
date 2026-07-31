@@ -204,7 +204,6 @@ async fn patch_admin_server_pause_and_resume() {
     assert_eq!(manager.summary().await.tracked_servers, 1);
 }
 
-
 #[tokio::test]
 async fn admin_server_lifecycle_records_monitored_events() {
     let (_postgres, database_url) = common::start_postgres().await;

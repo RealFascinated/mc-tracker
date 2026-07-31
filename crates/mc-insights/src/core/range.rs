@@ -19,7 +19,11 @@ pub fn parse_chart_epochs(from: i64, to: i64) -> Result<ResolvedTimeRange, Insig
     Ok(ResolvedTimeRange { from, to })
 }
 
-pub fn parse_insights_range(from: &str, to: &str, now: i64) -> Result<ResolvedTimeRange, InsightsError> {
+pub fn parse_insights_range(
+    from: &str,
+    to: &str,
+    now: i64,
+) -> Result<ResolvedTimeRange, InsightsError> {
     let to_epoch = parse_bound(to, now, true)?;
     let from_epoch = parse_bound(from, now, false)?;
     if from_epoch >= to_epoch {

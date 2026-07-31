@@ -21,12 +21,12 @@ use crate::core::{
     PlayersResolution,
 };
 use crate::error::InsightsError;
+use crate::metric::AlignedLane;
 use crate::metric::{
     avg_trend_by_server, labels, peak_players_24h, peak_players_24h_by_asn,
     peak_players_24h_by_server, peak_players_7d, LabeledInstantValue, PlayerCountEntry,
     PlayerCountRegistry, VmPushClient, VmQueryBuilder, VmQueryClient, VmRangeQuery,
 };
-use crate::metric::AlignedLane;
 
 const PEAK_CACHE_TTL: Duration = Duration::from_secs(5);
 const TREND_CACHE_TTL: Duration = Duration::from_secs(10);
@@ -111,8 +111,7 @@ impl Insights {
     ) {
         let query_base_url = query_base_url.into();
         let import_url = import_url.into();
-        *self.query_client.write().await =
-            VmQueryClient::new(query_base_url, auth_token.clone());
+        *self.query_client.write().await = VmQueryClient::new(query_base_url, auth_token.clone());
         *self.push_client.write().await = VmPushClient::new(import_url, auth_token.clone());
         self.cache.clear().await;
     }
@@ -237,7 +236,11 @@ impl Insights {
             );
 
             let sanitize = |v: f64| {
-                if v.is_finite() && v.abs() <= 500.0 { Some(v) } else { None }
+                if v.is_finite() && v.abs() <= 500.0 {
+                    Some(v)
+                } else {
+                    None
+                }
             };
 
             let mut all: HashMap<String, (Option<f64>, Option<f64>, Option<f64>)> = HashMap::new();
@@ -276,15 +279,7 @@ impl Insights {
         weekly_avg: bool,
     ) -> Result<ServerTimeseriesResponse, InsightsError> {
         parse_chart_epochs(from, to)?;
-        let lane = fetch_server_lane(
-            self,
-            catalog,
-            id,
-            from,
-            to,
-            PlayersResolution::Chart,
-        )
-        .await?;
+        let lane = fetch_server_lane(self, catalog, id, from, to, PlayersResolution::Chart).await?;
         let query = crate::core::build_players_query(
             PlayersResolution::Chart,
             catalog.environment(),
@@ -296,15 +291,9 @@ impl Insights {
         let mut lanes = lane_to_timeseries_lanes(&lane, query.window());
 
         if daily_avg {
-            if let Ok(avg_lane) = fetch_server_lane(
-                self,
-                catalog,
-                id,
-                from,
-                to,
-                PlayersResolution::DailyAverage,
-            )
-            .await
+            if let Ok(avg_lane) =
+                fetch_server_lane(self, catalog, id, from, to, PlayersResolution::DailyAverage)
+                    .await
             {
                 lanes.insert_lane(
                     mc_api_types::timeseries_keys::PLAYERS_DAILY_AVG,
@@ -366,7 +355,8 @@ impl Insights {
             None,
         )?;
 
-        let mut lanes = TimeseriesLanes::new(query.window().from_epoch(), query.window().to_epoch());
+        let mut lanes =
+            TimeseriesLanes::new(query.window().from_epoch(), query.window().to_epoch());
 
         if let Ok(lane) = total_lane {
             lanes.insert_lane(

@@ -31,12 +31,14 @@ pub fn build_total_players_by_type_query(
 ) -> Result<VmRangeQuery, InsightsError> {
     let promql = match resolution {
         PlayersResolution::Chart => total_players_by_type_series(environment, platform_type),
-        PlayersResolution::DailyAverage => {
-            avg_over_time(&total_players_by_type_series(environment, platform_type), "1d")
-        }
-        PlayersResolution::WeeklyAverage => {
-            avg_over_time(&total_players_by_type_series(environment, platform_type), "7d")
-        }
+        PlayersResolution::DailyAverage => avg_over_time(
+            &total_players_by_type_series(environment, platform_type),
+            "1d",
+        ),
+        PlayersResolution::WeeklyAverage => avg_over_time(
+            &total_players_by_type_series(environment, platform_type),
+            "7d",
+        ),
     };
 
     let mut builder = VmRangeQuery::builder()
@@ -81,14 +83,12 @@ pub fn build_players_query(
         },
         (None, Some((asn, asn_org))) => match resolution {
             PlayersResolution::Chart => players_for_asn_series(environment, asn, asn_org),
-            PlayersResolution::DailyAverage => avg_over_time(
-                &players_for_asn_series(environment, asn, asn_org),
-                "1d",
-            ),
-            PlayersResolution::WeeklyAverage => avg_over_time(
-                &players_for_asn_series(environment, asn, asn_org),
-                "7d",
-            ),
+            PlayersResolution::DailyAverage => {
+                avg_over_time(&players_for_asn_series(environment, asn, asn_org), "1d")
+            }
+            PlayersResolution::WeeklyAverage => {
+                avg_over_time(&players_for_asn_series(environment, asn, asn_org), "7d")
+            }
         },
         _ => {
             return Err(InsightsError::InvalidRange(
@@ -147,8 +147,15 @@ mod tests {
             None,
         )
         .unwrap();
-        assert!(query.to_vm_query().unwrap().promql().contains(r#"id="abc""#));
-        assert_eq!(query.window().step(), step_for(Duration::from_secs((to - from) as u64)));
+        assert!(query
+            .to_vm_query()
+            .unwrap()
+            .promql()
+            .contains(r#"id="abc""#));
+        assert_eq!(
+            query.window().step(),
+            step_for(Duration::from_secs((to - from) as u64))
+        );
     }
 
     #[test]
