@@ -23,6 +23,7 @@ import { Route as ServersServerIdRouteImport } from './routes/servers/$serverId'
 import { Route as AdminAdminIndexRouteImport } from './routes/_admin/admin/index'
 import { Route as AdminAdminServersRouteImport } from './routes/_admin/admin/servers'
 import { Route as AdminAdminSettingsRouteImport } from './routes/_admin/admin/settings'
+import { Route as AdminAdminSuggestionsRouteImport } from './routes/_admin/admin/suggestions'
 import { Route as AdminAdminUsersRouteImport } from './routes/_admin/admin/users'
 
 const IndexRoute = IndexRouteImport.update({
@@ -88,14 +89,14 @@ const AdminAdminServersRoute = AdminAdminServersRouteImport.update({
   path: '/admin/servers',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAdminSuggestionsRoute = AdminAdminSuggestionsRouteImport.update({
-  id: '/admin/suggestions',
-  path: '/admin/suggestions',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminAdminSettingsRoute = AdminAdminSettingsRouteImport.update({
   id: '/admin/settings',
   path: '/admin/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAdminSuggestionsRoute = AdminAdminSuggestionsRouteImport.update({
+  id: '/admin/suggestions',
+  path: '/admin/suggestions',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAdminUsersRoute = AdminAdminUsersRouteImport.update({
@@ -314,18 +315,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminServersRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/_admin/admin/suggestions': {
-      id: '/_admin/admin/suggestions'
-      path: '/admin/suggestions'
-      fullPath: '/admin/suggestions'
-      preLoaderRoute: typeof AdminAdminSuggestionsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/_admin/admin/settings': {
       id: '/_admin/admin/settings'
       path: '/admin/settings'
       fullPath: '/admin/settings'
       preLoaderRoute: typeof AdminAdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/admin/suggestions': {
+      id: '/_admin/admin/suggestions'
+      path: '/admin/suggestions'
+      fullPath: '/admin/suggestions'
+      preLoaderRoute: typeof AdminAdminSuggestionsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/admin/users': {
