@@ -129,9 +129,21 @@ function useMetricChartInstance({
   const chartZoomRef = useRef(chartZoom);
   const themeRef = useRef(resolvedTheme);
   const seriesColorsRef = useRef(seriesColors);
+  const labelsRef = useRef(labels);
+  const chartAxesRef = useRef(chartAxes);
+  const negatedRef = useRef(negated);
+  const seriesFillsRef = useRef(seriesFills);
+  const seriesRendersRef = useRef(seriesRenders);
+  const seriesAxisIdsRef = useRef(seriesAxisIds);
   chartZoomRef.current = chartZoom;
   themeRef.current = resolvedTheme;
   seriesColorsRef.current = seriesColors;
+  labelsRef.current = labels;
+  chartAxesRef.current = chartAxes;
+  negatedRef.current = negated;
+  seriesFillsRef.current = seriesFills;
+  seriesRendersRef.current = seriesRenders;
+  seriesAxisIdsRef.current = seriesAxisIds;
 
   useLayoutEffect(() => {
     const container = containerRef.current;
@@ -169,26 +181,26 @@ function useMetricChartInstance({
     const mountXWindow = getXWindowRef.current();
 
     const options = buildUPlotOptions({
-      labels,
+      labels: labelsRef.current,
       height: initialHeight,
-      chartAxes,
-      seriesAxisIds,
+      chartAxes: chartAxesRef.current,
+      seriesAxisIds: seriesAxisIdsRef.current,
       seriesFormatters: seriesFormattersRef.current,
       xRange: mountXWindow
         ? { min: mountXWindow.from, max: mountXWindow.to }
         : undefined,
-      seriesRenders,
+      seriesRenders: seriesRendersRef.current,
       stacked,
       bands: mountBands,
       bidirectional,
-      negated,
+      negated: negatedRef.current,
       compact,
       hideYAxis,
       xTime,
       reserveUnitLabels,
       layout,
       seriesColors: seriesColorsRef.current,
-      seriesFills,
+      seriesFills: seriesFillsRef.current,
       xDrag,
       inlineLegend,
     });
@@ -198,7 +210,9 @@ function useMetricChartInstance({
       const sourceIndex =
         sourceIndicesRef.current?.[seriesIndex] ?? seriesIndex;
       const display =
-        seriesIndex >= 0 && negated[seriesIndex] ? Math.abs(value) : value;
+        seriesIndex >= 0 && negatedRef.current[seriesIndex]
+          ? Math.abs(value)
+          : value;
       const formatter = seriesFormattersRef.current?.[sourceIndex];
       return formatter?.(display) ?? String(display);
     };
@@ -222,7 +236,7 @@ function useMetricChartInstance({
       hooks.setCursor = [
         createCursorTooltipHandler({
           tooltip,
-          labels,
+          labels: labelsRef.current,
           colors,
           getData: () => dataRef.current,
           formatValue: formatSeriesValue,
@@ -322,7 +336,6 @@ function useMetricChartInstance({
     applySeriesVisibilityRef,
     bidirectional,
     bandsKey,
-    chartAxes,
     chartAxesKey,
     chartRef,
     compact,
@@ -333,21 +346,16 @@ function useMetricChartInstance({
     hiddenSeriesRef,
     hideYAxis,
     inlineLegend,
-    labels,
     labelsKey,
     layoutDensityRef,
-    negated,
     negatedKey,
     preparedBandsRef,
     preparedDataRef,
     reserveUnitLabels,
     resolvedTheme,
-    seriesAxisIds,
     seriesAxisIdsKey,
-    seriesFills,
     seriesFillsKey,
     seriesFormattersRef,
-    seriesRenders,
     seriesRendersKey,
     setLayoutDensity,
     showTooltip,
