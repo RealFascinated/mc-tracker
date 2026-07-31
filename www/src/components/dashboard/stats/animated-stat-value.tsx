@@ -8,6 +8,7 @@ type AnimatedStatValueProps = {
   tooltip?: string;
   className?: string;
   active?: boolean;
+  delay?: number;
 };
 
 function AnimatedStatValueCore({
@@ -15,8 +16,9 @@ function AnimatedStatValueCore({
   tooltip,
   className,
   active,
+  delay = 0,
 }: AnimatedStatValueProps & { active: boolean }) {
-  const animated = useCountUp(value, undefined, active);
+  const animated = useCountUp(value, undefined, active, delay);
 
   return (
     <StatValueTooltip
@@ -31,6 +33,7 @@ function AnimatedStatValueObserved({
   value,
   tooltip,
   className,
+  delay = 0,
 }: Omit<AnimatedStatValueProps, "active">) {
   const { ref, hasBeenVisible } = useIntersectionVisible();
 
@@ -41,6 +44,7 @@ function AnimatedStatValueObserved({
         tooltip={tooltip}
         className={className}
         active={hasBeenVisible}
+        delay={delay}
       />
     </span>
   );

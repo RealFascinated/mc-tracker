@@ -1,6 +1,10 @@
+use std::any::Any;
 use std::collections::BTreeMap;
 
 use std::collections::HashMap;
+use std::future::Future;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use mc_api_types::{
     AsnTimeseriesResponse, ServerTimeseriesResponse, ServersCompareTimeseriesItem,
@@ -24,11 +28,60 @@ use crate::metric::{
 };
 use crate::metric::AlignedLane;
 
+const PEAK_CACHE_TTL: Duration = Duration::from_secs(5);
+const TREND_CACHE_TTL: Duration = Duration::from_secs(10);
+
+const KEY_PEAKS_24H_BY_SERVER: &str = "peaks_24h_by_server_id";
+const KEY_PEAKS_24H_BY_ASN: &str = "peaks_24h_by_asn_key";
+const KEY_PEAK_PLAYERS_24H: &str = "peak_players_24h";
+const KEY_PEAK_PLAYERS_7D: &str = "peak_players_7d";
+const KEY_TRENDS_BY_SERVER: &str = "trends_by_server_id";
+
+/// Small in-process TTL cache for the expensive dashboard peak/trend queries.
+///
+/// These results change slowly (they aggregate 24h/7d/30d windows) yet are
+/// recomputed on every dashboard poll (default every 30s per tab). Caching them
+/// for a few seconds collapses the per-request VictoriaMetrics fan-out across
+/// all concurrent viewers into a single upstream query per TTL window.
+type CachedEntry = (Instant, Arc<dyn Any + Send + Sync>);
+
+#[derive(Default)]
+struct TtlCache {
+    entries: RwLock<HashMap<&'static str, CachedEntry>>,
+}
+
+impl TtlCache {
+    async fn get<T: Send + Sync + 'static>(
+        &self,
+        key: &'static str,
+        ttl: Duration,
+    ) -> Option<Arc<T>> {
+        let entries = self.entries.read().await;
+        let (at, value) = entries.get(key)?;
+        if at.elapsed() >= ttl {
+            return None;
+        }
+        value.clone().downcast().ok()
+    }
+
+    async fn insert<T: Send + Sync + 'static>(&self, key: &'static str, value: Arc<T>) {
+        self.entries
+            .write()
+            .await
+            .insert(key, (Instant::now(), value));
+    }
+
+    async fn clear(&self) {
+        self.entries.write().await.clear();
+    }
+}
+
 pub struct Insights {
     environment: String,
     query_client: RwLock<VmQueryClient>,
     push_client: RwLock<VmPushClient>,
     registry: RwLock<PlayerCountRegistry>,
+    cache: TtlCache,
 }
 
 impl Insights {
@@ -45,6 +98,7 @@ impl Insights {
             query_client: RwLock::new(VmQueryClient::new(query_base_url, auth_token.clone())),
             push_client: RwLock::new(VmPushClient::new(import_url, auth_token.clone())),
             registry: RwLock::new(PlayerCountRegistry::new(&environment)),
+            cache: TtlCache::default(),
             environment,
         }
     }
@@ -60,10 +114,25 @@ impl Insights {
         *self.query_client.write().await =
             VmQueryClient::new(query_base_url, auth_token.clone());
         *self.push_client.write().await = VmPushClient::new(import_url, auth_token.clone());
+        self.cache.clear().await;
     }
 
     pub fn environment(&self) -> &str {
         &self.environment
+    }
+
+    async fn cached<T: Send + Sync + 'static>(
+        &self,
+        key: &'static str,
+        ttl: Duration,
+        future: impl Future<Output = T>,
+    ) -> Arc<T> {
+        if let Some(value) = self.cache.get::<T>(key, ttl).await {
+            return value;
+        }
+        let value = Arc::new(future.await);
+        self.cache.insert(key, Arc::clone(&value)).await;
+        value
     }
 
     pub async fn push_player_counts(
@@ -81,48 +150,66 @@ impl Insights {
         Ok(())
     }
 
-    pub async fn peaks_24h_by_server_id(&self) -> BTreeMap<String, f64> {
-        let mut peaks: BTreeMap<String, f64> = BTreeMap::new();
-        for entry in self
-            .labeled_instant(&peak_players_24h_by_server(self.environment()))
-            .await
-        {
-            let Some(id) = label_value(&entry.labels, labels::ID) else {
-                continue;
-            };
+    pub async fn peaks_24h_by_server_id(&self) -> Arc<BTreeMap<String, f64>> {
+        self.cached(KEY_PEAKS_24H_BY_SERVER, PEAK_CACHE_TTL, async {
+            let mut peaks: BTreeMap<String, f64> = BTreeMap::new();
+            for entry in self
+                .labeled_instant(&peak_players_24h_by_server(self.environment()))
+                .await
+            {
+                let Some(id) = label_value(&entry.labels, labels::ID) else {
+                    continue;
+                };
+                peaks
+                    .entry(id)
+                    .and_modify(|current| *current = current.max(entry.value))
+                    .or_insert(entry.value);
+            }
             peaks
-                .entry(id)
-                .and_modify(|current| *current = current.max(entry.value))
-                .or_insert(entry.value);
-        }
-        peaks
+        })
+        .await
     }
 
-    pub async fn peaks_24h_by_asn_key(&self) -> BTreeMap<AsnPeakKey, f64> {
-        let mut peaks: BTreeMap<AsnPeakKey, f64> = BTreeMap::new();
-        for entry in self
-            .labeled_instant(&peak_players_24h_by_asn(self.environment()))
-            .await
-        {
-            let Some(asn) = label_value(&entry.labels, labels::ASN) else {
-                continue;
-            };
-            let asn_org = label_value(&entry.labels, labels::ASN_ORG).unwrap_or_default();
-            let key = AsnPeakKey { asn, asn_org };
+    pub async fn peaks_24h_by_asn_key(&self) -> Arc<BTreeMap<AsnPeakKey, f64>> {
+        self.cached(KEY_PEAKS_24H_BY_ASN, PEAK_CACHE_TTL, async {
+            let mut peaks: BTreeMap<AsnPeakKey, f64> = BTreeMap::new();
+            for entry in self
+                .labeled_instant(&peak_players_24h_by_asn(self.environment()))
+                .await
+            {
+                let Some(asn) = label_value(&entry.labels, labels::ASN) else {
+                    continue;
+                };
+                let asn_org = label_value(&entry.labels, labels::ASN_ORG).unwrap_or_default();
+                let key = AsnPeakKey { asn, asn_org };
+                peaks
+                    .entry(key)
+                    .and_modify(|current| *current = current.max(entry.value))
+                    .or_insert(entry.value);
+            }
             peaks
-                .entry(key)
-                .and_modify(|current| *current = current.max(entry.value))
-                .or_insert(entry.value);
-        }
-        peaks
+        })
+        .await
     }
 
     pub async fn peak_players_24h(&self) -> Option<f64> {
-        self.scalar(&peak_players_24h(self.environment())).await
+        *self
+            .cached(
+                KEY_PEAK_PLAYERS_24H,
+                PEAK_CACHE_TTL,
+                self.scalar(&peak_players_24h(self.environment())),
+            )
+            .await
     }
 
     pub async fn peak_players_7d(&self) -> Option<f64> {
-        self.scalar(&peak_players_7d(self.environment())).await
+        *self
+            .cached(
+                KEY_PEAK_PLAYERS_7D,
+                PEAK_CACHE_TTL,
+                self.scalar(&peak_players_7d(self.environment())),
+            )
+            .await
     }
 
     /// Returns per-server trend percentages for 24h, 7d, and 30d windows.
@@ -135,43 +222,48 @@ impl Insights {
     ///
     /// Values outside ±500% are discarded (noisy — typically servers that just
     /// started tracking or were offline in the reference period).
-    pub async fn trends_by_server_id(&self) -> HashMap<String, (Option<f64>, Option<f64>, Option<f64>)> {
-        let env = self.environment();
-        let q_24h = avg_trend_by_server(env, "24h", "24h");
-        let q_7d = avg_trend_by_server(env, "7d", "7d");
-        let q_30d = avg_trend_by_server(env, "30d", "30d");
-        let (trends_24h, trends_7d, trends_30d) = tokio::join!(
-            self.labeled_instant(&q_24h),
-            self.labeled_instant(&q_7d),
-            self.labeled_instant(&q_30d),
-        );
+    pub async fn trends_by_server_id(
+        &self,
+    ) -> Arc<HashMap<String, (Option<f64>, Option<f64>, Option<f64>)>> {
+        self.cached(KEY_TRENDS_BY_SERVER, TREND_CACHE_TTL, async {
+            let env = self.environment();
+            let q_24h = avg_trend_by_server(env, "24h", "24h");
+            let q_7d = avg_trend_by_server(env, "7d", "7d");
+            let q_30d = avg_trend_by_server(env, "30d", "30d");
+            let (trends_24h, trends_7d, trends_30d) = tokio::join!(
+                self.labeled_instant(&q_24h),
+                self.labeled_instant(&q_7d),
+                self.labeled_instant(&q_30d),
+            );
 
-        let sanitize = |v: f64| {
-            if v.is_finite() && v.abs() <= 500.0 { Some(v) } else { None }
-        };
-
-        let mut all: HashMap<String, (Option<f64>, Option<f64>, Option<f64>)> = HashMap::new();
-
-        for entry in trends_24h {
-            let Some(id) = label_value(&entry.labels, labels::ID) else {
-                continue;
+            let sanitize = |v: f64| {
+                if v.is_finite() && v.abs() <= 500.0 { Some(v) } else { None }
             };
-            all.entry(id).or_default().0 = sanitize(entry.value);
-        }
-        for entry in trends_7d {
-            let Some(id) = label_value(&entry.labels, labels::ID) else {
-                continue;
-            };
-            all.entry(id).or_default().1 = sanitize(entry.value);
-        }
-        for entry in trends_30d {
-            let Some(id) = label_value(&entry.labels, labels::ID) else {
-                continue;
-            };
-            all.entry(id).or_default().2 = sanitize(entry.value);
-        }
 
-        all
+            let mut all: HashMap<String, (Option<f64>, Option<f64>, Option<f64>)> = HashMap::new();
+
+            for entry in trends_24h {
+                let Some(id) = label_value(&entry.labels, labels::ID) else {
+                    continue;
+                };
+                all.entry(id).or_default().0 = sanitize(entry.value);
+            }
+            for entry in trends_7d {
+                let Some(id) = label_value(&entry.labels, labels::ID) else {
+                    continue;
+                };
+                all.entry(id).or_default().1 = sanitize(entry.value);
+            }
+            for entry in trends_30d {
+                let Some(id) = label_value(&entry.labels, labels::ID) else {
+                    continue;
+                };
+                all.entry(id).or_default().2 = sanitize(entry.value);
+            }
+
+            all
+        })
+        .await
     }
 
     pub async fn server_players_lanes(

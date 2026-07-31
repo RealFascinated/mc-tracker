@@ -27,6 +27,7 @@ export function useCountUp(
   target: number | null | undefined,
   durationMs = DEFAULT_DURATION_MS,
   active = true,
+  delayMs = 0,
 ): number | null {
   const to = normalizeTarget(target);
   const valueRef = useRef<number | null>(null);
@@ -63,14 +64,14 @@ export function useCountUp(
       animRef.current = {
         from: 0,
         to,
-        start: performance.now(),
+        start: performance.now() + delayMs,
         countingFromZero: true,
       };
     } else if (valueRef.current !== to) {
       animRef.current = {
         from: valueRef.current,
         to,
-        start: performance.now(),
+        start: performance.now() + delayMs,
         countingFromZero: false,
       };
     } else {
@@ -80,7 +81,7 @@ export function useCountUp(
     const anim = animRef.current;
 
     const tick = (now: number) => {
-      const progress = Math.min((now - anim.start) / durationMs, 1);
+      const progress = Math.min(Math.max((now - anim.start) / durationMs, 0), 1);
       const next = Math.round(
         anim.from + (anim.to - anim.from) * easeOutCubic(progress),
       );
@@ -106,7 +107,7 @@ export function useCountUp(
         cancelAnimationFrame(frameRef.current);
       }
     };
-  }, [active, to, durationMs, bumpFrame]);
+  }, [active, to, durationMs, delayMs, bumpFrame]);
 
   if (to === null) {
     return null;
@@ -121,7 +122,7 @@ export function useCountUp(
   }
 
   const progress = Math.min(
-    (performance.now() - animRef.current.start) / durationMs,
+    Math.max((performance.now() - animRef.current.start) / durationMs, 0),
     1,
   );
   if (progress >= 1) {

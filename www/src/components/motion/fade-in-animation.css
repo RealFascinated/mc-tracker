@@ -13,7 +13,8 @@
 }
 
 .fade-in-animation-active {
-  animation: fade-in-enter 400ms ease-out both;
+  animation: fade-in-enter var(--motion-duration-enter, 400ms)
+    var(--motion-ease, ease-out) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

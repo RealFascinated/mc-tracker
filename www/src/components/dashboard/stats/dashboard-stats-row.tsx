@@ -28,20 +28,21 @@ export function DashboardStatsRow({ summary }: DashboardStatsRowProps) {
 
   return (
     <div className="dashboard-stats-row">
-      {stats.map((stat, index) => (
-        <SlideUpAnimation
-          key={stat.label}
-          delay={staggeredSlideUpDelay(index)}
-          className="min-w-0"
-        >
-          <MetricStat
-            label={stat.label}
-            value={stat.value}
-            highlight={stat.highlight}
-            labelClassName={stat.labelClassName}
-          />
-        </SlideUpAnimation>
-      ))}
+      {stats.map((stat, index) => {
+        const delay = staggeredSlideUpDelay(index);
+
+        return (
+          <SlideUpAnimation key={stat.label} delay={delay} className="min-w-0">
+            <MetricStat
+              label={stat.label}
+              value={stat.value}
+              highlight={stat.highlight}
+              labelClassName={stat.labelClassName}
+              valueDelay={delay}
+            />
+          </SlideUpAnimation>
+        );
+      })}
     </div>
   );
 }

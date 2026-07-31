@@ -10,7 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
+import { useDashboardRefreshEpoch } from "@/hooks/use-dashboard-refresh";
 import {
   datetimeLocalValueToEpoch,
   epochToDatetimeLocalValue,
@@ -90,7 +90,7 @@ export function DashboardTimeRangePicker({
   onCustomChange,
   className,
 }: DashboardTimeRangePickerProps) {
-  const { epochAnchor } = useDashboardRefresh();
+  const epochAnchor = useDashboardRefreshEpoch();
   const [open, setOpen] = useState(false);
   const [customDraft, dispatchCustomDraft] = useReducer(
     customDraftReducer,

@@ -20,6 +20,9 @@ export function getRouter() {
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
+    defaultViewTransition: {
+      types: ({ pathChanged }) => (pathChanged ? ["route"] : false),
+    },
   });
 
   setupRouterSsrQueryIntegration({ router, queryClient });

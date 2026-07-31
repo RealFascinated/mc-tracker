@@ -9,6 +9,7 @@ type MetricStatProps = {
   highlight?: boolean;
   compact?: boolean;
   valueTooltip?: string;
+  valueDelay?: number;
 };
 
 export function MetricStat({
@@ -19,6 +20,7 @@ export function MetricStat({
   highlight = false,
   compact = false,
   valueTooltip,
+  valueDelay = 0,
 }: MetricStatProps) {
   return (
     <div
@@ -34,6 +36,7 @@ export function MetricStat({
         tooltip={valueTooltip}
         value={value}
         className="metric-stat-value"
+        delay={valueDelay}
       />
     </div>
   );

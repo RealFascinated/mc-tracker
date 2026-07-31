@@ -57,7 +57,10 @@ async fn login(
         Err(_) => return invalid_credentials(),
     };
 
-    if !users::verify_password(&body.password, &user.password_hash).unwrap_or(false) {
+    if !users::verify_password_blocking(body.password.clone(), user.password_hash.clone())
+        .await
+        .unwrap_or(false)
+    {
         return invalid_credentials();
     }
 
@@ -191,7 +194,10 @@ async fn change_password(
         Err(_) => return invalid_credentials(),
     };
 
-    if !users::verify_password(&body.current_password, &db_user.password_hash).unwrap_or(false) {
+    if !users::verify_password_blocking(body.current_password.clone(), db_user.password_hash.clone())
+        .await
+        .unwrap_or(false)
+    {
         return (
             StatusCode::UNAUTHORIZED,
             Json(ApiError::new(
@@ -295,7 +301,10 @@ async fn delete_account(
         Err(_) => return invalid_credentials(),
     };
 
-    if !users::verify_password(&body.password, &db_user.password_hash).unwrap_or(false) {
+    if !users::verify_password_blocking(body.password.clone(), db_user.password_hash.clone())
+        .await
+        .unwrap_or(false)
+    {
         return (
             StatusCode::UNAUTHORIZED,
             Json(ApiError::new(

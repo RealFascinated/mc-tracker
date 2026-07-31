@@ -10,7 +10,7 @@ import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 
 type MetricsChartZoomProviderProps = {
   window: MetricTimeWindow;
-  dataWindow: MetricsDataWindow;
+  getDataWindow: () => MetricsDataWindow;
   onZoomToRange: (from: number, to: number) => void;
   disabled?: boolean;
   children: ReactNode;
@@ -18,7 +18,7 @@ type MetricsChartZoomProviderProps = {
 
 export function MetricsChartZoomProvider({
   window,
-  dataWindow,
+  getDataWindow,
   onZoomToRange,
   disabled = false,
   children,
@@ -33,12 +33,12 @@ export function MetricsChartZoomProvider({
 
         return {
           window,
-          dataWindow,
+          dataWindow: getDataWindow(),
           onZoomToRange,
         };
       },
     }),
-    [window, dataWindow, onZoomToRange, disabled],
+    [window, getDataWindow, onZoomToRange, disabled],
   );
 
   return (

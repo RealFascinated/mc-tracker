@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback } from "react";
 import type { ReactNode } from "react";
 
 import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
@@ -21,16 +21,17 @@ export function MetricChartsScope({
   zoomDisabled = false,
   children,
 }: MetricChartsScopeProps) {
-  const { epochAnchor } = useDashboardRefresh();
-  const dataWindow = useMemo(
-    (): MetricsDataWindow => metricTimeWindowToEpochWindow(window, epochAnchor),
-    [window, epochAnchor],
+  const { getEpochAnchor } = useDashboardRefresh();
+  const getDataWindow = useCallback(
+    (): MetricsDataWindow =>
+      metricTimeWindowToEpochWindow(window, getEpochAnchor()),
+    [window, getEpochAnchor],
   );
 
   return (
     <MetricsChartZoomProvider
       window={window}
-      dataWindow={dataWindow}
+      getDataWindow={getDataWindow}
       onZoomToRange={onZoomToRange}
       disabled={zoomDisabled}
     >

@@ -1,6 +1,9 @@
 import { use } from "react";
 
-import { DashboardRefreshContext } from "@/lib/dashboard/dashboard-refresh-context";
+import {
+  DashboardRefreshContext,
+  DashboardRefreshEpochContext,
+} from "@/lib/dashboard/dashboard-refresh-context";
 import type { DashboardRefreshContextValue } from "@/lib/dashboard/dashboard-refresh-context";
 import {
   DEFAULT_DASHBOARD_REFRESH_INTERVAL,
@@ -25,4 +28,18 @@ function useDashboardRefreshIntervalMs(): number | false {
   );
 }
 
-export { useDashboardRefresh, useDashboardRefreshIntervalMs };
+function useDashboardRefreshEpoch(): number {
+  const epochAnchor = use(DashboardRefreshEpochContext);
+  if (epochAnchor == null) {
+    throw new Error(
+      "useDashboardRefreshEpoch must be used within DashboardRefreshProvider",
+    );
+  }
+  return epochAnchor;
+}
+
+export {
+  useDashboardRefresh,
+  useDashboardRefreshEpoch,
+  useDashboardRefreshIntervalMs,
+};

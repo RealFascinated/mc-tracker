@@ -17,5 +17,15 @@ export function startThemeViewTransition(updateDom: () => void): void {
     return;
   }
 
+  const supportsTypedTransitions =
+    typeof CSS !== "undefined" &&
+    typeof CSS.supports === "function" &&
+    CSS.supports("selector(:active-view-transition-type(theme))");
+
+  if (supportsTypedTransitions) {
+    document.startViewTransition({ update: updateDom, types: ["theme"] });
+    return;
+  }
+
   document.startViewTransition(updateDom);
 }

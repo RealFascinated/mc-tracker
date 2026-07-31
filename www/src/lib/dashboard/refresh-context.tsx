@@ -1,5 +1,5 @@
 import { useQueryClient, useIsFetching } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import {
@@ -17,7 +17,10 @@ import {
   serversTimeseriesQueryKey,
 } from "@/lib/api/servers.queries";
 import { pinnedServersQueryKey } from "@/lib/api/pinned-servers.queries";
-import { DashboardRefreshContext } from "@/lib/dashboard/dashboard-refresh-context";
+import {
+  DashboardRefreshContext,
+  DashboardRefreshEpochContext,
+} from "@/lib/dashboard/dashboard-refresh-context";
 import {
   DASHBOARD_REFRESH_STORAGE_KEY,
   DEFAULT_DASHBOARD_REFRESH_INTERVAL,
@@ -39,12 +42,17 @@ function DashboardRefreshProvider({ children }: { children: ReactNode }) {
   const [epochAnchor, setEpochAnchor] = useState(() =>
     Math.floor(Date.now() / 1000),
   );
+  const epochAnchorRef = useRef(epochAnchor);
 
   const refreshIntervalMs = dashboardRefreshIntervalToMs(refreshInterval);
 
   const bumpEpochAnchor = useCallback(() => {
-    setEpochAnchor(Math.floor(Date.now() / 1000));
+    const next = Math.floor(Date.now() / 1000);
+    epochAnchorRef.current = next;
+    setEpochAnchor(next);
   }, []);
+
+  const getEpochAnchor = useCallback(() => epochAnchorRef.current, []);
 
   useEffect(() => {
     if (refreshIntervalMs === false) {
@@ -96,22 +104,24 @@ function DashboardRefreshProvider({ children }: { children: ReactNode }) {
       setRefreshInterval,
       refreshAll,
       isRefreshing: isManualRefreshing || isQueryRefreshing,
-      epochAnchor,
+      getEpochAnchor,
     }),
     [
-      epochAnchor,
       isManualRefreshing,
       isQueryRefreshing,
       refreshAll,
       refreshInterval,
       refreshIntervalMs,
       setRefreshInterval,
+      getEpochAnchor,
     ],
   );
 
   return (
     <DashboardRefreshContext.Provider value={value}>
-      {children}
+      <DashboardRefreshEpochContext.Provider value={epochAnchor}>
+        {children}
+      </DashboardRefreshEpochContext.Provider>
     </DashboardRefreshContext.Provider>
   );
 }

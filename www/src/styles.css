@@ -121,10 +121,18 @@
     0.9283 38.01%,
     0.9529 44.08%,
     0.9711 51.14%,
-    0.9833 59.06%,
-    0.9915 68.74%,
-    1 100%
+     0.9833 59.06%,
+     0.9915 68.74%,
+     1 100%
   );
+  --motion-duration-fast: 200ms;
+  --motion-duration-medium: 300ms;
+  --motion-duration-enter: 400ms;
+  --motion-duration-slow: 700ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-stagger-step: 80ms;
+  --motion-stagger-max: 400ms;
+  --motion-distance: 8px;
   color-scheme: light;
   --base: #101010;
   --monitor: #6b16ed;
@@ -367,29 +375,33 @@
   .metric-stat-grid > * {
     flex: 1 1 100%;
     min-width: 0;
-    animation: motion-fade-in-up 400ms ease-out both;
+    animation: motion-fade-in-up var(--motion-duration-enter, 400ms)
+      var(--motion-ease, ease-out) both;
   }
 
   .metric-stat-grid > *:nth-child(2) {
-    animation-delay: 75ms;
+    animation-delay: calc(var(--motion-stagger-step, 80ms) * 1);
   }
 
   .metric-stat-grid > *:nth-child(3) {
-    animation-delay: 150ms;
+    animation-delay: calc(var(--motion-stagger-step, 80ms) * 2);
   }
 
   .metric-stat-grid > *:nth-child(4) {
-    animation-delay: 225ms;
+    animation-delay: calc(var(--motion-stagger-step, 80ms) * 3);
   }
 
   .metric-stat-grid > *:nth-child(n + 5) {
-    animation-delay: 300ms;
+    animation-delay: min(
+      calc(var(--motion-stagger-step, 80ms) * 4),
+      var(--motion-stagger-max, 400ms)
+    );
   }
 
   @keyframes motion-fade-in-up {
     from {
       opacity: 0;
-      transform: translateY(8px);
+      transform: translateY(var(--motion-distance, 8px));
     }
 
     to {
@@ -432,21 +444,25 @@
   }
 
   .motion-callout {
-    animation: motion-fade-in-up 300ms ease-out both;
+    animation: motion-fade-in-up var(--motion-duration-medium, 300ms)
+      var(--motion-ease, ease-out) both;
   }
 
   .motion-enter {
-    animation: motion-fade-in 300ms ease-out both;
+    animation: motion-fade-in var(--motion-duration-medium, 300ms)
+      var(--motion-ease, ease-out) both;
   }
 
   .motion-auth-card {
-    animation: motion-auth-enter 400ms ease-out both;
+    animation: motion-auth-enter var(--motion-duration-enter, 400ms)
+      var(--motion-ease, ease-out) both;
   }
 
   .motion-collapsible {
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows 200ms ease-out;
+    transition: grid-template-rows var(--motion-duration-fast, 200ms)
+      var(--motion-ease, ease-out);
   }
 
   .motion-collapsible-open {
@@ -1326,12 +1342,11 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  ::view-transition-group(root) {
+  html:active-view-transition-type(theme)::view-transition-group(root) {
     animation-timing-function: var(--expo-out);
   }
 
-  ::view-transition-new(root),
-  .dark::view-transition-new(root) {
+  html:active-view-transition-type(theme)::view-transition-new(root) {
     mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3Cfilter id='blur'%3E%3CfeGaussianBlur stdDeviation='2'/%3E%3C/filter%3E%3C/defs%3E%3Ccircle cx='0' cy='0' r='18' fill='white' filter='url(%23blur)'/%3E%3C/svg%3E");
     mask-position: top left;
     mask-size: 0;
@@ -1341,16 +1356,42 @@
     transform-origin: top left;
   }
 
-  ::view-transition-old(root),
-  .dark::view-transition-old(root) {
+  html:active-view-transition-type(theme)::view-transition-old(root) {
     animation: theme-scale 1s var(--expo-out) both;
     transform-origin: top left;
     z-index: -1;
   }
 
+  html:active-view-transition-type(route)::view-transition-old(root) {
+    animation: route-fade-out var(--motion-duration-fast, 200ms) ease-out both;
+  }
+
+  html:active-view-transition-type(route)::view-transition-new(root) {
+    animation: route-fade-in var(--motion-duration-enter, 400ms)
+      var(--motion-ease, ease-out) both;
+  }
+
   @keyframes theme-scale {
     to {
       mask-size: 350vmax;
+    }
+  }
+
+  @keyframes route-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes route-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(var(--motion-distance, 8px));
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 }

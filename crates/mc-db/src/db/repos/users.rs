@@ -71,6 +71,23 @@ pub fn verify_password(password: &str, password_hash: &str) -> Result<bool, DbEr
         .is_ok())
 }
 
+/// Argon2 verification is CPU-bound (~100ms); run it on the blocking pool so
+/// tokio worker threads are not stalled during login/password changes.
+pub async fn verify_password_blocking(
+    password: String,
+    password_hash: String,
+) -> Result<bool, DbError> {
+    tokio::task::spawn_blocking(move || verify_password(&password, &password_hash))
+        .await
+        .map_err(DbError::database)?
+}
+
+async fn hash_password_blocking(password: String) -> Result<String, DbError> {
+    tokio::task::spawn_blocking(move || hash_password(&password))
+        .await
+        .map_err(DbError::database)?
+}
+
 pub async fn count(pool: &DbPool) -> Result<i64, DbError> {
     let mut conn = get_conn(pool).await?;
     users::table
@@ -134,7 +151,7 @@ pub async fn create(
     let mut conn = get_conn(pool).await?;
     let id = Uuid::new_v4();
     let now = Utc::now();
-    let password_hash = hash_password(password)?;
+    let password_hash = hash_password_blocking(password.to_string()).await?;
 
     diesel::insert_into(users::table)
         .values((
@@ -206,7 +223,7 @@ pub async fn update_profile(
 
 pub async fn update_password(pool: &DbPool, id: Uuid, new_password: &str) -> Result<(), DbError> {
     let mut conn = get_conn(pool).await?;
-    let password_hash = hash_password(new_password)?;
+    let password_hash = hash_password_blocking(new_password.to_string()).await?;
     let now = Utc::now();
 
     let updated = diesel::update(users::table.filter(users::id.eq(id)))

@@ -189,14 +189,12 @@ impl ServerManager {
         order: SortOrder,
     ) -> ServersListResponse {
         let summary = self.servers_summary_response().await;
-        let all_tracked = self.servers.read().await.clone();
-        let tracked = all_tracked
+        let servers_guard = self.servers.read().await;
+        let tracked: Vec<&TrackedServer> = servers_guard
             .iter()
             .filter(|server| server.is_tracking())
             .filter(|server| matches_server_search(server, search))
-            .cloned()
-            .collect::<Vec<_>>();
-
+            .collect();
 
         let (peaks_24h, trends) = tokio::join!(
             self.insights.peaks_24h_by_server_id(),
@@ -208,7 +206,7 @@ impl ServerManager {
             let id = server.config.id.to_string();
             let t = trends.get(&id).copied();
             servers.push(server_list_item(
-                &server,
+                server,
                 peaks_24h.get(&id).copied(),
                 t,
             ));
@@ -221,15 +219,14 @@ impl ServerManager {
 
     async fn servers_by_asn_org(&self, query: &str, limit: u32) -> (ServersListResponse, bool) {
         let limit = limit.clamp(1, DEFAULT_LIST_LIMIT) as usize;
-        let all_tracked = self.servers.read().await.clone();
-        let mut tracked: Vec<_> = all_tracked
+        let servers_guard = self.servers.read().await;
+        let mut tracked: Vec<&TrackedServer> = servers_guard
             .iter()
             .filter(|server| server.is_tracking())
             .filter(|server| matches_asn_org(server, query))
-            .cloned()
             .collect();
 
-        let summary = accumulate_summary(&tracked);
+        let summary = accumulate_summary(tracked.iter().copied());
 
         tracked.sort_by(|left, right| {
             let left_players = players_sort_key(left.players_online);
@@ -244,14 +241,13 @@ impl ServerManager {
             tracked.truncate(limit);
         }
 
-
         let peaks_24h = self.insights.peaks_24h_by_server_id().await;
 
         let servers = tracked
             .into_iter()
             .map(|server| {
                 let id = server.config.id.to_string();
-                server_list_item(&server, peaks_24h.get(&id).copied(), None)
+                server_list_item(server, peaks_24h.get(&id).copied(), None)
             })
             .collect();
 
@@ -380,11 +376,10 @@ impl ServerManager {
 
     pub async fn asns_list_response(&self, search: Option<&str>) -> AsnsListResponse {
         let summary = self.summary().await;
-        let all_tracked = self.servers.read().await.clone();
-        let tracked = all_tracked.clone();
+        let servers_guard = self.servers.read().await;
 
         let mut aggregates: BTreeMap<AsnAggregateKey, AsnAggregate> = BTreeMap::new();
-        for server in tracked.iter().filter(|server| server.is_tracking()) {
+        for server in servers_guard.iter().filter(|server| server.is_tracking()) {
             let key = asn_key(server);
             if !matches_asn_search(&key, search) {
                 continue;
@@ -418,7 +413,7 @@ impl ServerManager {
                 server_count: aggregate.server_count,
                 peaks: entity_peak_stats_with_all_time(
                     peaks_24h.get(&aggregate.key).copied(),
-                    asn_peak_all_time(&all_tracked, &aggregate.key),
+                    asn_peak_all_time(&servers_guard, &aggregate.key),
                 ),
             });
         }
@@ -442,19 +437,18 @@ impl ServerManager {
     }
 
     pub async fn asn_detail_response(&self, asn: &str, asn_org: &str) -> Option<AsnDetailResponse> {
-        let all_tracked = self.servers.read().await.clone();
-        let tracked: Vec<_> = all_tracked
+        let servers_guard = self.servers.read().await;
+        let tracked: Vec<&TrackedServer> = servers_guard
             .iter()
             .filter(|server| server.is_tracking())
             .filter(|server| matches_asn_key(server, asn, asn_org))
-            .cloned()
             .collect();
 
         if tracked.is_empty() {
             return None;
         }
 
-        let summary = accumulate_summary(&tracked);
+        let summary = accumulate_summary(tracked.iter().copied());
 
         let key = AsnAggregateKey {
             asn: asn.to_string(),
@@ -466,13 +460,13 @@ impl ServerManager {
         );
         let asn_peak_24h = peaks_24h_by_asn.get(&key).copied();
         let entity_peaks =
-            entity_peak_stats_with_all_time(asn_peak_24h, asn_peak_all_time(&all_tracked, &key));
+            entity_peak_stats_with_all_time(asn_peak_24h, asn_peak_all_time(&servers_guard, &key));
 
         let mut servers = Vec::with_capacity(tracked.len());
         for server in tracked {
             let id = server.config.id.to_string();
             servers.push(server_list_item(
-                &server,
+                server,
                 peaks_24h_by_server.get(&id).copied(),
                 None,
             ));

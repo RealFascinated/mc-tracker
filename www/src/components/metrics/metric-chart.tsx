@@ -20,7 +20,7 @@ import {
   resolveChartXWindow,
 } from "@/lib/metrics/chart-zoom";
 import { useMetricsChartZoom } from "@/hooks/metrics/use-metrics-chart-zoom";
-import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
+import { useDashboardRefreshEpoch } from "@/hooks/use-dashboard-refresh";
 import { cn } from "cnfast";
 import { useTheme } from "@/hooks/use-theme";
 import { useMetricChartInstance } from "@/hooks/metrics/use-metric-chart-instance";
@@ -115,7 +115,7 @@ function MetricChart({
   const hiddenSeriesRef = useRef(hiddenSeries);
   const sourceIndicesRef = useRef(sourceIndices);
   const chartZoom = useMetricsChartZoom();
-  const { epochAnchor } = useDashboardRefresh();
+  const epochAnchor = useDashboardRefreshEpoch();
   const { resolvedTheme } = useTheme();
   const applySeriesVisibilityRef = useRef<(chart: uPlot) => void>(() => {});
   const syncUnitInsetsRef = useRef<(chart: uPlot) => void>(() => {});
@@ -189,6 +189,11 @@ function MetricChart({
     const result = stackAlignedData(data);
     return { data: result.data, bands: result.bands };
   }, [data, stacked]);
+
+  const lastAppliedDataRef = useRef(prepared.data);
+  const lastAppliedXWindowKeyRef = useRef<string | null>(
+    xWindow ? `${xWindow.from}:${xWindow.to}` : null,
+  );
   const preparedDataRef = useRef(prepared.data);
   const preparedBandsRef = useRef(prepared.bands);
   preparedDataRef.current = prepared.data;
@@ -332,10 +337,18 @@ function MetricChart({
   useLayoutEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
-    chart.setData(prepared.data);
-    applyChartAxisScales(chart, displayAxes, bidirectional);
+
+    if (prepared.data !== lastAppliedDataRef.current) {
+      chart.setData(prepared.data);
+      applyChartAxisScales(chart, displayAxes, bidirectional);
+      lastAppliedDataRef.current = prepared.data;
+    }
     if (xWindow) {
-      applyChartXWindow(chart, xWindow);
+      const key = `${xWindow.from}:${xWindow.to}`;
+      if (key !== lastAppliedXWindowKeyRef.current) {
+        applyChartXWindow(chart, xWindow);
+        lastAppliedXWindowKeyRef.current = key;
+      }
     }
     syncUnitInsets(chart);
   }, [

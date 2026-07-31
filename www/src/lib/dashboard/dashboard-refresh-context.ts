@@ -8,9 +8,12 @@ export type DashboardRefreshContextValue = {
   setRefreshInterval: (interval: DashboardRefreshInterval) => void;
   refreshAll: () => Promise<void>;
   isRefreshing: boolean;
-  /** Rolling "now" for preset time windows; bumps on manual and auto refresh. */
-  epochAnchor: number;
+  /** Stable callback returning the latest rolling "now". */
+  getEpochAnchor: () => number;
 };
 
 export const DashboardRefreshContext =
   createContext<DashboardRefreshContextValue | null>(null);
+
+/** Rolling "now" for preset time windows; bumps on manual and auto refresh. */
+export const DashboardRefreshEpochContext = createContext<number | null>(null);
