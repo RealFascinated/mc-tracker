@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { MessageCircleIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { DashboardCard } from "@/components/dashboard/cards/card";
-import { Button } from "@/components/ui/button";
 import {
   MessageScroller,
   MessageScrollerButton,
@@ -23,10 +21,14 @@ import { useChatSession } from "@/hooks/chat/use-chat-session";
 import { useChatDisplayPrefs } from "@/hooks/chat/use-chat-display-prefs";
 import { useChatWindowSize } from "@/hooks/chat/use-chat-window-size";
 
-export function TrackerChatWidget() {
+type TrackerChatWidgetProps = {
+  open: boolean;
+  onClose: () => void;
+};
+
+export function TrackerChatWidget({ open, onClose }: TrackerChatWidgetProps) {
   const { isLoading, isAuthenticated } = useAuth();
-  const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(open);
   const [enterAnimationDone, setEnterAnimationDone] = useState(false);
   const [followUpSuggestionsExpanded, setFollowUpSuggestionsExpanded] =
     useState(true);
@@ -59,15 +61,12 @@ export function TrackerChatWidget() {
     onResizePointerDown,
   } = useChatWindowSize();
 
-  const openChat = useCallback(() => {
-    setMounted(true);
-    setEnterAnimationDone(false);
-    setOpen(true);
-  }, []);
-
-  const closeChat = useCallback(() => {
-    setOpen(false);
-  }, []);
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      setEnterAnimationDone(false);
+    }
+  }, [open]);
 
   useEffect(() => {
     if (isResizing) {
@@ -149,7 +148,7 @@ export function TrackerChatWidget() {
               onLoadSession={loadSession}
               onDeleteActiveSession={startNewChat}
               onStartNewChat={startNewChat}
-              onClose={closeChat}
+              onClose={onClose}
             />
 
             {!isAuthenticated ? (
@@ -222,24 +221,6 @@ export function TrackerChatWidget() {
           </DashboardCard>
         </div>
       ) : null}
-
-      <Button
-        type="button"
-        variant="brand"
-        size="icon-lg"
-        className={cn(
-          "fixed right-4 bottom-4 z-50 size-12 rounded-full shadow-lg ring-2 ring-background transition-all duration-200",
-          panelOpen && "pointer-events-none scale-0 opacity-0",
-          isStreaming && !panelOpen && "animate-pulse",
-        )}
-        aria-label={
-          isStreaming && !panelOpen ? "Open chat (responding…)" : "Open chat"
-        }
-        aria-hidden={panelOpen}
-        onClick={openChat}
-      >
-        <MessageCircleIcon className="size-5" />
-      </Button>
     </>
   );
 }

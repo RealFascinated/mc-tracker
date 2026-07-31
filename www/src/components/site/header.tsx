@@ -1,7 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 
-import { DashboardSearchInput } from "@/components/dashboard/controls/search-input";
-import { DashboardTimeControls } from "@/components/dashboard/controls/time-controls";
 import { SiteHeaderActions } from "@/components/site/header-actions";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
@@ -19,6 +18,20 @@ import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 import { cn } from "cnfast";
 
 const SITE_LOGO = `${import.meta.env.BASE_URL}favicon.svg`;
+
+// Only rendered on dashboard routes; keep their deps (servers API, dropdowns)
+// out of the root chunk that ships on every page.
+const DashboardSearchInput = lazy(() =>
+  import("@/components/dashboard/controls/search-input").then((mod) => ({
+    default: mod.DashboardSearchInput,
+  })),
+);
+
+const DashboardTimeControls = lazy(() =>
+  import("@/components/dashboard/controls/time-controls").then((mod) => ({
+    default: mod.DashboardTimeControls,
+  })),
+);
 
 function SiteHeaderPageNav() {
   const pathname = useRouterState({
@@ -85,7 +98,9 @@ function SiteHeaderBar({ showDashboardControls }: SiteHeaderBarProps) {
       <div className="site-header-toolbar">
         <div className="dashboard-header-search-slot">
           {showDashboardControls && showsHeaderSearch(pathname) ? (
-            <DashboardSearchInput />
+            <Suspense fallback={null}>
+              <DashboardSearchInput />
+            </Suspense>
           ) : null}
         </div>
       </div>
@@ -93,11 +108,13 @@ function SiteHeaderBar({ showDashboardControls }: SiteHeaderBarProps) {
         <div className="site-header-controls">
           <SiteHeaderPageNav />
           {showDashboardControls ? (
-            <DashboardTimeControls
-              window={timeWindow}
-              onPresetChange={setPresetTimeRange}
-              onCustomChange={setCustomTimeRange}
-            />
+            <Suspense fallback={null}>
+              <DashboardTimeControls
+                window={timeWindow}
+                onPresetChange={setPresetTimeRange}
+                onCustomChange={setCustomTimeRange}
+              />
+            </Suspense>
           ) : null}
         </div>
       </div>

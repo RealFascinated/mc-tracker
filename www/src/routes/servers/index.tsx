@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Grid2x2, Plus, Rows3 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 
-import { PinnedServersGrid } from "@/components/dashboard/grids/pinned-servers-grid";
 import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-row";
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
@@ -40,6 +39,13 @@ import type { MetricTimeRange } from "@/lib/metrics/range";
 import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 
 type ViewMode = "cards" | "table";
+
+// dnd-kit (drag reordering) only loads once a user actually has pins.
+const PinnedServersGrid = lazy(() =>
+  import("@/components/dashboard/grids/pinned-servers-grid").then((mod) => ({
+    default: mod.PinnedServersGrid,
+  })),
+);
 
 const TABLE_SORT_FIELDS = [
   "name",
@@ -219,7 +225,12 @@ function ServersPage() {
             />
 
             {viewMode === "cards" && pinnedServers.length > 0 ? (
-              <PinnedServersGrid servers={pinnedServers} window={timeWindow} />
+              <Suspense fallback={null}>
+                <PinnedServersGrid
+                  servers={pinnedServers}
+                  window={timeWindow}
+                />
+              </Suspense>
             ) : null}
 
             <ServerMetricsGrid

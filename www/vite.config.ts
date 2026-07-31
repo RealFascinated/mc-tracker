@@ -38,6 +38,15 @@ export default defineConfig(({ mode }) => ({
           ) {
             return "react-vendor";
           }
+          // Dashboard-only API modules: keep them out of the root chunk that
+          // ships on every page (login, account, admin, …).
+          if (
+            id.includes("/src/lib/api/servers") ||
+            id.includes("/src/lib/api/server-sort") ||
+            id.includes("/src/lib/api/platform")
+          ) {
+            return "servers-api";
+          }
         },
       },
     },

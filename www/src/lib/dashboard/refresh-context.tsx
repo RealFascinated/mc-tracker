@@ -7,16 +7,14 @@ import {
   useLocalStorage,
 } from "@/hooks/use-local-storage";
 import {
+  asnQueryKey,
   asnsQueryKey,
   asnsTimeseriesQueryKey,
-  asnQueryKey,
-} from "@/lib/api/asns.queries";
-import {
-  serversQueryKey,
+  pinnedServersQueryKey,
   serverQueryKey,
+  serversQueryKey,
   serversTimeseriesQueryKey,
-} from "@/lib/api/servers.queries";
-import { pinnedServersQueryKey } from "@/lib/api/pinned-servers.queries";
+} from "@/lib/api/query-keys";
 import {
   DashboardRefreshContext,
   DashboardRefreshEpochContext,

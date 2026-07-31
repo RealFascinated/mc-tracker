@@ -4,17 +4,21 @@ import type { ReactNode } from "react";
 import { ServerSortToggle } from "@/components/dashboard/server/sort-toggle";
 import { ServerPlatformFilterToggle } from "@/components/dashboard/server/platform-filter-toggle";
 import { EntityMetricsGrid } from "@/components/dashboard/grids/entity-metrics-grid";
-import type { EntityMetricsSectionCopy } from "@/components/dashboard/grids/entity-metrics-grid";
+import type {
+  EntityMetricsBatchTimeseries,
+  EntityMetricsSectionCopy,
+} from "@/components/dashboard/grids/entity-metrics-grid";
 import { ServerIdentityHeader } from "@/components/dashboard/server/identity-header";
 import { ServerPinButton } from "@/components/dashboard/server/pin-button";
 import type { ServerPlatformFilter } from "@/lib/api/platform";
 import { platformFilterEmptyCopy } from "@/lib/api/platform";
 import type { ServerSort } from "@/lib/api/server-sort";
 import type {
+  PerServerTimeseriesResponse,
   ServerListItem,
   ServerTimeseriesResponse,
 } from "@/lib/api/servers";
-import { serverTimeseriesQueryOptions } from "@/lib/api/servers.queries";
+import { perServerTimeseriesQueryOptions } from "@/lib/api/servers.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
 import { createServerPlayersChart } from "@/lib/metrics/charts/players";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
@@ -105,11 +109,21 @@ export function ServerMetricsGrid({
       createServerPlayersChart(`server-players-${server.id}`),
     [],
   );
-  const timeseriesOptions = useCallback(
-    (server: ServerListItem, timeWindow: MetricTimeWindow) =>
-      toVisibleTimeseriesOptions(
-        serverTimeseriesQueryOptions(server.id, timeWindow),
-      ),
+  const batchTimeseries = useMemo<
+    EntityMetricsBatchTimeseries<
+      ServerListItem,
+      ServerTimeseriesResponse,
+      PerServerTimeseriesResponse
+    >
+  >(
+    () => ({
+      options: (timeWindow) =>
+        toVisibleTimeseriesOptions(
+          perServerTimeseriesQueryOptions(timeWindow),
+        ),
+      extract: (server, batch) =>
+        batch.servers.find((entry) => entry.id === server.id),
+    }),
     [],
   );
   const sectionCopy = useMemo(
@@ -127,7 +141,7 @@ export function ServerMetricsGrid({
   );
 
   return (
-    <EntityMetricsGrid<ServerListItem, ServerTimeseriesResponse>
+    <EntityMetricsGrid
       items={servers}
       window={window}
       hasActiveFilter={hasActivePlatformFilter}
@@ -136,7 +150,7 @@ export function ServerMetricsGrid({
       getKey={(server) => server.id}
       renderHeader={renderHeader}
       chartDef={chartDef}
-      timeseriesOptions={timeseriesOptions}
+      batchTimeseries={batchTimeseries}
       timeseriesEnabled={(server) => server.id.length > 0}
       section={sectionCopy}
       gridContainerClassName={hideGridContent ? "hidden" : undefined}

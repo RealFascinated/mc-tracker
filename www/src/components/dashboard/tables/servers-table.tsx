@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { cn } from "cnfast";
@@ -106,6 +106,138 @@ function sortServersList(
   return sorted;
 }
 
+function serverFieldsEqual(a: ServerListItem, b: ServerListItem): boolean {
+  return (
+    a.id === b.id &&
+    a.name === b.name &&
+    a.type === b.type &&
+    a.host === b.host &&
+    a.port === b.port &&
+    a.asn === b.asn &&
+    a.asnOrg === b.asnOrg &&
+    a.playersOnline === b.playersOnline &&
+    a.favicon === b.favicon &&
+    a.trend24h === b.trend24h &&
+    a.trend7d === b.trend7d &&
+    a.trend30d === b.trend30d &&
+    a.peaks.players24h === b.peaks.players24h &&
+    a.peaks.allTime?.players === b.peaks.allTime?.players &&
+    a.peaks.allTime?.timestamp === b.peaks.allTime?.timestamp
+  );
+}
+
+type ServerTableRowProps = {
+  server: ServerListItem;
+  isPinned: boolean;
+  showPinButtons: boolean;
+};
+
+function ServerTableRow({ server, isPinned, showPinButtons }: ServerTableRowProps) {
+  return (
+    <tr className="group border-b border-border transition-colors hover:bg-muted/30 last:border-b-0">
+      {/* Server name column */}
+      <TableCell>
+        <div className="flex items-center gap-2.5">
+          <ServerFavicon
+            name={server.name}
+            favicon={server.favicon}
+            size="sm"
+          />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <Link
+                to="/servers/$serverId"
+                params={{ serverId: server.id }}
+                className="truncate text-sm font-medium text-foreground transition-colors hover:text-monitor dark:hover:text-warning"
+              >
+                {server.name}
+              </Link>
+              <ServerPlatformBadge platform={server.type} />
+            </div>
+            <div className="mt-0.5 flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+              <ServerHostCopy
+                host={server.host}
+                port={server.port}
+                className="shrink-0 whitespace-nowrap hover:text-foreground"
+              />
+              {(() => {
+                const asnName = asnLabelOptional(server);
+                return asnName ? (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    {server.asn ? (
+                      <AsnHoverPreview
+                        asn={server.asn}
+                        asnOrg={server.asnOrg}
+                        label={asnName}
+                        className="truncate hover:text-foreground"
+                      />
+                    ) : (
+                      <span className="truncate">{asnName}</span>
+                    )}
+                  </>
+                ) : null;
+              })()}
+            </div>
+          </div>
+        </div>
+      </TableCell>
+
+      {/* Players online */}
+      <TableCell className="text-right tabular-nums">
+        <span className="text-sm font-medium text-foreground">
+          {formatPlayers(server.playersOnline)}
+        </span>
+      </TableCell>
+
+      {/* Trend 24h */}
+      <TableCell className="text-right tabular-nums">
+        <TrendCell value={server.trend24h} />
+      </TableCell>
+
+      {/* Trend 7d */}
+      <TableCell className="text-right tabular-nums">
+        <TrendCell value={server.trend7d} />
+      </TableCell>
+
+      {/* Trend 30d */}
+      <TableCell className="text-right tabular-nums">
+        <TrendCell value={server.trend30d} />
+      </TableCell>
+
+      {/* Peak 24h */}
+      <TableCell className="text-right tabular-nums">
+        <span className="text-sm text-muted-foreground">
+          {formatPlayers(server.peaks.players24h)}
+        </span>
+      </TableCell>
+
+      {/* All-time peak */}
+      <TableCell className="text-right tabular-nums">
+        <span
+          className="text-sm text-muted-foreground"
+          title={peakTimestampTooltip(server.peaks.allTime?.timestamp)}
+        >
+          {formatPlayers(server.peaks.allTime?.players ?? null)}
+        </span>
+      </TableCell>
+
+      {/* Pin button */}
+      {showPinButtons && (
+        <TableCell className="w-10">
+          <ServerPinButton serverId={server.id} isPinned={isPinned} />
+        </TableCell>
+      )}
+    </tr>
+  );
+}
+
+const ServerTableRowMemo = memo(ServerTableRow, (prev, next) =>
+  prev.showPinButtons === next.showPinButtons &&
+  prev.isPinned === next.isPinned &&
+  serverFieldsEqual(prev.server, next.server),
+);
+
 function ServersTable({
   servers,
   pinnedServerIds,
@@ -157,107 +289,12 @@ function ServersTable({
         </TableHeader>
         <TableBody>
           {sorted.map((server) => (
-            <tr
+            <ServerTableRowMemo
               key={server.id}
-              className="group border-b border-border transition-colors hover:bg-muted/30 last:border-b-0"
-            >
-              {/* Server name column */}
-              <TableCell>
-                <div className="flex items-center gap-2.5">
-                  <ServerFavicon
-                    name={server.name}
-                    favicon={server.favicon}
-                    size="sm"
-                  />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        to="/servers/$serverId"
-                        params={{ serverId: server.id }}
-                        className="truncate text-sm font-medium text-foreground transition-colors hover:text-monitor dark:hover:text-warning"
-                      >
-                        {server.name}
-                      </Link>
-                      <ServerPlatformBadge platform={server.type} />
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
-                      <ServerHostCopy
-                        host={server.host}
-                        port={server.port}
-                        className="shrink-0 whitespace-nowrap hover:text-foreground"
-                      />
-                      {(() => {
-                        const asnName = asnLabelOptional(server);
-                        return asnName ? (
-                          <>
-                            <span aria-hidden="true">·</span>
-                            {server.asn ? (
-                              <AsnHoverPreview
-                                asn={server.asn}
-                                asnOrg={server.asnOrg}
-                                label={asnName}
-                                className="truncate hover:text-foreground"
-                              />
-                            ) : (
-                              <span className="truncate">{asnName}</span>
-                            )}
-                          </>
-                        ) : null;
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              </TableCell>
-
-              {/* Players online */}
-              <TableCell className="text-right tabular-nums">
-                <span className="text-sm font-medium text-foreground">
-                  {formatPlayers(server.playersOnline)}
-                </span>
-              </TableCell>
-
-              {/* Trend 24h */}
-              <TableCell className="text-right tabular-nums">
-                <TrendCell value={server.trend24h} />
-              </TableCell>
-
-              {/* Trend 7d */}
-              <TableCell className="text-right tabular-nums">
-                <TrendCell value={server.trend7d} />
-              </TableCell>
-
-              {/* Trend 30d */}
-              <TableCell className="text-right tabular-nums">
-                <TrendCell value={server.trend30d} />
-              </TableCell>
-
-              {/* Peak 24h */}
-              <TableCell className="text-right tabular-nums">
-                <span className="text-sm text-muted-foreground">
-                  {formatPlayers(server.peaks.players24h)}
-                </span>
-              </TableCell>
-
-              {/* All-time peak */}
-              <TableCell className="text-right tabular-nums">
-                <span
-                  className="text-sm text-muted-foreground"
-                  title={peakTimestampTooltip(server.peaks.allTime?.timestamp)}
-                >
-                  {formatPlayers(server.peaks.allTime?.players ?? null)}
-                </span>
-              </TableCell>
-
-              {/* Pin button */}
-              {showPinButtons && (
-                <TableCell className="w-10">
-                  <ServerPinButton
-                    serverId={server.id}
-                    isPinned={pinnedServerIds?.has(server.id) ?? false}
-                  />
-                </TableCell>
-              )}
-            </tr>
+              server={server}
+              isPinned={pinnedServerIds?.has(server.id) ?? false}
+              showPinButtons={showPinButtons}
+            />
           ))}
         </TableBody>
       </Table>

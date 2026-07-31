@@ -32,9 +32,17 @@ export type EntityMetricsSectionCopy = {
   emptyFilteredHint: string;
 };
 
+export type EntityMetricsBatchTimeseries<T, TTimeseries, TBatch> = {
+  /** One query covering all items (e.g. every server at once) instead of per-item queries. */
+  options: (window: MetricTimeWindow) => VisibleTimeseriesQueryOptions<TBatch>;
+  /** Pull this item's timeseries out of the batch response. */
+  extract: (item: T, batch: TBatch) => TTimeseries | undefined;
+};
+
 export type EntityMetricsGridConfig<
   T,
   TTimeseries extends TimeseriesResponse = TimeseriesResponse,
+  TBatch = never,
 > = {
   items: T[];
   window: MetricTimeWindow;
@@ -44,10 +52,12 @@ export type EntityMetricsGridConfig<
   getKey: (item: T) => string;
   renderHeader: (item: T) => ReactNode;
   chartDef: (item: T) => ChartDefinition;
-  timeseriesOptions: (
+  timeseriesOptions?: (
     item: T,
     window: MetricTimeWindow,
   ) => VisibleTimeseriesQueryOptions<TTimeseries>;
+  /** When set, cards share one batched query instead of one per item. */
+  batchTimeseries?: EntityMetricsBatchTimeseries<T, TTimeseries, TBatch>;
   timeseriesEnabled?: (item: T) => boolean;
   section: EntityMetricsSectionCopy;
   wrapItem?: (props: {
@@ -58,39 +68,63 @@ export type EntityMetricsGridConfig<
   gridContainerClassName?: string;
 };
 
-type EntityMetricsChartProps<T, TTimeseries extends TimeseriesResponse> = {
+type EntityMetricsChartProps<
+  T,
+  TTimeseries extends TimeseriesResponse,
+  TBatch,
+> = {
   visibilityKey: string;
   item: T;
   window: MetricTimeWindow;
   chartDef: (item: T) => ChartDefinition;
-  timeseriesOptions: (
+  timeseriesOptions?: (
     item: T,
     window: MetricTimeWindow,
   ) => VisibleTimeseriesQueryOptions<TTimeseries>;
+  batchTimeseries?: EntityMetricsBatchTimeseries<T, TTimeseries, TBatch>;
   timeseriesEnabled?: (item: T) => boolean;
 };
 
-function EntityMetricsChart<T, TTimeseries extends TimeseriesResponse>({
+function EntityMetricsChart<
+  T,
+  TTimeseries extends TimeseriesResponse,
+  TBatch,
+>({
   visibilityKey,
   item,
   window,
   chartDef,
   timeseriesOptions,
+  batchTimeseries,
   timeseriesEnabled,
-}: EntityMetricsChartProps<T, TTimeseries>) {
+}: EntityMetricsChartProps<T, TTimeseries, TBatch>) {
   const { ref, isIntersecting, hasBeenVisible } =
     useGridItemVisible(visibilityKey);
   const def = useMemo(() => chartDef(item), [chartDef, item]);
-  const options = useMemo(
-    () => timeseriesOptions(item, window),
+  const enabled = timeseriesEnabled?.(item) ?? true;
+  const perItemOptions = useMemo(
+    () => (timeseriesOptions ? timeseriesOptions(item, window) : undefined),
     [timeseriesOptions, item, window],
   );
-  const enabled = timeseriesEnabled?.(item) ?? true;
-  const { data, isPending, isError } = useVisibleTimeseriesQuery(
-    options,
-    isIntersecting,
-    enabled,
+  const batchOptions = useMemo(
+    () => (batchTimeseries ? batchTimeseries.options(window) : undefined),
+    [batchTimeseries, window],
   );
+  // Cards always provide one of the two sources (per-item or batch).
+  const sourceOptions = (batchOptions ?? perItemOptions)!;
+  const { data: sourceData, isPending, isError } = useVisibleTimeseriesQuery<
+    TTimeseries | TBatch
+  >(sourceOptions, isIntersecting, enabled);
+  // `sourceData` is TBatch when batching, TTimeseries otherwise — the union
+  // can't be narrowed by `batchTimeseries`, so cast at the extraction point.
+  const data = useMemo((): TTimeseries | undefined => {
+    if (sourceData == null) {
+      return undefined;
+    }
+    return batchTimeseries
+      ? batchTimeseries.extract(item, sourceData as TBatch)
+      : (sourceData as TTimeseries);
+  }, [batchTimeseries, item, sourceData]);
 
   const chartData = useMemo(
     () => (data ? timeseriesToMetric(data) : EMPTY_METRIC_TIME_SERIES),
@@ -120,16 +154,21 @@ function EntityMetricsChart<T, TTimeseries extends TimeseriesResponse>({
   );
 }
 
-type EntityMetricsCardProps<T, TTimeseries extends TimeseriesResponse> = {
+type EntityMetricsCardProps<
+  T,
+  TTimeseries extends TimeseriesResponse,
+  TBatch,
+> = {
   visibilityKey: string;
   item: T;
   window: MetricTimeWindow;
   renderHeader: (item: T) => ReactNode;
   chartDef: (item: T) => ChartDefinition;
-  timeseriesOptions: (
+  timeseriesOptions?: (
     item: T,
     window: MetricTimeWindow,
   ) => VisibleTimeseriesQueryOptions<TTimeseries>;
+  batchTimeseries?: EntityMetricsBatchTimeseries<T, TTimeseries, TBatch>;
   timeseriesEnabled?: (item: T) => boolean;
 };
 
@@ -145,15 +184,16 @@ function EntityMetricsCardHeader<T>({
   return renderHeader(item);
 }
 
-function EntityMetricsCard<T, TTimeseries extends TimeseriesResponse>({
+function EntityMetricsCard<T, TTimeseries extends TimeseriesResponse, TBatch>({
   visibilityKey,
   item,
   window,
   renderHeader,
   chartDef,
   timeseriesOptions,
+  batchTimeseries,
   timeseriesEnabled,
-}: EntityMetricsCardProps<T, TTimeseries>) {
+}: EntityMetricsCardProps<T, TTimeseries, TBatch>) {
   return (
     <DashboardCard className="entity-metrics-card h-full">
       <EntityMetricsCardHeader item={item} renderHeader={renderHeader} />
@@ -163,6 +203,7 @@ function EntityMetricsCard<T, TTimeseries extends TimeseriesResponse>({
         window={window}
         chartDef={chartDef}
         timeseriesOptions={timeseriesOptions}
+        batchTimeseries={batchTimeseries}
         timeseriesEnabled={timeseriesEnabled}
       />
     </DashboardCard>
@@ -172,6 +213,7 @@ function EntityMetricsCard<T, TTimeseries extends TimeseriesResponse>({
 export function EntityMetricsGrid<
   T,
   TTimeseries extends TimeseriesResponse = TimeseriesResponse,
+  TBatch = never,
 >({
   items,
   window,
@@ -182,11 +224,12 @@ export function EntityMetricsGrid<
   renderHeader,
   chartDef,
   timeseriesOptions,
+  batchTimeseries,
   timeseriesEnabled,
   section,
   wrapItem,
   gridContainerClassName,
-}: EntityMetricsGridConfig<T, TTimeseries>) {
+}: EntityMetricsGridConfig<T, TTimeseries, TBatch>) {
   if (trackedCount === 0) {
     return (
       <div className="entity-metrics-empty">
@@ -246,6 +289,7 @@ export function EntityMetricsGrid<
                 renderHeader={renderHeader}
                 chartDef={chartDef}
                 timeseriesOptions={timeseriesOptions}
+                batchTimeseries={batchTimeseries}
                 timeseriesEnabled={timeseriesEnabled}
               />
             );

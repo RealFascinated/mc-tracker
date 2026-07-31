@@ -10,17 +10,19 @@ import {
 } from "@/lib/api/servers";
 import type { ServerSort } from "@/lib/api/server-sort";
 import { DEFAULT_SERVER_SORT } from "@/lib/api/server-sort";
+import {
+  serverQueryKey,
+  serversQueryKey,
+  serversSearchQueryKey,
+  serversTimeseriesQueryKey,
+} from "@/lib/api/query-keys";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 import {
   metricTimeWindowQueryKey,
   metricTimeWindowToEpochWindow,
 } from "@/lib/metrics/time-window";
 
-export const serversQueryKey = ["servers", "list"] as const;
-
-export const serverQueryKey = ["servers", "detail"] as const;
-
-export const serversTimeseriesQueryKey = ["servers", "timeseries"] as const;
+export { serverQueryKey, serversQueryKey, serversTimeseriesQueryKey };
 
 export function serversQueryOptions(sort: ServerSort = DEFAULT_SERVER_SORT) {
   return queryOptions({
@@ -37,8 +39,6 @@ export function serverQueryOptions(id: string) {
     enabled: id.length > 0,
   });
 }
-
-const serversSearchQueryKey = ["servers", "search"] as const;
 
 export function serversSearchQueryOptions(search: string, limit = 10) {
   const trimmed = search.trim();
