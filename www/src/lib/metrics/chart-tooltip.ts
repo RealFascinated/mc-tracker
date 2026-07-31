@@ -439,11 +439,11 @@ export function createCursorTooltipHandler({
     );
 
     if (stacked && entries.length > 1 && stackTotalValue > 0) {
-      const totalFormatted = formatValue(stackTotalValue, -1);
+      const totalFormatted = new Intl.NumberFormat().format(Math.round(stackTotalValue));
       rows.push(
-        `<div class="mt-1 flex items-center justify-between border-t border-border pt-1">` +
-          `<span class="text-muted-foreground">Total</span>` +
-          `<span class="font-medium tabular-nums">${totalFormatted}</span>` +
+        `<div class="mt-1 flex items-center justify-between gap-2 border-t border-border pt-1.5">` +
+          `<span class="text-xs font-semibold text-foreground">Total</span>` +
+          `<span class="font-semibold whitespace-nowrap tabular-nums text-foreground">${totalFormatted}</span>` +
           `</div>`,
       );
     } else if (usedTotalFooter) {
