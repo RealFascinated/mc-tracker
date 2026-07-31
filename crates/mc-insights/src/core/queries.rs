@@ -1,3 +1,7 @@
+use std::time::Duration;
+
+use mc_common::constants::time::SECONDS_PER_DAY_U64;
+
 use crate::error::InsightsError;
 use crate::metric::{
     avg_over_time, per_server_players_series, player_count_series, players_for_asn_series,
@@ -5,6 +9,18 @@ use crate::metric::{
 };
 
 use super::resolution::PlayersResolution;
+
+const SECONDS_PER_WEEK_U64: u64 = 7 * SECONDS_PER_DAY_U64;
+
+/// Step at which average overlays are sampled: one point per day or per week,
+/// instead of the rolling average evaluated at every chart step.
+fn resolution_step(resolution: PlayersResolution) -> Option<Duration> {
+    match resolution {
+        PlayersResolution::Chart => None,
+        PlayersResolution::DailyAverage => Some(Duration::from_secs(SECONDS_PER_DAY_U64)),
+        PlayersResolution::WeeklyAverage => Some(Duration::from_secs(SECONDS_PER_WEEK_U64)),
+    }
+}
 
 pub fn build_total_players_by_type_query(
     resolution: PlayersResolution,
@@ -28,10 +44,9 @@ pub fn build_total_players_by_type_query(
         .from_epoch(from_epoch)
         .to_epoch(to_epoch);
 
-    match resolution {
-        PlayersResolution::Chart |
-        PlayersResolution::DailyAverage |
-        PlayersResolution::WeeklyAverage => builder = builder.chart_step(),
+    match resolution_step(resolution) {
+        Some(step) => builder = builder.step(step),
+        None => builder = builder.chart_step(),
     }
 
     builder.build().map_err(InsightsError::from)
@@ -87,10 +102,9 @@ pub fn build_players_query(
         .from_epoch(from_epoch)
         .to_epoch(to_epoch);
 
-    match resolution {
-        PlayersResolution::Chart |
-        PlayersResolution::DailyAverage |
-        PlayersResolution::WeeklyAverage => builder = builder.chart_step(),
+    match resolution_step(resolution) {
+        Some(step) => builder = builder.step(step),
+        None => builder = builder.chart_step(),
     }
 
     builder.build().map_err(InsightsError::from)
@@ -155,7 +169,10 @@ mod tests {
             .unwrap()
             .promql()
             .starts_with("avg_over_time("));
-        assert_eq!(query.window().step(), step_for(Duration::from_secs((to - from) as u64)));
+        assert_eq!(
+            query.window().step(),
+            Duration::from_secs(SECONDS_PER_DAY_U64)
+        );
     }
 
     #[test]
@@ -176,6 +193,9 @@ mod tests {
             .unwrap()
             .promql()
             .starts_with("avg_over_time("));
-        assert_eq!(query.window().step(), step_for(Duration::from_secs((to - from) as u64)));
+        assert_eq!(
+            query.window().step(),
+            Duration::from_secs(SECONDS_PER_WEEK_U64)
+        );
     }
 }

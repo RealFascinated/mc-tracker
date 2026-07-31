@@ -1,5 +1,4 @@
-import { cn } from "cnfast";
-
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
   ASN_SORT_FIELD_OPTIONS,
   getAsnSortFieldOption,
@@ -31,41 +30,25 @@ export function AsnSortToggle({
   }
 
   return (
-    <div
-      className={cn("inline-flex flex-wrap items-center gap-1", className)}
-      role="group"
+    <SegmentedControl
+      value={value.field}
+      onValueChange={handleFieldClick}
       aria-label="Sort networks"
-    >
-      {ASN_SORT_FIELD_OPTIONS.map((option) => {
+      className={className}
+      options={ASN_SORT_FIELD_OPTIONS.map((option) => {
         const active = value.field === option.field;
-        const Icon = active ? option.directionIcons[value.order] : option.icon;
-
-        return (
-          <button
-            key={option.field}
-            type="button"
-            className={cn(
-              "inline-flex h-7 items-center gap-1 rounded-snug border px-2 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning max-sm:px-1.5 max-sm:text-[11px]",
-              active
-                ? "border-monitor text-monitor dark:border-warning dark:text-warning"
-                : "border-border text-muted-foreground hover:text-foreground",
-            )}
-            aria-pressed={active}
-            aria-label={
-              active
-                ? `${option.label}, ${value.order === "asc" ? "ascending" : "descending"}`
-                : option.label
-            }
-            onClick={() => handleFieldClick(option.field)}
-          >
-            <Icon
-              className={cn("size-3 shrink-0", !active && "opacity-70")}
-              aria-hidden
-            />
-            <span className="max-sm:hidden">{option.label}</span>
-          </button>
-        );
+        return {
+          value: option.field,
+          shortLabel: option.label,
+          label: option.label,
+          icon: option.icon,
+          activeIcon: option.directionIcons[value.order],
+          hideLabelOnMobile: true,
+          ariaLabel: active
+            ? `${option.label}, ${value.order === "asc" ? "ascending" : "descending"}`
+            : option.label,
+        };
       })}
-    </div>
+    />
   );
 }

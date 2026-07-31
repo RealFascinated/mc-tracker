@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { TotalPlayersChart } from "@/components/dashboard/charts/total-players-chart";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
-import { DashboardRangeToggle } from "@/components/dashboard/controls/range-toggle";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 
 type HeroChartPanelProps = {
   hasServers: boolean;
@@ -38,13 +38,13 @@ export function HeroChartPanel({ hasServers, window }: HeroChartPanelProps) {
                 onCheckedChange={setShowAnnotations}
                 aria-label="Show annotations"
               />
-              <DashboardRangeToggle
+              <SegmentedControl
                 value={mode}
                 options={[
                   { value: "overall", shortLabel: "Overall" },
                   { value: "servers", shortLabel: "Servers" },
                 ]}
-                onValueChange={(value) => setMode(value as "overall" | "servers")}
+                onValueChange={setMode}
                 aria-label="Chart mode"
               />
             </div>

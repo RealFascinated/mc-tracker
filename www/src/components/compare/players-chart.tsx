@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { DashboardCard } from "@/components/dashboard/cards/card";
 import { DashboardCardHeader } from "@/components/dashboard/cards/card-header";
-import { DashboardRangeToggle } from "@/components/dashboard/controls/range-toggle";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { LoadingState } from "@/components/loading-state";
 import { ChartEmpty } from "@/components/metrics/chart-empty";
 import { MetricChartView } from "@/components/metrics/metric-chart-view";
@@ -93,7 +93,7 @@ export function ComparePlayersChart({
         title="Player history"
         trailingAction={
           <div className="flex flex-wrap items-center gap-2">
-            <DashboardRangeToggle
+            <SegmentedControl
               value={scale}
               options={[
                 { value: "absolute", shortLabel: "Absolute" },
@@ -102,7 +102,7 @@ export function ComparePlayersChart({
               onValueChange={setScale}
               aria-label="Chart scale"
             />
-            <DashboardRangeToggle
+            <SegmentedControl
               value={showTotal ? "on" : "off"}
               options={[
                 { value: "off", shortLabel: "Servers only" },

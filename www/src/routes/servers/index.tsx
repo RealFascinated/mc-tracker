@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { cn } from "cnfast";
+import { Grid2x2, Rows3 } from "lucide-react";
 
 import { PinnedServersGrid } from "@/components/dashboard/grids/pinned-servers-grid";
 import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-row";
@@ -16,10 +17,7 @@ import type {
 } from "@/components/dashboard/tables/servers-table";
 import { LoadingState } from "@/components/loading-state";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
-import {
-  SlidingSegmentedControl,
-  SlidingSegmentedControlItem,
-} from "@/components/ui/sliding-segmented-control";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
 import { usePersistedServerSort } from "@/hooks/use-persisted-server-sort";
 import { useSearchParamNavigation } from "@/hooks/use-search-param-navigation";
@@ -321,6 +319,24 @@ function ServersPage() {
                     </SlidingSegmentedControlItem>
                   </SlidingSegmentedControl>
                 </div>
+                <SegmentedControl
+                  value={viewMode}
+                  onValueChange={(v) => setViewMode(v)}
+                  aria-label="View mode"
+                  options={[
+                    {
+                      value: "cards",
+                      shortLabel: "Cards",
+                      mobileLabel: "Grid",
+                      icon: Grid2x2,
+                    },
+                    {
+                      value: "table",
+                      shortLabel: "Table",
+                      icon: Rows3,
+                    },
+                  ]}
+                />
               }
               hideGridContent={viewMode === "table"}
             />
