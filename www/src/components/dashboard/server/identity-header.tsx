@@ -8,6 +8,7 @@ import type { ServerListItem } from "@/lib/api/servers";
 import { formatServerHost } from "@/lib/api/servers";
 import { ServerHostCopy } from "@/components/dashboard/server/host-copy";
 import { ServerPlatformBadge } from "@/components/dashboard/server/platform-badge";
+import { ServerTrendChips } from "@/components/dashboard/server/trend-chips";
 import { AsnHoverPreview } from "@/components/dashboard/server/asn-hover-preview";
 import { asnDetailSearch, asnLabelOptional } from "@/lib/api/asns";
 import { cn } from "cnfast";
@@ -74,7 +75,10 @@ export function ServerIdentityHeader({
               )}
               {asnName ? (
                 <>
-                  <span className="entity-metrics-subtitle-sep" aria-hidden="true">
+                  <span
+                    className="entity-metrics-subtitle-sep"
+                    aria-hidden="true"
+                  >
                     ·
                   </span>
                   {server.asn ? (
@@ -100,7 +104,10 @@ export function ServerIdentityHeader({
                       </Link>
                     )
                   ) : (
-                    <span className="entity-metrics-subtitle-asn" title={asnName}>
+                    <span
+                      className="entity-metrics-subtitle-asn"
+                      title={asnName}
+                    >
                       {asnName}
                     </span>
                   )}
@@ -109,6 +116,12 @@ export function ServerIdentityHeader({
             </div>
           </div>
         </div>
+        {layout === "card" ? (
+          <ServerTrendChips
+            trend30d={server.trend30d}
+            className="shrink-0"
+          />
+        ) : null}
         {trailing ? <div className="shrink-0">{trailing}</div> : null}
       </div>
 

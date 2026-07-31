@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 
 import {
   EntityCardStats,
@@ -16,6 +17,7 @@ type AsnMetricsGridProps = {
   asns: AsnListItem[];
   window: MetricTimeWindow;
   trackedAsns: number;
+  headerTrailing?: ReactNode;
 };
 
 function AsnMetricsCardHeader({ asn }: { asn: AsnListItem }) {
@@ -57,6 +59,7 @@ export function AsnMetricsGrid({
   asns,
   window,
   trackedAsns,
+  headerTrailing,
 }: AsnMetricsGridProps) {
   return (
     <EntityMetricsGrid<AsnListItem, AsnTimeseriesResponse>
@@ -75,6 +78,7 @@ export function AsnMetricsGrid({
         )
       }
       timeseriesEnabled={(asn) => asn.asn.length > 0}
+      headerTrailing={headerTrailing}
       section={{
         title: "Per ASN",
         subtitleDefault: "Player history grouped by network",

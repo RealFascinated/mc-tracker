@@ -8,10 +8,16 @@ import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
 import { ServersTable } from "@/components/dashboard/tables/servers-table";
-import type { SortField, SortDirection } from "@/components/dashboard/tables/servers-table";
+import type {
+  SortField,
+  SortDirection,
+} from "@/components/dashboard/tables/servers-table";
 import { LoadingState } from "@/components/loading-state";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
-import { SlidingSegmentedControl, SlidingSegmentedControlItem } from "@/components/ui/sliding-segmented-control";
+import {
+  SlidingSegmentedControl,
+  SlidingSegmentedControlItem,
+} from "@/components/ui/sliding-segmented-control";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
 import { usePersistedServerSort } from "@/hooks/use-persisted-server-sort";
 import { useSearchParamNavigation } from "@/hooks/use-search-param-navigation";
@@ -47,7 +53,10 @@ const TABLE_SORT_FIELDS = [
 ] as const;
 
 function parseTableSortFieldParam(value: unknown): SortField | undefined {
-  if (typeof value === "string" && (TABLE_SORT_FIELDS as readonly string[]).includes(value)) {
+  if (
+    typeof value === "string" &&
+    (TABLE_SORT_FIELDS as readonly string[]).includes(value)
+  ) {
     return value as SortField;
   }
   return undefined;
@@ -143,19 +152,32 @@ function ServersPage() {
   const globalSummary = serversData?.summary;
   const showPageLoading = serversPending && !globalSummary;
 
-  const setViewMode = useSearchParamNavigation<ViewMode>(navigate, "view", "cards");
+  const setViewMode = useSearchParamNavigation<ViewMode>(
+    navigate,
+    "view",
+    "cards",
+  );
 
   // Table sort — stored in URL search params
   const tableSortField: SortField = urlTableSort ?? "name";
-  const tableSortDirection: SortDirection = urlTableOrder ??
-    (tableSortField === "name" ? "asc" : "desc");
+  const tableSortDirection: SortDirection =
+    urlTableOrder ?? (tableSortField === "name" ? "asc" : "desc");
 
   function handleTableSort(field: SortField) {
     let newDirection: SortDirection;
     if (field === tableSortField) {
       newDirection = tableSortDirection === "asc" ? "desc" : "asc";
     } else {
-      newDirection = (["players", "peak24h", "peakAllTime", "trend24h", "trend7d", "trend30d"] as SortField[]).includes(field)
+      newDirection = (
+        [
+          "players",
+          "peak24h",
+          "peakAllTime",
+          "trend24h",
+          "trend7d",
+          "trend30d",
+        ] as SortField[]
+      ).includes(field)
         ? "desc"
         : "asc";
     }
@@ -244,7 +266,9 @@ function ServersPage() {
                       <rect width="7" height="7" x="14" y="14" rx="1" />
                     </svg>
                     <span className="max-sm:hidden">Cards</span>
-                    <span className="sm:hidden" aria-hidden>Grid</span>
+                    <span className="sm:hidden" aria-hidden>
+                      Grid
+                    </span>
                   </SlidingSegmentedControlItem>
                   <SlidingSegmentedControlItem
                     value="table"
@@ -280,7 +304,7 @@ function ServersPage() {
             />
 
             <div className={viewMode === "cards" ? "hidden" : "-mt-2"}>
-              <div className="overflow-x-auto scrollbar-hide">
+              <div className="servers-table-scroll scrollbar-hide">
                 <div className="min-w-[40rem]">
                   <ServersTable
                     servers={filteredServers}
