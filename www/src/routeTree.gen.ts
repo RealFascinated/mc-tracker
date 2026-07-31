@@ -22,6 +22,7 @@ import { Route as AsnsAsnRouteImport } from './routes/asns/$asn'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AdminAdminIndexRouteImport } from './routes/_admin/admin/index'
 import { Route as AdminAdminUsersRouteImport } from './routes/_admin/admin/users'
+import { Route as AdminAdminSuggestionsRouteImport } from './routes/_admin/admin/suggestions'
 import { Route as AdminAdminSettingsRouteImport } from './routes/_admin/admin/settings'
 import { Route as AdminAdminServersRouteImport } from './routes/_admin/admin/servers'
 
@@ -88,6 +89,11 @@ const AdminAdminUsersRoute = AdminAdminUsersRouteImport.update({
   path: '/admin/users',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAdminSuggestionsRoute = AdminAdminSuggestionsRouteImport.update({
+  id: '/admin/suggestions',
+  path: '/admin/suggestions',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAdminSettingsRoute = AdminAdminSettingsRouteImport.update({
   id: '/admin/settings',
   path: '/admin/settings',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/servers/': typeof ServersIndexRoute
   '/admin/servers': typeof AdminAdminServersRoute
   '/admin/settings': typeof AdminAdminSettingsRoute
+  '/admin/suggestions': typeof AdminAdminSuggestionsRoute
   '/admin/users': typeof AdminAdminUsersRoute
   '/admin/': typeof AdminAdminIndexRoute
 }
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/servers': typeof ServersIndexRoute
   '/admin/servers': typeof AdminAdminServersRoute
   '/admin/settings': typeof AdminAdminSettingsRoute
+  '/admin/suggestions': typeof AdminAdminSuggestionsRoute
   '/admin/users': typeof AdminAdminUsersRoute
   '/admin': typeof AdminAdminIndexRoute
 }
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/servers/': typeof ServersIndexRoute
   '/_admin/admin/servers': typeof AdminAdminServersRoute
   '/_admin/admin/settings': typeof AdminAdminSettingsRoute
+  '/_admin/admin/suggestions': typeof AdminAdminSuggestionsRoute
   '/_admin/admin/users': typeof AdminAdminUsersRoute
   '/_admin/admin/': typeof AdminAdminIndexRoute
 }
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/servers/'
     | '/admin/servers'
     | '/admin/settings'
+    | '/admin/suggestions'
     | '/admin/users'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/servers'
     | '/admin/servers'
     | '/admin/settings'
+    | '/admin/suggestions'
     | '/admin/users'
     | '/admin'
   id:
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/servers/'
     | '/_admin/admin/servers'
     | '/_admin/admin/settings'
+    | '/_admin/admin/suggestions'
     | '/_admin/admin/users'
     | '/_admin/admin/'
   fileRoutesById: FileRoutesById
@@ -303,6 +315,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/admin/suggestions': {
+      id: '/_admin/admin/suggestions'
+      path: '/admin/suggestions'
+      fullPath: '/admin/suggestions'
+      preLoaderRoute: typeof AdminAdminSuggestionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/admin/settings': {
       id: '/_admin/admin/settings'
       path: '/admin/settings'
@@ -323,6 +342,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAdminServersRoute: typeof AdminAdminServersRoute
   AdminAdminSettingsRoute: typeof AdminAdminSettingsRoute
+  AdminAdminSuggestionsRoute: typeof AdminAdminSuggestionsRoute
   AdminAdminUsersRoute: typeof AdminAdminUsersRoute
   AdminAdminIndexRoute: typeof AdminAdminIndexRoute
 }
@@ -330,6 +350,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAdminServersRoute: AdminAdminServersRoute,
   AdminAdminSettingsRoute: AdminAdminSettingsRoute,
+  AdminAdminSuggestionsRoute: AdminAdminSuggestionsRoute,
   AdminAdminUsersRoute: AdminAdminUsersRoute,
   AdminAdminIndexRoute: AdminAdminIndexRoute,
 }

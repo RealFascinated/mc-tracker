@@ -74,6 +74,20 @@ diesel::table! {
 }
 
 diesel::table! {
+    server_suggestions (id) {
+        id -> Uuid,
+        user_id -> Uuid,
+        name -> Text,
+        host -> Text,
+        port -> Nullable<Integer>,
+        platform -> Text,
+        status -> Text,
+        created_at -> Timestamptz,
+        updated_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
     chat_turns (id) {
         id -> Uuid,
         session_id -> Uuid,
@@ -90,6 +104,7 @@ diesel::joinable!(chat_sessions -> users (user_id));
 diesel::joinable!(chat_turns -> chat_sessions (session_id));
 diesel::joinable!(pinned_servers -> users (user_id));
 diesel::joinable!(pinned_servers -> servers (server_id));
+diesel::joinable!(server_suggestions -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     servers,
@@ -100,4 +115,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     chat_turns,
     pinned_servers,
     monitored_server_events,
+    server_suggestions,
 );

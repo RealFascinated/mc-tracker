@@ -135,6 +135,152 @@ async fn servers_unique_host_port_platform_violation() {
 }
 
 #[tokio::test]
+async fn servers_find_by_host_port_platform_matches_null_port() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+
+    mc_db::db::repos::servers::insert(
+        &pool,
+        mc_db::db::repos::servers::NewServer {
+            id: None,
+            name: "Hypixel",
+            host: "mc.hypixel.net",
+            port: None,
+            platform: mc_db::Platform::Pc,
+        },
+    )
+    .await
+    .unwrap();
+
+    let found = mc_db::db::repos::servers::find_by_host_port_platform(
+        &pool,
+        "mc.hypixel.net",
+        None,
+        mc_db::Platform::Pc,
+    )
+    .await
+    .unwrap();
+    assert!(found.is_some());
+    assert_eq!(found.unwrap().name, "Hypixel");
+
+    let other = mc_db::db::repos::servers::find_by_host_port_platform(
+        &pool,
+        "mc.hypixel.net",
+        Some(19132),
+        mc_db::Platform::Pe,
+    )
+    .await
+    .unwrap();
+    assert!(other.is_none());
+}
+
+#[tokio::test]
+async fn server_suggestions_crud_and_status_flow() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+
+    let user =
+        mc_db::db::repos::users::create(&pool, "suggester", "pass", mc_db::UserRole::User, None)
+            .await
+            .unwrap();
+
+    let suggestion = mc_db::db::repos::server_suggestions::insert(
+        &pool,
+        mc_db::db::repos::server_suggestions::NewServerSuggestion {
+            user_id: user.id,
+            name: "Hypixel",
+            host: "mc.hypixel.net",
+            port: None,
+            platform: mc_db::Platform::Pc,
+        },
+    )
+    .await
+    .unwrap();
+    assert_eq!(suggestion.status, mc_db::ServerSuggestionStatus::Pending);
+
+    let pending = mc_db::db::repos::server_suggestions::list_by_status(
+        &pool,
+        mc_db::ServerSuggestionStatus::Pending,
+    )
+    .await
+    .unwrap();
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0].host, "mc.hypixel.net");
+
+    let by_user = mc_db::db::repos::server_suggestions::list_by_user(&pool, user.id)
+        .await
+        .unwrap();
+    assert_eq!(by_user.len(), 1);
+
+    mc_db::db::repos::server_suggestions::update(
+        &pool,
+        suggestion.id,
+        mc_db::db::repos::server_suggestions::UpdateServerSuggestion {
+            name: None,
+            host: None,
+            port: None,
+            platform: None,
+            status: Some(mc_db::ServerSuggestionStatus::Denied),
+        },
+    )
+    .await
+    .unwrap();
+    let denied = mc_db::db::repos::server_suggestions::get(&pool, suggestion.id)
+        .await
+        .unwrap();
+    assert_eq!(denied.status, mc_db::ServerSuggestionStatus::Denied);
+
+    assert!(
+        mc_db::db::repos::server_suggestions::delete(&pool, suggestion.id)
+            .await
+            .unwrap()
+    );
+    assert!(mc_db::db::repos::server_suggestions::list_by_status(
+        &pool,
+        mc_db::ServerSuggestionStatus::Denied,
+    )
+    .await
+    .unwrap()
+    .is_empty());
+}
+
+#[tokio::test]
+async fn server_suggestions_duplicate_active_identity_conflicts() {
+    let (_postgres, database_url) = start_postgres().await;
+    let pool = setup_pool(&database_url).await;
+
+    let user =
+        mc_db::db::repos::users::create(&pool, "suggester", "pass", mc_db::UserRole::User, None)
+            .await
+            .unwrap();
+
+    let new = mc_db::db::repos::server_suggestions::NewServerSuggestion {
+        user_id: user.id,
+        name: "A",
+        host: "example.com",
+        port: Some(25565),
+        platform: mc_db::Platform::Pc,
+    };
+    mc_db::db::repos::server_suggestions::insert(&pool, new)
+        .await
+        .unwrap();
+
+    let err = mc_db::db::repos::server_suggestions::insert(
+        &pool,
+        mc_db::db::repos::server_suggestions::NewServerSuggestion {
+            user_id: user.id,
+            name: "B",
+            host: "example.com",
+            port: Some(25565),
+            platform: mc_db::Platform::Pc,
+        },
+    )
+    .await
+    .unwrap_err();
+    assert!(matches!(err, mc_db::DbError::Conflict(_)));
+}
+
+#[tokio::test]
 async fn users_create_and_get() {
     let (_postgres, database_url) = start_postgres().await;
     let pool = setup_pool(&database_url).await;
@@ -168,10 +314,15 @@ async fn users_wrong_password_fails_verify() {
     let (_postgres, database_url) = start_postgres().await;
     let pool = setup_pool(&database_url).await;
 
-    let user =
-        mc_db::db::repos::users::create(&pool, "carol", "correcthorse", mc_db::UserRole::User, None)
-            .await
-            .unwrap();
+    let user = mc_db::db::repos::users::create(
+        &pool,
+        "carol",
+        "correcthorse",
+        mc_db::UserRole::User,
+        None,
+    )
+    .await
+    .unwrap();
 
     assert!(!mc_db::db::repos::users::verify_password("wrong", &user.password_hash).unwrap());
 }
@@ -279,4 +430,3 @@ async fn users_delete_by_id_removes_user() {
         .unwrap_err();
     assert!(matches!(err, mc_db::DbError::NotFound(_)));
 }
-

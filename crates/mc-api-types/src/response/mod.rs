@@ -8,6 +8,7 @@ pub mod health;
 pub mod insights;
 pub mod monitored_server_events;
 pub mod pinned_servers;
+pub mod server_suggestions;
 pub mod servers;
 pub mod settings;
 pub mod timeseries;
@@ -27,9 +28,12 @@ pub use self::chat_session::{
 pub use self::chat_stream::{ChatStreamEvent, ChatTokenUsage, ChatToolCallRecord};
 pub use self::error::{ApiError, ApiErrorCode, ErrorTarget, PartialError};
 pub use self::health::HealthResponse;
-pub use self::monitored_server_events::MonitoredServerEventResponse;
 pub use self::insights::{ServersCompareTimeseriesItem, ServersCompareTimeseriesResponse};
+pub use self::monitored_server_events::MonitoredServerEventResponse;
 pub use self::pinned_servers::PinnedServersListResponse;
+pub use self::server_suggestions::{
+    ServerSuggestionResponse, ServerSuggestionsListResponse, SuggestionAuthorResponse,
+};
 pub use self::servers::{
     EntityPeakStats, PeakPlayersRecord, PlayersPeakSummary, ServerListItemResponse,
     ServerSearchItemResponse, ServerTimeseriesResponse, ServersListResponse, ServersSearchResponse,

@@ -2,6 +2,7 @@ pub mod chat_messages;
 pub mod chat_sessions;
 pub mod monitored_server_events;
 pub mod pinned_servers;
+pub mod server_suggestions;
 pub mod servers;
 pub mod settings;
 pub mod users;
