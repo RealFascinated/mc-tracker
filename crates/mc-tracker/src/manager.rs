@@ -303,8 +303,10 @@ impl ServerManager {
             return Vec::new();
         }
 
-
-        let peaks_24h = self.insights.peaks_24h_by_server_id().await;
+        let (peaks_24h, trends) = tokio::join!(
+            self.insights.peaks_24h_by_server_id(),
+            self.insights.trends_by_server_id(),
+        );
         let servers = self.servers.read().await;
 
         ids.iter()
@@ -313,7 +315,11 @@ impl ServerManager {
                     .iter()
                     .find(|server| server.config.id == *id && server.is_tracking())?;
                 let id_str = id.to_string();
-                Some(server_list_item(server, peaks_24h.get(&id_str).copied(), None))
+                Some(server_list_item(
+                    server,
+                    peaks_24h.get(&id_str).copied(),
+                    trends.get(&id_str).copied(),
+                ))
             })
             .collect()
     }
