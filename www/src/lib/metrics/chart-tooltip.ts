@@ -18,6 +18,7 @@ const TOOLTIP_COLUMN_WIDTH = 132;
 const MOBILE_BREAKPOINT = 768;
 const HIDDEN_CURSOR_POS = -10;
 const POINTS_SERIES_TOOLTIP_SNAP_PX = 22;
+const MAX_TOOLTIP_ENTRIES = 20;
 
 function getViewportBounds() {
   const visualViewport = window.visualViewport;
@@ -151,13 +152,17 @@ type TooltipEntry = {
 function renderTooltipRow(
   entry: TooltipEntry,
   formatValue: (value: number, seriesIndex: number) => string,
+  isFocused = false,
 ): string {
   const formatted = formatValue(entry.value, entry.seriesIndex);
+  const labelClass = isFocused
+    ? "truncate font-bold text-foreground"
+    : "truncate text-muted-foreground";
   return (
     `<div class="flex items-center gap-2 py-0.5">` +
     `<span class="size-2 shrink-0 rounded-full" style="background:${entry.color}"></span>` +
-    `<span class="truncate text-muted-foreground">${entry.label}</span>` +
-    `<span class="ml-auto pl-3 font-medium whitespace-nowrap tabular-nums">${formatted}</span>` +
+    `<span class="${labelClass}">${entry.label}</span>` +
+    `<span class="ml-auto pl-3 font-semibold whitespace-nowrap tabular-nums">${formatted}</span>` +
     `</div>`
   );
 }
@@ -179,6 +184,8 @@ function renderTooltipBody(
   tooltipColumnSize?: number,
   tooltipSort?: (a: TooltipSortEntry, b: TooltipSortEntry) => number,
   seriesCount = entries.length,
+  maxEntries = MAX_TOOLTIP_ENTRIES,
+  focusedLabel?: string,
 ): string {
   const useColumns =
     tooltipColumnSize != null && seriesCount > tooltipColumnSize;
@@ -186,25 +193,52 @@ function renderTooltipBody(
     ? [...entries].sort(tooltipSort)
     : [...entries].sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
 
-  if (!useColumns) {
-    return ordered
-      .map((entry) => renderTooltipRow(entry, formatValue))
-      .join("");
+  const focusedIndex = focusedLabel
+    ? ordered.findIndex((e) => e.label === focusedLabel)
+    : -1;
+
+  let truncated: Array<TooltipEntry>;
+  let remaining: number;
+  if (focusedIndex >= 0 && focusedIndex >= maxEntries) {
+    truncated = ordered.slice(0, maxEntries - 1);
+    truncated.push(ordered[focusedIndex]);
+    remaining = ordered.length - maxEntries;
+  } else {
+    truncated = ordered.slice(0, maxEntries);
+    remaining = ordered.length - truncated.length;
   }
 
-  const columns = chunkEntries(ordered, tooltipColumnSize);
-  return (
+  const renderEntryRows = (items: Array<TooltipEntry>) =>
+    items
+      .map((entry) =>
+        renderTooltipRow(entry, formatValue, entry.label === focusedLabel),
+      )
+      .join("");
+
+  if (!useColumns) {
+    let html = renderEntryRows(truncated);
+    if (remaining > 0) {
+      html += `<div class="flex items-center gap-2 py-0.5 text-muted-foreground/60 italic">… ${remaining} more</div>`;
+    }
+    return html;
+  }
+
+  const columns = chunkEntries(truncated, tooltipColumnSize);
+  let html =
     `<div class="flex items-start gap-4">` +
     columns
       .map(
         (column) =>
           `<div class="min-w-0 shrink-0" style="width:${TOOLTIP_COLUMN_WIDTH}px">` +
-          column.map((entry) => renderTooltipRow(entry, formatValue)).join("") +
+          renderEntryRows(column) +
           `</div>`,
       )
       .join("") +
-    `</div>`
-  );
+    `</div>`;
+  if (remaining > 0) {
+    html += `<div class="mt-1 text-muted-foreground/60 italic">… ${remaining} more</div>`;
+  }
+  return html;
 }
 
 function getTooltipMaxWidth(
@@ -335,6 +369,7 @@ export function createCursorTooltipHandler({
         : 0;
 
     const entries: Array<TooltipEntry> = [];
+    let stackTotalValue = 0;
     for (let si = 0; si < labels.length; si++) {
       if (isSeriesHidden?.(si)) continue;
       const value = resolveTooltipSeriesValue(
@@ -345,8 +380,16 @@ export function createCursorTooltipHandler({
         seriesRenders?.[si],
       );
       if (value == null) continue;
+
+      let displayValue = value;
+      if (stacked) {
+        const prev = si > 0 ? (data[si] as Array<number | null>)[idx] ?? 0 : 0;
+        displayValue = value - prev;
+      }
+      stackTotalValue += Math.abs(displayValue);
+
       entries.push({
-        value,
+        value: displayValue,
         label: labels[si],
         color: colors[si % colors.length],
         seriesIndex: si,
@@ -358,9 +401,24 @@ export function createCursorTooltipHandler({
       return;
     }
 
-    const stackTotal = stacked
-      ? entries.reduce((sum, e) => sum + Math.abs(e.value), 0)
-      : 0;
+    let focusedLabel: string | undefined;
+    if (stacked && data.length > 1) {
+      const cursorTop = u.cursor.top;
+      if (cursorTop != null) {
+        const scaleKey = u.series[1]?.scale ?? "y";
+        const hoverValue = u.posToVal(cursorTop, scaleKey);
+        if (hoverValue != null && isFinite(hoverValue)) {
+          for (let si = 1; si < data.length; si++) {
+            const seriesVal = (data[si] as Array<number | null>)[idx] ?? 0;
+            const prevVal = si > 1 ? (data[si - 1] as Array<number | null>)[idx] ?? 0 : 0;
+            if (hoverValue >= prevVal && hoverValue <= seriesVal) {
+              focusedLabel = labels[si - 1];
+              break;
+            }
+          }
+        }
+      }
+    }
 
     const body = renderTooltipBody(
       entries,
@@ -368,6 +426,8 @@ export function createCursorTooltipHandler({
       tooltipColumnSize,
       tooltipSort,
       labels.length,
+      undefined,
+      focusedLabel,
     );
     const rows = [body];
 
@@ -378,8 +438,8 @@ export function createCursorTooltipHandler({
       seriesIndexByLabel,
     );
 
-    if (stacked && entries.length > 1 && stackTotal > 0) {
-      const totalFormatted = formatValue(stackTotal, -1);
+    if (stacked && entries.length > 1 && stackTotalValue > 0) {
+      const totalFormatted = formatValue(stackTotalValue, -1);
       rows.push(
         `<div class="mt-1 flex items-center justify-between border-t border-border pt-1">` +
           `<span class="text-muted-foreground">Total</span>` +

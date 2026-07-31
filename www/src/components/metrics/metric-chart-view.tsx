@@ -3,6 +3,7 @@ import { useMemo, useRef } from "react";
 import type { MetricTimeSeries } from "@/lib/api/metric-timeseries";
 import type { ChartDefinition } from "@/lib/metrics/charts/types";
 import type { ChartEventAnnotation } from "@/lib/metrics/chart-event-annotations";
+import type { MetricChartMode } from "@/components/metrics/metric-chart";
 import { MetricChart } from "@/components/metrics/metric-chart";
 import { MetricChartCard } from "@/components/metrics/metric-chart-card";
 import { ChartEmpty } from "@/components/metrics/chart-empty";
@@ -24,6 +25,7 @@ type MetricChartViewProps = {
   hydrateWhen?: boolean;
   eventAnnotations?: ChartEventAnnotation[];
   showAnnotations?: boolean;
+  mode?: MetricChartMode;
 };
 
 function MetricChartView({
@@ -40,6 +42,7 @@ function MetricChartView({
   hydrateWhen,
   eventAnnotations,
   showAnnotations,
+  mode,
 }: MetricChartViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const config = useMemo(() => buildChartConfig(def, data), [def, data]);
@@ -105,6 +108,7 @@ function MetricChartView({
         queryWindow={queryWindow}
         eventAnnotations={eventAnnotations}
         showAnnotations={showAnnotations}
+        mode={mode}
       />
     </div>
   );

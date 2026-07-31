@@ -5,6 +5,7 @@ import {
   getServerTimeseries,
   getServers,
   getTotalTimeseries,
+  getPerServerTimeseries,
   searchServers,
 } from "@/lib/api/servers";
 import type { ServerSort } from "@/lib/api/server-sort";
@@ -81,6 +82,20 @@ export function totalTimeseriesQueryOptions(window: MetricTimeWindow) {
     queryFn: () => {
       const { from, to } = metricTimeWindowToEpochWindow(window);
       return getTotalTimeseries(from, to);
+    },
+  });
+}
+
+export function perServerTimeseriesQueryOptions(window: MetricTimeWindow) {
+  return queryOptions({
+    queryKey: [
+      ...serversTimeseriesQueryKey,
+      "per-server",
+      metricTimeWindowQueryKey(window),
+    ] as const,
+    queryFn: () => {
+      const { from, to } = metricTimeWindowToEpochWindow(window);
+      return getPerServerTimeseries(from, to);
     },
   });
 }

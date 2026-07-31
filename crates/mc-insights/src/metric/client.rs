@@ -182,6 +182,53 @@ impl VmQueryClient {
             values,
         })
     }
+
+    /// Execute a range query and return one aligned lane per labeled result,
+    /// keyed by the value of `label_key` (e.g. `"id"`).
+    pub async fn execute_labeled_lanes(
+        &self,
+        query: &VmRangeQuery,
+        label_key: &str,
+    ) -> Result<BTreeMap<String, AlignedLane>, MetricsError> {
+        let vm_query = query.to_vm_query()?;
+        let response = self.execute(&vm_query).await?;
+        let window = query.window();
+        let step_secs = window.step_seconds();
+
+        let mut lanes = BTreeMap::new();
+        for result in response.results {
+            let key = result
+                .metric
+                .get(label_key)
+                .and_then(|v| v.as_str())
+                .map(String::from)
+                .unwrap_or_default();
+            if key.is_empty() {
+                continue;
+            }
+
+            let samples: Vec<(i64, Option<f64>)> = result
+                .values
+                .iter()
+                .filter_map(|(ts, val)| {
+                    let parsed = val.parse::<f64>().ok()?;
+                    Some((normalize_timestamp(*ts), Some(parsed)))
+                })
+                .collect();
+
+            let (timestamps, values) = align_samples_to_window(window, &samples);
+            lanes.insert(
+                key,
+                AlignedLane {
+                    step_secs,
+                    timestamps,
+                    values,
+                },
+            );
+        }
+
+        Ok(lanes)
+    }
 }
 
 fn normalize_timestamp(timestamp: f64) -> i64 {

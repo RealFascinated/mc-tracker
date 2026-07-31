@@ -1,7 +1,7 @@
 use crate::error::InsightsError;
 use crate::metric::{
-    avg_over_time, player_count_series, players_for_asn_series, total_players_by_type_series,
-    total_players_series, VmRangeQuery,
+    avg_over_time, per_server_players_series, player_count_series, players_for_asn_series,
+    total_players_by_type_series, total_players_series, VmRangeQuery,
 };
 
 use super::resolution::PlayersResolution;
@@ -94,6 +94,22 @@ pub fn build_players_query(
     }
 
     builder.build().map_err(InsightsError::from)
+}
+
+pub fn build_per_server_players_query(
+    environment: &str,
+    from_epoch: i64,
+    to_epoch: i64,
+) -> Result<VmRangeQuery, InsightsError> {
+    let promql = per_server_players_series(environment);
+
+    VmRangeQuery::builder()
+        .promql(promql)
+        .from_epoch(from_epoch)
+        .to_epoch(to_epoch)
+        .chart_step()
+        .build()
+        .map_err(InsightsError::from)
 }
 
 #[cfg(test)]

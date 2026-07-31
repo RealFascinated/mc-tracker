@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { TotalPlayersChart } from "@/components/dashboard/charts/total-players-chart";
 import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
+import { DashboardRangeToggle } from "@/components/dashboard/controls/range-toggle";
 
 type HeroChartPanelProps = {
   hasServers: boolean;
@@ -15,6 +16,7 @@ type HeroChartPanelProps = {
 
 export function HeroChartPanel({ hasServers, window }: HeroChartPanelProps) {
   const [showAnnotations, setShowAnnotations] = useState(false);
+  const [mode, setMode] = useState<"overall" | "servers">("overall");
 
   return (
     <FadeInAnimation>
@@ -23,6 +25,15 @@ export function HeroChartPanel({ hasServers, window }: HeroChartPanelProps) {
           title="Total players"
           trailingAction={
             <div className="flex items-center gap-2">
+              <DashboardRangeToggle
+                value={mode}
+                options={[
+                  { value: "overall", shortLabel: "Overall" },
+                  { value: "servers", shortLabel: "Servers" },
+                ]}
+                onValueChange={(value) => setMode(value as "overall" | "servers")}
+                aria-label="Chart mode"
+              />
               <Label
                 htmlFor="global-chart-annotations"
                 className="text-xs font-normal text-muted-foreground"
@@ -44,6 +55,7 @@ export function HeroChartPanel({ hasServers, window }: HeroChartPanelProps) {
           window={window}
           height={360}
           showAnnotations={showAnnotations}
+          mode={mode}
         />
       </DashboardCard>
     </FadeInAnimation>

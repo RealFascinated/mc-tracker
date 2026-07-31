@@ -93,6 +93,7 @@ pub fn router(
             get(servers_compare_timeseries),
         )
         .route("/servers/timeseries/total", get(total_timeseries))
+        .route("/servers/timeseries/per-server", get(per_server_timeseries))
         .route("/servers/{id}", get(get_server))
         .route("/servers/{id}/timeseries", get(server_timeseries))
         .route("/asns", get(list_asns))
@@ -278,6 +279,20 @@ async fn total_timeseries(
                 monitored_server_events_in_range(&state.pool, query.from, query.to).await;
             Json(response).into_response()
         }
+        Err(err) => map_insights_error(err),
+    }
+}
+
+async fn per_server_timeseries(
+    State(state): State<AppState>,
+    Query(query): Query<TimeseriesQuery>,
+) -> Response {
+    match state
+        .insights
+        .per_server_players_lanes(state.manager.as_ref(), query.from, query.to)
+        .await
+    {
+        Ok(response) => Json(response).into_response(),
         Err(err) => map_insights_error(err),
     }
 }

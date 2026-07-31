@@ -4,6 +4,7 @@ import type { ServerSort } from "@/lib/api/server-sort";
 import type { MonitoredServerEvent } from "@/lib/api/monitored-server-events";
 import type {
   EntityPeakStats,
+  PartialError,
   PlayersSummaryBase,
   TimeseriesResponse,
 } from "@/lib/api/types";
@@ -110,6 +111,29 @@ export function getTotalTimeseries(from: number, to: number) {
   });
   return apiFetch<ServerTimeseriesResponse>(
     `/servers/timeseries/total?${params}`,
+    { credentials: "omit" },
+  );
+}
+
+export type PerServerTimeseriesItem = {
+  id: string;
+  name: string;
+} & TimeseriesResponse;
+
+export type PerServerTimeseriesResponse = {
+  from: number;
+  to: number;
+  servers: PerServerTimeseriesItem[];
+  errors: PartialError[];
+};
+
+export function getPerServerTimeseries(from: number, to: number) {
+  const params = new URLSearchParams({
+    from: String(from),
+    to: String(to),
+  });
+  return apiFetch<PerServerTimeseriesResponse>(
+    `/servers/timeseries/per-server?${params}`,
     { credentials: "omit" },
   );
 }

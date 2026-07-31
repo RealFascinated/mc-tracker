@@ -3,8 +3,8 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 
 use mc_api_types::{
-    AsnTimeseriesResponse, ServerTimeseriesResponse, ServersCompareTimeseriesResponse,
-    TimeseriesLanes,
+    AsnTimeseriesResponse, ServerTimeseriesResponse, ServersCompareTimeseriesItem,
+    ServersCompareTimeseriesResponse, TimeseriesLanes,
 };
 use tokio::sync::RwLock;
 use tracing::warn;
@@ -12,8 +12,9 @@ use uuid::Uuid;
 
 use crate::catalog::{AsnPeakKey, ServerCatalog};
 use crate::core::{
-    compare_servers_chart, fetch_asn_lane, fetch_server_lane, fetch_total_lane,
-    fetch_total_lane_by_type, lane_to_timeseries_lanes, parse_chart_epochs, PlayersResolution,
+    build_per_server_players_query, compare_servers_chart, fetch_asn_lane, fetch_server_lane,
+    fetch_total_lane, fetch_total_lane_by_type, lane_to_timeseries_lanes, parse_chart_epochs,
+    PlayersResolution,
 };
 use crate::error::InsightsError;
 use crate::metric::{
@@ -304,6 +305,56 @@ impl Insights {
             id: "total".to_string(),
             timeseries: lanes,
             events: vec![],
+        })
+    }
+
+    pub async fn per_server_players_lanes(
+        &self,
+        catalog: &dyn ServerCatalog,
+        from: i64,
+        to: i64,
+    ) -> Result<ServersCompareTimeseriesResponse, InsightsError> {
+        parse_chart_epochs(from, to)?;
+        let query = build_per_server_players_query(catalog.environment(), from, to)?;
+
+        let labeled_lanes = self
+            .query_client
+            .read()
+            .await
+            .execute_labeled_lanes(&query, "id")
+            .await
+            .map_err(InsightsError::from)?;
+
+        let mut servers = Vec::with_capacity(labeled_lanes.len());
+
+        for (id_str, lane) in &labeled_lanes {
+            let id = match uuid::Uuid::parse_str(id_str) {
+                Ok(id) => id,
+                Err(_) => continue,
+            };
+            let meta = match catalog.server_detail(id).await {
+                Some(meta) => meta,
+                None => continue,
+            };
+            let mut lanes = TimeseriesLanes::new(from, to);
+            lanes.insert_lane(
+                mc_api_types::timeseries_keys::PLAYERS_ONLINE,
+                lane.step_secs,
+                lane.timestamps.clone(),
+                lane.values.clone(),
+            );
+            servers.push(ServersCompareTimeseriesItem {
+                id: meta.id.to_string(),
+                name: meta.name,
+                timeseries: lanes,
+            });
+        }
+
+        Ok(ServersCompareTimeseriesResponse {
+            from,
+            to,
+            servers,
+            errors: vec![],
         })
     }
 
