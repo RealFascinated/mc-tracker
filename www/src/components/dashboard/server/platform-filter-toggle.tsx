@@ -1,4 +1,4 @@
-import { DashboardRangeToggle } from "@/components/dashboard/controls/range-toggle";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { SERVER_PLATFORM_FILTER_OPTIONS } from "@/lib/api/platform";
 import type { ServerPlatformFilter } from "@/lib/api/platform";
 
@@ -14,7 +14,7 @@ export function ServerPlatformFilterToggle({
   className,
 }: ServerPlatformFilterToggleProps) {
   return (
-    <DashboardRangeToggle
+    <SegmentedControl
       value={value}
       options={SERVER_PLATFORM_FILTER_OPTIONS}
       onValueChange={onValueChange}

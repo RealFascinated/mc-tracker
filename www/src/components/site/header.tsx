@@ -1,14 +1,14 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 
-import { DashboardRangeToggle } from "@/components/dashboard/controls/range-toggle";
 import { DashboardSearchInput } from "@/components/dashboard/controls/search-input";
 import { DashboardTimeControls } from "@/components/dashboard/controls/time-controls";
 import { SiteHeaderActions } from "@/components/site/header-actions";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/metrics/use-metric-time-window-link-search";
 import {
   activeDashboardHeaderRoute,
-  DASHBOARD_HEADER_ROUTE_OPTIONS,
+  DASHBOARD_HEADER_ROUTES,
   isDashboardHeaderRoute,
   showsHeaderSearch,
   showsSiteHeaderPageNav,
@@ -24,22 +24,37 @@ function SiteHeaderPageNav() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
-  const navigate = useNavigate();
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
   const activeRoute = activeDashboardHeaderRoute(pathname);
 
   return (
-    <DashboardRangeToggle
-      value={activeRoute}
-      options={DASHBOARD_HEADER_ROUTE_OPTIONS}
-      onValueChange={(to) => {
-        void navigate({
-          to: to as DashboardHeaderRoute,
-          search: timeWindowSearch,
-        });
-      }}
+    <SegmentedControl
+      value={activeRoute as DashboardHeaderRoute}
+      options={DASHBOARD_HEADER_ROUTES.map((route) => ({
+        value: route.to,
+        shortLabel: route.label,
+      }))}
       aria-label="Dashboard pages"
       className="site-header-page-nav shrink-0"
+      renderItem={({
+        option,
+        selected,
+        className,
+        ref,
+        "aria-label": ariaLabel,
+        children,
+      }) => (
+        <Link
+          ref={ref}
+          to={option.value}
+          search={timeWindowSearch}
+          aria-label={ariaLabel}
+          aria-current={selected ? "page" : undefined}
+          className={className}
+        >
+          {children}
+        </Link>
+      )}
     />
   );
 }

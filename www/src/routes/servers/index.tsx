@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { Grid2x2, Rows3 } from "lucide-react";
 import { useMemo } from "react";
-import { cn } from "cnfast";
 
 import { PinnedServersGrid } from "@/components/dashboard/grids/pinned-servers-grid";
 import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-row";
@@ -14,10 +14,7 @@ import type {
 } from "@/components/dashboard/tables/servers-table";
 import { LoadingState } from "@/components/loading-state";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
-import {
-  SlidingSegmentedControl,
-  SlidingSegmentedControlItem,
-} from "@/components/ui/sliding-segmented-control";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
 import { usePersistedServerSort } from "@/hooks/use-persisted-server-sort";
 import { useSearchParamNavigation } from "@/hooks/use-search-param-navigation";
@@ -233,72 +230,24 @@ function ServersPage() {
               pinnedServerIds={pinnedServerIds}
               showPinButtons={isAuthenticated}
               viewToggle={
-                <SlidingSegmentedControl
+                <SegmentedControl
                   value={viewMode}
-                  onValueChange={(v) => setViewMode(v as ViewMode)}
+                  onValueChange={(v) => setViewMode(v)}
                   aria-label="View mode"
-                >
-                  <SlidingSegmentedControlItem
-                    value="cards"
-                    className={cn(
-                      "relative z-10 flex h-7 items-center gap-1 rounded-snug px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning max-sm:px-1.5 max-sm:text-[11px]",
-                      viewMode === "cards"
-                        ? "text-monitor dark:text-warning"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="size-3.5"
-                      aria-hidden
-                    >
-                      <rect width="7" height="7" x="3" y="3" rx="1" />
-                      <rect width="7" height="7" x="14" y="3" rx="1" />
-                      <rect width="7" height="7" x="3" y="14" rx="1" />
-                      <rect width="7" height="7" x="14" y="14" rx="1" />
-                    </svg>
-                    <span className="max-sm:hidden">Cards</span>
-                    <span className="sm:hidden" aria-hidden>
-                      Grid
-                    </span>
-                  </SlidingSegmentedControlItem>
-                  <SlidingSegmentedControlItem
-                    value="table"
-                    className={cn(
-                      "relative z-10 flex h-7 items-center gap-1 rounded-snug px-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning max-sm:px-1.5 max-sm:text-[11px]",
-                      viewMode === "table"
-                        ? "text-monitor dark:text-warning"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="size-3.5"
-                      aria-hidden
-                    >
-                      <line x1="3" x2="21" y1="6" y2="6" />
-                      <line x1="3" x2="21" y1="12" y2="12" />
-                      <line x1="3" x2="21" y1="18" y2="18" />
-                    </svg>
-                    Table
-                  </SlidingSegmentedControlItem>
-                </SlidingSegmentedControl>
+                  options={[
+                    {
+                      value: "cards",
+                      shortLabel: "Cards",
+                      mobileLabel: "Grid",
+                      icon: Grid2x2,
+                    },
+                    {
+                      value: "table",
+                      shortLabel: "Table",
+                      icon: Rows3,
+                    },
+                  ]}
+                />
               }
               hideGridContent={viewMode === "table"}
             />
