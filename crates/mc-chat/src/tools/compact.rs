@@ -445,6 +445,9 @@ mod tests {
                     timestamp: 1,
                 }),
             },
+            trend_24h: None,
+            trend_7d: None,
+            trend_30d: None,
         }
     }
 

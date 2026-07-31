@@ -22,16 +22,18 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 
 import { EntityMetricsGrid } from "@/components/dashboard/grids/entity-metrics-grid";
+import type { EntityMetricsBatchTimeseries } from "@/components/dashboard/grids/entity-metrics-grid";
 import { ServerIdentityHeader } from "@/components/dashboard/server/identity-header";
 import { ServerPinButton } from "@/components/dashboard/server/pin-button";
 import { Button } from "@/components/ui/button";
 import { reorderPinnedServers } from "@/lib/api/pinned-servers";
 import { pinnedServersQueryKey } from "@/lib/api/pinned-servers.queries";
 import type {
+  PerServerTimeseriesResponse,
   ServerListItem,
   ServerTimeseriesResponse,
 } from "@/lib/api/servers";
-import { serverTimeseriesQueryOptions } from "@/lib/api/servers.queries";
+import { perServerTimeseriesQueryOptions } from "@/lib/api/servers.queries";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
 import { createServerPlayersChart } from "@/lib/metrics/charts/players";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
@@ -197,11 +199,19 @@ export function PinnedServersGrid({ servers, window }: PinnedServersGridProps) {
     [],
   );
 
-  const timeseriesOptions = useCallback(
-    (server: ServerListItem, timeWindow: MetricTimeWindow) =>
-      toVisibleTimeseriesOptions(
-        serverTimeseriesQueryOptions(server.id, timeWindow),
-      ),
+  const batchTimeseries = useMemo<
+    EntityMetricsBatchTimeseries<
+      ServerListItem,
+      ServerTimeseriesResponse,
+      PerServerTimeseriesResponse
+    >
+  >(
+    () => ({
+      options: (timeWindow) =>
+        toVisibleTimeseriesOptions(perServerTimeseriesQueryOptions(timeWindow)),
+      extract: (server, batch) =>
+        batch.servers.find((entry) => entry.id === server.id),
+    }),
     [],
   );
 
@@ -236,14 +246,18 @@ export function PinnedServersGrid({ servers, window }: PinnedServersGridProps) {
         items={items.map((server) => server.id)}
         strategy={rectSortingStrategy}
       >
-        <EntityMetricsGrid<ServerListItem, ServerTimeseriesResponse>
+        <EntityMetricsGrid<
+          ServerListItem,
+          ServerTimeseriesResponse,
+          PerServerTimeseriesResponse
+        >
           items={items}
           window={window}
           trackedCount={items.length}
           getKey={(server) => `pinned:${server.id}`}
           renderHeader={renderHeader}
           chartDef={chartDef}
-          timeseriesOptions={timeseriesOptions}
+          batchTimeseries={batchTimeseries}
           timeseriesEnabled={(server) => server.id.length > 0}
           wrapItem={wrapItem}
           section={{
