@@ -25,15 +25,6 @@ export function HeroChartPanel({ hasServers, window }: HeroChartPanelProps) {
           title="Total players"
           trailingAction={
             <div className="flex items-center gap-2">
-              <DashboardRangeToggle
-                value={mode}
-                options={[
-                  { value: "overall", shortLabel: "Overall" },
-                  { value: "servers", shortLabel: "Servers" },
-                ]}
-                onValueChange={(value) => setMode(value as "overall" | "servers")}
-                aria-label="Chart mode"
-              />
               <Label
                 htmlFor="global-chart-annotations"
                 className="text-xs font-normal text-muted-foreground"
@@ -46,6 +37,15 @@ export function HeroChartPanel({ hasServers, window }: HeroChartPanelProps) {
                 checked={showAnnotations}
                 onCheckedChange={setShowAnnotations}
                 aria-label="Show annotations"
+              />
+              <DashboardRangeToggle
+                value={mode}
+                options={[
+                  { value: "overall", shortLabel: "Overall" },
+                  { value: "servers", shortLabel: "Servers" },
+                ]}
+                onValueChange={(value) => setMode(value as "overall" | "servers")}
+                aria-label="Chart mode"
               />
             </div>
           }
