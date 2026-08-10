@@ -380,3 +380,61 @@ async fn my_suggestions_lists_user_submissions() {
     assert_eq!(body["suggestions"][0]["status"], "pending");
     assert_eq!(body["suggestions"][0]["suggestedBy"], json!(null));
 }
+
+#[tokio::test]
+async fn submitting_suggestion_posts_webhook_notification() {
+    let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+    let receiver = axum::Router::new().route(
+        "/hook",
+        axum::routing::post(move |body: axum::body::Bytes| async move {
+            let _ = tx.send(body).await;
+            StatusCode::NO_CONTENT
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, receiver).await.unwrap();
+    });
+
+    let (postgres, database_url) = common::start_postgres().await;
+    let pool = common::setup_pool(&database_url).await;
+    common::bootstrap_admin(&pool).await;
+    common::create_user(&pool, "alice", "password", mc_db::UserRole::User).await;
+    let manager = common::manager_from_pool(&pool, "development").await;
+    let app = common::build_app_with_discord_webhook(
+        pool,
+        Arc::clone(&manager),
+        "development",
+        Some(format!("http://{addr}/hook")),
+    )
+    .await;
+    let user_cookie = common::login_as(&app, "alice", "password").await;
+    let _postgres = postgres;
+
+    let response = suggest_request(&app, &user_cookie, SUGGEST_BODY)
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+
+    let body = tokio::time::timeout(std::time::Duration::from_secs(5), rx.recv())
+        .await
+        .expect("webhook POST timed out")
+        .expect("webhook channel closed");
+    let payload: Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(payload["username"], "mc-tracker");
+    let embed = &payload["embeds"][0];
+    assert_eq!(embed["title"], "New server suggestion: Hypixel");
+    assert_eq!(embed["color"], 0x5865F2);
+    assert!(embed["timestamp"].is_string());
+    let fields = embed["fields"].as_array().unwrap();
+    assert_eq!(fields[0]["name"], "Host");
+    assert_eq!(fields[0]["value"], "mc.hypixel.net");
+    assert_eq!(fields[0]["inline"], true);
+    assert_eq!(fields[1]["name"], "Platform");
+    assert_eq!(fields[1]["value"], "PC");
+    assert_eq!(fields[1]["inline"], true);
+    assert_eq!(fields[2]["name"], "Suggested by");
+    assert_eq!(fields[2]["value"], "alice");
+    assert!(fields[2].get("inline").is_none());
+}

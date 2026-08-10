@@ -1,13 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  ChevronDown,
-  LogIn,
-  LogOut,
-  Shield,
-  User,
-} from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, LogIn, LogOut, Plus, Shield, User } from "lucide-react";
+import { lazy, Suspense, useState } from "react";
 
 import { ThemeSwitcher } from "@/components/site/theme-switcher";
 import { Button } from "@/components/ui/button";
@@ -25,6 +19,14 @@ import { adminLandingPath } from "@/lib/auth/require-admin";
 import { userDisplayName } from "@/lib/auth/user-display";
 import { canManageServers } from "@/lib/user-flags";
 import { cn } from "cnfast";
+
+// The dialog pulls in admin form fields + mcutils lookup; keep it out of the
+// root chunk and load it only when someone actually opens it.
+const SuggestServerDialog = lazy(() =>
+  import("@/components/dashboard/suggest-server-dialog").then((mod) => ({
+    default: mod.SuggestServerDialog,
+  })),
+);
 
 type SiteHeaderUserMenuProps = {
   iconOnly?: boolean;
@@ -119,12 +121,49 @@ function SiteHeaderUserMenu({ iconOnly = false }: SiteHeaderUserMenuProps) {
   );
 }
 
+function SuggestServerButton({ iconOnly = false }: { iconOnly?: boolean }) {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant="highlighted"
+        size="default"
+        className="site-header-nav-button"
+        aria-label="Suggest a server"
+        onClick={() => {
+          if (!isAuthenticated) {
+            void navigate({ to: "/login" });
+            return;
+          }
+          setOpen(true);
+        }}
+      >
+        <Plus
+          className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
+          aria-hidden
+        />
+        <span className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}>
+          Suggest a server
+        </span>
+      </Button>
+      <Suspense fallback={null}>
+        <SuggestServerDialog open={open} onOpenChange={setOpen} />
+      </Suspense>
+    </>
+  );
+}
+
 function SiteHeaderActions({ iconOnly = false }: { iconOnly?: boolean }) {
   const { isAuthenticated } = useAuth();
 
   return (
     <>
       <ThemeSwitcher />
+      <SuggestServerButton iconOnly={iconOnly} />
       {isAuthenticated ? (
         <SiteHeaderUserMenu iconOnly={iconOnly} />
       ) : (

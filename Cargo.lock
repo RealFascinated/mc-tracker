@@ -1980,6 +1980,7 @@ dependencies = [
  "mc-settings",
  "mc-test-support",
  "mime_guess",
+ "reqwest",
  "rust-embed",
  "serde",
  "serde_json",

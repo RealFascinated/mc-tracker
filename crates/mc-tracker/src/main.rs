@@ -14,6 +14,7 @@ use mc_tracker::api::{router, AppState};
 use mc_tracker::auth::{AuthContext, LoginRateLimiter, SessionManager};
 use mc_tracker::chat::ChatRateLimiter;
 use mc_tracker::chat_config::{build_chat_agent, chat_enabled_for};
+use mc_tracker::discord_webhook::DiscordWebhook;
 use mc_tracker::manager::{spawn_push_loop, ServerManager};
 use tokio::signal;
 use tracing::info;
@@ -56,6 +57,11 @@ struct Config {
     /// HMAC secret for signing session cookies
     #[arg(long, env = "SESSION_SECRET")]
     session_secret: String,
+
+    /// Optional Discord webhook URL notified when a new server is suggested;
+    /// empty disables notifications
+    #[arg(long, env = "DISCORD_WEBHOOK_URL")]
+    discord_webhook_url: Option<String>,
 }
 
 #[tokio::main]
@@ -141,6 +147,8 @@ async fn main() -> anyhow::Result<()> {
         rate_limiter: LoginRateLimiter::new(),
     };
 
+    let discord_webhook = Arc::new(DiscordWebhook::new(config.discord_webhook_url));
+
     let app = router(
         AppState {
             pool: pool.clone(),
@@ -150,6 +158,7 @@ async fn main() -> anyhow::Result<()> {
             auth,
             chat,
             chat_rate_limiter: Arc::new(ChatRateLimiter::new()),
+            discord_webhook: Arc::clone(&discord_webhook),
         },
         &manager.settings(),
         &config.environment,
@@ -162,6 +171,7 @@ async fn main() -> anyhow::Result<()> {
         servers = server_count,
         maxmind_ready = true,
         chat_enabled = chat_enabled_for(&manager.settings()),
+        discord_webhook_enabled = discord_webhook.is_enabled(),
         "mc-tracker started"
     );
 

@@ -5,6 +5,7 @@ pub mod chat;
 pub mod chat_config;
 pub mod chat_quota;
 #[cfg(feature = "embedded-ui")]
+pub mod discord_webhook;
 pub mod embedded;
 pub mod manager;
 pub mod pinned_servers;

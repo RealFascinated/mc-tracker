@@ -26,6 +26,7 @@ use uuid::Uuid;
 use crate::admin;
 use crate::auth::{require_admin, require_manage_servers, AuthContext};
 use crate::chat::ChatRateLimiter;
+use crate::discord_webhook::DiscordWebhook;
 use crate::manager::ServerManager;
 use crate::settings_api::to_settings_list;
 
@@ -38,6 +39,7 @@ pub struct AppState {
     pub auth: AuthContext,
     pub chat: Option<Arc<dyn mc_chat::ChatAgent>>,
     pub chat_rate_limiter: Arc<ChatRateLimiter>,
+    pub discord_webhook: Arc<DiscordWebhook>,
 }
 
 pub fn cors_layer(

@@ -10,6 +10,7 @@ use mc_settings::{victoriametrics_base_url, victoriametrics_import_url, Settings
 use mc_tracker::api::{router, AppState};
 use mc_tracker::auth::{AuthContext, LoginRateLimiter, SessionManager};
 use mc_tracker::chat::ChatRateLimiter;
+use mc_tracker::discord_webhook::DiscordWebhook;
 use mc_tracker::manager::ServerManager;
 use serde_json::json;
 use testcontainers::runners::AsyncRunner;
@@ -102,7 +103,7 @@ pub async fn build_app_with_env(
     manager: Arc<ServerManager>,
     deployment_environment: &str,
 ) -> axum::Router {
-    build_app_with_options(pool, manager, deployment_environment, None).await
+    build_app_with_options(pool, manager, deployment_environment, None, None).await
 }
 
 pub async fn build_app_with_chat(
@@ -111,7 +112,17 @@ pub async fn build_app_with_chat(
     deployment_environment: &str,
     chat: Arc<dyn mc_chat::ChatAgent>,
 ) -> axum::Router {
-    build_app_with_options(pool, manager, deployment_environment, Some(chat)).await
+    build_app_with_options(pool, manager, deployment_environment, Some(chat), None).await
+}
+
+/// Build an app whose Discord webhook posts to `webhook_url` (None disables).
+pub async fn build_app_with_discord_webhook(
+    pool: DbPool,
+    manager: Arc<ServerManager>,
+    deployment_environment: &str,
+    webhook_url: Option<String>,
+) -> axum::Router {
+    build_app_with_options(pool, manager, deployment_environment, None, webhook_url).await
 }
 
 async fn build_app_with_options(
@@ -119,6 +130,7 @@ async fn build_app_with_options(
     manager: Arc<ServerManager>,
     deployment_environment: &str,
     chat: Option<Arc<dyn mc_chat::ChatAgent>>,
+    webhook_url: Option<String>,
 ) -> axum::Router {
     let sessions = Arc::new(SessionManager::new(b"test-secret", false));
     let settings = manager.settings();
@@ -134,6 +146,7 @@ async fn build_app_with_options(
             },
             chat,
             chat_rate_limiter: Arc::new(ChatRateLimiter::new()),
+            discord_webhook: Arc::new(DiscordWebhook::new(webhook_url)),
         },
         &settings,
         deployment_environment,

@@ -1,12 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Grid2x2, Plus, Rows3 } from "lucide-react";
-import { lazy, Suspense, useMemo, useState } from "react";
+import { Grid2x2, Rows3 } from "lucide-react";
+import { lazy, Suspense, useMemo } from "react";
 
 import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-row";
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
-import { SuggestServerDialog } from "@/components/dashboard/suggest-server-dialog";
 import { ServersTable } from "@/components/dashboard/tables/servers-table";
 import type {
   SortField,
@@ -34,7 +33,6 @@ import { serversQueryOptions } from "@/lib/api/servers.queries";
 import { pinnedServersQueryOptions } from "@/lib/api/pinned-servers.queries";
 import { useAuth } from "@/lib/auth/context";
 import { pageTitle } from "@/lib/page-title";
-import { Button } from "@/components/ui/button";
 import type { MetricTimeRange } from "@/lib/metrics/range";
 import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 
@@ -104,7 +102,6 @@ export const Route = createFileRoute("/servers/")({
 function ServersPage() {
   const { refreshIntervalMs } = useDashboardRefresh();
   const { isAuthenticated } = useAuth();
-  const [suggestOpen, setSuggestOpen] = useState(false);
   const {
     range: searchRange,
     from: searchFrom,
@@ -244,24 +241,7 @@ function ServersPage() {
               pinnedServerIds={pinnedServerIds}
               showPinButtons={isAuthenticated}
               viewToggle={
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="highlighted"
-                    size="sm"
-                    className="rounded-snug"
-                    data-icon-inline-start
-                    onClick={() => {
-                      if (!isAuthenticated) {
-                        void navigate({ to: "/login" });
-                        return;
-                      }
-                      setSuggestOpen(true);
-                    }}
-                  >
-                    <Plus />
-                    Suggest a server
-                  </Button>
-                  <SegmentedControl
+                <SegmentedControl
                   value={viewMode}
                   onValueChange={(v) => setViewMode(v)}
                   aria-label="View mode"
@@ -279,7 +259,6 @@ function ServersPage() {
                     },
                   ]}
                 />
-                </div>
               }
               hideGridContent={viewMode === "table"}
             />
@@ -301,8 +280,6 @@ function ServersPage() {
           </MetricChartsScope>
         </main>
       )}
-
-      <SuggestServerDialog open={suggestOpen} onOpenChange={setSuggestOpen} />
     </>
   );
 }

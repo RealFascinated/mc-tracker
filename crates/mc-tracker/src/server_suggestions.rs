@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
@@ -13,6 +15,7 @@ use mc_db::model::{Platform, ServerSuggestion};
 
 use crate::api::AppState;
 use crate::auth::AuthUser;
+use crate::discord_webhook::{DiscordEmbed, DiscordEmbedField, DiscordWebhookMessage};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -54,11 +57,17 @@ async fn submit_suggestion(
     )
     .await
     {
-        Ok(suggestion) => (
-            StatusCode::CREATED,
-            Json(suggestion_response(&suggestion, None)),
-        )
-            .into_response(),
+        Ok(suggestion) => {
+            // Notify in the background: a slow webhook must not delay the response.
+            let notifier = Arc::clone(&state.discord_webhook);
+            let message = suggestion_webhook_message(&suggestion, &user.username);
+            tokio::spawn(async move { notifier.notify(&message).await });
+            (
+                StatusCode::CREATED,
+                Json(suggestion_response(&suggestion, None)),
+            )
+                .into_response()
+        }
         Err(DbError::Conflict(message)) => conflict(&message),
         Err(err) => map_db_error(err),
     }
@@ -77,6 +86,41 @@ async fn list_my_suggestions(
             .map(|suggestion| suggestion_response(suggestion, None))
             .collect(),
     }))
+}
+
+fn suggestion_webhook_message(
+    suggestion: &ServerSuggestion,
+    username: &str,
+) -> DiscordWebhookMessage {
+    let host = match suggestion.port {
+        Some(port) => format!("{}:{}", suggestion.host, port),
+        None => suggestion.host.clone(),
+    };
+    DiscordWebhookMessage {
+        username: Some("mc-tracker".to_owned()),
+        embeds: vec![DiscordEmbed {
+            title: Some(format!("New server suggestion: {}", suggestion.name)),
+            color: Some(0x5865F2), // Discord blurple
+            fields: vec![
+                DiscordEmbedField {
+                    name: "Host".to_owned(),
+                    value: host,
+                    inline: Some(true),
+                },
+                DiscordEmbedField {
+                    name: "Platform".to_owned(),
+                    value: suggestion.platform.as_str().to_owned(),
+                    inline: Some(true),
+                },
+                DiscordEmbedField {
+                    name: "Suggested by".to_owned(),
+                    value: username.to_owned(),
+                    inline: None,
+                },
+            ],
+            timestamp: Some(suggestion.created_at.to_rfc3339()),
+        }],
+    }
 }
 
 pub(crate) fn suggestion_response(
