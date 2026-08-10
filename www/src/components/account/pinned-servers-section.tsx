@@ -89,7 +89,7 @@ function PinnedServerRow({ server }: { server: ServerListItem }) {
 
   const address = formatServerHost(server.host, server.port);
   const playersLabel =
-    server.playersOnline == null
+    server.status === "offline"
       ? "—"
       : `${formatPlayers(server.playersOnline)} online`;
 

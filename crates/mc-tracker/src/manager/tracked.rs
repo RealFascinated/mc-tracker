@@ -1,3 +1,4 @@
+use mc_api_types::ServerStatus;
 use mc_db::model::Server;
 use mc_geo::AsnLookup;
 use mc_ping::Ping;
@@ -35,6 +36,16 @@ impl TrackedServer {
 
     pub(crate) fn is_tracking(&self) -> bool {
         !self.config.paused
+    }
+
+    /// Whether the last ping attempt succeeded. A tracked server with no
+    /// successful ping yet is offline.
+    pub(crate) fn status(&self) -> ServerStatus {
+        if self.players_online.is_some() {
+            ServerStatus::Online
+        } else {
+            ServerStatus::Offline
+        }
     }
 
     pub(crate) fn apply_success(&mut self, ping: &Ping, asn: AsnLookup, resolved_ip: &str) -> bool {

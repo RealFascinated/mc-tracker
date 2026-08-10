@@ -6,7 +6,10 @@ use mc_api_types::request::settings::PatchSettingRequest;
 use mc_api_types::response::admin_servers::AdminServerResponse;
 use mc_api_types::response::auth::{LoginResponse, MeResponse};
 use mc_api_types::response::settings::{SettingResponse, SettingsListResponse};
-use mc_api_types::{ApiError, ApiErrorCode, ErrorTarget, HealthResponse, PartialError};
+use mc_api_types::{
+    ApiError, ApiErrorCode, EntityPeakStats, ErrorTarget, HealthResponse, PartialError,
+    ServerListItemResponse, ServerStatus,
+};
 
 #[test]
 fn health_response_serializes_camel_case() {
@@ -142,6 +145,38 @@ fn admin_server_response_serializes_camel_case() {
         json,
         r#"{"id":"b8dd1998-c3c8-4248-905c-52c26092baf5","name":"Hypixel","type":"PC","host":"mc.hypixel.net","port":null,"createdAt":"2026-06-30T12:00:00Z","updatedAt":"2026-06-30T12:00:00Z","paused":false,"playersOnline":null}"#
     );
+}
+
+#[test]
+fn server_status_serializes_lowercase() {
+    assert_eq!(serde_json::to_string(&ServerStatus::Online).unwrap(), "\"online\"");
+    assert_eq!(serde_json::to_string(&ServerStatus::Offline).unwrap(), "\"offline\"");
+}
+
+#[test]
+fn server_list_item_serializes_status() {
+    let json = serde_json::to_string(&ServerListItemResponse {
+        id: "b8dd1998-c3c8-4248-905c-52c26092baf5".into(),
+        name: "Hypixel".into(),
+        server_type: "PC".into(),
+        host: "mc.hypixel.net".into(),
+        port: None,
+        asn: "AS13335".into(),
+        asn_org: "Cloudflare".into(),
+        players_online: None,
+        status: ServerStatus::Offline,
+        favicon: None,
+        peaks: EntityPeakStats {
+            players_24h: None,
+            all_time: None,
+        },
+        trend_24h: None,
+        trend_7d: None,
+        trend_30d: None,
+    })
+    .unwrap();
+    assert!(json.contains(r#""playersOnline":null"#));
+    assert!(json.contains(r#""status":"offline""#));
 }
 
 #[test]

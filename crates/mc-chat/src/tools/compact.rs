@@ -36,6 +36,7 @@ fn compact_server_list_item(server: &ServerListItemResponse) -> Value {
         "port": effective_server_port(server.port, &server.server_type),
         "platform": platform_display_label(&server.server_type),
         "playersOnline": server.players_online,
+        "status": server.status,
         "asn": server.asn,
         "asnOrg": server.asn_org,
     })
@@ -49,6 +50,7 @@ pub(crate) fn compact_server(server: &ServerListItemResponse) -> Value {
         "port": server.port,
         "platform": platform_display_label(&server.server_type),
         "playersOnline": server.players_online,
+        "status": server.status,
         "asn": server.asn,
         "asnOrg": server.asn_org,
         "peaks": compact_entity_peaks(&server.peaks),
@@ -383,6 +385,7 @@ fn compact_search_item(server: &ServerSearchItemResponse) -> Value {
         "port": server.port,
         "platform": platform_display_label(&server.server_type),
         "playersOnline": server.players_online,
+        "status": server.status,
     })
 }
 
@@ -422,7 +425,7 @@ mod tests {
     use mc_chat_types::{ChatPoint, ChatTimeseriesSnapshot, ChatTrend};
 
     use mc_api_types::{
-        EntityPeakStats, PeakPlayersRecord, ServerListItemResponse, ServersListResponse,
+        EntityPeakStats, PeakPlayersRecord, ServerListItemResponse, ServerStatus, ServersListResponse,
     };
 
     use super::*;
@@ -437,6 +440,7 @@ mod tests {
             asn: "AS1".into(),
             asn_org: "Host".into(),
             players_online: Some(online),
+            status: ServerStatus::Online,
             favicon: None,
             peaks: EntityPeakStats {
                 players_24h: Some(peak24h),

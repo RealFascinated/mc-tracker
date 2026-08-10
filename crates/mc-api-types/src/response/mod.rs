@@ -36,8 +36,8 @@ pub use self::server_suggestions::{
 };
 pub use self::servers::{
     EntityPeakStats, PeakPlayersRecord, PlayersPeakSummary, ServerListItemResponse,
-    ServerSearchItemResponse, ServerTimeseriesResponse, ServersListResponse, ServersSearchResponse,
-    ServersSummaryResponse,
+    ServerSearchItemResponse, ServerStatus, ServerTimeseriesResponse, ServersListResponse,
+    ServersSearchResponse, ServersSummaryResponse,
 };
 pub use self::settings::{SettingResponse, SettingsListResponse};
 pub use self::users::{AdminUser, AdminUsersListResponse, PatchUserFlagsResponse};

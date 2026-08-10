@@ -8,6 +8,7 @@ import type { ServerListItem } from "@/lib/api/servers";
 import { formatServerHost } from "@/lib/api/servers";
 import { ServerHostCopy } from "@/components/dashboard/server/host-copy";
 import { ServerPlatformBadge } from "@/components/dashboard/server/platform-badge";
+import { ServerStatusDot } from "@/components/dashboard/server/status-dot";
 import { ServerTrendChips } from "@/components/dashboard/server/trend-chips";
 import { AsnHoverPreview } from "@/components/dashboard/server/asn-hover-preview";
 import { asnDetailSearch, asnLabelOptional } from "@/lib/api/asns";
@@ -60,6 +61,7 @@ export function ServerIdentityHeader({
           />
           <div className="min-w-0">
             <div className="entity-metrics-title-row">
+              <ServerStatusDot status={server.status} />
               {linkToDetail ? linkedNameContent : nameContent}
               <ServerPlatformBadge platform={server.type} />
             </div>

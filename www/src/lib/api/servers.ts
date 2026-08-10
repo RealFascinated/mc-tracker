@@ -13,6 +13,8 @@ export type ServersSummary = PlayersSummaryBase & {
   trackedServers: number;
 };
 
+export type ServerStatus = "online" | "offline";
+
 export type ServerListItem = {
   id: string;
   name: string;
@@ -22,6 +24,7 @@ export type ServerListItem = {
   asn: string;
   asnOrg: string;
   playersOnline: number | null;
+  status: ServerStatus;
   favicon: string | null;
   peaks: EntityPeakStats;
   trend24h?: number | null;
@@ -47,6 +50,7 @@ export type ServerSearchItem = {
   port: number | null;
   favicon: string | null;
   playersOnline: number | null;
+  status: ServerStatus;
 };
 
 export type ServersSearchResponse = {

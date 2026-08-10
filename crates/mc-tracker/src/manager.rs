@@ -374,6 +374,7 @@ impl ServerManager {
                 port: server.config.port,
                 favicon: server.favicon.clone(),
                 players_online: server.players_online,
+                status: server.status(),
             })
             .collect();
 

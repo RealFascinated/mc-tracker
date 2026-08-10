@@ -31,6 +31,14 @@ pub struct ServersListResponse {
     pub servers: Vec<ServerListItemResponse>,
 }
 
+/// Whether a tracked server answered its last ping.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ServerStatus {
+    Online,
+    Offline,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServersSummaryResponse {
@@ -53,6 +61,7 @@ pub struct ServerListItemResponse {
     pub asn: String,
     pub asn_org: String,
     pub players_online: Option<u32>,
+    pub status: ServerStatus,
     pub favicon: Option<String>,
     pub peaks: EntityPeakStats,
     pub trend_24h: Option<f64>,
@@ -77,6 +86,7 @@ pub struct ServerSearchItemResponse {
     pub port: Option<i32>,
     pub favicon: Option<String>,
     pub players_online: Option<u32>,
+    pub status: ServerStatus,
 }
 
 #[derive(Debug, Clone, Serialize)]

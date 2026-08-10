@@ -47,6 +47,7 @@ pub(crate) fn server_list_item(
         asn: server.asn.asn.clone(),
         asn_org: server.asn.asn_org.clone(),
         players_online: server.players_online,
+        status: server.status(),
         favicon: server.favicon.clone(),
         peaks: entity_peak_stats_with_all_time(
             peak_24h,

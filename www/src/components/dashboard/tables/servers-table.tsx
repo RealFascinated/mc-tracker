@@ -8,6 +8,7 @@ import { ServerPlatformBadge } from "@/components/dashboard/server/platform-badg
 import { ServerHostCopy } from "@/components/dashboard/server/host-copy";
 import { AsnHoverPreview } from "@/components/dashboard/server/asn-hover-preview";
 import { ServerPinButton } from "@/components/dashboard/server/pin-button";
+import { ServerStatusDot } from "@/components/dashboard/server/status-dot";
 import {
   Table,
   TableBody,
@@ -116,6 +117,7 @@ function serverFieldsEqual(a: ServerListItem, b: ServerListItem): boolean {
     a.asn === b.asn &&
     a.asnOrg === b.asnOrg &&
     a.playersOnline === b.playersOnline &&
+    a.status === b.status &&
     a.favicon === b.favicon &&
     a.trend24h === b.trend24h &&
     a.trend7d === b.trend7d &&
@@ -145,6 +147,7 @@ function ServerTableRow({ server, isPinned, showPinButtons }: ServerTableRowProp
           />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
+              <ServerStatusDot status={server.status} className="mt-px" />
               <Link
                 to="/servers/$serverId"
                 params={{ serverId: server.id }}
