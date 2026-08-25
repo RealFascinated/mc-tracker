@@ -2,6 +2,7 @@ mod asn_timeseries_summary;
 mod compact;
 mod compare_servers;
 mod constants;
+mod format_timestamp;
 mod get_asn;
 mod get_current_time;
 mod get_server;
