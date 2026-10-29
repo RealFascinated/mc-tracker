@@ -17,7 +17,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { errorMessage } from "@/lib/api/error-message";
-import { changePassword, deleteAccount, logout, updateProfile } from "@/lib/auth";
+import {
+  changePassword,
+  deleteAccount,
+  logout,
+  updateProfile,
+} from "@/lib/auth";
 import { useAuth } from "@/lib/auth/context";
 import { validateProfileUpdate } from "@/lib/auth/validation";
 import { pageTitle } from "@/lib/page-title";
@@ -93,7 +98,6 @@ function AccountPage() {
     }
   }
 
-
   async function handleDeleteAccount() {
     if (!deletePassword) {
       toast.error("Enter your password to confirm deletion");
@@ -132,7 +136,10 @@ function AccountPage() {
             </p>
           </div>
           <div className="app-shell-section-body">
-            <form className="flex flex-col gap-4" onSubmit={handleProfileSubmit}>
+            <form
+              className="flex flex-col gap-4"
+              onSubmit={handleProfileSubmit}
+            >
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -159,7 +166,9 @@ function AccountPage() {
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Role
                 </span>
-                <span className="text-sm font-medium capitalize">{user?.role}</span>
+                <span className="text-sm font-medium capitalize">
+                  {user?.role}
+                </span>
               </div>
               <div>
                 <Button type="submit" disabled={isProfileSubmitting}>
@@ -181,7 +190,10 @@ function AccountPage() {
             </p>
           </div>
           <div className="app-shell-section-body">
-            <form className="flex flex-col gap-4" onSubmit={handlePasswordSubmit}>
+            <form
+              className="flex flex-col gap-4"
+              onSubmit={handlePasswordSubmit}
+            >
               <div className="grid gap-2">
                 <Label htmlFor="currentPassword">Current password</Label>
                 <Input
@@ -215,7 +227,9 @@ function AccountPage() {
 
         <section className="app-shell-section border-destructive/30">
           <div className="app-shell-section-header">
-            <h2 className="app-shell-section-title text-destructive">Delete account</h2>
+            <h2 className="app-shell-section-title text-destructive">
+              Delete account
+            </h2>
             <p className="app-shell-section-description">
               Permanently remove your account. This cannot be undone.
             </p>

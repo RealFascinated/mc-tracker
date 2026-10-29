@@ -6,7 +6,10 @@ import { ChatThinkingBlock } from "@/components/chat/panel/thinking-block";
 import { ChatToolCallRow } from "@/components/chat/turns/tool-call-row";
 import { ThinkingIndicator } from "@/components/chat/panel/thinking-indicator";
 import { STREAMING_ID } from "@/components/chat/lib/types";
-import type { ChatMessage, ChatDisplayPrefs } from "@/components/chat/lib/types";
+import type {
+  ChatMessage,
+  ChatDisplayPrefs,
+} from "@/components/chat/lib/types";
 
 export function ChatAssistantTurn({
   message,

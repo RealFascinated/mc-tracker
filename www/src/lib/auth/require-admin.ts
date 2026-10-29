@@ -32,6 +32,8 @@ export async function requireAdminAccess(): Promise<User> {
   return user;
 }
 
-export function adminLandingPath(user: User): "/admin/settings" | "/admin/servers" {
+export function adminLandingPath(
+  user: User,
+): "/admin/settings" | "/admin/servers" {
   return user.role === "admin" ? "/admin/settings" : "/admin/servers";
 }

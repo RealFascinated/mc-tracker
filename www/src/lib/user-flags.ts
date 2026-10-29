@@ -6,8 +6,7 @@ const UserFlag = {
   MANAGE_SERVERS: 1 << 1,
 } as const;
 
-export const ALL_USER_FLAGS =
-  UserFlag.UNLIMITED_CHAT | UserFlag.MANAGE_SERVERS;
+export const ALL_USER_FLAGS = UserFlag.UNLIMITED_CHAT | UserFlag.MANAGE_SERVERS;
 
 export type UserFlagDefinition = {
   flag: number;

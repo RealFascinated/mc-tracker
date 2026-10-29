@@ -49,7 +49,10 @@ export function ChatSettingsPopover({
         <p className="mb-3 text-sm font-medium">Display</p>
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
-            <Label htmlFor="chat-show-tool-calls" className="text-xs font-normal">
+            <Label
+              htmlFor="chat-show-tool-calls"
+              className="text-xs font-normal"
+            >
               Tool calls
             </Label>
             <Switch
@@ -60,7 +63,10 @@ export function ChatSettingsPopover({
             />
           </div>
           <div className="flex items-center justify-between gap-3">
-            <Label htmlFor="chat-show-reasoning" className="text-xs font-normal">
+            <Label
+              htmlFor="chat-show-reasoning"
+              className="text-xs font-normal"
+            >
               Reasoning
             </Label>
             <Switch

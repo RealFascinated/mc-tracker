@@ -2,10 +2,19 @@ import { useMemo } from "react";
 
 import { PlayersMetricChart } from "@/components/dashboard/charts/players-metric-chart";
 import { MetricChartView } from "@/components/metrics/metric-chart-view";
-import { EMPTY_METRIC_TIME_SERIES, timeseriesToMetric } from "@/lib/api/metric-timeseries";
+import {
+  EMPTY_METRIC_TIME_SERIES,
+  timeseriesToMetric,
+} from "@/lib/api/metric-timeseries";
 import type { MetricTimeSeries } from "@/lib/api/metric-timeseries";
-import { perServerTimeseriesQueryOptions, totalTimeseriesQueryOptions } from "@/lib/api/servers.queries";
-import type { PerServerTimeseriesItem, PerServerTimeseriesResponse } from "@/lib/api/servers";
+import {
+  perServerTimeseriesQueryOptions,
+  totalTimeseriesQueryOptions,
+} from "@/lib/api/servers.queries";
+import type {
+  PerServerTimeseriesItem,
+  PerServerTimeseriesResponse,
+} from "@/lib/api/servers";
 import { toVisibleTimeseriesOptions } from "@/lib/api/visible-timeseries-options";
 import type { VisibleTimeseriesQueryOptions } from "@/lib/api/visible-timeseries-options";
 import { totalPlayersChart } from "@/lib/metrics/charts/players";
@@ -48,13 +57,19 @@ function buildPerServerChartDefinition(
   };
 }
 
-function perServerToMetricTimeSeries(
-  response: { from: number; to: number; servers: PerServerTimeseriesItem[] },
-): MetricTimeSeries {
+function perServerToMetricTimeSeries(response: {
+  from: number;
+  to: number;
+  servers: PerServerTimeseriesItem[];
+}): MetricTimeSeries {
   if (response.servers.length === 0) return EMPTY_METRIC_TIME_SERIES;
 
   const allTimestamps = new Set<number>();
-  const serverLanes: Array<{ key: string; timestamps: number[]; values: Array<number | null> }> = [];
+  const serverLanes: Array<{
+    key: string;
+    timestamps: number[];
+    values: Array<number | null>;
+  }> = [];
 
   for (const server of response.servers) {
     const metric = timeseriesToMetric(server);
@@ -62,18 +77,30 @@ function perServerToMetricTimeSeries(
     if (!lane) continue;
     const ts = metric.timestamps;
     for (const t of ts) allTimestamps.add(t);
-    serverLanes.push({ key: `server_${server.id}`, timestamps: ts, values: lane });
+    serverLanes.push({
+      key: `server_${server.id}`,
+      timestamps: ts,
+      values: lane,
+    });
   }
 
   const timestamps = [...allTimestamps].sort((a, b) => a - b);
   const series: Record<string, Array<number | null>> = {};
 
   for (const lane of serverLanes) {
-    const valueMap = new Map(lane.timestamps.map((t, i) => [t, lane.values[i]]));
+    const valueMap = new Map(
+      lane.timestamps.map((t, i) => [t, lane.values[i]]),
+    );
     series[lane.key] = timestamps.map((t) => valueMap.get(t) ?? null);
   }
 
-  return { from: response.from, to: response.to, step: null, timestamps, series };
+  return {
+    from: response.from,
+    to: response.to,
+    step: null,
+    timestamps,
+    series,
+  };
 }
 
 export function TotalPlayersChart({
@@ -89,7 +116,10 @@ export function TotalPlayersChart({
   );
 
   const perServerOptions = useMemo(
-    () => toVisibleTimeseriesOptions(perServerTimeseriesQueryOptions(window)) as VisibleTimeseriesQueryOptions<PerServerTimeseriesResponse>,
+    () =>
+      toVisibleTimeseriesOptions(
+        perServerTimeseriesQueryOptions(window),
+      ) as VisibleTimeseriesQueryOptions<PerServerTimeseriesResponse>,
     [window],
   );
 
@@ -106,10 +136,9 @@ export function TotalPlayersChart({
   }
 
   if (mode === "servers") {
-    return <PerServerChart
-      timeseriesOptions={perServerOptions}
-      height={height}
-    />;
+    return (
+      <PerServerChart timeseriesOptions={perServerOptions} height={height} />
+    );
   }
 
   return (
@@ -129,11 +158,12 @@ type PerServerChartProps = {
 
 function PerServerChart({ timeseriesOptions, height }: PerServerChartProps) {
   const { ref, isIntersecting, hasBeenVisible } = useIntersectionVisible();
-  const { data, isPending, isError } = useVisibleTimeseriesQuery<PerServerTimeseriesResponse>(
-    timeseriesOptions,
-    isIntersecting,
-    true,
-  );
+  const { data, isPending, isError } =
+    useVisibleTimeseriesQuery<PerServerTimeseriesResponse>(
+      timeseriesOptions,
+      isIntersecting,
+      true,
+    );
 
   const chartData = useMemo(() => {
     if (!data) return null;

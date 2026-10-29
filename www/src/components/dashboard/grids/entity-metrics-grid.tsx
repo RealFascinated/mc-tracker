@@ -85,11 +85,7 @@ type EntityMetricsChartProps<
   timeseriesEnabled?: (item: T) => boolean;
 };
 
-function EntityMetricsChart<
-  T,
-  TTimeseries extends TimeseriesResponse,
-  TBatch,
->({
+function EntityMetricsChart<T, TTimeseries extends TimeseriesResponse, TBatch>({
   visibilityKey,
   item,
   window,
@@ -112,9 +108,15 @@ function EntityMetricsChart<
   );
   // Cards always provide one of the two sources (per-item or batch).
   const sourceOptions = (batchOptions ?? perItemOptions)!;
-  const { data: sourceData, isPending, isError } = useVisibleTimeseriesQuery<
-    TTimeseries | TBatch
-  >(sourceOptions, isIntersecting, enabled);
+  const {
+    data: sourceData,
+    isPending,
+    isError,
+  } = useVisibleTimeseriesQuery<TTimeseries | TBatch>(
+    sourceOptions,
+    isIntersecting,
+    enabled,
+  );
   // `sourceData` is TBatch when batching, TTimeseries otherwise — the union
   // can't be narrowed by `batchTimeseries`, so cast at the extraction point.
   const data = useMemo((): TTimeseries | undefined => {
@@ -273,10 +275,7 @@ export function EntityMetricsGrid<
       </FadeInAnimation>
 
       <div
-        className={cn(
-          "entity-metrics-grid-container",
-          gridContainerClassName,
-        )}
+        className={cn("entity-metrics-grid-container", gridContainerClassName)}
       >
         <div className="entity-metrics-grid">
           {items.map((item) => {

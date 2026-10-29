@@ -29,7 +29,9 @@ export function AccountChatQuotaSection() {
   const limit = quota?.limit ?? 0;
   const remaining = Math.max(0, limit - used);
   const usagePercent =
-    unlimited || limit <= 0 ? 0 : Math.min(100, Math.round((used / limit) * 100));
+    unlimited || limit <= 0
+      ? 0
+      : Math.min(100, Math.round((used / limit) * 100));
   const exhausted = !unlimited && remaining === 0;
   const resetLabel = quota ? formatQuotaResetAt(quota.resetsAt) : null;
 

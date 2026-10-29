@@ -19,10 +19,20 @@ import {
 } from "@/components/ui/table";
 import type { ServerListItem } from "@/lib/api/servers";
 import { asnLabelOptional } from "@/lib/api/asns";
-import { formatPercentValue, formatPlayers, peakTimestampTooltip } from "@/lib/formatter";
+import {
+  formatPercentValue,
+  formatPlayers,
+  peakTimestampTooltip,
+} from "@/lib/formatter";
 
-
-type SortField = "name" | "players" | "peak24h" | "peakAllTime" | "trend24h" | "trend7d" | "trend30d";
+type SortField =
+  | "name"
+  | "players"
+  | "peak24h"
+  | "peakAllTime"
+  | "trend24h"
+  | "trend7d"
+  | "trend30d";
 type SortDirection = "asc" | "desc";
 
 type ServersTableProps = {
@@ -98,8 +108,7 @@ function sortServersList(
         break;
       case "peakAllTime":
         cmp =
-          (a.peaks.allTime?.players ?? -1) -
-          (b.peaks.allTime?.players ?? -1);
+          (a.peaks.allTime?.players ?? -1) - (b.peaks.allTime?.players ?? -1);
         break;
     }
     return direction === "asc" ? cmp : -cmp;
@@ -134,7 +143,11 @@ type ServerTableRowProps = {
   showPinButtons: boolean;
 };
 
-function ServerTableRow({ server, isPinned, showPinButtons }: ServerTableRowProps) {
+function ServerTableRow({
+  server,
+  isPinned,
+  showPinButtons,
+}: ServerTableRowProps) {
   return (
     <tr className="group border-b border-border transition-colors hover:bg-muted/30 last:border-b-0">
       {/* Server name column */}
@@ -235,10 +248,12 @@ function ServerTableRow({ server, isPinned, showPinButtons }: ServerTableRowProp
   );
 }
 
-const ServerTableRowMemo = memo(ServerTableRow, (prev, next) =>
-  prev.showPinButtons === next.showPinButtons &&
-  prev.isPinned === next.isPinned &&
-  serverFieldsEqual(prev.server, next.server),
+const ServerTableRowMemo = memo(
+  ServerTableRow,
+  (prev, next) =>
+    prev.showPinButtons === next.showPinButtons &&
+    prev.isPinned === next.isPinned &&
+    serverFieldsEqual(prev.server, next.server),
 );
 
 function ServersTable({
@@ -285,9 +300,7 @@ function ServersTable({
                 </span>
               </TableHead>
             ))}
-            {showPinButtons && (
-              <TableHead className="w-10" aria-label="Pin" />
-            )}
+            {showPinButtons && <TableHead className="w-10" aria-label="Pin" />}
           </TableRow>
         </TableHeader>
         <TableBody>

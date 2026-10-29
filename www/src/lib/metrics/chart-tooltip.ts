@@ -383,7 +383,8 @@ export function createCursorTooltipHandler({
 
       let displayValue = value;
       if (stacked) {
-        const prev = si > 0 ? (data[si] as Array<number | null>)[idx] ?? 0 : 0;
+        const prev =
+          si > 0 ? ((data[si] as Array<number | null>)[idx] ?? 0) : 0;
         displayValue = value - prev;
       }
       stackTotalValue += Math.abs(displayValue);
@@ -410,7 +411,8 @@ export function createCursorTooltipHandler({
         if (hoverValue != null && isFinite(hoverValue)) {
           for (let si = 1; si < data.length; si++) {
             const seriesVal = (data[si] as Array<number | null>)[idx] ?? 0;
-            const prevVal = si > 1 ? (data[si - 1] as Array<number | null>)[idx] ?? 0 : 0;
+            const prevVal =
+              si > 1 ? ((data[si - 1] as Array<number | null>)[idx] ?? 0) : 0;
             if (hoverValue >= prevVal && hoverValue <= seriesVal) {
               focusedLabel = labels[si - 1];
               break;
@@ -439,7 +441,9 @@ export function createCursorTooltipHandler({
     );
 
     if (stacked && entries.length > 1 && stackTotalValue > 0) {
-      const totalFormatted = new Intl.NumberFormat().format(Math.round(stackTotalValue));
+      const totalFormatted = new Intl.NumberFormat().format(
+        Math.round(stackTotalValue),
+      );
       rows.push(
         `<div class="mt-1 flex items-center justify-between gap-2 border-t border-border pt-1.5">` +
           `<span class="text-xs font-semibold text-foreground">Total</span>` +

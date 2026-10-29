@@ -103,9 +103,7 @@ export function ContextUsage({
           type="button"
           variant="ghost"
           size="icon-sm"
-          className={cn(
-            hot ? "text-destructive" : "text-success",
-          )}
+          className={cn(hot ? "text-destructive" : "text-success")}
           aria-label={`Context ${pct}% used`}
         >
           <svg

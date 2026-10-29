@@ -224,11 +224,10 @@ function useMetricChartInstance({
     }
     if (eventAnnotationsRef) {
       hooks.draw = [
-        createEventAnnotationDrawHook(
-          () =>
-            showAnnotationsRef?.current
-              ? (eventAnnotationsRef.current ?? [])
-              : [],
+        createEventAnnotationDrawHook(() =>
+          showAnnotationsRef?.current
+            ? (eventAnnotationsRef.current ?? [])
+            : [],
         ),
       ];
     }

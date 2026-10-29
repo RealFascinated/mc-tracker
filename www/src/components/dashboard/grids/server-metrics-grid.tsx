@@ -118,9 +118,7 @@ export function ServerMetricsGrid({
   >(
     () => ({
       options: (timeWindow) =>
-        toVisibleTimeseriesOptions(
-          perServerTimeseriesQueryOptions(timeWindow),
-        ),
+        toVisibleTimeseriesOptions(perServerTimeseriesQueryOptions(timeWindow)),
       extract: (server, batch) =>
         batch.servers.find((entry) => entry.id === server.id),
     }),

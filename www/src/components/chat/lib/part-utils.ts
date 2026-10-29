@@ -1,4 +1,8 @@
-import type { ChatMessage, ChatPart, ChatDisplayPrefs } from "@/components/chat/lib/types";
+import type {
+  ChatMessage,
+  ChatPart,
+  ChatDisplayPrefs,
+} from "@/components/chat/lib/types";
 
 export function assistantTextFromParts(parts: ChatPart[]): string {
   return parts

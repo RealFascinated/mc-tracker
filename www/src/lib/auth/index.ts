@@ -60,14 +60,18 @@ export async function updateProfile(input: {
   });
 }
 
-export async function deleteAccount(input: { password: string }): Promise<void> {
+export async function deleteAccount(input: {
+  password: string;
+}): Promise<void> {
   await apiFetch<void>("/auth/account", {
     method: "DELETE",
     body: JSON.stringify({ password: input.password }),
   });
 }
 
-export async function signup(credentials: SignupCredentials): Promise<AuthResult> {
+export async function signup(
+  credentials: SignupCredentials,
+): Promise<AuthResult> {
   try {
     await apiFetch<LoginResponse>("/auth/signup", {
       method: "POST",

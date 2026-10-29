@@ -1,10 +1,7 @@
 import { getServerPlatform, type ServerPlatform } from "@/lib/api/platform";
 
 export type MonitoredServerEventType =
-  | "added"
-  | "removed"
-  | "paused"
-  | "unpaused";
+  "added" | "removed" | "paused" | "unpaused";
 
 export type MonitoredServerEvent = {
   id: string;

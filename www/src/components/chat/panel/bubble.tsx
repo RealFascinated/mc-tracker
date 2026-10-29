@@ -3,7 +3,10 @@ import { cn } from "cnfast";
 
 import { ChatAssistantTurn } from "@/components/chat/turns/assistant-turn";
 import { ChatErrorTurn } from "@/components/chat/turns/error-turn";
-import type { ChatMessage, ChatDisplayPrefs } from "@/components/chat/lib/types";
+import type {
+  ChatMessage,
+  ChatDisplayPrefs,
+} from "@/components/chat/lib/types";
 
 export function ChatBubble({
   message,

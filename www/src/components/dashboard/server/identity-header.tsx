@@ -119,10 +119,7 @@ export function ServerIdentityHeader({
           </div>
         </div>
         {layout === "card" ? (
-          <ServerTrendChips
-            trend30d={server.trend30d}
-            className="shrink-0"
-          />
+          <ServerTrendChips trend30d={server.trend30d} className="shrink-0" />
         ) : null}
         {trailing ? <div className="shrink-0">{trailing}</div> : null}
       </div>

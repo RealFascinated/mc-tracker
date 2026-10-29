@@ -18,7 +18,10 @@ function parseChatDisplayPrefs(raw: unknown): ChatDisplayPrefs | null {
   }
 
   const { showToolCalls, showReasoning } = raw as Record<string, unknown>;
-  if (typeof showToolCalls !== "boolean" || typeof showReasoning !== "boolean") {
+  if (
+    typeof showToolCalls !== "boolean" ||
+    typeof showReasoning !== "boolean"
+  ) {
     return null;
   }
 

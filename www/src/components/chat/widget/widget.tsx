@@ -32,8 +32,11 @@ export function TrackerChatWidget({ open, onClose }: TrackerChatWidgetProps) {
   const [enterAnimationDone, setEnterAnimationDone] = useState(false);
   const [followUpSuggestionsExpanded, setFollowUpSuggestionsExpanded] =
     useState(true);
-  const { prefs: displayPrefs, setShowToolCalls, setShowReasoning } =
-    useChatDisplayPrefs();
+  const {
+    prefs: displayPrefs,
+    setShowToolCalls,
+    setShowReasoning,
+  } = useChatDisplayPrefs();
   const {
     messages,
     input,

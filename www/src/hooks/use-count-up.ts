@@ -81,7 +81,10 @@ export function useCountUp(
     const anim = animRef.current;
 
     const tick = (now: number) => {
-      const progress = Math.min(Math.max((now - anim.start) / durationMs, 0), 1);
+      const progress = Math.min(
+        Math.max((now - anim.start) / durationMs, 0),
+        1,
+      );
       const next = Math.round(
         anim.from + (anim.to - anim.from) * easeOutCubic(progress),
       );

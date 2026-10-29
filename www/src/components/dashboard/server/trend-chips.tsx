@@ -56,7 +56,10 @@ export function ServerTrendChips({
   }
 
   return (
-    <div className={cn("flex items-center gap-1.5", className)} aria-label="Player trend">
+    <div
+      className={cn("flex items-center gap-1.5", className)}
+      aria-label="Player trend"
+    >
       <TrendChip label="30d" value={trend30d} />
     </div>
   );

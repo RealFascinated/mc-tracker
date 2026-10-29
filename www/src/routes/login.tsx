@@ -30,9 +30,7 @@ function LoginPage() {
   useEffect(() => {
     if (!isLoading && user) {
       void navigate({
-        to: canManageServers(user.flags)
-          ? adminLandingPath(user)
-          : "/account",
+        to: canManageServers(user.flags) ? adminLandingPath(user) : "/account",
       });
     }
   }, [isLoading, user, navigate]);

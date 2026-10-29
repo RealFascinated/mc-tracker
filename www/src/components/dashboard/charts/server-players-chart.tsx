@@ -21,7 +21,12 @@ export function ServerPlayersChart({
   height = 360,
 }: ServerPlayersChartProps) {
   const chartDef = useMemo(
-    () => createServerPlayersChart(`server-players-${serverId}`, "auto", avgOverlays),
+    () =>
+      createServerPlayersChart(
+        `server-players-${serverId}`,
+        "auto",
+        avgOverlays,
+      ),
     [serverId, avgOverlays],
   );
   const timeseriesOptions = useMemo(

@@ -82,7 +82,7 @@ function AdminUsersPage() {
         <TableHeader>
           <TableRow>
             <TableHead>Email</TableHead>
-              <TableHead>Display name</TableHead>
+            <TableHead>Display name</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Created</TableHead>
             <TableHead className="w-[1%]">Flags</TableHead>
@@ -160,7 +160,9 @@ function EditFlagsDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {user ? `Flags for ${user.displayName ?? user.email}` : "User flags"}
+            {user
+              ? `Flags for ${user.displayName ?? user.email}`
+              : "User flags"}
           </DialogTitle>
           <DialogDescription>
             Toggle flags assigned to this account.
