@@ -14,6 +14,9 @@ pub enum SettingKey {
     PingerTimeoutMs,
     PingerRetryAttempts,
     PingerRetryDelayMs,
+    PlayersOutlierWindow,
+    PlayersOutlierRatio,
+    PlayersOutlierFloor,
     DnsCacheEnabled,
     DnsCacheTtlMinutes,
     VictoriametricsUrl,
@@ -37,10 +40,13 @@ pub enum SettingKey {
 }
 
 impl SettingKey {
-    pub const ALL: [Self; 23] = [
+    pub const ALL: [Self; 26] = [
         Self::PingerTimeoutMs,
         Self::PingerRetryAttempts,
         Self::PingerRetryDelayMs,
+        Self::PlayersOutlierWindow,
+        Self::PlayersOutlierRatio,
+        Self::PlayersOutlierFloor,
         Self::DnsCacheEnabled,
         Self::DnsCacheTtlMinutes,
         Self::VictoriametricsUrl,
@@ -75,6 +81,9 @@ impl SettingKey {
             Self::PingerTimeoutMs => "pinger_timeout_ms",
             Self::PingerRetryAttempts => "pinger_retry_attempts",
             Self::PingerRetryDelayMs => "pinger_retry_delay_ms",
+            Self::PlayersOutlierWindow => "players_outlier_window",
+            Self::PlayersOutlierRatio => "players_outlier_ratio",
+            Self::PlayersOutlierFloor => "players_outlier_floor",
             Self::DnsCacheEnabled => "dns_cache_enabled",
             Self::DnsCacheTtlMinutes => "dns_cache_ttl_minutes",
             Self::VictoriametricsUrl => "victoriametrics_url",
@@ -104,6 +113,9 @@ impl SettingKey {
             Self::PingerTimeoutMs
             | Self::PingerRetryAttempts
             | Self::PingerRetryDelayMs
+            | Self::PlayersOutlierWindow
+            | Self::PlayersOutlierRatio
+            | Self::PlayersOutlierFloor
             | Self::DnsCacheTtlMinutes
             | Self::LlmMaxToolRounds
             | Self::LlmContextMaxTurns
@@ -125,6 +137,9 @@ impl SettingKey {
             Self::PingerTimeoutMs => json!(5000),
             Self::PingerRetryAttempts => json!(3),
             Self::PingerRetryDelayMs => json!(1000),
+            Self::PlayersOutlierWindow => json!(30),
+            Self::PlayersOutlierRatio => json!(10),
+            Self::PlayersOutlierFloor => json!(1000),
             Self::DnsCacheEnabled => json!(true),
             Self::DnsCacheTtlMinutes => json!(5),
             Self::VictoriametricsUrl => json!("http://localhost:8428"),
@@ -170,6 +185,22 @@ impl SettingKey {
             Self::PingerTimeoutMs | Self::PingerRetryAttempts => {
                 if value.as_u64().unwrap_or(0) == 0 {
                     return Err(format!("{} must be greater than 0", self.key()));
+                }
+                Ok(())
+            }
+            Self::PlayersOutlierWindow | Self::PlayersOutlierFloor => {
+                if value.as_u64().unwrap_or(0) == 0 {
+                    return Err(format!("{} must be greater than 0", self.key()));
+                }
+                Ok(())
+            }
+            Self::PlayersOutlierRatio => {
+                let ratio = value.as_u64().unwrap_or(0);
+                if ratio != 0 && ratio < 2 {
+                    return Err(format!(
+                        "{} must be 0 to disable the check or at least 2",
+                        self.key()
+                    ));
                 }
                 Ok(())
             }

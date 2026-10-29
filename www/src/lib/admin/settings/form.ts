@@ -11,6 +11,9 @@ export type SettingsFormValues = {
   pingerTimeoutMs: number;
   pingerRetryAttempts: number;
   pingerRetryDelayMs: number;
+  playersOutlierWindow: number;
+  playersOutlierRatio: number;
+  playersOutlierFloor: number;
   dnsCacheEnabled: boolean;
   dnsCacheTtlMinutes: number;
   victoriametricsUrl: string;
@@ -40,6 +43,9 @@ const FIELD_KEYS: Record<
   pingerTimeoutMs: "pinger_timeout_ms",
   pingerRetryAttempts: "pinger_retry_attempts",
   pingerRetryDelayMs: "pinger_retry_delay_ms",
+  playersOutlierWindow: "players_outlier_window",
+  playersOutlierRatio: "players_outlier_ratio",
+  playersOutlierFloor: "players_outlier_floor",
   dnsCacheEnabled: "dns_cache_enabled",
   dnsCacheTtlMinutes: "dns_cache_ttl_minutes",
   victoriametricsUrl: "victoriametrics_url",
@@ -96,6 +102,11 @@ export function settingsListToFormValues(
     pingerTimeoutMs: valueFromItem(get("pinger_timeout_ms")!) as number,
     pingerRetryAttempts: valueFromItem(get("pinger_retry_attempts")!) as number,
     pingerRetryDelayMs: valueFromItem(get("pinger_retry_delay_ms")!) as number,
+    playersOutlierWindow: valueFromItem(
+      get("players_outlier_window")!,
+    ) as number,
+    playersOutlierRatio: valueFromItem(get("players_outlier_ratio")!) as number,
+    playersOutlierFloor: valueFromItem(get("players_outlier_floor")!) as number,
     dnsCacheEnabled: valueFromItem(get("dns_cache_enabled")!) as boolean,
     dnsCacheTtlMinutes: valueFromItem(get("dns_cache_ttl_minutes")!) as number,
     victoriametricsUrl: valueFromItem(get("victoriametrics_url")!) as string,

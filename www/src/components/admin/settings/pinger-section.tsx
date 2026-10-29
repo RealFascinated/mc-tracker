@@ -9,7 +9,7 @@ export function PingerSettingsSection({
   return (
     <SettingsSection
       title="Pinger"
-      description="How server status checks are timed and retried."
+      description="How server status checks are timed, retried, and filtered."
     >
       <SettingsFieldGrid columns={3}>
         <SettingsField
@@ -56,6 +56,56 @@ export function PingerSettingsSection({
             value={values.pingerRetryDelayMs}
             onChange={(event) =>
               updateNumber("pingerRetryDelayMs", event.target.value)
+            }
+            inputMode="numeric"
+          />
+        </SettingsField>
+      </SettingsFieldGrid>
+      <SettingsFieldGrid columns={3}>
+        <SettingsField
+          label="Outlier window"
+          htmlFor="players-outlier-window"
+          hint="Accepted player counts kept per server as the baseline. A count is only rejected once the window is full."
+        >
+          <Input
+            id="players-outlier-window"
+            type="number"
+            min={1}
+            value={values.playersOutlierWindow}
+            onChange={(event) =>
+              updateNumber("playersOutlierWindow", event.target.value)
+            }
+            inputMode="numeric"
+          />
+        </SettingsField>
+        <SettingsField
+          label="Outlier ratio"
+          htmlFor="players-outlier-ratio"
+          hint="Counts more than this many times above (or below) the baseline median are ignored entirely. 0 disables the check."
+        >
+          <Input
+            id="players-outlier-ratio"
+            type="number"
+            min={0}
+            value={values.playersOutlierRatio}
+            onChange={(event) =>
+              updateNumber("playersOutlierRatio", event.target.value)
+            }
+            inputMode="numeric"
+          />
+        </SettingsField>
+        <SettingsField
+          label="Outlier floor"
+          htmlFor="players-outlier-floor"
+          hint="Only reject counts when median × ratio reaches this high, so small servers can spike freely."
+        >
+          <Input
+            id="players-outlier-floor"
+            type="number"
+            min={1}
+            value={values.playersOutlierFloor}
+            onChange={(event) =>
+              updateNumber("playersOutlierFloor", event.target.value)
             }
             inputMode="numeric"
           />

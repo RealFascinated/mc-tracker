@@ -8,11 +8,13 @@ use cron::Schedule;
 use futures::future::join_all;
 use mc_db::db::repos::servers;
 use mc_insights::PlayerCountEntry;
+use mc_settings::SettingKey;
 use tokio::sync::watch;
 use tokio::task::JoinHandle;
 use tracing::{info, warn};
 use uuid::Uuid;
 
+use super::tracked::OutlierRule;
 use super::ServerManager;
 
 pub struct PushLoopHandle {
@@ -105,6 +107,17 @@ fn duration_until_next_cron_tick(schedule: &Schedule) -> Duration {
 }
 
 impl ServerManager {
+    pub(crate) fn outlier_rule(&self) -> OutlierRule {
+        OutlierRule {
+            window: self
+                .settings
+                .cached_u32(SettingKey::PlayersOutlierWindow)
+                .max(1) as usize,
+            ratio: self.settings.cached_u32(SettingKey::PlayersOutlierRatio),
+            floor: self.settings.cached_u32(SettingKey::PlayersOutlierFloor),
+        }
+    }
+
     pub async fn drain_push_cycle(&self) {
         while self.pushing.load(Ordering::Acquire) {
             tokio::time::sleep(Duration::from_millis(25)).await;
@@ -139,6 +152,7 @@ impl ServerManager {
             .collect();
 
         let fetch_started = std::time::Instant::now();
+        let outlier_rule = self.outlier_rule();
         let ping_results = join_all(
             server_ids
                 .into_iter()
@@ -163,13 +177,25 @@ impl ServerManager {
             match result {
                 Ok((ping, asn, resolved_ip)) => {
                     let mut peak_update = None;
+                    let mut rejected = None;
                     let mut servers = self.servers.write().await;
                     if let Some(server) = servers.iter_mut().find(|s| s.config.id == id) {
-                        if server.apply_success(&ping, asn, &resolved_ip) {
+                        if server.is_outlier(ping.players.online, &outlier_rule) {
+                            rejected = Some(server.rejected_ping(ping.players.online));
+                        } else if server.apply_success(&ping, asn, &resolved_ip, &outlier_rule) {
                             peak_update = Some((ping.players.online, ping.timestamp));
                         }
                     }
                     drop(servers);
+                    if let Some(info) = rejected {
+                        warn!(
+                            server_id = %id,
+                            online = info.online,
+                            median = info.median,
+                            samples = info.samples,
+                            "rejected outlier ping; keeping previous state"
+                        );
+                    }
                     if let Some((players, at)) = peak_update {
                         if let Some(pool) = &self.pool {
                             if let Err(err) =
