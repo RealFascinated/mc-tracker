@@ -13,7 +13,7 @@ use uuid::Uuid;
 use crate::catalog::ServerCatalog;
 use crate::core::{
     fetch_asn_snapshot, fetch_server_snapshot, fetch_total_snapshot, parse_insights_range,
-    DEFAULT_MAX_SNAPSHOT_POINTS,
+    AsnSnapshotRequest, DEFAULT_MAX_SNAPSHOT_POINTS,
 };
 use crate::error::InsightsError;
 use crate::Insights;
@@ -87,12 +87,14 @@ impl InsightsChat {
         let snapshot = fetch_asn_snapshot(
             &self.insights,
             self.catalog.as_ref(),
-            asn,
-            asn_org,
-            range.from,
-            range.to,
-            SERIES_KEY,
-            DEFAULT_MAX_SNAPSHOT_POINTS,
+            AsnSnapshotRequest {
+                asn,
+                asn_org,
+                from: range.from,
+                to: range.to,
+                series_key: SERIES_KEY,
+                max_points: DEFAULT_MAX_SNAPSHOT_POINTS,
+            },
         )
         .await?;
         Ok(ChatAsnTimeseriesSnapshot {

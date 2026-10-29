@@ -43,8 +43,8 @@ pub fn build_total_players_by_type_query(
 
     let mut builder = VmRangeQuery::builder()
         .promql(promql)
-        .from_epoch(from_epoch)
-        .to_epoch(to_epoch);
+        .set_from(from_epoch)
+        .set_to(to_epoch);
 
     match resolution_step(resolution) {
         Some(step) => builder = builder.step(step),
@@ -99,8 +99,8 @@ pub fn build_players_query(
 
     let mut builder = VmRangeQuery::builder()
         .promql(promql)
-        .from_epoch(from_epoch)
-        .to_epoch(to_epoch);
+        .set_from(from_epoch)
+        .set_to(to_epoch);
 
     match resolution_step(resolution) {
         Some(step) => builder = builder.step(step),
@@ -119,8 +119,8 @@ pub fn build_per_server_players_query(
 
     VmRangeQuery::builder()
         .promql(promql)
-        .from_epoch(from_epoch)
-        .to_epoch(to_epoch)
+        .set_from(from_epoch)
+        .set_to(to_epoch)
         .chart_step()
         .build()
         .map_err(InsightsError::from)

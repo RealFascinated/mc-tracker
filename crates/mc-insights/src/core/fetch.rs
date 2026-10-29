@@ -117,25 +117,35 @@ pub async fn fetch_total_snapshot(
     lane_to_snapshot(from, to, series_key, &lane, max_points)
 }
 
+pub struct AsnSnapshotRequest<'a> {
+    pub asn: &'a str,
+    pub asn_org: &'a str,
+    pub from: i64,
+    pub to: i64,
+    pub series_key: &'a str,
+    pub max_points: usize,
+}
+
 pub async fn fetch_asn_snapshot(
     insights: &Insights,
     catalog: &dyn ServerCatalog,
-    asn: &str,
-    asn_org: &str,
-    from: i64,
-    to: i64,
-    series_key: &str,
-    max_points: usize,
+    request: AsnSnapshotRequest<'_>,
 ) -> Result<mc_chat_types::ChatTimeseriesSnapshot, InsightsError> {
     let lane = fetch_asn_lane(
         insights,
         catalog,
-        asn,
-        asn_org,
-        from,
-        to,
+        request.asn,
+        request.asn_org,
+        request.from,
+        request.to,
         PlayersResolution::DailyAverage,
     )
     .await?;
-    lane_to_snapshot(from, to, series_key, &lane, max_points)
+    lane_to_snapshot(
+        request.from,
+        request.to,
+        request.series_key,
+        &lane,
+        request.max_points,
+    )
 }

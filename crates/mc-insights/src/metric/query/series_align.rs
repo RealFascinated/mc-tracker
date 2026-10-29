@@ -8,8 +8,8 @@ pub fn align_samples_to_window(
     samples: &[(i64, Option<f64>)],
 ) -> (Vec<i64>, Vec<Option<f64>>) {
     let step = window.step_seconds().max(1);
-    let from = window.from_epoch();
-    let to = window.to_epoch();
+    let from = window.epoch_from();
+    let to = window.epoch_to();
     let start = (from / step) * step;
 
     let mut buckets: BTreeMap<i64, Option<f64>> = BTreeMap::new();
@@ -78,7 +78,7 @@ mod tests {
         )
         .unwrap();
         let step = window.step_seconds();
-        let start = (window.from_epoch() / step) * step;
+        let start = (window.epoch_from() / step) * step;
 
         let (timestamps, values) =
             align_samples_to_window(&window, &[(start + step / 2, Some(42.0))]);

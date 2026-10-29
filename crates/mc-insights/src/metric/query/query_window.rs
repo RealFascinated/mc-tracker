@@ -87,14 +87,14 @@ impl MetricQueryWindow {
         self.step
     }
 
-    pub fn from_epoch(&self) -> i64 {
+    pub fn epoch_from(&self) -> i64 {
         self.from
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_secs() as i64)
             .unwrap_or(0)
     }
 
-    pub fn to_epoch(&self) -> i64 {
+    pub fn epoch_to(&self) -> i64 {
         self.to
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_secs() as i64)
@@ -178,7 +178,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs() as i64;
-        assert!(window.to_epoch() <= now_epoch);
+        assert!(window.epoch_to() <= now_epoch);
     }
 
     #[test]

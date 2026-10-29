@@ -44,12 +44,12 @@ impl VmRangeQueryBuilder {
         self
     }
 
-    pub fn from_epoch(mut self, from: i64) -> Self {
+    pub fn set_from(mut self, from: i64) -> Self {
         self.from_epoch = Some(from);
         self
     }
 
-    pub fn to_epoch(mut self, to: i64) -> Self {
+    pub fn set_to(mut self, to: i64) -> Self {
         self.to_epoch = Some(to);
         self
     }
@@ -111,8 +111,8 @@ mod tests {
         let from = to - 3600;
         let query = VmRangeQuery::builder()
             .promql("up")
-            .from_epoch(from)
-            .to_epoch(to)
+            .set_from(from)
+            .set_to(to)
             .chart_step()
             .build()
             .unwrap();
@@ -129,8 +129,8 @@ mod tests {
         let step = Duration::from_secs(SECONDS_PER_DAY as u64);
         let query = VmRangeQuery::builder()
             .promql("up")
-            .from_epoch(from)
-            .to_epoch(to)
+            .set_from(from)
+            .set_to(to)
             .step(step)
             .build()
             .unwrap();
@@ -144,8 +144,8 @@ mod tests {
             .unwrap()
             .as_secs() as i64;
         let err = VmRangeQuery::builder()
-            .from_epoch(to - 3600)
-            .to_epoch(to)
+            .set_from(to - 3600)
+            .set_to(to)
             .chart_step()
             .build()
             .unwrap_err();

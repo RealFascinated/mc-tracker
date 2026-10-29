@@ -18,7 +18,7 @@ pub fn lane_to_timeseries_lanes(
     lane: &crate::metric::AlignedLane,
     window: &MetricQueryWindow,
 ) -> TimeseriesLanes {
-    let mut lanes = TimeseriesLanes::new(window.from_epoch(), window.to_epoch());
+    let mut lanes = TimeseriesLanes::new(window.epoch_from(), window.epoch_to());
     lanes.insert_lane(
         mc_api_types::timeseries_keys::PLAYERS_ONLINE,
         lane.step_secs,

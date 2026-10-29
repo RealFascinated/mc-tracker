@@ -37,6 +37,10 @@ const KEY_PEAK_PLAYERS_24H: &str = "peak_players_24h";
 const KEY_PEAK_PLAYERS_7D: &str = "peak_players_7d";
 const KEY_TRENDS_BY_SERVER: &str = "trends_by_server_id";
 
+/// One server's 24h/7d/30d average trend percentages; each is `None` when the
+/// sample is missing or implausible.
+type ServerTrends = (Option<f64>, Option<f64>, Option<f64>);
+
 /// Small in-process TTL cache for the expensive dashboard peak/trend queries.
 ///
 /// These results change slowly (they aggregate 24h/7d/30d windows) yet are
@@ -221,9 +225,7 @@ impl Insights {
     ///
     /// Values outside ±500% are discarded (noisy — typically servers that just
     /// started tracking or were offline in the reference period).
-    pub async fn trends_by_server_id(
-        &self,
-    ) -> Arc<HashMap<String, (Option<f64>, Option<f64>, Option<f64>)>> {
+    pub async fn trends_by_server_id(&self) -> Arc<HashMap<String, ServerTrends>> {
         self.cached(KEY_TRENDS_BY_SERVER, TREND_CACHE_TTL, async {
             let env = self.environment();
             let q_24h = avg_trend_by_server(env, "24h", "24h");
@@ -243,7 +245,7 @@ impl Insights {
                 }
             };
 
-            let mut all: HashMap<String, (Option<f64>, Option<f64>, Option<f64>)> = HashMap::new();
+            let mut all: HashMap<String, ServerTrends> = HashMap::new();
 
             for entry in trends_24h {
                 let Some(id) = label_value(&entry.labels, labels::ID) else {
@@ -356,7 +358,7 @@ impl Insights {
         )?;
 
         let mut lanes =
-            TimeseriesLanes::new(query.window().from_epoch(), query.window().to_epoch());
+            TimeseriesLanes::new(query.window().epoch_from(), query.window().epoch_to());
 
         if let Ok(lane) = total_lane {
             lanes.insert_lane(
@@ -533,8 +535,8 @@ impl Insights {
 }
 
 fn label_value(labels: &serde_json::Map<String, serde_json::Value>, key: &str) -> Option<String> {
-    labels.get(key).and_then(|value| match value {
-        serde_json::Value::String(text) => Some(text.clone()),
-        other => Some(other.to_string()),
+    labels.get(key).map(|value| match value {
+        serde_json::Value::String(text) => text.clone(),
+        other => other.to_string(),
     })
 }
