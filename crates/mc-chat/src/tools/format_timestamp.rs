@@ -31,11 +31,7 @@ impl ChatTool for FormatTimestampTool {
         )
     }
 
-    async fn execute(
-        &self,
-        _deps: &ChatToolDeps,
-        args: Value,
-    ) -> Result<Value, ChatError> {
+    async fn execute(&self, _deps: &ChatToolDeps, args: Value) -> Result<Value, ChatError> {
         let value = args
             .get("timestamp")
             .ok_or_else(|| ChatError::Tool("timestamp required".into()))?;
@@ -88,13 +84,19 @@ mod tests {
     #[test]
     fn parses_epoch_seconds() {
         let dt = parse_timestamp(&json!(1_700_000_000)).unwrap();
-        assert_eq!(dt.format("%Y-%m-%dT%H:%M:%SZ").to_string(), "2023-11-14T22:13:20Z");
+        assert_eq!(
+            dt.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+            "2023-11-14T22:13:20Z"
+        );
     }
 
     #[test]
     fn parses_epoch_millis() {
         let dt = parse_timestamp(&json!(1_700_000_000_000i64)).unwrap();
-        assert_eq!(dt.format("%Y-%m-%dT%H:%M:%SZ").to_string(), "2023-11-14T22:13:20Z");
+        assert_eq!(
+            dt.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+            "2023-11-14T22:13:20Z"
+        );
     }
 
     #[test]
@@ -106,7 +108,10 @@ mod tests {
     #[test]
     fn parses_iso8601() {
         let dt = parse_timestamp(&json!("2026-08-26T23:06:00Z")).unwrap();
-        assert_eq!(dt.format("%Y-%m-%d %H:%M:%S").to_string(), "2026-08-26 23:06:00");
+        assert_eq!(
+            dt.format("%Y-%m-%d %H:%M:%S").to_string(),
+            "2026-08-26 23:06:00"
+        );
     }
 
     #[test]

@@ -28,9 +28,9 @@ pub use response::{
     HealthResponse, IpLookupResponse, LoginResponse, MeResponse, MonitoredServerEventResponse,
     PartialError, PatchUserFlagsResponse, PeakPlayersRecord, PinnedServersListResponse,
     PlayersPeakSummary, ServerListItemResponse, ServerSearchItemResponse, ServerStatus,
-    ServerSuggestionResponse, ServerSuggestionsListResponse, ServerTimeseriesResponse, ServersCompareTimeseriesItem,
-    ServersCompareTimeseriesResponse, ServersListResponse, ServersSearchResponse,
-    ServersSummaryResponse, SettingResponse, SettingsListResponse, SuggestionAuthorResponse,
-    TimeseriesLane, TimeseriesLanes,
+    ServerSuggestionResponse, ServerSuggestionsListResponse, ServerTimeseriesResponse,
+    ServersCompareTimeseriesItem, ServersCompareTimeseriesResponse, ServersListResponse,
+    ServersSearchResponse, ServersSummaryResponse, SettingResponse, SettingsListResponse,
+    SuggestionAuthorResponse, TimeseriesLane, TimeseriesLanes,
 };
 pub use validation::is_valid_email;

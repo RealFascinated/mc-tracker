@@ -425,7 +425,8 @@ mod tests {
     use mc_chat_types::{ChatPoint, ChatTimeseriesSnapshot, ChatTrend};
 
     use mc_api_types::{
-        EntityPeakStats, PeakPlayersRecord, ServerListItemResponse, ServerStatus, ServersListResponse,
+        EntityPeakStats, PeakPlayersRecord, ServerListItemResponse, ServerStatus,
+        ServersListResponse,
     };
 
     use super::*;

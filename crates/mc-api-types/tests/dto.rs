@@ -149,8 +149,14 @@ fn admin_server_response_serializes_camel_case() {
 
 #[test]
 fn server_status_serializes_lowercase() {
-    assert_eq!(serde_json::to_string(&ServerStatus::Online).unwrap(), "\"online\"");
-    assert_eq!(serde_json::to_string(&ServerStatus::Offline).unwrap(), "\"offline\"");
+    assert_eq!(
+        serde_json::to_string(&ServerStatus::Online).unwrap(),
+        "\"online\""
+    );
+    assert_eq!(
+        serde_json::to_string(&ServerStatus::Offline).unwrap(),
+        "\"offline\""
+    );
 }
 
 #[test]
