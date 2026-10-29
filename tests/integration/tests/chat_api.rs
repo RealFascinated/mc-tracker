@@ -1,6 +1,5 @@
 use std::pin::Pin;
-use std::sync::Mutex as StdMutex;
-use std::sync::{Arc, LazyLock};
+use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
@@ -14,15 +13,9 @@ use tower::ServiceExt;
 use uuid::Uuid;
 
 use mc_test_support::{
-    bootstrap_admin, build_app_with_chat, create_user, login_admin, login_as, manager_with_vm_url,
-    setup_pool, start_postgres,
+    bootstrap_admin, build_app_with_chat, build_app_with_chat_rate_limit, create_user, login_admin,
+    login_as, manager_with_vm_url, setup_pool, start_postgres,
 };
-
-static CHAT_ENV_LOCK: LazyLock<StdMutex<()>> = LazyLock::new(|| StdMutex::new(()));
-
-fn lock_chat_env() -> std::sync::MutexGuard<'static, ()> {
-    CHAT_ENV_LOCK.lock().unwrap()
-}
 
 struct MockChatAgent;
 
@@ -165,13 +158,7 @@ async fn post_chat_drained(
     drain_chat(post_chat(app, cookie, message, session_id).await).await
 }
 
-fn configure_chat_rate_limit(limit: u32) {
-    let _guard = lock_chat_env();
-    std::env::set_var("CHAT_RATE_LIMIT_PER_MINUTE", limit.to_string());
-}
-
 async fn enable_chat(pool: &mc_db::DbPool) {
-    configure_chat_rate_limit(100);
     mc_db::db::repos::settings::set(pool, "llm_base_url", "http://127.0.0.1:9")
         .await
         .unwrap();
@@ -506,7 +493,6 @@ async fn post_chat_error_does_not_increment_quota() {
 
 #[tokio::test]
 async fn post_chat_rate_limit_per_user() {
-    configure_chat_rate_limit(2);
     let (_postgres, database_url) = start_postgres().await;
     let pool = setup_pool(&database_url).await;
     bootstrap_admin(&pool).await;
@@ -515,7 +501,9 @@ async fn post_chat_rate_limit_per_user() {
         .unwrap();
 
     let manager = manager_with_vm_url(&pool, "http://127.0.0.1:9").await;
-    let app = build_app_with_chat(pool, manager, "development", Arc::new(MockChatAgent)).await;
+    let app =
+        build_app_with_chat_rate_limit(pool, manager, "development", Arc::new(MockChatAgent), 2)
+            .await;
     let cookie = login_admin(&app).await;
 
     for i in 0..2 {

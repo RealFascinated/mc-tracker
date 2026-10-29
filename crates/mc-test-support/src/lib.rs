@@ -98,12 +98,24 @@ pub async fn build_app(pool: DbPool, manager: Arc<ServerManager>) -> axum::Route
     build_app_with_env(pool, manager, &deployment_environment).await
 }
 
+/// Chat requests accepted per user per minute in tests that do not exercise
+/// the limiter; high enough that no test trips it by accident.
+const TEST_CHAT_RATE_LIMIT_PER_MINUTE: u32 = 1_000;
+
 pub async fn build_app_with_env(
     pool: DbPool,
     manager: Arc<ServerManager>,
     deployment_environment: &str,
 ) -> axum::Router {
-    build_app_with_options(pool, manager, deployment_environment, None, None).await
+    build_app_with_options(
+        pool,
+        manager,
+        deployment_environment,
+        None,
+        None,
+        TEST_CHAT_RATE_LIMIT_PER_MINUTE,
+    )
+    .await
 }
 
 pub async fn build_app_with_chat(
@@ -112,7 +124,33 @@ pub async fn build_app_with_chat(
     deployment_environment: &str,
     chat: Arc<dyn mc_chat::ChatAgent>,
 ) -> axum::Router {
-    build_app_with_options(pool, manager, deployment_environment, Some(chat), None).await
+    build_app_with_chat_rate_limit(
+        pool,
+        manager,
+        deployment_environment,
+        chat,
+        TEST_CHAT_RATE_LIMIT_PER_MINUTE,
+    )
+    .await
+}
+
+/// Build an app with chat enabled and an explicit per-user chat rate limit.
+pub async fn build_app_with_chat_rate_limit(
+    pool: DbPool,
+    manager: Arc<ServerManager>,
+    deployment_environment: &str,
+    chat: Arc<dyn mc_chat::ChatAgent>,
+    chat_rate_limit_per_minute: u32,
+) -> axum::Router {
+    build_app_with_options(
+        pool,
+        manager,
+        deployment_environment,
+        Some(chat),
+        None,
+        chat_rate_limit_per_minute,
+    )
+    .await
 }
 
 /// Build an app whose Discord webhook posts to `webhook_url` (None disables).
@@ -122,7 +160,15 @@ pub async fn build_app_with_discord_webhook(
     deployment_environment: &str,
     webhook_url: Option<String>,
 ) -> axum::Router {
-    build_app_with_options(pool, manager, deployment_environment, None, webhook_url).await
+    build_app_with_options(
+        pool,
+        manager,
+        deployment_environment,
+        None,
+        webhook_url,
+        TEST_CHAT_RATE_LIMIT_PER_MINUTE,
+    )
+    .await
 }
 
 async fn build_app_with_options(
@@ -131,6 +177,7 @@ async fn build_app_with_options(
     deployment_environment: &str,
     chat: Option<Arc<dyn mc_chat::ChatAgent>>,
     webhook_url: Option<String>,
+    chat_rate_limit_per_minute: u32,
 ) -> axum::Router {
     let sessions = Arc::new(SessionManager::new(b"test-secret", false));
     let settings = manager.settings();
@@ -145,7 +192,7 @@ async fn build_app_with_options(
                 rate_limiter: LoginRateLimiter::new(),
             },
             chat,
-            chat_rate_limiter: Arc::new(ChatRateLimiter::new()),
+            chat_rate_limiter: Arc::new(ChatRateLimiter::new(chat_rate_limit_per_minute)),
             discord_webhook: Arc::new(DiscordWebhook::new(webhook_url)),
         },
         &settings,

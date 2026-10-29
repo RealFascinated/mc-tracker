@@ -62,6 +62,10 @@ struct Config {
     /// empty disables notifications
     #[arg(long, env = "DISCORD_WEBHOOK_URL")]
     discord_webhook_url: Option<String>,
+
+    /// Chat requests accepted per user per minute
+    #[arg(long, env = "CHAT_RATE_LIMIT_PER_MINUTE", default_value = "10")]
+    chat_rate_limit_per_minute: u32,
 }
 
 #[tokio::main]
@@ -157,7 +161,7 @@ async fn main() -> anyhow::Result<()> {
             geo,
             auth,
             chat,
-            chat_rate_limiter: Arc::new(ChatRateLimiter::new()),
+            chat_rate_limiter: Arc::new(ChatRateLimiter::new(config.chat_rate_limit_per_minute)),
             discord_webhook: Arc::clone(&discord_webhook),
         },
         &manager.settings(),

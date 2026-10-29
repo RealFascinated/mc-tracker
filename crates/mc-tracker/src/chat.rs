@@ -30,12 +30,8 @@ use crate::auth::AuthUser;
 use crate::chat_config::{agent_config, chat_enabled_for};
 use crate::chat_quota::{calendar_week_start_utc, WEEKLY_MESSAGE_LIMIT};
 
-fn rate_limit_per_minute() -> u32 {
-    std::env::var("CHAT_RATE_LIMIT_PER_MINUTE")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(10)
-}
+/// Sliding window a caller's chat requests are counted in.
+const RATE_LIMIT_WINDOW: Duration = Duration::from_secs(60);
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -47,22 +43,25 @@ pub fn router() -> Router<AppState> {
         )
 }
 
-#[derive(Default)]
 pub struct ChatRateLimiter {
+    limit_per_minute: u32,
     hits: Mutex<HashMap<String, Vec<Instant>>>,
 }
 
 impl ChatRateLimiter {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(limit_per_minute: u32) -> Self {
+        Self {
+            limit_per_minute,
+            hits: Mutex::new(HashMap::new()),
+        }
     }
 
     pub fn check(&self, key: &str) -> bool {
         let now = Instant::now();
         let mut hits = self.hits.lock().unwrap();
         let entry = hits.entry(key.to_string()).or_default();
-        entry.retain(|instant| now.duration_since(*instant) < Duration::from_secs(60));
-        if entry.len() as u32 >= rate_limit_per_minute() {
+        entry.retain(|instant| now.duration_since(*instant) < RATE_LIMIT_WINDOW);
+        if entry.len() as u32 >= self.limit_per_minute {
             return false;
         }
         entry.push(now);
