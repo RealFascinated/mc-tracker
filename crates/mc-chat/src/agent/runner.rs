@@ -219,8 +219,8 @@ async fn stream_with_tools(
                 }
             }
             if let Some(piece) = reasoning_delta_piece(&choice.delta) {
+                reasoning.push_str(&piece);
                 if config.thinking_enabled {
-                    reasoning.push_str(&piece);
                     streamed_reasoning = true;
                     let _ = tx
                         .send(Ok(ChatStreamEvent::ReasoningDelta { content: piece }))
