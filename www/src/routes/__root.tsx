@@ -7,7 +7,7 @@ import {
 
 import { NotFoundPage } from "@/components/not-found-page";
 import { RouteErrorPage } from "@/components/route-error-page";
-import { SiteHeader } from "@/components/site/header";
+import { SiteFrame } from "@/components/site/header";
 import { DeferredChatWidget } from "@/components/chat/widget/deferred";
 import { ScrollToTopButton } from "@/components/site/scroll-to-top-button";
 import { Toaster } from "@/components/ui/sonner";
@@ -72,10 +72,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <TooltipProvider>
             <AuthProvider>
               <DashboardRefreshProvider>
-                <div className="site-layout">
-                  <SiteHeader />
-                  {children}
-                </div>
+                <SiteFrame>{children}</SiteFrame>
               </DashboardRefreshProvider>
               <Toaster richColors closeButton />
               <ScrollToTopButton />

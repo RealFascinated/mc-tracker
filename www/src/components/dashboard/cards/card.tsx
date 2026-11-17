@@ -13,7 +13,7 @@ function DashboardCard({ children, className, style }: DashboardCardProps) {
     <div
       style={style}
       className={cn(
-        "overflow-hidden rounded-soft border border-border bg-card shadow-sm",
+        "overflow-hidden rounded-soft border border-border bg-card",
         className,
       )}
     >

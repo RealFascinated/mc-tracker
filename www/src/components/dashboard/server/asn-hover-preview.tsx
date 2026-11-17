@@ -120,7 +120,7 @@ export function AsnHoverPreview({
           params={{ asn }}
           search={asnDetailSearch(asnOrg, timeWindowSearch)}
           className={cn(
-            "link-underline-animate link-underline-animate--primary min-w-0 max-w-full truncate hover:text-monitor dark:hover:text-warning",
+            "link-underline-animate link-underline-animate--primary min-w-0 max-w-full truncate hover:text-monitor dark:hover:text-monitor",
             className,
           )}
           title={label}

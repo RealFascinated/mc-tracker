@@ -1,21 +1,9 @@
-@keyframes slide-up-enter {
-  from {
-    opacity: 0;
-    transform: translateY(var(--motion-distance, 8px));
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .slide-up-animation-pending {
   opacity: 0;
 }
 
 .slide-up-animation-active {
-  animation: slide-up-enter var(--motion-duration-enter, 400ms)
+  animation: motion-fade-in-up var(--motion-duration-enter, 400ms)
     var(--motion-ease, ease-out) both;
 }
 

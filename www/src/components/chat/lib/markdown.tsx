@@ -46,7 +46,7 @@ const components: Components = {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-monitor underline underline-offset-2 dark:text-warning"
+      className="text-monitor underline underline-offset-2 dark:text-monitor"
     >
       {children}
     </a>

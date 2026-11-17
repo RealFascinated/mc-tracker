@@ -43,7 +43,7 @@ const NORMAL_LAYOUT: ChartLayout = {
   axisGap: 8,
   xAxisHeight: 24,
   xAxisGap: 4,
-  xAxisSpace: 40,
+  xAxisSpace: 88,
   paddingTop: 20,
   paddingTopWithUnits: 28,
   paddingBottom: 18,
@@ -60,7 +60,7 @@ const COMPACT_LAYOUT: ChartLayout = {
   axisGap: 4,
   xAxisHeight: 18,
   xAxisGap: 2,
-  xAxisSpace: 56,
+  xAxisSpace: 72,
   paddingTop: 12,
   paddingTopWithUnits: 18,
   paddingBottom: 10,
@@ -326,8 +326,11 @@ function buildAxisConfig({
     font: layout.axisFont,
     gap: layout.axisGap,
     size: (_self, tickValues) => measureAxisWidth(tickValues, layout),
-    grid: showGrid ? { stroke: gridColor } : { show: false },
-    ticks: { stroke: axisColor },
+    grid: showGrid
+      ? { stroke: gridColor, width: 1, dash: [3, 4] }
+      : { show: false },
+    ticks: { show: false },
+    border: { show: false },
     values,
   };
 }
@@ -482,11 +485,9 @@ export function buildUPlotOptions({
             gap: layout.xAxisGap,
             size: layout.xAxisHeight,
             space: layout.xAxisSpace,
-            grid: { stroke: gridColor },
-            ticks: {
-              stroke: axisColor,
-              size: layout.density === "compact" ? 3 : 4,
-            },
+            grid: { show: false },
+            ticks: { show: false },
+            border: { show: false },
             values: xTime
               ? (_self, splits, _axisIdx, _foundSpace, foundIncr) =>
                   formatChartAxisTicks(splits, foundIncr)

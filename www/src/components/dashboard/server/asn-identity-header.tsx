@@ -37,7 +37,7 @@ export function AsnIdentityHeader({
                 to="/asns/$asn"
                 params={{ asn: asn.asn }}
                 search={asnDetailSearch(asn.asnOrg, timeWindowSearch)}
-                className="min-w-0 hover:text-monitor focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:hover:text-warning dark:focus-visible:ring-warning"
+                className="min-w-0 hover:text-monitor focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:hover:text-monitor dark:focus-visible:ring-monitor"
               >
                 {nameContent}
               </Link>

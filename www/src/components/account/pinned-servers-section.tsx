@@ -117,7 +117,7 @@ function PinnedServerRow({ server }: { server: ServerListItem }) {
           <Link
             to="/servers/$serverId"
             params={{ serverId: server.id }}
-            className="link-underline-animate link-underline-animate--primary block truncate text-sm font-medium text-foreground hover:text-monitor dark:hover:text-warning"
+            className="link-underline-animate link-underline-animate--primary block truncate text-sm font-medium text-foreground hover:text-monitor dark:hover:text-monitor"
           >
             {server.name}
           </Link>

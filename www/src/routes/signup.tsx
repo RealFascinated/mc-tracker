@@ -139,7 +139,7 @@ function SignupPage() {
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link to="/login" className="text-monitor dark:text-warning">
+              <Link to="/login" className="text-monitor dark:text-monitor">
                 Sign in
               </Link>
             </p>

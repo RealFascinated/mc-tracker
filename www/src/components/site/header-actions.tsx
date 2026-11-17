@@ -30,9 +30,13 @@ const SuggestServerDialog = lazy(() =>
 
 type SiteHeaderUserMenuProps = {
   iconOnly?: boolean;
+  railStyle?: boolean;
 };
 
-function SiteHeaderUserMenu({ iconOnly = false }: SiteHeaderUserMenuProps) {
+function SiteHeaderUserMenu({
+  iconOnly = false,
+  railStyle = false,
+}: SiteHeaderUserMenuProps) {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -60,7 +64,10 @@ function SiteHeaderUserMenu({ iconOnly = false }: SiteHeaderUserMenuProps) {
         <Button
           variant="ghost"
           size="default"
-          className="site-header-nav-button gap-1.5"
+          className={cn(
+            "site-header-nav-button gap-1.5",
+            railStyle && "w-auto min-w-0 flex-1 justify-start px-2",
+          )}
           aria-label="Account menu"
         >
           <User className="size-4 shrink-0" aria-hidden />
@@ -68,6 +75,7 @@ function SiteHeaderUserMenu({ iconOnly = false }: SiteHeaderUserMenuProps) {
             className={cn(
               "max-w-32 truncate",
               iconOnly ? "hidden lg:inline" : "hidden sm:inline",
+              railStyle && "inline",
             )}
           >
             {userDisplayName(user)}
@@ -121,7 +129,13 @@ function SiteHeaderUserMenu({ iconOnly = false }: SiteHeaderUserMenuProps) {
   );
 }
 
-function SuggestServerButton({ iconOnly = false }: { iconOnly?: boolean }) {
+function SuggestServerButton({
+  iconOnly = false,
+  railStyle = false,
+}: {
+  iconOnly?: boolean;
+  railStyle?: boolean;
+}) {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -130,9 +144,12 @@ function SuggestServerButton({ iconOnly = false }: { iconOnly?: boolean }) {
     <>
       <Button
         type="button"
-        variant="highlighted"
+        variant={railStyle ? "outline" : "highlighted"}
         size="default"
-        className="site-header-nav-button"
+        className={cn(
+          "site-header-nav-button",
+          railStyle && "w-full justify-center",
+        )}
         aria-label="Suggest a server"
         onClick={() => {
           if (!isAuthenticated) {
@@ -146,7 +163,15 @@ function SuggestServerButton({ iconOnly = false }: { iconOnly?: boolean }) {
           className={cn("size-4", iconOnly ? "lg:hidden" : "sm:hidden")}
           aria-hidden
         />
-        <span className={iconOnly ? "hidden lg:inline" : "hidden sm:inline"}>
+        <span
+          className={
+            railStyle
+              ? "inline"
+              : iconOnly
+                ? "hidden lg:inline"
+                : "hidden sm:inline"
+          }
+        >
           Suggest a server
         </span>
       </Button>
@@ -157,8 +182,32 @@ function SuggestServerButton({ iconOnly = false }: { iconOnly?: boolean }) {
   );
 }
 
-function SiteHeaderActions({ iconOnly = false }: { iconOnly?: boolean }) {
+function SiteHeaderActions({
+  iconOnly = false,
+  variant = "bar",
+}: {
+  iconOnly?: boolean;
+  variant?: "bar" | "rail";
+}) {
   const { isAuthenticated } = useAuth();
+
+  if (variant === "rail") {
+    return (
+      <>
+        <SuggestServerButton railStyle />
+        <div className="rail-account">
+          {isAuthenticated ? (
+            <SiteHeaderUserMenu railStyle />
+          ) : (
+            <Link to="/login" className="rail-signin">
+              Sign in
+            </Link>
+          )}
+          <ThemeSwitcher className="ml-auto" />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

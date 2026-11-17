@@ -53,10 +53,26 @@ const SORTABLE_COLUMNS: Array<{
   { field: "name", label: "Server" },
   { field: "players", label: "Now", className: "text-right" },
   { field: "trend24h", label: "24h", className: "text-right" },
-  { field: "trend7d", label: "7d", className: "text-right" },
-  { field: "trend30d", label: "30d", className: "text-right" },
-  { field: "peak24h", label: "Peak 24h", className: "text-right" },
-  { field: "peakAllTime", label: "All-time Peak", className: "text-right" },
+  {
+    field: "trend7d",
+    label: "7d",
+    className: "hidden text-right sm:table-cell",
+  },
+  {
+    field: "trend30d",
+    label: "30d",
+    className: "hidden text-right sm:table-cell",
+  },
+  {
+    field: "peak24h",
+    label: "Peak 24h",
+    className: "hidden text-right md:table-cell",
+  },
+  {
+    field: "peakAllTime",
+    label: "All-time Peak",
+    className: "hidden text-right lg:table-cell",
+  },
 ];
 
 function SortIcon({
@@ -139,18 +155,25 @@ function serverFieldsEqual(a: ServerListItem, b: ServerListItem): boolean {
 }
 
 type ServerTableRowProps = {
+  rank: number;
+  maxPlayers: number;
   server: ServerListItem;
   isPinned: boolean;
   showPinButtons: boolean;
 };
 
 function ServerTableRow({
+  rank,
+  maxPlayers,
   server,
   isPinned,
   showPinButtons,
 }: ServerTableRowProps) {
   return (
-    <tr className="group border-b border-border transition-colors hover:bg-muted/30 last:border-b-0">
+    <tr className="group border-b border-border transition-colors hover:bg-muted/40 last:border-b-0">
+      <TableCell className="w-12 pr-0 text-right text-xs tabular-nums text-muted-foreground">
+        {rank}
+      </TableCell>
       {/* Server name column */}
       <TableCell>
         <div className="flex items-center gap-2.5">
@@ -165,13 +188,13 @@ function ServerTableRow({
               <Link
                 to="/servers/$serverId"
                 params={{ serverId: server.id }}
-                className="truncate text-sm font-medium text-foreground transition-colors hover:text-monitor dark:hover:text-warning"
+                className="truncate text-sm font-medium text-foreground transition-colors hover:text-monitor dark:hover:text-monitor"
               >
                 {server.name}
               </Link>
               <ServerPlatformBadge platform={server.type} />
             </div>
-            <div className="mt-0.5 flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+            <div className="mt-0.5 flex max-w-[8.5rem] items-center gap-1 overflow-hidden font-mono text-[11px] text-muted-foreground sm:max-w-none">
               <ServerHostCopy
                 host={server.host}
                 port={server.port}
@@ -201,10 +224,26 @@ function ServerTableRow({
       </TableCell>
 
       {/* Players online */}
-      <TableCell className="text-right tabular-nums">
-        <span className="text-sm font-medium text-foreground">
-          {formatPlayers(server.playersOnline)}
-        </span>
+      <TableCell className="text-right tabular-nums sm:w-56">
+        <div className="flex items-center justify-end gap-3">
+          <span
+            className="players-bar"
+            aria-hidden
+            style={{
+              ["--share" as string]: `${
+                maxPlayers > 0
+                  ? Math.max(
+                      ((server.playersOnline ?? 0) / maxPlayers) * 100,
+                      server.playersOnline ? 2 : 0,
+                    )
+                  : 0
+              }%`,
+            }}
+          />
+          <span className="w-16 text-sm font-medium text-foreground">
+            {formatPlayers(server.playersOnline)}
+          </span>
+        </div>
       </TableCell>
 
       {/* Trend 24h */}
@@ -213,24 +252,24 @@ function ServerTableRow({
       </TableCell>
 
       {/* Trend 7d */}
-      <TableCell className="text-right tabular-nums">
+      <TableCell className="hidden sm:table-cell text-right tabular-nums">
         <TrendCell value={server.trend7d} />
       </TableCell>
 
       {/* Trend 30d */}
-      <TableCell className="text-right tabular-nums">
+      <TableCell className="hidden sm:table-cell text-right tabular-nums">
         <TrendCell value={server.trend30d} />
       </TableCell>
 
       {/* Peak 24h */}
-      <TableCell className="text-right tabular-nums">
+      <TableCell className="hidden md:table-cell text-right tabular-nums">
         <span className="text-sm text-muted-foreground">
           {formatPlayers(server.peaks.players24h)}
         </span>
       </TableCell>
 
       {/* All-time peak */}
-      <TableCell className="text-right tabular-nums">
+      <TableCell className="hidden lg:table-cell text-right tabular-nums">
         <span
           className="text-sm text-muted-foreground"
           title={peakTimestampTooltip(server.peaks.allTime?.timestamp)}
@@ -252,6 +291,8 @@ function ServerTableRow({
 const ServerTableRowMemo = memo(
   ServerTableRow,
   (prev, next) =>
+    prev.rank === next.rank &&
+    prev.maxPlayers === next.maxPlayers &&
     prev.showPinButtons === next.showPinButtons &&
     prev.isPinned === next.isPinned &&
     serverFieldsEqual(prev.server, next.server),
@@ -271,16 +312,22 @@ function ServersTable({
     [servers, sortField, sortDirection],
   );
 
+  const maxPlayers = useMemo(
+    () => servers.reduce((max, s) => Math.max(max, s.playersOnline ?? 0), 0),
+    [servers],
+  );
+
   return (
-    <div className="rounded-soft border border-border bg-card shadow-sm">
+    <div className="servers-table">
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-12 pr-0" aria-label="Rank" />
             {SORTABLE_COLUMNS.map((col) => (
               <TableHead
                 key={col.field}
                 className={cn(
-                  "cursor-pointer select-none text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground",
+                  "cursor-pointer select-none text-xs font-medium text-muted-foreground hover:text-foreground",
                   col.className,
                 )}
                 onClick={() => onSort(col.field)}
@@ -309,16 +356,18 @@ function ServersTable({
           {sorted.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={SORTABLE_COLUMNS.length + (showPinButtons ? 1 : 0)}
+                colSpan={SORTABLE_COLUMNS.length + 1 + (showPinButtons ? 1 : 0)}
                 className="px-4 py-10 text-center text-sm text-muted-foreground"
               >
                 {emptyMessage}
               </TableCell>
             </TableRow>
           ) : (
-            sorted.map((server) => (
+            sorted.map((server, index) => (
               <ServerTableRowMemo
                 key={server.id}
+                rank={index + 1}
+                maxPlayers={maxPlayers}
                 server={server}
                 isPinned={pinnedServerIds?.has(server.id) ?? false}
                 showPinButtons={showPinButtons}
@@ -344,8 +393,8 @@ function TrendCell({ value }: { value: number | null | undefined }) {
       className={cn(
         "text-sm font-medium tabular-nums",
         isNeutral && "text-muted-foreground",
-        isPositive && "text-green-600 dark:text-green-400",
-        !isPositive && !isNeutral && "text-red-600 dark:text-red-400",
+        isPositive && "text-platform-java",
+        !isPositive && !isNeutral && "text-destructive",
       )}
     >
       {isPositive ? "+" : ""}

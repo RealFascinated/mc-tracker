@@ -42,7 +42,7 @@ export function ServerHostCopy({ host, port, className }: ServerHostCopyProps) {
       type="button"
       onClick={handleCopy}
       className={cn(
-        "server-host-copy link-underline-animate link-underline-animate--primary focus-visible:ring-2 focus-visible:ring-monitor focus-visible:ring-offset-1 focus-visible:ring-offset-background dark:focus-visible:ring-warning",
+        "server-host-copy link-underline-animate link-underline-animate--primary focus-visible:ring-2 focus-visible:ring-monitor focus-visible:ring-offset-1 focus-visible:ring-offset-background dark:focus-visible:ring-monitor",
         className,
       )}
       title={`Copy ${address}`}

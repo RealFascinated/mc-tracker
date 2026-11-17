@@ -52,7 +52,7 @@ function LoginPage() {
           <AuthForm />
           <p className="mt-4 text-center text-sm text-muted-foreground">
             No account yet?{" "}
-            <Link to="/signup" className="text-monitor dark:text-warning">
+            <Link to="/signup" className="text-monitor dark:text-monitor">
               Sign up
             </Link>
           </p>

@@ -24,7 +24,7 @@ export function ThemeSwitcher({ className }: { className?: string }) {
           variant="ghost"
           size="default"
           className={cn(
-            "site-header-nav-button text-muted-foreground hover:bg-transparent hover:text-monitor dark:hover:bg-transparent dark:hover:text-warning",
+            "site-header-nav-button text-muted-foreground hover:bg-transparent hover:text-monitor dark:hover:bg-transparent dark:hover:text-monitor",
             className,
           )}
           onClick={() => {

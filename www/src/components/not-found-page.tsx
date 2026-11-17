@@ -27,7 +27,7 @@ function NotFoundPage({
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-4 py-16 sm:py-24">
       <FadeInAnimation className="flex max-w-md flex-col items-center text-center">
         <p
-          className="text-6xl font-bold tracking-tighter text-monitor/30 dark:text-warning/30"
+          className="text-6xl font-bold tracking-tighter text-monitor/30 dark:text-monitor/30"
           aria-hidden
         >
           404

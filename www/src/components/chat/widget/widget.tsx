@@ -131,7 +131,7 @@ export function TrackerChatWidget({ open, onClose }: TrackerChatWidgetProps) {
             setMounted(false);
           }}
         >
-          <DashboardCard className="flex h-full flex-col border-monitor/25 shadow-2xl ring-1 ring-black/10 dark:border-warning/30 dark:ring-white/10">
+          <DashboardCard className="flex h-full flex-col border-monitor/25 shadow-2xl ring-1 ring-black/10 dark:border-monitor/30 dark:ring-white/10">
             {isResizable ? (
               <button
                 type="button"

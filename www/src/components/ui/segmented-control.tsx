@@ -64,10 +64,10 @@ const segmentedControlIndicatorClassName =
   "pointer-events-none absolute top-0.5 bottom-0.5 rounded-snug bg-white shadow-sm ring-1 ring-black/5 dark:bg-monitor-gray-400 dark:ring-white/10";
 
 const segmentedControlItemBaseClassName =
-  "relative z-10 inline-flex h-7 min-w-0 items-center justify-center gap-1 rounded-snug px-2.5 text-xs font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning max-sm:px-1.5 max-sm:text-[11px]";
+  "relative z-10 inline-flex h-7 min-w-0 items-center justify-center gap-1 rounded-snug px-2.5 text-xs font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-monitor max-sm:px-1.5 max-sm:text-[11px]";
 
 const segmentedControlItemSelectedClassName =
-  "font-semibold text-monitor dark:text-warning";
+  "font-semibold text-monitor dark:text-monitor";
 
 const segmentedControlItemIdleClassName =
   "text-muted-foreground hover:text-foreground";

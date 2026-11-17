@@ -3,8 +3,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 
-import { DashboardCard } from "@/components/dashboard/cards/card";
-import { DashboardCardHeader } from "@/components/dashboard/cards/card-header";
 import { ServerPlayersChart } from "@/components/dashboard/charts/server-players-chart";
 import { ServerIdentityHeader } from "@/components/dashboard/server/identity-header";
 import { Toggle } from "@/components/ui/toggle";
@@ -82,45 +80,41 @@ function ServerDetailPage() {
         className="server-detail-back inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-3.5" aria-hidden />
-        Back to dashboard
+        All servers
       </Link>
 
       <FadeInAnimation>
-        <DashboardCard className="server-detail-card">
-          <ServerIdentityHeader server={server} layout="page" />
-        </DashboardCard>
+        <ServerIdentityHeader server={server} layout="page" />
       </FadeInAnimation>
 
       <MetricChartsScope window={timeWindow} onZoomToRange={handleZoomToRange}>
         <FadeInAnimation>
-          <DashboardCard className="hero-chart-panel">
-            <DashboardCardHeader
-              title="Player history"
-              trailingAction={
-                <div className="flex items-center gap-1.5">
-                  <Toggle
-                    pressed={showDailyAvg}
-                    onPressedChange={setShowDailyAvg}
-                    variant="outline"
-                    size="sm"
-                    className="data-[state=on]:border-monitor data-[state=on]:text-monitor dark:data-[state=on]:border-warning dark:data-[state=on]:text-warning data-[state=on]:font-semibold data-[state=off]:text-muted-foreground/60 data-[state=off]:border-input/60"
-                    aria-label="Toggle daily average"
-                  >
-                    Daily avg
-                  </Toggle>
-                  <Toggle
-                    pressed={showWeeklyAvg}
-                    onPressedChange={setShowWeeklyAvg}
-                    variant="outline"
-                    size="sm"
-                    className="data-[state=on]:border-monitor data-[state=on]:text-monitor dark:data-[state=on]:border-warning dark:data-[state=on]:text-warning data-[state=on]:font-semibold data-[state=off]:text-muted-foreground/60 data-[state=off]:border-input/60"
-                    aria-label="Toggle weekly average"
-                  >
-                    Weekly avg
-                  </Toggle>
-                </div>
-              }
-            />
+          <section className="hero-chart-panel">
+            <div className="hero-chart-head">
+              <h2 className="section-label">Player history</h2>
+              <div className="flex items-center gap-1.5">
+                <Toggle
+                  pressed={showDailyAvg}
+                  onPressedChange={setShowDailyAvg}
+                  variant="outline"
+                  size="sm"
+                  className="data-[state=on]:border-monitor data-[state=on]:text-monitor dark:data-[state=on]:border-monitor dark:data-[state=on]:text-monitor data-[state=on]:font-semibold data-[state=off]:text-muted-foreground/60 data-[state=off]:border-input/60"
+                  aria-label="Toggle daily average"
+                >
+                  Daily avg
+                </Toggle>
+                <Toggle
+                  pressed={showWeeklyAvg}
+                  onPressedChange={setShowWeeklyAvg}
+                  variant="outline"
+                  size="sm"
+                  className="data-[state=on]:border-monitor data-[state=on]:text-monitor dark:data-[state=on]:border-monitor dark:data-[state=on]:text-monitor data-[state=on]:font-semibold data-[state=off]:text-muted-foreground/60 data-[state=off]:border-input/60"
+                  aria-label="Toggle weekly average"
+                >
+                  Weekly avg
+                </Toggle>
+              </div>
+            </div>
             <ServerPlayersChart
               serverId={server.id}
               window={timeWindow}
@@ -130,7 +124,7 @@ function ServerDetailPage() {
                 weeklyAvg: showWeeklyAvg,
               }}
             />
-          </DashboardCard>
+          </section>
         </FadeInAnimation>
       </MetricChartsScope>
     </main>

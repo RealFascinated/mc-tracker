@@ -67,7 +67,15 @@ function MetricChartView({
   if (variant === "sparkline") {
     const built = buildMultiSeriesData(config.timestamps, config.series);
     if (!built) {
-      return <div className={cn("h-16 bg-muted/40", className)} aria-hidden />;
+      return (
+        <div
+          className={cn(
+            "h-16 animate-pulse bg-muted/40 motion-reduce:animate-none",
+            className,
+          )}
+          aria-hidden
+        />
+      );
     }
 
     const seriesAxisIds = built.sourceIndices.map(

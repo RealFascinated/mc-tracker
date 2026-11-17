@@ -1,8 +1,9 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Columns2, Network, Server } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { lazy, Suspense } from "react";
 
 import { SiteHeaderActions } from "@/components/site/header-actions";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/metrics/use-metric-time-window-link-search";
 import {
@@ -10,9 +11,7 @@ import {
   DASHBOARD_HEADER_ROUTES,
   isDashboardHeaderRoute,
   showsHeaderSearch,
-  showsSiteHeaderPageNav,
 } from "@/lib/dashboard/header-routes";
-import type { DashboardHeaderRoute } from "@/lib/dashboard/header-routes";
 import { APP_NAME } from "@/lib/page-title";
 import { parseMetricTimeWindowSearch } from "@/lib/metrics/time-window";
 import { cn } from "cnfast";
@@ -33,50 +32,61 @@ const DashboardTimeControls = lazy(() =>
   })),
 );
 
-function SiteHeaderPageNav() {
+const NAV_ICONS: Record<string, LucideIcon> = {
+  "/servers": Server,
+  "/asns": Network,
+  "/compare": Columns2,
+};
+
+function Brand({ className }: { className?: string }) {
+  return (
+    <Link to="/servers" className={cn("rail-brand", className)}>
+      <img
+        src={SITE_LOGO}
+        alt=""
+        width={22}
+        height={22}
+        className="size-[22px]"
+      />
+      <span>{APP_NAME}</span>
+    </Link>
+  );
+}
+
+function RailNav({ orientation }: { orientation: "vertical" | "horizontal" }) {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
   const timeWindowSearch = useMetricTimeWindowLinkSearch();
-  const activeRoute = activeDashboardHeaderRoute(pathname);
+  const active = activeDashboardHeaderRoute(pathname);
 
   return (
-    <SegmentedControl
-      value={activeRoute as DashboardHeaderRoute}
-      options={DASHBOARD_HEADER_ROUTES.map((route) => ({
-        value: route.to,
-        shortLabel: route.label,
-      }))}
-      aria-label="Dashboard pages"
-      className="site-header-page-nav shrink-0"
-      renderItem={({
-        option,
-        selected,
-        className,
-        ref,
-        "aria-label": ariaLabel,
-        children,
-      }) => (
-        <Link
-          ref={ref}
-          to={option.value}
-          search={timeWindowSearch}
-          aria-label={ariaLabel}
-          aria-current={selected ? "page" : undefined}
-          className={className}
-        >
-          {children}
-        </Link>
-      )}
-    />
+    <nav
+      aria-label="Primary"
+      className={orientation === "vertical" ? "rail-nav" : "rail-nav-inline"}
+    >
+      {DASHBOARD_HEADER_ROUTES.map((route) => {
+        const Icon = NAV_ICONS[route.to];
+        const isActive = active === route.to;
+
+        return (
+          <Link
+            key={route.to}
+            to={route.to}
+            search={timeWindowSearch}
+            aria-current={isActive ? "page" : undefined}
+            className={cn("rail-link", isActive && "rail-link--active")}
+          >
+            {Icon ? <Icon className="size-4 shrink-0" aria-hidden /> : null}
+            <span>{route.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 
-type SiteHeaderBarProps = {
-  showDashboardControls: boolean;
-};
-
-function SiteHeaderBar({ showDashboardControls }: SiteHeaderBarProps) {
+function Topbar() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -93,89 +103,55 @@ function SiteHeaderBar({ showDashboardControls }: SiteHeaderBarProps) {
       (options) => void navigate(options as never),
     );
 
+  if (!isDashboardHeaderRoute(pathname)) {
+    return null;
+  }
+
   return (
-    <>
-      <div className="site-header-toolbar">
-        <div className="dashboard-header-search-slot">
-          {showDashboardControls && showsHeaderSearch(pathname) ? (
-            <Suspense fallback={null}>
-              <DashboardSearchInput />
-            </Suspense>
-          ) : null}
-        </div>
+    <div className="topbar">
+      <div className="topbar-search">
+        {showsHeaderSearch(pathname) ? (
+          <Suspense fallback={null}>
+            <DashboardSearchInput />
+          </Suspense>
+        ) : null}
       </div>
-      <div className="site-header-nav">
-        <div className="site-header-controls">
-          <SiteHeaderPageNav />
-          {showDashboardControls ? (
-            <Suspense fallback={null}>
-              <DashboardTimeControls
-                window={timeWindow}
-                onPresetChange={setPresetTimeRange}
-                onCustomChange={setCustomTimeRange}
-              />
-            </Suspense>
-          ) : null}
-        </div>
-      </div>
-      <div className="site-header-actions">
-        <SiteHeaderActions iconOnly />
-      </div>
-    </>
+      <Suspense fallback={null}>
+        <DashboardTimeControls
+          window={timeWindow}
+          onPresetChange={setPresetTimeRange}
+          onCustomChange={setCustomTimeRange}
+        />
+      </Suspense>
+    </div>
   );
 }
 
-type SiteHeaderProps = {
-  className?: string;
-};
-
-function SiteHeader({ className }: SiteHeaderProps) {
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  });
-  const isDashboardPage = isDashboardHeaderRoute(pathname);
-  const hasPageNav = showsSiteHeaderPageNav(pathname);
-
+function SiteFrame({ children }: { children: React.ReactNode }) {
   return (
-    <header
-      className={cn(
-        "site-header sticky top-0 z-40 shrink-0 border-b border-border bg-background/95 backdrop-blur-sm",
-        className,
-      )}
-    >
-      <div
-        className={cn(
-          "site-header-inner mx-auto px-3 sm:px-5",
-          hasPageNav ? null : "max-w-7xl",
-          hasPageNav
-            ? "site-header-inner--with-toolbar"
-            : "site-header-inner--simple",
-        )}
-      >
-        <Link
-          to="/servers"
-          className="site-header-brand flex shrink-0 items-center gap-2 text-base font-bold text-foreground hover:text-monitor dark:hover:text-warning"
-        >
-          <img
-            src={SITE_LOGO}
-            alt=""
-            className="size-6 shrink-0"
-            width={24}
-            height={24}
-          />
-          {APP_NAME}
-        </Link>
+    <div className="site-layout">
+      <aside className="rail">
+        <Brand />
+        <RailNav orientation="vertical" />
+        <div className="rail-footer">
+          <SiteHeaderActions variant="rail" />
+        </div>
+      </aside>
 
-        {hasPageNav ? (
-          <SiteHeaderBar showDashboardControls={isDashboardPage} />
-        ) : (
-          <nav className="site-header-nav site-header-nav--simple">
-            <SiteHeaderActions />
-          </nav>
-        )}
+      <header className="mobile-bar">
+        <Brand />
+        <RailNav orientation="horizontal" />
+        <div className="mobile-bar-actions">
+          <SiteHeaderActions iconOnly />
+        </div>
+      </header>
+
+      <div className="site-main">
+        <Topbar />
+        {children}
       </div>
-    </header>
+    </div>
   );
 }
 
-export { SiteHeader };
+export { SiteFrame };

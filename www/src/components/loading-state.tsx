@@ -21,7 +21,7 @@ function LoadingState({
         className,
       )}
     >
-      <Spinner className="text-monitor dark:text-warning" />
+      <Spinner className="text-monitor dark:text-monitor" />
       <span>{message}</span>
     </output>
   );

@@ -38,7 +38,7 @@ export function ServerIdentityHeader({
       to="/servers/$serverId"
       params={{ serverId: server.id }}
       search={timeWindowSearch}
-      className="link-underline-animate link-underline-animate--primary entity-metrics-name min-w-0 transition-colors hover:text-monitor dark:hover:text-warning focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-warning"
+      className="link-underline-animate link-underline-animate--primary entity-metrics-name min-w-0 transition-colors hover:text-monitor dark:hover:text-monitor focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-monitor dark:focus-visible:ring-monitor"
     >
       {server.name}
     </Link>
@@ -99,7 +99,7 @@ export function ServerIdentityHeader({
                           server.asnOrg,
                           timeWindowSearch,
                         )}
-                        className="link-underline-animate link-underline-animate--primary entity-metrics-subtitle-asn hover:text-monitor dark:hover:text-warning"
+                        className="link-underline-animate link-underline-animate--primary entity-metrics-subtitle-asn hover:text-monitor dark:hover:text-monitor"
                         title={asnName}
                       >
                         {asnName}

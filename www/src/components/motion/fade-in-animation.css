@@ -1,19 +1,9 @@
-@keyframes fade-in-enter {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
 .fade-in-animation-pending {
   opacity: 0;
 }
 
 .fade-in-animation-active {
-  animation: fade-in-enter var(--motion-duration-enter, 400ms)
+  animation: motion-fade-in var(--motion-duration-enter, 400ms)
     var(--motion-ease, ease-out) both;
 }
 

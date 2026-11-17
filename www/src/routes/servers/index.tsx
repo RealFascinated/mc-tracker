@@ -85,7 +85,7 @@ export const Route = createFileRoute("/servers/")({
     platform: parseServerPlatformFilterParam(search.platform),
     sort: parseServerSortFieldParam(search.sort),
     order: parseSortOrderParam(search.order),
-    view: search.view === "table" ? "table" : undefined,
+    view: search.view === "cards" ? "cards" : undefined,
     tableSort: parseTableSortFieldParam(search.tableSort),
     tableOrder: parseSortOrderParam(search.tableOrder),
   }),
@@ -117,7 +117,7 @@ function ServersPage() {
   } = Route.useSearch();
   const navigate = Route.useNavigate();
   const platformFilter: ServerPlatformFilter = urlPlatform ?? "all";
-  const viewMode: ViewMode = urlView ?? "cards";
+  const viewMode: ViewMode = urlView ?? "table";
   const { serverSort, setServerSort } = usePersistedServerSort(navigate, {
     sort: urlSortField,
     order: urlOrder,
@@ -170,11 +170,11 @@ function ServersPage() {
   const setViewMode = useSearchParamNavigation<ViewMode>(
     navigate,
     "view",
-    "cards",
+    "table",
   );
 
   // Table sort — stored in URL search params
-  const tableSortField: SortField = urlTableSort ?? "name";
+  const tableSortField: SortField = urlTableSort ?? "players";
   const tableSortDirection: SortDirection =
     urlTableOrder ?? (tableSortField === "name" ? "asc" : "desc");
 
@@ -197,8 +197,8 @@ function ServersPage() {
         : "asc";
     }
 
-    // Omit params when they match defaults (name + asc) to keep the URL clean
-    const isDefault = field === "name" && newDirection === "asc";
+    // Omit params when they match defaults (players + desc) to keep the URL clean
+    const isDefault = field === "players" && newDirection === "desc";
     void navigate({
       search: (prev) => ({
         ...prev,
@@ -237,7 +237,7 @@ function ServersPage() {
               window={timeWindow}
             />
 
-            {viewMode === "cards" && pinnedServers.length > 0 ? (
+            {pinnedServers.length > 0 ? (
               <Suspense fallback={null}>
                 <PinnedServersGrid
                   servers={pinnedServers}
@@ -279,9 +279,9 @@ function ServersPage() {
               hideGridContent={viewMode === "table"}
             />
 
-            <div className={viewMode === "cards" ? "hidden" : "-mt-2"}>
+            <div className={viewMode === "cards" ? "hidden" : "-mt-4"}>
               <div className="servers-table-scroll scrollbar-hide">
-                <div className="min-w-[40rem]">
+                <div className="sm:min-w-[40rem]">
                   <ServersTable
                     servers={filteredServers}
                     pinnedServerIds={pinnedServerIds}

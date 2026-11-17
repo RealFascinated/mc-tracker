@@ -89,7 +89,10 @@ function ChartSeriesToggle({
     >
       <span
         aria-hidden
-        className={cn("size-2 shrink-0 rounded-full", hidden && "opacity-35")}
+        className={cn(
+          "size-2 shrink-0 rounded-full transition-opacity duration-200",
+          hidden && "opacity-35",
+        )}
         style={{ backgroundColor: color }}
       />
       <span
