@@ -11,7 +11,8 @@ import type {
   SortField,
   SortDirection,
 } from "@/components/dashboard/tables/servers-table";
-import { LoadingState } from "@/components/loading-state";
+import { DashboardLoadingSkeleton } from "@/components/dashboard/dashboard-loading-skeleton";
+import { QueryErrorState } from "@/components/query-error-state";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
@@ -21,6 +22,7 @@ import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
 import {
   filterServersByPlatform,
   parseServerPlatformFilterParam,
+  platformFilterEmptyCopy,
 } from "@/lib/api/platform";
 import type { ServerPlatformFilter } from "@/lib/api/platform";
 import {
@@ -121,7 +123,13 @@ function ServersPage() {
     order: urlOrder,
   });
 
-  const { data: serversData, isPending: serversPending } = useQuery({
+  const {
+    data: serversData,
+    isPending: serversPending,
+    isFetching: serversFetching,
+    error: serversError,
+    refetch: refetchServers,
+  } = useQuery({
     ...serversQueryOptions(serverSort),
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
@@ -154,6 +162,10 @@ function ServersPage() {
   }, [pinnedServersData?.servers]);
   const globalSummary = serversData?.summary;
   const showPageLoading = serversPending && !globalSummary;
+
+  function handleRetryServers() {
+    void refetchServers();
+  }
 
   const setViewMode = useSearchParamNavigation<ViewMode>(
     navigate,
@@ -201,23 +213,27 @@ function ServersPage() {
   return (
     <>
       {showPageLoading ? (
-        <LoadingState message="Loading dashboard…" centered />
-      ) : !globalSummary && !serversData ? (
+        <DashboardLoadingSkeleton />
+      ) : !globalSummary ? (
         <main className="dashboard-shell">
-          <p className="text-destructive">Failed to load dashboard data.</p>
+          <QueryErrorState
+            title="Couldn't load the dashboard"
+            description="Live player counts and peak history are unavailable."
+            error={serversError}
+            onRetry={handleRetryServers}
+            isRetrying={serversFetching}
+          />
         </main>
       ) : (
         <main className="dashboard-shell">
-          {globalSummary ? <DashboardStatsRow summary={globalSummary} /> : null}
+          <DashboardStatsRow summary={globalSummary} />
 
           <MetricChartsScope
             window={timeWindow}
             onZoomToRange={handleZoomToRange}
           >
             <HeroChartPanel
-              hasServers={
-                globalSummary ? globalSummary.trackedServers > 0 : false
-              }
+              hasServers={globalSummary.trackedServers > 0}
               window={timeWindow}
             />
 
@@ -237,7 +253,7 @@ function ServersPage() {
               onPlatformFilterChange={setPlatformFilter}
               sort={serverSort}
               onSortChange={setServerSort}
-              trackedServers={serversData.summary.trackedServers}
+              trackedServers={globalSummary.trackedServers}
               pinnedServerIds={pinnedServerIds}
               showPinButtons={isAuthenticated}
               viewToggle={
@@ -273,6 +289,9 @@ function ServersPage() {
                     sortField={tableSortField}
                     sortDirection={tableSortDirection}
                     onSort={handleTableSort}
+                    emptyMessage={
+                      platformFilterEmptyCopy(platformFilter).emptyFiltered
+                    }
                   />
                 </div>
               </div>

@@ -42,6 +42,7 @@ type ServersTableProps = {
   sortField: SortField;
   sortDirection: SortDirection;
   onSort: (field: SortField) => void;
+  emptyMessage?: string;
 };
 
 const SORTABLE_COLUMNS: Array<{
@@ -263,6 +264,7 @@ function ServersTable({
   sortField,
   sortDirection,
   onSort,
+  emptyMessage = "No servers to show.",
 }: ServersTableProps) {
   const sorted = useMemo(
     () => sortServersList(servers, sortField, sortDirection),
@@ -304,14 +306,25 @@ function ServersTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sorted.map((server) => (
-            <ServerTableRowMemo
-              key={server.id}
-              server={server}
-              isPinned={pinnedServerIds?.has(server.id) ?? false}
-              showPinButtons={showPinButtons}
-            />
-          ))}
+          {sorted.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={SORTABLE_COLUMNS.length + (showPinButtons ? 1 : 0)}
+                className="px-4 py-10 text-center text-sm text-muted-foreground"
+              >
+                {emptyMessage}
+              </TableCell>
+            </TableRow>
+          ) : (
+            sorted.map((server) => (
+              <ServerTableRowMemo
+                key={server.id}
+                server={server}
+                isPinned={pinnedServerIds?.has(server.id) ?? false}
+                showPinButtons={showPinButtons}
+              />
+            ))
+          )}
         </TableBody>
       </Table>
     </div>

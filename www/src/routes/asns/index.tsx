@@ -6,7 +6,11 @@ import { AsnMetricsGrid } from "@/components/dashboard/grids/asn-metrics-grid";
 import { AsnSortToggle } from "@/components/dashboard/server/asn-sort-toggle";
 import { DashboardStatsRow } from "@/components/dashboard/stats/dashboard-stats-row";
 import { HeroChartPanel } from "@/components/dashboard/charts/hero-chart-panel";
-import { LoadingState } from "@/components/loading-state";
+import {
+  DashboardLoadingSkeleton,
+  GridSkeleton,
+} from "@/components/dashboard/dashboard-loading-skeleton";
+import { QueryErrorState } from "@/components/query-error-state";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
 import { useDashboardRefresh } from "@/hooks/use-dashboard-refresh";
@@ -62,11 +66,22 @@ function AsnsPage() {
   } = Route.useSearch();
   const navigate = Route.useNavigate();
 
-  const { data: serversData, isPending: serversPending } = useQuery({
+  const {
+    data: serversData,
+    isPending: serversPending,
+    isFetching: serversFetching,
+    error: serversError,
+    refetch: refetchServers,
+  } = useQuery({
     ...serversQueryOptions(),
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
-  const { data: asnsData } = useQuery({
+  const {
+    data: asnsData,
+    isFetching: asnsFetching,
+    error: asnsError,
+    refetch: refetchAsns,
+  } = useQuery({
     ...asnsQueryOptions(),
     refetchInterval: refreshIntervalMs === false ? false : refreshIntervalMs,
   });
@@ -103,32 +118,54 @@ function AsnsPage() {
   const globalSummary = serversData?.summary;
   const showPageLoading = serversPending && !globalSummary;
 
+  function handleRetrySummary() {
+    void refetchServers();
+  }
+
+  function handleRetryAsns() {
+    void refetchAsns();
+  }
+
   return (
     <>
       {showPageLoading ? (
-        <LoadingState message="Loading dashboard…" centered />
-      ) : !globalSummary && !asnsData ? (
+        <DashboardLoadingSkeleton />
+      ) : !globalSummary ? (
         <main className="dashboard-shell">
-          <p className="text-destructive">Failed to load dashboard data.</p>
+          <QueryErrorState
+            title="Couldn't load the dashboard"
+            description="Live player counts and peak history are unavailable."
+            error={serversError}
+            onRetry={handleRetrySummary}
+            isRetrying={serversFetching}
+          />
         </main>
       ) : (
         <main className="dashboard-shell">
-          {globalSummary ? <DashboardStatsRow summary={globalSummary} /> : null}
+          <DashboardStatsRow summary={globalSummary} />
 
-          {!asnsData ? (
-            <LoadingState message="Loading networks…" centered />
-          ) : (
-            <MetricChartsScope
+          <MetricChartsScope
+            window={timeWindow}
+            onZoomToRange={handleZoomToRange}
+          >
+            <HeroChartPanel
+              hasServers={globalSummary.trackedServers > 0}
               window={timeWindow}
-              onZoomToRange={handleZoomToRange}
-            >
-              <HeroChartPanel
-                hasServers={
-                  globalSummary ? globalSummary.trackedServers > 0 : false
-                }
-                window={timeWindow}
-              />
+            />
 
+            {!asnsData ? (
+              asnsError ? (
+                <QueryErrorState
+                  title="Couldn't load network groupings"
+                  description="The totals above are still live."
+                  error={asnsError}
+                  onRetry={handleRetryAsns}
+                  isRetrying={asnsFetching}
+                />
+              ) : (
+                <GridSkeleton />
+              )
+            ) : (
               <AsnMetricsGrid
                 asns={sortedAsns}
                 window={timeWindow}
@@ -137,8 +174,8 @@ function AsnsPage() {
                   <AsnSortToggle value={asnSort} onValueChange={setAsnSort} />
                 }
               />
-            </MetricChartsScope>
-          )}
+            )}
+          </MetricChartsScope>
         </main>
       )}
     </>

@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router";
 
 import { NotFoundPage } from "@/components/not-found-page";
+import { RouteErrorPage } from "@/components/route-error-page";
 import { SiteHeader } from "@/components/site/header";
 import { DeferredChatWidget } from "@/components/chat/widget/deferred";
 import { ScrollToTopButton } from "@/components/site/scroll-to-top-button";
@@ -50,6 +51,7 @@ export const Route = createRootRouteWithContext<{
     };
   },
   notFoundComponent: () => <NotFoundPage />,
+  errorComponent: RouteErrorPage,
   shellComponent: RootDocument,
 });
 
