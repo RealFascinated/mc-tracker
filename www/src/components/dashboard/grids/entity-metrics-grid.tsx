@@ -9,7 +9,6 @@ import { DashboardCard } from "@/components/dashboard/cards/card";
 import { LazyMetricChartBody } from "@/components/dashboard/charts/lazy-metric-chart-body";
 import { resolveLazyMetricChartState } from "@/components/dashboard/charts/lazy-metric-chart-state";
 import { AnimatedStatValue } from "@/components/dashboard/stats/animated-stat-value";
-import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import {
   useGridItemVisible,
   useIntersectionVisible,
@@ -242,7 +241,7 @@ export function EntityMetricsGrid<
 
   if (items.length === 0) {
     return (
-      <FadeInAnimation as="section" className="entity-metrics-section">
+      <section className="entity-metrics-section">
         <div className="entity-metrics-section-header">
           <h2 className="entity-metrics-section-title">{section.title}</h2>
           <p className="entity-metrics-section-subtitle">
@@ -254,13 +253,13 @@ export function EntityMetricsGrid<
             {section.emptyFilteredHint}
           </p>
         </div>
-      </FadeInAnimation>
+      </section>
     );
   }
 
   return (
     <section className="entity-metrics-section">
-      <FadeInAnimation className="entity-metrics-section-header">
+      <div className="entity-metrics-section-header">
         <div className="min-w-0">
           <h2 className="entity-metrics-section-title">{section.title}</h2>
           <p className="entity-metrics-section-subtitle">
@@ -272,7 +271,7 @@ export function EntityMetricsGrid<
         {headerTrailing ? (
           <div className="shrink-0">{headerTrailing}</div>
         ) : null}
-      </FadeInAnimation>
+      </div>
 
       <div
         className={cn("entity-metrics-grid-container", gridContainerClassName)}
@@ -300,9 +299,9 @@ export function EntityMetricsGrid<
               );
             }
             return (
-              <FadeInAnimation key={visibilityKey} className="min-w-0">
+              <div key={visibilityKey} className="min-w-0">
                 {card}
-              </FadeInAnimation>
+              </div>
             );
           })}
         </div>

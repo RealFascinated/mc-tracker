@@ -6,7 +6,6 @@ import { ArrowLeft } from "lucide-react";
 import { ServerPlayersChart } from "@/components/dashboard/charts/server-players-chart";
 import { ServerIdentityHeader } from "@/components/dashboard/server/identity-header";
 import { Toggle } from "@/components/ui/toggle";
-import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import { NotFoundPage } from "@/components/not-found-page";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
@@ -83,12 +82,12 @@ function ServerDetailPage() {
         All servers
       </Link>
 
-      <FadeInAnimation>
+      <>
         <ServerIdentityHeader server={server} layout="page" />
-      </FadeInAnimation>
+      </>
 
       <MetricChartsScope window={timeWindow} onZoomToRange={handleZoomToRange}>
-        <FadeInAnimation>
+        <>
           <section className="hero-chart-panel">
             <div className="hero-chart-head">
               <h2 className="section-label">Player history</h2>
@@ -125,7 +124,7 @@ function ServerDetailPage() {
               }}
             />
           </section>
-        </FadeInAnimation>
+        </>
       </MetricChartsScope>
     </main>
   );

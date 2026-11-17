@@ -2,7 +2,6 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Home } from "lucide-react";
 import { useEffect } from "react";
 
-import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import { Button } from "@/components/ui/button";
 import { pageTitle } from "@/lib/page-title";
 
@@ -25,7 +24,7 @@ function NotFoundPage({
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-4 py-16 sm:py-24">
-      <FadeInAnimation className="flex max-w-md flex-col items-center text-center">
+      <div className="flex max-w-md flex-col items-center text-center">
         <p
           className="text-6xl font-bold tracking-tighter text-monitor/30 dark:text-monitor/30"
           aria-hidden
@@ -43,7 +42,7 @@ function NotFoundPage({
             Back to dashboard
           </Link>
         </Button>
-      </FadeInAnimation>
+      </div>
     </main>
   );
 }

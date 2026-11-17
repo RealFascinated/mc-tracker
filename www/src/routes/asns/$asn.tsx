@@ -8,7 +8,6 @@ import { AsnPlayersChart } from "@/components/dashboard/charts/asn-players-chart
 import { DashboardCard } from "@/components/dashboard/cards/card";
 import { DashboardCardHeader } from "@/components/dashboard/cards/card-header";
 import { ServerMetricsGrid } from "@/components/dashboard/grids/server-metrics-grid";
-import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import { NotFoundPage } from "@/components/not-found-page";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
@@ -132,14 +131,14 @@ function AsnDetailPage() {
         Back to networks
       </Link>
 
-      <FadeInAnimation>
+      <>
         <DashboardCard className="server-detail-card">
           <AsnIdentityHeader asn={asnDetail} layout="page" />
         </DashboardCard>
-      </FadeInAnimation>
+      </>
 
       <MetricChartsScope window={timeWindow} onZoomToRange={handleZoomToRange}>
-        <FadeInAnimation>
+        <>
           <DashboardCard className="hero-chart-panel">
             <DashboardCardHeader title="Player history" />
             <AsnPlayersChart
@@ -149,7 +148,7 @@ function AsnDetailPage() {
               height={360}
             />
           </DashboardCard>
-        </FadeInAnimation>
+        </>
 
         <ServerMetricsGrid
           servers={filteredServers}

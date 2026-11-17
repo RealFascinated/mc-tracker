@@ -5,7 +5,6 @@ import { useMemo } from "react";
 
 import { ComparePlayersChart } from "@/components/compare/players-chart";
 import { CompareServersTable } from "@/components/compare/table";
-import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import { MetricChartsScope } from "@/components/metrics/metric-charts-scope";
 import { useMetricTimeWindowControls } from "@/hooks/metrics/use-metric-time-window-controls";
 import { useMetricTimeWindowLinkSearch } from "@/hooks/metrics/use-metric-time-window-link-search";
@@ -95,14 +94,14 @@ function ComparePage() {
         Back to dashboard
       </Link>
 
-      <FadeInAnimation>
+      <>
         <CompareServersTable
           ids={serverIds}
           onIdsChange={setServerIds}
           compareData={data}
           compareLoading={canCompare && isPending}
         />
-      </FadeInAnimation>
+      </>
 
       {canCompare && isError ? (
         <p className="text-destructive">Failed to load compare chart.</p>
@@ -117,14 +116,14 @@ function ComparePage() {
             <p className="text-sm text-muted-foreground">{platformWarning}</p>
           ) : null}
 
-          <FadeInAnimation>
+          <>
             <ComparePlayersChart
               servers={data.servers}
               window={timeWindow}
               from={data.from}
               to={data.to}
             />
-          </FadeInAnimation>
+          </>
         </MetricChartsScope>
       ) : null}
     </main>

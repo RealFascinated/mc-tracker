@@ -41,7 +41,7 @@ function LoginPage() {
 
   return (
     <AuthPageShell>
-      <Card className="motion-auth-card w-full max-w-md">
+      <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
           <CardDescription>

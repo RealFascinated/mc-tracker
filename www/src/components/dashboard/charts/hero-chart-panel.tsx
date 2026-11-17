@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { TotalPlayersChart } from "@/components/dashboard/charts/total-players-chart";
-import { FadeInAnimation } from "@/components/motion/fade-in-animation";
 import type { MetricTimeWindow } from "@/lib/metrics/time-window";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 
@@ -17,7 +16,7 @@ export function HeroChartPanel({ hasServers, window }: HeroChartPanelProps) {
   const [mode, setMode] = useState<"overall" | "servers">("overall");
 
   return (
-    <FadeInAnimation>
+    <>
       <section className="hero-chart-panel" aria-label="Player history">
         <div className="hero-chart-head">
           <h2 className="section-label">Player history</h2>
@@ -54,6 +53,6 @@ export function HeroChartPanel({ hasServers, window }: HeroChartPanelProps) {
           mode={mode}
         />
       </section>
-    </FadeInAnimation>
+    </>
   );
 }
