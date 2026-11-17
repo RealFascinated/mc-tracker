@@ -10,6 +10,7 @@ diesel::table! {
         peak_players -> Nullable<Integer>,
         peak_players_timestamp -> Nullable<BigInt>,
         paused -> Bool,
+        last_online_at -> Nullable<Timestamptz>,
     }
 }
 

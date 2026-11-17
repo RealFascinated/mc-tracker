@@ -61,6 +61,16 @@ export function LazyMetricChartBody({
     );
   }
 
+  if (state.kind === "empty") {
+    return (
+      <ChartEmpty
+        message={DASHBOARD_CHART_EMPTY_MESSAGE}
+        height={height}
+        className="text-sm text-muted-foreground"
+      />
+    );
+  }
+
   if (state.kind === "idle") {
     return (
       <div className="relative h-full min-h-0">

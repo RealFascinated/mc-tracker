@@ -1,6 +1,7 @@
 export type LazyMetricChartState =
   | { kind: "error" }
   | { kind: "idle" }
+  | { kind: "empty" }
   | { kind: "loading" }
   | { kind: "chart" };
 
@@ -27,6 +28,11 @@ export function resolveLazyMetricChartState({
 
   if (!mountChart && showLoading) {
     return { kind: "loading" };
+  }
+
+  // Fetch finished (visible, not pending) but there are no points to plot.
+  if (!mountChart && isVisible && !isPending && !hasData) {
+    return { kind: "empty" };
   }
 
   if (!mountChart) {

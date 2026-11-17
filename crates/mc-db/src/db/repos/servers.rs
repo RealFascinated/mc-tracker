@@ -21,6 +21,7 @@ type ServerRow = (
     Option<i32>,
     Option<i64>,
     bool,
+    Option<chrono::DateTime<Utc>>,
 );
 
 fn row_to_server(row: ServerRow) -> Result<Server, DbError> {
@@ -35,6 +36,7 @@ fn row_to_server(row: ServerRow) -> Result<Server, DbError> {
         peak_players: row.7.map(|value| value as u32),
         peak_players_timestamp: row.8,
         paused: row.9,
+        last_online_at: row.10,
     })
 }
 
@@ -69,6 +71,7 @@ pub async fn list(pool: &DbPool) -> Result<Vec<Server>, DbError> {
             servers::peak_players,
             servers::peak_players_timestamp,
             servers::paused,
+            servers::last_online_at,
         ))
         .load::<ServerRow>(&mut conn)
         .await
@@ -92,6 +95,7 @@ pub async fn get(pool: &DbPool, id: Uuid) -> Result<Server, DbError> {
             servers::peak_players,
             servers::peak_players_timestamp,
             servers::paused,
+            servers::last_online_at,
         ))
         .first::<ServerRow>(&mut conn)
         .await
@@ -132,6 +136,7 @@ pub async fn find_by_host_port_platform(
             servers::peak_players,
             servers::peak_players_timestamp,
             servers::paused,
+            servers::last_online_at,
         ))
         .first::<ServerRow>(&mut conn)
         .await
@@ -187,6 +192,13 @@ pub async fn update(pool: &DbPool, id: Uuid, update: UpdateServer<'_>) -> Result
     let port = update.port.unwrap_or(existing.port);
     let platform = update.platform.unwrap_or(existing.platform);
     let paused = update.paused.unwrap_or(existing.paused);
+    // Unpausing restarts the offline clock so a long-dead server gets a
+    // fresh grace period instead of being auto-paused again immediately.
+    let last_online_at = if existing.paused && !paused {
+        Some(now)
+    } else {
+        existing.last_online_at
+    };
 
     diesel::update(servers::table.filter(servers::id.eq(id)))
         .set((
@@ -195,6 +207,7 @@ pub async fn update(pool: &DbPool, id: Uuid, update: UpdateServer<'_>) -> Result
             servers::port.eq(port),
             servers::platform.eq(platform.as_str()),
             servers::paused.eq(paused),
+            servers::last_online_at.eq(last_online_at),
             servers::updated_at.eq(now),
         ))
         .execute(&mut conn)
@@ -250,6 +263,36 @@ pub async fn update_peak_if_higher(
     .await
     .map_err(db_err)?;
 
+    Ok(updated > 0)
+}
+
+pub async fn touch_last_online(
+    pool: &DbPool,
+    id: Uuid,
+    at: chrono::DateTime<Utc>,
+) -> Result<(), DbError> {
+    let mut conn = get_conn(pool).await?;
+    diesel::update(servers::table.filter(servers::id.eq(id)))
+        .set(servers::last_online_at.eq(at))
+        .execute(&mut conn)
+        .await
+        .map_err(db_err)?;
+    Ok(())
+}
+
+/// Pauses a server without touching its other fields. Returns false when it
+/// was already paused or missing, so callers only record an event once.
+pub async fn set_paused(pool: &DbPool, id: Uuid) -> Result<bool, DbError> {
+    let mut conn = get_conn(pool).await?;
+    let updated = diesel::update(
+        servers::table
+            .filter(servers::id.eq(id))
+            .filter(servers::paused.eq(false)),
+    )
+    .set((servers::paused.eq(true), servers::updated_at.eq(Utc::now())))
+    .execute(&mut conn)
+    .await
+    .map_err(db_err)?;
     Ok(updated > 0)
 }
 

@@ -24,6 +24,7 @@ fn sample_server(id: Uuid, name: &str) -> Server {
         peak_players: None,
         peak_players_timestamp: None,
         paused: false,
+        last_online_at: None,
     }
 }
 

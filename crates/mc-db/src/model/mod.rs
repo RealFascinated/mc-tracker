@@ -74,6 +74,7 @@ pub struct Server {
     pub peak_players: Option<u32>,
     pub peak_players_timestamp: Option<i64>,
     pub paused: bool,
+    pub last_online_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

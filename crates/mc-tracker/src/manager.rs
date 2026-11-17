@@ -573,6 +573,7 @@ mod tests {
             peak_players: None,
             peak_players_timestamp: None,
             paused: false,
+            last_online_at: None,
         }
     }
 
@@ -660,6 +661,7 @@ mod tests {
         let active = sample_server();
         let paused = Server {
             paused: true,
+            last_online_at: None,
             ..sample_server()
         };
         let manager = ServerManager::new(
@@ -694,6 +696,7 @@ mod tests {
             peak_players: None,
             peak_players_timestamp: None,
             paused: false,
+            last_online_at: None,
         }
     }
 
@@ -710,6 +713,7 @@ mod tests {
             peak_players: None,
             peak_players_timestamp: None,
             paused: false,
+            last_online_at: None,
         });
         server.asn = AsnLookup {
             asn: "AS13335".into(),
@@ -739,6 +743,7 @@ mod tests {
             peak_players: None,
             peak_players_timestamp: None,
             paused: false,
+            last_online_at: None,
         });
         server.asn = AsnLookup {
             asn: "AS1".into(),
@@ -765,6 +770,7 @@ mod tests {
             peak_players: None,
             peak_players_timestamp: None,
             paused: false,
+            last_online_at: None,
         });
         server.asn = AsnLookup {
             asn: "AS99999".into(),

@@ -215,6 +215,7 @@ mod tests {
             peak_players: None,
             peak_players_timestamp: None,
             paused: false,
+            last_online_at: None,
         })
     }
 
